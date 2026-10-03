@@ -1,13 +1,14 @@
-# 72H Architecture v0.1
+# 72H Architecture v0.2
 
 ## 1. Architecture Goals
 
-The 72H architecture must support four properties:
+72H must support five properties:
 
 1. **Evidence-backed planning** — important actions are tied to verified evidence.
-2. **Agentic re-planning** — the system reacts to relevant situation changes.
+2. **Agentic re-planning** — relevant situation changes can invalidate dependencies and trigger re-planning.
 3. **Deterministic safety** — critical policy decisions are not delegated to free-form model reasoning.
 4. **Offline continuity** — the application remains useful during temporary network loss.
+5. **Credential isolation** — no privileged credential is exposed to the browser, Git repository, or offline storage.
 
 ## 2. High-Level Architecture
 
@@ -17,56 +18,53 @@ The 72H architecture must support four properties:
                          │ Next.js / TypeScript │
                          └──────────┬───────────┘
                                     │
-                         Online Sync│
+                              HTTPS │ no secrets
                                     ▼
                          ┌──────────────────────┐
                          │      Cloud Run       │
                          │   FastAPI Backend    │
                          └──────────┬───────────┘
                                     │
-                         ┌──────────▼───────────┐
-                         │    Google ADK        │
-                         │       Gemini         │
-                         └──────────┬───────────┘
+                    Service Identity / ADC
                                     │
-                 ┌──────────────────┼──────────────────┐
-                 ▼                  ▼                  ▼
-        ┌────────────────┐ ┌────────────────┐ ┌────────────────┐
-        │ Situation Agent│ │  Source Agent  │ │ Mobility Agent │
-        └────────┬───────┘ └────────┬───────┘ └────────┬───────┘
-                 │                  │                  │
-                 └──────────────────┼──────────────────┘
-                                    ▼
-                         ┌──────────────────────┐
-                         │    Action Agent      │
-                         └──────────┬───────────┘
-                                    ▼
-                         ┌──────────────────────┐
-                         │ Deterministic Safety │
-                         │        Core          │
-                         └──────────┬───────────┘
-                                    │
-                 ┌──────────────────┼──────────────────┐
-                 ▼                  ▼                  ▼
-            Firestore         Cloud Logging      External Sources
-                                                     │
-                                      ┌──────────────┼──────────────┐
-                                      ▼              ▼              ▼
-                                     JMA       Transport Provider  Replay
+         ┌──────────────────────────┼──────────────────────────┐
+         ▼                          ▼                          ▼
+ ┌────────────────┐        ┌────────────────┐        ┌────────────────┐
+ │ Vertex AI      │        │   Firestore    │        │ Secret Manager │
+ │ Gemini + ADK   │        └────────────────┘        └───────┬────────┘
+ └───────┬────────┘                                           │
+         │                                                    ▼
+         │                                           Third-party secrets
+         ▼
+ ┌─────────────────────────────────────────────────────────────┐
+ │ Agent Runtime                                               │
+ │ Situation Agent / Source Agent / Mobility Agent / Action   │
+ └──────────────────────────────┬──────────────────────────────┘
+                                ▼
+                     ┌──────────────────────┐
+                     │ Deterministic Safety │
+                     │        Core          │
+                     └──────────┬───────────┘
+                                │
+              ┌─────────────────┼──────────────────┐
+              ▼                 ▼                  ▼
+         Cloud Logging     External Sources      Replay
+                                                Fixtures
 
 
-                         Browser Local Continuity
-                         ─────────────────────────
+                      Browser Local Continuity
+                      ─────────────────────────
 
-                         ┌──────────────────────┐
-                         │    Service Worker    │
-                         └──────────┬───────────┘
-                                    │
-                         ┌──────────▼───────────┐
-                         │      IndexedDB       │
-                         │ Situation / Evidence │
-                         │ Plans / Trace / Pack │
-                         └──────────────────────┘
+                      ┌──────────────────────┐
+                      │    Service Worker    │
+                      └──────────┬───────────┘
+                                 │
+                      ┌──────────▼───────────┐
+                      │      IndexedDB       │
+                      │ Situation / Evidence │
+                      │ Plans / Trace / Pack │
+                      │      NO SECRETS      │
+                      └──────────────────────┘
 ```
 
 ## 3. Frontend
@@ -81,16 +79,28 @@ Recommended stack:
 
 Primary responsibilities:
 
-- User onboarding
-- Situation dashboard
-- Plan visualization
-- Source inspection
-- Agent trace visualization
-- Replay controls
-- Connectivity status
+- user onboarding
+- situation dashboard
+- plan visualization
+- source inspection
+- agent trace visualization
+- replay controls
+- connectivity status
 - Offline Emergency Pack
 
 The frontend must be able to open the critical emergency dashboard from cached assets after an initial successful load.
+
+### Frontend security boundary
+
+The browser must never receive:
+
+- Gemini or Vertex AI credentials
+- Google Cloud service-account keys
+- Secret Manager values
+- transport-provider API keys
+- privileged OAuth refresh tokens
+
+Any `NEXT_PUBLIC_*` variable is treated as public information.
 
 ## 4. Backend
 
@@ -99,20 +109,61 @@ Recommended stack:
 - Python
 - FastAPI
 - Google Agent Development Kit
-- Gemini
+- Gemini through Vertex AI
 - Cloud Run
 
 Responsibilities:
 
-- Normalize external events
-- Coordinate agents
-- Maintain cloud situation state
-- Validate candidate plans through the Safety Core
-- Persist evidence and plans
-- Produce structured trace events
-- Serve replay events
+- normalize external events
+- coordinate agents
+- maintain cloud situation state
+- validate candidate plans through the Safety Core
+- persist evidence and plans
+- produce structured trace events
+- serve replay events
+- call third-party APIs without exposing their credentials
 
-## 5. Agent Layer
+## 5. Google Cloud Authentication
+
+Production Google Cloud authentication uses a dedicated Cloud Run runtime service account and Application Default Credentials.
+
+Expected flow:
+
+```text
+Cloud Run
+↓
+72H runtime service account
+↓
+Application Default Credentials
+↓
+Vertex AI / Firestore / Logging / Secret Manager
+```
+
+Production must not depend on a checked-in service-account JSON key.
+
+A suggested runtime identity is:
+
+```text
+72h-runtime@PROJECT_ID.iam.gserviceaccount.com
+```
+
+Grant only the permissions required by the shipped implementation. Do not grant broad Owner or Editor access.
+
+## 6. Third-Party Secrets
+
+Third-party credentials are stored in Google Secret Manager and are read only by the backend runtime.
+
+Examples:
+
+- transport provider API token
+- partner API credential
+- other external service keys
+
+Secret values must never be persisted to Firestore, replay fixtures, browser storage, or logs.
+
+See `SECURITY_AND_SECRETS.md`.
+
+## 7. Agent Layer
 
 ### Situation Agent
 
@@ -120,20 +171,14 @@ Purpose:
 
 > What is the current situation and what changed?
 
-Consumes:
-
-- User state
-- Event state
-- Evidence
-- Mobility state
-- Current plan
-
 Produces:
 
-- Situation summary
-- Semantic change summary
-- Uncertainties
-- Request for plan review
+- situation summary
+- semantic change summary
+- uncertainties
+- request for plan review
+
+It cannot override source trust or plan validity.
 
 ### Source Agent
 
@@ -141,9 +186,7 @@ Purpose:
 
 > What claims exist in this external information?
 
-Produces normalized evidence candidates.
-
-Trust classification remains deterministic.
+It produces normalized evidence candidates. Trust classification remains deterministic.
 
 ### Mobility Agent
 
@@ -151,37 +194,35 @@ Purpose:
 
 > Which transport options currently appear available?
 
-May integrate with a transport provider or hackathon partner MCP/API.
-
-Must not label a route “safe.”
+It may integrate with a transport provider or Hackathon partner API/MCP. It must not label a route as safe.
 
 ### Action Agent
 
 Purpose:
 
-> Given the eligible evidence and current situation, what should the user see under NOW / NEXT / AVOID?
+> Given eligible evidence and the current situation, what should the user see under NOW / NEXT / AVOID?
 
-Produces candidate plans only.
+It produces candidate plans only.
 
-## 6. Safety Core
+## 8. Safety Core
 
-The Safety Core is implemented as deterministic application logic rather than a free-form agent.
+The Safety Core is deterministic application logic rather than a free-form agent.
 
 Responsibilities:
 
-- Evidence eligibility
+- evidence eligibility
 - TTL / freshness
-- Conflict state
-- Plan expiration
-- Dependency invalidation
-- High-risk action blocking
-- Hallucinated evidence reference rejection
-- Replay state determinism
-- Offline degradation policy
+- conflict state
+- plan expiration
+- dependency invalidation
+- high-risk action blocking
+- hallucinated evidence-reference rejection
+- replay state determinism
+- offline degradation policy
 
 See `AGENT_SAFETY_CONTRACT.md`.
 
-## 7. Core Domain Objects
+## 9. Core Domain Objects
 
 ### UserProfile
 
@@ -274,9 +315,7 @@ output_refs
 status
 ```
 
-## 8. Firestore Collections
-
-Initial structure:
+## 10. Firestore Collections
 
 ```text
 users/
@@ -289,11 +328,9 @@ agent_events/
 replay_sessions/
 ```
 
-For the hackathon MVP, schema simplicity is preferred over deep abstraction.
+Secrets are not domain objects and must not be stored in these collections.
 
-## 9. External Data Adapter Pattern
-
-External sources must be hidden behind adapters.
+## 11. External Data Adapter Pattern
 
 ```text
 DisasterSource
@@ -306,26 +343,13 @@ MobilitySource
 └── ReplayMobilitySource
 ```
 
-This prevents the MVP from depending on a single production API being available during judging.
+This allows the judging experience to remain reliable even if a production API is temporarily unavailable.
 
-## 10. Replay Engine
+## 12. Replay Engine
 
-The Replay Engine emits deterministic events at defined offsets.
+Replay controls external event timing and input data only. Core safety and plan transitions must remain real.
 
-Example event schema:
-
-```json
-{
-  "id": "event_001",
-  "at_seconds": 0,
-  "type": "disaster_alert",
-  "source": "JMA",
-  "payload": {},
-  "expected_effect": "CREATE_SITUATION"
-}
-```
-
-Supported event types:
+Supported event types include:
 
 ```text
 disaster_alert
@@ -341,16 +365,16 @@ plan_expiration
 
 Core replay transitions must not depend on stochastic model output.
 
-## 11. Network Architecture
+## 13. Network Architecture
 
 ### Online
 
 ```text
 External Sources
 ↓
-Cloud Backend
+Cloud Run
 ↓
-Agent + Safety Core
+Agent Runtime + Safety Core
 ↓
 Firestore
 ↓
@@ -395,43 +419,16 @@ Re-plan if needed
 ONLINE_VERIFIED
 ```
 
-## 12. API Surface — Initial Proposal
-
-### Situation
+## 14. API Surface — Initial Proposal
 
 ```text
 GET  /api/situation/{session_id}
 POST /api/situation/{session_id}/evaluate
-```
-
-### Events
-
-```text
 POST /api/events
-```
-
-### Evidence
-
-```text
-GET /api/evidence/{session_id}
-```
-
-### Plans
-
-```text
+GET  /api/evidence/{session_id}
 GET  /api/plans/{session_id}
 POST /api/plans/{session_id}/evaluate
-```
-
-### Trace
-
-```text
-GET /api/trace/{session_id}
-```
-
-### Replay
-
-```text
+GET  /api/trace/{session_id}
 POST /api/replay/start
 POST /api/replay/pause
 POST /api/replay/next
@@ -439,29 +436,29 @@ POST /api/replay/reset
 GET  /api/replay/{session_id}
 ```
 
-The exact API shape may evolve during implementation, but the domain boundaries should remain stable.
+## 15. Deployment
 
-## 13. Deployment
-
-Recommended initial deployment:
+Initial deployment:
 
 ```text
 Frontend + API: Cloud Run
 Database: Firestore
-Agent runtime: Google ADK + Gemini
+Agent runtime: Google ADK + Gemini through Vertex AI
+Authentication: Cloud Run service identity / ADC
+Third-party secrets: Secret Manager
 Observability: Cloud Logging
 ```
 
 A split frontend/backend deployment may be introduced later if operationally useful.
 
-## 14. Observability
+## 16. Observability
 
-Every important state transition should generate both:
+Every important state transition should generate:
 
-1. A user-safe trace event for `/trace`
-2. A structured operational log for debugging
+1. a user-safe trace event for `/trace`
+2. a structured operational log for debugging
 
-Important event types include:
+Important events include:
 
 - `DISASTER_EVENT_RECEIVED`
 - `EVIDENCE_NORMALIZED`
@@ -475,33 +472,41 @@ Important event types include:
 - `OFFLINE_MODE_ENTERED`
 - `NETWORK_RESTORED`
 
-## 15. Security Boundaries
+Logs must not contain API keys, access tokens, authorization headers, or Secret Manager payloads.
 
-- External content is always untrusted data
-- Agent output cannot directly override source trust
-- Agent output cannot directly override plan validity
-- Tool access is role-limited by agent
-- All important actions require evidence IDs
-- Sensitive configuration is stored outside the repository
+## 17. Security Boundaries
 
-## 16. MVP Build Order
+- external content is always untrusted data
+- agent output cannot directly override source trust
+- agent output cannot directly override plan validity
+- tool access is role-limited by agent
+- important actions require evidence IDs
+- Google Cloud access uses service identity / ADC
+- third-party credentials stay in Secret Manager
+- the frontend contains no privileged secrets
+- IndexedDB contains no privileged secrets
+- sensitive configuration never enters the repository
+
+See `SECURITY_AND_SECRETS.md`.
+
+## 18. MVP Build Order
 
 ### Phase 1 — Domain and Replay
 
-1. Repository structure
-2. Core schemas
-3. Replay event model
-4. Situation state
-5. Evidence state
-6. Plan model
+1. repository structure
+2. core schemas
+3. replay event model
+4. situation state
+5. evidence state
+6. plan model
 
 ### Phase 2 — Deterministic Safety
 
-7. Trust states
-8. Freshness TTL
-9. Dependency invalidation
-10. Plan versioning
-11. Network state machine
+7. trust states
+8. freshness TTL
+9. dependency invalidation
+10. plan versioning
+11. network state machine
 
 ### Phase 3 — Agent Layer
 
@@ -512,11 +517,11 @@ Important event types include:
 
 ### Phase 4 — UI
 
-16. Dashboard
-17. Plan history
-18. Sources
-19. Trace
-20. Demo controls
+16. dashboard
+17. plan history
+18. sources
+19. trace
+20. demo controls
 
 ### Phase 5 — Offline Continuity
 
@@ -524,22 +529,28 @@ Important event types include:
 22. IndexedDB
 23. Emergency Pack
 24. Last Verified Plan
-25. Reconnect reconciliation
+25. reconnect reconciliation
 
-### Phase 6 — Submission
+### Phase 6 — Security and Cloud Integration
 
-26. Cloud Run deployment
-27. Replay stability tests
-28. Safety tests
-29. Architecture diagram
-30. Demo video
-31. Submission README
+26. dedicated Cloud Run runtime service account
+27. Vertex AI / Gemini authentication via ADC
+28. Secret Manager integration for third-party credentials
+29. `.gitignore` / `.env.example` secret hygiene
+30. rate limits and budget safeguards
 
-## 17. Architecture Definition of Done
+### Phase 7 — Submission
 
-The architecture is sufficient for v0.1 when the same codebase can demonstrate both:
+31. Cloud Run deployment
+32. replay stability tests
+33. safety and secret-audit tests
+34. architecture diagram
+35. demo video
+36. submission README
 
-### Normal mode
+## 19. Architecture Definition of Done
+
+Normal mode:
 
 ```text
 Verified event
@@ -552,7 +563,7 @@ Verified event
 → Re-plan
 ```
 
-### Continuity mode
+Continuity mode:
 
 ```text
 Network lost
@@ -564,4 +575,22 @@ Network lost
 → Re-evaluate
 ```
 
-That pair of flows is the architectural core of 72H.
+Credential mode:
+
+```text
+Browser
+→ no secrets
+
+Cloud Run
+→ service identity / ADC
+→ Google Cloud services
+
+Cloud Run
+→ Secret Manager
+→ third-party APIs
+
+Git / IndexedDB / Logs
+→ no secrets
+```
+
+All three flows are part of the architectural core of 72H.
