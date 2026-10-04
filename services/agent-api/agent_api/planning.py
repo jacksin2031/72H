@@ -1,0 +1,1068 @@
+"""Deterministic plan evaluation and conservative replay planning."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, replace
+from datetime import timedelta
+
+from seventytwoh_contracts.models import (
+    AgentName,
+    ClaimStateStatus,
+    CandidateActionSelection,
+    CandidatePlanSelection,
+    DependencyExpectation,
+    Evidence,
+    EvidenceProjection,
+    FreshnessStatus,
+    NetworkState,
+    Plan,
+    PlanAction,
+    PlanActionCategory,
+    PlanActionStatus,
+    PlanEvaluation,
+    PlanEvaluationStatus,
+    PlanStatus,
+    RiskLevel,
+    SafetyDecision,
+    SafeIntentId,
+    Situation,
+    SituationClaim,
+    TraceEvent,
+    TraceStatus,
+    TrustStatus,
+)
+
+from .domain import append_plan
+from .safety import (
+    DEFAULT_POLICY,
+    SafetyPolicy,
+    current_claim_value,
+    derive_claim_states,
+    expires_at_for,
+    project_evidence,
+)
+from .state import CoreState
+
+TRUSTED_STATUSES = {TrustStatus.VERIFIED_OFFICIAL, TrustStatus.VERIFIED_PARTNER}
+DISASTER_STATUS_KEY = "disaster.tokyo.status"
+ROUTE_STATUS_KEY = "route.shibuya_asakusa.status"
+
+
+@dataclass(frozen=True, slots=True)
+class PlannerTrace:
+    mode: str
+    reason_code: str | None = None
+
+
+INTENT_DESCRIPTIONS = {
+    SafeIntentId.PROTECT_AND_MONITOR: "Prioritize personal safety and monitor verified updates.",
+    SafeIntentId.REVIEW_OFFICIAL_GUIDANCE: "Review verified official guidance and follow local instructions.",
+    SafeIntentId.WAIT_FOR_TRANSPORT_UPDATE: "Wait for verified transport updates before reconsidering travel.",
+    SafeIntentId.RECHECK_TRANSPORT_STATUS: "Recheck verified transport status before reconsidering travel.",
+    SafeIntentId.AVOID_DISRUPTED_ROUTE: "Avoid relying on a route with a verified disruption.",
+    SafeIntentId.DO_NOT_ASSUME_ROUTE_SAFETY: "Do not infer route or personal safety from transport status.",
+}
+PUBLIC_PLANNER_REASON_CODES = frozenset(
+    {
+        "MISSING_ADC",
+        "TIMEOUT",
+        "INVALID_OUTPUT",
+        "SESSION_CALL_LIMIT",
+        "GLOBAL_RATE_LIMIT",
+        "GLOBAL_CALL_LIMIT",
+        "INPUT_LIMIT",
+        "SDK_ERROR",
+        "CONFIG_ERROR",
+        "PROVIDER_ERROR",
+    }
+)
+
+
+def evidence_projections(
+    evidence: tuple[Evidence, ...],
+    situation: Situation,
+    current_time,
+    policy: SafetyPolicy = DEFAULT_POLICY,
+) -> tuple[EvidenceProjection, ...]:
+    claims, _, conflict_evidence_ids = derive_claim_states(
+        situation,
+        evidence,
+        current_time,
+        policy,
+    )
+    del claims
+    conflict_ids = set(conflict_evidence_ids)
+    return tuple(
+        project_evidence(item, current_time, policy, conflict=item.id in conflict_ids)
+        for item in evidence
+    )
+
+
+def candidate_context_for_preview(
+    before: CoreState,
+    preview: CoreState,
+    policy: SafetyPolicy = DEFAULT_POLICY,
+) -> dict[str, object] | None:
+    """Build a prompt from bounded trusted state and catalog IDs, never report prose."""
+    previous_plan_ids = {plan.id for plan in before.plans}
+    generated_plan = next((plan for plan in reversed(preview.plans) if plan.id not in previous_plan_ids), None)
+    if generated_plan is None:
+        return None
+    actions = _actions_for_plan(preview, generated_plan.id)
+    changed_ids = set(generated_plan.changed_action_ids)
+    target_actions = [action for action in actions if action.id in changed_ids]
+    projections = {
+        item.evidence_id: item
+        for item in evidence_projections(
+            preview.evidence,
+            preview.situation,
+            preview.current_time,
+            policy,
+        )
+    }
+    claims = {item.key: item for item in preview.situation.claim_states}
+    route_value = current_claim_value(claims.get(ROUTE_STATUS_KEY))
+    choices: list[dict[str, object]] = []
+    for action in target_actions:
+        key = DISASTER_STATUS_KEY if action.category == PlanActionCategory.NOW else ROUTE_STATUS_KEY
+        eligible_ids = _eligible_ids_for_claim(claims.get(key), projections)
+        options = [
+            {
+                "intent_id": intent.value,
+                "description": INTENT_DESCRIPTIONS[intent],
+                "eligible_evidence_ids": list(eligible_ids),
+            }
+            for intent in _intent_options(action.category, route_value)
+        ]
+        choices.append({"category": action.category.value, "options": options})
+    return {
+        "language": preview.profile.preferred_language.value,
+        "verified_claims": [
+            {"key": key, "status": claims[key].status.value, "value": claims[key].value}
+            for key in (DISASTER_STATUS_KEY, ROUTE_STATUS_KEY)
+            if key in claims
+        ],
+        "choices": choices,
+    }
+
+
+def validate_candidate_selection(
+    selection: CandidatePlanSelection,
+    context: dict[str, object],
+) -> CandidatePlanSelection:
+    """Validate model selections again at the domain boundary before plan append."""
+    expected_choices = {
+        str(item["category"]): item["options"]
+        for item in context["choices"]  # type: ignore[index]
+    }
+    received = {choice.category.value: choice for choice in selection.choices}
+    if set(received) != set(expected_choices):
+        raise ValueError("OUTPUT_REJECTED: candidate categories do not match requested plan actions")
+    for category, choice in received.items():
+        options = expected_choices[category]
+        option = next(
+            (item for item in options if item["intent_id"] == choice.intent_id.value),
+            None,
+        )
+        if option is None:
+            raise ValueError("OUTPUT_REJECTED: unknown or unsafe intent for category")
+        allowed_ids = tuple(option["eligible_evidence_ids"])
+        if len(choice.evidence_ids) != len(set(choice.evidence_ids)):
+            raise ValueError("OUTPUT_REJECTED: candidate evidence references must be unique")
+        if any(reference not in allowed_ids for reference in choice.evidence_ids):
+            raise ValueError("OUTPUT_REJECTED: candidate references ineligible or mismatched evidence")
+        if allowed_ids and not choice.evidence_ids:
+            raise ValueError("OUTPUT_REJECTED: candidate omitted required eligible evidence references")
+        if not allowed_ids and choice.evidence_ids:
+            raise ValueError("OUTPUT_REJECTED: no eligible evidence supports this intent")
+    return selection
+
+
+def _intent_options(
+    category: PlanActionCategory,
+    route_value: object,
+) -> tuple[SafeIntentId, ...]:
+    if category == PlanActionCategory.NOW:
+        return (SafeIntentId.PROTECT_AND_MONITOR, SafeIntentId.REVIEW_OFFICIAL_GUIDANCE)
+    if category == PlanActionCategory.NEXT:
+        return (SafeIntentId.WAIT_FOR_TRANSPORT_UPDATE, SafeIntentId.RECHECK_TRANSPORT_STATUS)
+    if route_value == "DISRUPTED":
+        return (SafeIntentId.AVOID_DISRUPTED_ROUTE, SafeIntentId.DO_NOT_ASSUME_ROUTE_SAFETY)
+    return (SafeIntentId.DO_NOT_ASSUME_ROUTE_SAFETY,)
+
+
+def _default_intent(category: PlanActionCategory, route_value: object) -> SafeIntentId:
+    if category == PlanActionCategory.NOW:
+        return SafeIntentId.PROTECT_AND_MONITOR
+    if category == PlanActionCategory.NEXT:
+        return SafeIntentId.WAIT_FOR_TRANSPORT_UPDATE
+    if route_value == "DISRUPTED":
+        return SafeIntentId.AVOID_DISRUPTED_ROUTE
+    return SafeIntentId.DO_NOT_ASSUME_ROUTE_SAFETY
+
+
+def evaluate_and_replan(
+    before: CoreState,
+    after: CoreState,
+    event,
+    policy: SafetyPolicy = DEFAULT_POLICY,
+    *,
+    candidate_selection: CandidatePlanSelection | None = None,
+    candidate_context: dict[str, object] | None = None,
+    planner_trace: PlannerTrace | None = None,
+) -> CoreState:
+    """Rebuild current projections, evaluate plan dependencies, and append new versions."""
+    claim_states, conflict_keys, conflict_evidence_ids = derive_claim_states(
+        after.situation,
+        after.evidence,
+        after.current_time,
+        policy,
+    )
+    conflict_ids = set(conflict_evidence_ids)
+    projections = tuple(
+        project_evidence(item, after.current_time, policy, conflict=item.id in conflict_ids)
+        for item in after.evidence
+    )
+    projection_by_id = {item.evidence_id: item for item in projections}
+    claim_by_key = {item.key: item for item in claim_states}
+    uncertainty_flags = [
+        f"UNKNOWN_CLAIM:{item.key}"
+        for item in claim_states
+        if item.status == ClaimStateStatus.UNKNOWN
+    ]
+    uncertainty_flags.extend(f"CONFLICTING_CLAIM:{key}" for key in conflict_keys)
+    if any(
+        projection.freshness_status == FreshnessStatus.STALE
+        and evidence.trust_status in TRUSTED_STATUSES
+        for evidence, projection in zip(after.evidence, projections)
+    ):
+        uncertainty_flags.append("STALE_TRUSTED_EVIDENCE_PRESENT")
+    if any(evidence.trust_status == TrustStatus.UNVERIFIED for evidence in after.evidence):
+        uncertainty_flags.append("UNVERIFIED_SOURCE_PRESENT")
+
+    situation = after.situation.model_copy(
+        update={
+            "claim_states": claim_states,
+            "conflict_flags": conflict_keys,
+            "uncertainty_flags": tuple(uncertainty_flags),
+        }
+    )
+    after = replace(after, situation=situation)
+
+    new_ids = {item.id for item in after.evidence} - {item.id for item in before.evidence}
+    newly_verified = [
+        item
+        for item in after.evidence
+        if item.id in new_ids
+        and item.trust_status in TRUSTED_STATUSES
+        and projection_by_id[item.id].eligible_for_claims
+    ]
+    if newly_verified:
+        latest = max(item.received_at for item in newly_verified)
+        situation = after.situation.model_copy(
+            update={"latest_evidence_at": max(
+                (at for at in (after.situation.latest_evidence_at, latest) if at is not None),
+            )}
+        )
+        after = replace(after, situation=situation)
+
+    after = _reconcile_network_if_ready(after, projection_by_id, event)
+
+    old_claims = {item.key: item for item in before.situation.claim_states}
+    changed_keys = {
+        key
+        for key in set(old_claims) | set(claim_by_key)
+        if current_claim_value(old_claims.get(key)) != current_claim_value(claim_by_key.get(key))
+        or _claim_status(old_claims.get(key)) != _claim_status(claim_by_key.get(key))
+    }
+    current_plan = next(
+        (plan for plan in after.plans if plan.id == after.situation.current_plan_id),
+        None,
+    )
+    current_actions = _actions_for_plan(after, current_plan.id) if current_plan else ()
+    dependency_keys = {
+        key for action in current_actions for key in action.dependency_keys
+    }
+    changed_dependencies = changed_keys & dependency_keys
+    new_relevant_keys = {
+        claim.key
+        for item in newly_verified
+        for claim in item.claims
+        if claim.key in dependency_keys
+    }
+    expired_current = bool(
+        current_plan and after.current_time >= current_plan.expires_at
+    )
+    verified_disaster = claim_by_key.get(DISASTER_STATUS_KEY)
+    can_start_initial_plan = bool(
+        current_plan is None
+        and after.situation.active_event_ids
+        and verified_disaster is not None
+        and verified_disaster.status == ClaimStateStatus.VERIFIED
+        and verified_disaster.value == "ACTIVE"
+    )
+    should_review = bool(
+        changed_dependencies
+        or new_relevant_keys
+        or expired_current
+        or can_start_initial_plan
+    )
+
+    if candidate_selection is not None:
+        if candidate_context is None or not should_review:
+            raise ValueError("OUTPUT_REJECTED: no matching plan generation is pending")
+        validate_candidate_selection(candidate_selection, candidate_context)
+
+    if current_plan and should_review:
+        evaluation = _evaluate_plan(
+            current_plan,
+            current_actions,
+            claim_by_key,
+            projection_by_id,
+            after.current_time,
+            changed_dependencies,
+        )
+        after = _append_evaluation(after, evaluation, event)
+        if evaluation.status in {
+            PlanEvaluationStatus.PARTIAL_INVALIDATION,
+            PlanEvaluationStatus.INVALIDATED,
+            PlanEvaluationStatus.EXPIRED,
+        }:
+            after = _emit_trace(
+                after,
+                event,
+                "PLAN_INVALIDATED",
+                TraceStatus.SUCCESS,
+                evaluation.invalid_action_ids,
+                evaluation.reason,
+                agent=AgentName.SAFETY_CORE,
+            )
+            after = replace(
+                after,
+                situation=after.situation.model_copy(update={"current_plan_id": None}),
+            )
+            after = _generate_plan(
+                after,
+                current_plan,
+                set(evaluation.invalid_action_ids),
+                projection_by_id,
+                policy,
+                event,
+                candidate_selection,
+            )
+        else:
+            after = _emit_trace(
+                after,
+                event,
+                "PLAN_EVALUATED",
+                TraceStatus.SUCCESS,
+                (current_plan.id,),
+                evaluation.reason,
+                agent=AgentName.SAFETY_CORE,
+            )
+    elif can_start_initial_plan:
+        after = _generate_plan(
+            after,
+            None,
+            set(),
+            projection_by_id,
+            policy,
+            event,
+            candidate_selection,
+        )
+
+    if should_review and planner_trace is not None:
+        generated_plan = next(
+            (plan for plan in reversed(after.plans) if plan.id not in {item.id for item in before.plans}),
+            None,
+        )
+        if generated_plan is not None:
+            if planner_trace.mode == "GEMINI_ADK":
+                event_type = "GEMINI_CANDIDATE_APPLIED"
+                trace_status = TraceStatus.SUCCESS
+                summary = "A constrained Gemini/ADK intent selection was validated and used."
+            else:
+                code = planner_trace.reason_code or "PROVIDER_ERROR"
+                if code not in PUBLIC_PLANNER_REASON_CODES:
+                    code = "PROVIDER_ERROR"
+                event_type = "GEMINI_CANDIDATE_FALLBACK"
+                trace_status = TraceStatus.FAILED
+                summary = f"Gemini/ADK selection unavailable ({code}); deterministic safe intents were used."
+            after = _emit_trace(
+                after,
+                event,
+                event_type,
+                trace_status,
+                (generated_plan.id,),
+                summary,
+                agent=AgentName.ACTION_AGENT,
+            )
+
+    after = _expire_historical_plans(after, event)
+    if len(after.plan_evaluations) > 512:
+        raise ValueError("plan evaluation history limit reached")
+    return after
+
+
+def assess_action(
+    action: PlanAction,
+    evidence_by_id: dict[str, Evidence],
+    projection_by_id: dict[str, EvidenceProjection],
+) -> PlanAction:
+    """Apply deterministic structural checks; generated wording is server-owned."""
+    if any(reference not in evidence_by_id for reference in action.evidence_ids):
+        raise ValueError("OUTPUT_REJECTED: action references unknown evidence")
+
+    eligible = [
+        reference
+        for reference in action.evidence_ids
+        if projection_by_id.get(reference) is not None
+        and projection_by_id[reference].eligible_for_claims
+    ]
+    if action.risk_level == RiskLevel.HIGH:
+        if not any(projection_by_id[reference].eligible_for_high_risk for reference in eligible):
+            return action.model_copy(
+                update={
+                    "status": PlanActionStatus.BLOCKED,
+                    "safety_decision": SafetyDecision.BLOCK,
+                    "text": "This high-risk action is blocked because live verified support is unavailable.",
+                    "reason": "Synthetic replay, stale, conflicting, unverified, or missing evidence cannot authorize it.",
+                    "evidence_ids": tuple(eligible),
+                    "confidence_class": "UNKNOWN",
+                }
+            )
+        # Phase 2 has no deterministic allowlist for movement or safety judgments.
+        return action.model_copy(
+            update={
+                "status": PlanActionStatus.BLOCKED,
+                "safety_decision": SafetyDecision.BLOCK,
+                "text": "This high-risk action is blocked pending a deterministic policy rule.",
+                "reason": "The Phase 2 policy does not allow unclassified high-risk actions.",
+                "evidence_ids": tuple(eligible),
+                "confidence_class": "UNKNOWN",
+            }
+        )
+    if action.risk_level == RiskLevel.MEDIUM and not eligible:
+        return action.model_copy(
+            update={
+                "status": PlanActionStatus.ACTIVE,
+                "safety_decision": SafetyDecision.WAIT_FOR_EVIDENCE,
+                "evidence_ids": (),
+                "confidence_class": "UNKNOWN",
+            }
+        )
+    if action.risk_level == RiskLevel.MEDIUM:
+        return action.model_copy(update={"confidence_class": "LOW"})
+    return action.model_copy(update={"confidence_class": "LOW"})
+
+
+def _reconcile_network_if_ready(
+    state: CoreState,
+    projections: dict[str, EvidenceProjection],
+    event,
+) -> CoreState:
+    if state.situation.network_state != NetworkState.RECONNECTING:
+        return state
+    reconnect = next(
+        (item for item in reversed(state.trace) if item.event_type == "NETWORK_RESTORED"),
+        None,
+    )
+    if reconnect is None:
+        return state
+
+    # A disaster replay is not reconciled from a single source. Both the
+    # current official situation and transport state must be refreshed.
+    required_classes = {"OFFICIAL", "PARTNER"} if state.situation.active_event_ids else set()
+
+    required_claim_keys = {
+        "OFFICIAL": DISASTER_STATUS_KEY,
+        "PARTNER": ROUTE_STATUS_KEY,
+    }
+    fresh_after_reconnect: dict[str, list[Evidence]] = {
+        source_class: [] for source_class in required_classes
+    }
+    evidence_after_reconnect = state.evidence[
+        state.reconnect_evidence_count or 0 :
+    ]
+    for evidence in evidence_after_reconnect:
+        source_class = evidence.source_class.value
+        if source_class not in fresh_after_reconnect:
+            continue
+        projection = projections.get(evidence.id)
+        claim_key = required_claim_keys.get(source_class)
+        if (
+            evidence.trust_status in TRUSTED_STATUSES
+            and evidence.received_at >= reconnect.timestamp
+            and projection is not None
+            and projection.eligible_for_claims
+            and claim_key is not None
+            and any(claim.key == claim_key for claim in evidence.claims)
+        ):
+            fresh_after_reconnect[source_class].append(evidence)
+
+    if any(not items for items in fresh_after_reconnect.values()):
+        return state
+    reconciled_ids = tuple(
+        max(items, key=lambda item: (item.received_at, item.id)).id
+        for _, items in sorted(fresh_after_reconnect.items())
+    )
+    situation = state.situation.model_copy(
+        update={
+            "network_state": NetworkState.ONLINE_VERIFIED,
+            "updated_at": state.current_time,
+        }
+    )
+    state = replace(state, situation=situation, reconnect_evidence_count=None)
+    return _emit_trace(
+        state,
+        event,
+        "RECONCILIATION_COMPLETED",
+        TraceStatus.SUCCESS,
+        reconciled_ids,
+        "Fresh official and transport evidence were validated and reconciled after reconnect.",
+        agent=AgentName.SYNC_ENGINE,
+    )
+
+
+def _evaluate_plan(
+    plan: Plan,
+    actions: tuple[PlanAction, ...],
+    claims: dict[str, SituationClaim],
+    projections: dict[str, EvidenceProjection],
+    current_time,
+    changed_dependencies: set[str],
+) -> PlanEvaluation:
+    if current_time >= plan.expires_at:
+        return PlanEvaluation(
+            plan_id=plan.id,
+            status=PlanEvaluationStatus.EXPIRED,
+            evaluated_at=current_time,
+            reason="The plan reached its deterministic expiration time.",
+            invalid_action_ids=tuple(action.id for action in actions),
+        )
+
+    invalid: list[str] = []
+    reasons: list[str] = []
+    for action in actions:
+        action_invalid = False
+        expected_values = action.dependency_values
+        for key in action.dependency_keys:
+            if key not in expected_values:
+                continue
+            actual = current_claim_value(claims.get(key))
+            if key in changed_dependencies or actual != expected_values[key]:
+                action_invalid = True
+                reasons.append(f"{key} changed")
+        for reference in action.evidence_ids:
+            projection = projections.get(reference)
+            if projection is None or not projection.eligible_for_claims:
+                action_invalid = True
+                reasons.append(f"evidence {reference} is no longer current and eligible")
+        if action_invalid:
+            invalid.append(action.id)
+
+    if not invalid:
+        status = PlanEvaluationStatus.KEEP
+        reason = "The current evidence still matches every active plan dependency."
+    elif len(invalid) >= len(actions):
+        status = PlanEvaluationStatus.INVALIDATED
+        reason = "Every plan action lost a dependency or current evidence."
+    else:
+        status = PlanEvaluationStatus.PARTIAL_INVALIDATION
+        reason = "One or more plan actions lost a dependency or current evidence."
+    if changed_dependencies:
+        reason = f"{reason} Changed dependencies: {', '.join(sorted(changed_dependencies))}."
+    elif reasons and status != PlanEvaluationStatus.KEEP:
+        reason = f"{reason} {reasons[0]}."
+    return PlanEvaluation(
+        plan_id=plan.id,
+        status=status,
+        evaluated_at=current_time,
+        reason=reason[:240],
+        invalid_action_ids=tuple(sorted(set(invalid))),
+    )
+
+
+def _generate_plan(
+    state: CoreState,
+    previous_plan: Plan | None,
+    invalid_action_ids: set[str],
+    projections: dict[str, EvidenceProjection],
+    policy: SafetyPolicy,
+    event,
+    candidate_selection: CandidatePlanSelection | None = None,
+) -> CoreState:
+    version = len(state.plans) + 1
+    plan_id = f"plan_v{version}"
+    previous_actions = (
+        _actions_for_plan(state, previous_plan.id)
+        if previous_plan is not None
+        else ()
+    )
+    previous_by_category = {item.category: item for item in previous_actions}
+    candidate_by_category = (
+        {choice.category: choice for choice in candidate_selection.choices}
+        if candidate_selection is not None
+        else {}
+    )
+    evidence_by_id = {item.id: item for item in state.evidence}
+    current_claims = {item.key: item for item in state.situation.claim_states}
+
+    actions: list[PlanAction] = []
+    changed_action_ids: list[str] = []
+    for category in (
+        PlanActionCategory.NOW,
+        PlanActionCategory.NEXT,
+        PlanActionCategory.AVOID,
+    ):
+        old = previous_by_category.get(category)
+        if old is not None and old.id not in invalid_action_ids:
+            preserved = old.model_copy(
+                update={
+                    "id": f"act_v{version}_{category.value.casefold()}",
+                    "plan_id": plan_id,
+                }
+            )
+            assessed = assess_action(preserved, evidence_by_id, projections)
+            if assessed.status == PlanActionStatus.ACTIVE:
+                actions.append(assessed)
+                continue
+        action = _new_action(
+            state,
+            plan_id,
+            category,
+            current_claims,
+            projections,
+            evidence_by_id,
+            candidate_by_category.get(category),
+        )
+        actions.append(assess_action(action, evidence_by_id, projections))
+        changed_action_ids.append(action.id)
+
+    referenced_evidence = tuple(
+        sorted(
+            {
+                reference
+                for action in actions
+                for reference in action.evidence_ids
+            }
+        )
+    )
+    future_expiries = [
+        projections[reference].expires_at
+        for reference in referenced_evidence
+        if reference in projections
+        and projections[reference].freshness_status == FreshnessStatus.CURRENT
+    ]
+    if future_expiries:
+        expires_at = min(
+            min(future_expiries),
+            state.current_time + timedelta(seconds=policy.official_disaster_ttl_seconds),
+        )
+    else:
+        expires_at = state.current_time + timedelta(seconds=policy.transport_ttl_seconds)
+    if expires_at <= state.current_time:
+        expires_at = state.current_time + timedelta(seconds=min(policy.transport_ttl_seconds, 60))
+
+    plan = Plan(
+        id=plan_id,
+        situation_id=state.situation.id,
+        version=version,
+        status=PlanStatus.ACTIVE,
+        created_at=state.current_time,
+        expires_at=expires_at,
+        invalidate_on_new_relevant_evidence=True,
+        based_on_evidence_ids=referenced_evidence,
+        previous_plan_id=previous_plan.id if previous_plan else None,
+        changed_action_ids=tuple(changed_action_ids),
+        language=state.profile.preferred_language,
+    )
+    state = append_plan(state, plan, tuple(actions))
+    if previous_plan is None:
+        state = _emit_trace(
+            state,
+            event,
+            "PLAN_GENERATED",
+            TraceStatus.SUCCESS,
+            (plan.id, *referenced_evidence),
+            "A conservative plan was generated from current verified state.",
+            agent=AgentName.SAFETY_CORE,
+        )
+    else:
+        state = _emit_trace(
+            state,
+            event,
+            "REPLAN_TRIGGERED",
+            TraceStatus.SUCCESS,
+            (previous_plan.id, *referenced_evidence),
+            "A dependency changed; a new plan version preserves unaffected guidance.",
+            agent=AgentName.SAFETY_CORE,
+        )
+        state = _emit_trace(
+            state,
+            event,
+            "PLAN_GENERATED",
+            TraceStatus.SUCCESS,
+            (plan.id, *referenced_evidence),
+            "A new conservative plan version was appended.",
+            agent=AgentName.SAFETY_CORE,
+        )
+    return state
+
+
+def _new_action(
+    state: CoreState,
+    plan_id: str,
+    category: PlanActionCategory,
+    claims: dict[str, SituationClaim],
+    projections: dict[str, EvidenceProjection],
+    evidence_by_id: dict[str, Evidence],
+    candidate: CandidateActionSelection | None = None,
+) -> PlanAction:
+    route_state = claims.get(ROUTE_STATUS_KEY)
+    route_value = current_claim_value(route_state)
+    disaster_state = claims.get(DISASTER_STATUS_KEY)
+    official_ids = _eligible_ids_for_claim(disaster_state, projections)
+    route_ids = _eligible_ids_for_claim(route_state, projections)
+    intent_id = candidate.intent_id if candidate is not None else _default_intent(category, route_value)
+    if category == PlanActionCategory.NOW:
+        if intent_id == SafeIntentId.REVIEW_OFFICIAL_GUIDANCE:
+            words = {
+                "ja": "確認済みの公式情報を確認し、現場の指示に従いながら自身の安全を優先してください。",
+                "en": "Review verified official guidance and follow on-site instructions while protecting your personal safety.",
+                "zh-TW": "查看已驗證的官方指引，遵循現場指示並優先保護自身安全。",
+            }
+            text = words[state.profile.preferred_language.value]
+            reason = _now_reason(state.profile.preferred_language.value, bool(official_ids))
+            risk, dependencies, evidence_ids = RiskLevel.LOW, (DISASTER_STATUS_KEY,), official_ids
+        else:
+            text, reason, risk, dependencies, evidence_ids = _now_content(
+                state.profile.preferred_language,
+                official_ids,
+            )
+    elif category == PlanActionCategory.NEXT:
+        if intent_id == SafeIntentId.RECHECK_TRANSPORT_STATUS:
+            words = {
+                "ja": "予定している帰路を再検討する前に、確認済みの交通情報をもう一度確認してください。",
+                "en": "Check current verified transport updates again before reconsidering the planned return.",
+                "zh-TW": "重新考慮原定返程前，再確認一次已驗證的交通資訊。",
+            }
+            text = words[state.profile.preferred_language.value]
+            _, reason, risk, dependencies, _ = _next_content(state.profile.preferred_language, route_value, route_ids)
+            evidence_ids = route_ids
+        else:
+            text, reason, risk, dependencies, evidence_ids = _next_content(
+                state.profile.preferred_language,
+                route_value,
+                route_ids,
+            )
+    else:
+        if intent_id == SafeIntentId.DO_NOT_ASSUME_ROUTE_SAFETY:
+            words = {
+                "ja": "交通状況だけで、経路や自身の安全を判断しないでください。",
+                "en": "Do not treat transport status alone as an assessment of personal or route safety.",
+                "zh-TW": "不要只根據交通狀態判斷路線或自身安全。",
+            }
+            text = words[state.profile.preferred_language.value]
+            _, reason, risk, dependencies, _ = _avoid_content(state.profile.preferred_language, route_value, route_ids)
+            evidence_ids = route_ids
+        else:
+            text, reason, risk, dependencies, evidence_ids = _avoid_content(
+                state.profile.preferred_language,
+                route_value,
+                route_ids,
+            )
+    if candidate is not None:
+        evidence_ids = candidate.evidence_ids
+    dependency_expectations = tuple(
+        DependencyExpectation(
+            key=key,
+            expected_value=current_claim_value(claims.get(key)),
+        )
+        for key in dependencies
+    )
+    action_id = f"act_{plan_id}_{category.value.casefold()}"
+    return PlanAction(
+        id=action_id,
+        plan_id=plan_id,
+        category=category,
+        intent_id=intent_id,
+        text=text,
+        reason=reason,
+        risk_level=risk,
+        confidence_class="LOW" if evidence_ids else "UNKNOWN",
+        evidence_ids=tuple(reference for reference in evidence_ids if reference in evidence_by_id),
+        dependency_keys=dependencies,
+        dependency_expectations=dependency_expectations,
+        status=PlanActionStatus.ACTIVE,
+        safety_decision=SafetyDecision.ALLOW,
+    )
+
+
+def _now_content(language, evidence_ids):
+    words = {
+        "ja": (
+            "自身の安全に注意し、現場や公式の指示に従いながら、確認済みの更新を確認してください。",
+            "確認済みの公式情報があります。示されている災害状況を確認してください。",
+        ),
+        "en": (
+            "Protect your personal safety, follow on-site and official instructions, and monitor verified updates.",
+            "An eligible verified official update is available; review its stated disaster status.",
+        ),
+        "zh-TW": (
+            "先注意自身安全，遵循現場人員與官方指示，並留意已驗證的最新資訊。",
+            "目前有符合資格的已驗證官方資訊，請查看其中所載的災害狀態。",
+        ),
+    }
+    text, reason = words[language.value]
+    return (
+        text,
+        reason if evidence_ids else _now_reason(language.value, False),
+        RiskLevel.LOW,
+        (DISASTER_STATUS_KEY,),
+        evidence_ids,
+    )
+
+
+def _now_reason(language: str, evidence_available: bool) -> str:
+    if evidence_available:
+        return {
+            "ja": "確認済みの公式情報があります。示されている災害状況を確認してください。",
+            "en": "An eligible verified official update is available; review its stated disaster status.",
+            "zh-TW": "目前有符合資格的已驗證官方資訊，請查看其中所載的災害狀態。",
+        }[language]
+    return {
+        "ja": "現在有効な確認済み公式情報はありません。",
+        "en": "No current verified official update is available.",
+        "zh-TW": "目前沒有有效的已驗證官方資訊。",
+    }[language]
+
+
+def _next_content(language, route_value, evidence_ids):
+    if route_value == "DISRUPTED":
+        words = {
+            "ja": (
+                "帰路を決める前に、新しい交通情報を待ってください。",
+                "確認済みの交通情報で、予定している経路の運行乱れが示されています。",
+            ),
+            "en": (
+                "Wait for updated transport information before revisiting the return trip.",
+                "Verified transport information reports disruption on the planned route.",
+            ),
+            "zh-TW": (
+                "重新考慮返程前，先等候更新的交通資訊。",
+                "已驗證的交通資訊顯示原定路線受到影響。",
+            ),
+        }
+    elif route_value == "CONFLICT":
+        words = {
+            "ja": (
+                "交通情報の食い違いが解消するまで、新しい確認済み情報を待ってください。",
+                "確認済み情報の間で交通状況に食い違いがあります。",
+            ),
+            "en": (
+                "Wait for verified transport information to resolve the conflicting reports.",
+                "Current verified sources disagree about the transport status.",
+            ),
+            "zh-TW": (
+                "先等候新的已驗證交通資訊，以釐清來源間的差異。",
+                "目前已驗證來源對交通狀況的說法不一致。",
+            ),
+        }
+    elif route_value == "AVAILABLE":
+        words = {
+            "ja": (
+                "移動を始める前に、交通状況をもう一度確認してください。",
+                "運行状況が利用可能でも、災害時の安全性を示すものではありません。",
+            ),
+            "en": (
+                "Re-check transport before beginning the planned return.",
+                "Availability information does not establish that a route is safe.",
+            ),
+            "zh-TW": (
+                "開始原定返程前，再確認一次交通狀況。",
+                "路線可用資訊不代表災害期間的路線安全。",
+            ),
+        }
+    else:
+        words = {
+            "ja": (
+                "帰路を始める前に、確認済みの交通情報を待ってください。",
+                "現在の交通状況は確認できていません。",
+            ),
+            "en": (
+                "Wait for verified transport information before starting the planned return.",
+                "Current transport status is unknown.",
+            ),
+            "zh-TW": (
+                "開始原定返程前，先等候已驗證的交通資訊。",
+                "目前沒有已驗證的交通狀況。",
+            ),
+        }
+    text, reason = words[language.value]
+    return (
+        text,
+        reason,
+        RiskLevel.MEDIUM,
+        (ROUTE_STATUS_KEY,),
+        evidence_ids,
+    )
+
+
+def _avoid_content(language, route_value, evidence_ids):
+    if route_value == "DISRUPTED":
+        words = {
+            "ja": (
+                "運行乱れが確認された経路を使って帰らないでください。",
+                "確認済みの交通情報が予定経路の乱れを示しています。",
+            ),
+            "en": (
+                "Do not rely on the disrupted route for the planned return.",
+                "Verified transport information reports a disruption on that route.",
+            ),
+            "zh-TW": (
+                "不要依賴已確認受影響的路線返程。",
+                "已驗證的交通資訊顯示該路線受到影響。",
+            ),
+        }
+    elif route_value == "AVAILABLE":
+        words = {
+            "ja": (
+                "運行可能の表示を災害時の安全確認と混同しないでください。",
+                "交通の運行可能性は災害時の安全判断ではありません。",
+            ),
+            "en": (
+                "Do not treat route availability as a disaster safety assessment.",
+                "Transport availability does not establish route safety.",
+            ),
+            "zh-TW": (
+                "不要把路線可用狀態當成災害安全評估。",
+                "交通可用資訊不等於路線安全判斷。",
+            ),
+        }
+    elif route_value == "CONFLICT":
+        words = {
+            "ja": (
+                "食い違う交通情報に基づいて移動を決めないでください。",
+                "確認済み情報の間に未解決の食い違いがあります。",
+            ),
+            "en": (
+                "Do not make a movement decision from conflicting transport reports.",
+                "The current verified sources contain an unresolved conflict.",
+            ),
+            "zh-TW": (
+                "不要根據互相矛盾的交通資訊決定移動。",
+                "已驗證來源之間仍有未解決的差異。",
+            ),
+        }
+    else:
+        words = {
+            "ja": (
+                "確認済みの状況が分かるまで、経路が利用可能だと決めつけないでください。",
+                "現在の交通状況を示す確認済み情報はありません。",
+            ),
+            "en": (
+                "Do not assume the planned route is available.",
+                "No current verified transport status supports route availability.",
+            ),
+            "zh-TW": (
+                "不要假設原定路線仍可使用。",
+                "目前沒有已驗證的交通資訊可確認路線狀況。",
+            ),
+        }
+    text, reason = words[language.value]
+    return (
+        text,
+        reason,
+        RiskLevel.MEDIUM,
+        (ROUTE_STATUS_KEY,),
+        evidence_ids,
+    )
+
+
+def _eligible_ids_for_claim(
+    claim: SituationClaim | None,
+    projections: dict[str, EvidenceProjection],
+) -> tuple[str, ...]:
+    if claim is None:
+        return ()
+    return tuple(
+        reference
+        for reference in claim.evidence_ids
+        if projections.get(reference) is not None
+        and projections[reference].eligible_for_claims
+    )
+
+
+def _actions_for_plan(state: CoreState, plan_id: str) -> tuple[PlanAction, ...]:
+    return tuple(action for action in state.plan_actions if action.plan_id == plan_id)
+
+
+def _append_evaluation(
+    state: CoreState,
+    evaluation: PlanEvaluation,
+    event,
+) -> CoreState:
+    state = replace(state, plan_evaluations=(*state.plan_evaluations, evaluation))
+    return _emit_trace(
+        state,
+        event,
+        "PLAN_EVALUATED",
+        TraceStatus.SUCCESS,
+        (evaluation.plan_id, *evaluation.invalid_action_ids),
+        evaluation.reason,
+        agent=AgentName.SAFETY_CORE,
+    )
+
+
+def _expire_historical_plans(state: CoreState, event) -> CoreState:
+    evaluated_expired = {
+        item.plan_id
+        for item in state.plan_evaluations
+        if item.status == PlanEvaluationStatus.EXPIRED
+    }
+    expired = [
+        plan
+        for plan in state.plans
+        if state.current_time >= plan.expires_at
+        and plan.id not in evaluated_expired
+    ]
+    for plan in expired:
+        actions = _actions_for_plan(state, plan.id)
+        evaluation = PlanEvaluation(
+            plan_id=plan.id,
+            status=PlanEvaluationStatus.EXPIRED,
+            evaluated_at=state.current_time,
+            reason="The plan reached its deterministic expiration time.",
+            invalid_action_ids=tuple(action.id for action in actions),
+        )
+        state = _append_evaluation(state, evaluation, event)
+    return state
+
+
+def _emit_trace(
+    state: CoreState,
+    event,
+    event_type: str,
+    status: TraceStatus,
+    refs: tuple[str, ...],
+    summary: str,
+    *,
+    agent: AgentName,
+) -> CoreState:
+    trace = TraceEvent(
+        id=f"trace_{len(state.trace) + 1:03d}",
+        situation_id=state.situation.id,
+        timestamp=state.current_time,
+        agent=agent,
+        event_type=event_type,
+        input_refs=(event.id,),
+        output_refs=refs,
+        status=status,
+        public_summary=summary[:240],
+    )
+    return replace(state, trace=(*state.trace, trace))
+
+
+def _claim_status(claim: SituationClaim | None):
+    return claim.status if claim is not None else ClaimStateStatus.UNKNOWN

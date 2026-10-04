@@ -160,6 +160,8 @@ Do not remove or bypass these components merely to simplify local development.
 - Use structured outputs for agent responses.
 - Validate every external and model-generated payload before state mutation.
 - Keep source adapters replaceable.
+- Plan for `EkispertMcpProvider` as the live 駅すぱあと API MCP Server mobility adapter, while retaining a deterministic replay provider.
+- Treat 駅すぱあと output as mobility data only; never as a disaster-safety verdict.
 - Keep the Safety Core pure and highly testable where practical.
 - Add tests for every safety or state-transition bug fixed.
 - Preserve plan history; do not overwrite prior plan versions.

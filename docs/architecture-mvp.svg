@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="850" viewBox="0 0 1200 850" role="img" aria-labelledby="title desc">
+<title id="title">72H MVP runtime and safety boundaries</title>
+<desc id="desc">The browser retains a local snapshot and emergency pack. A prepared Cloud Run container hosts Next.js and FastAPI. Replay data enters deterministic evidence and safety logic. ADK Gemini proposes typed intents; application rules validate and publish append-only plans. Cloud deployment, model execution and live source integrations need separate acceptance.</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#527369"/></marker></defs>
+<rect width="1200" height="850" fill="#f5f5ef"/>
+<g font-family="Arial, sans-serif" fill="#173d32">
+<text x="45" y="55" font-size="30" font-weight="bold">72H — From Alert to Action</text>
+<text x="45" y="85" font-size="15">MVP implementation / prepared Google Cloud deployment • target project h-japan</text>
+<rect x="40" y="115" width="300" height="570" rx="14" fill="#fff" stroke="#8ca99a" stroke-width="2"/>
+<text x="65" y="153" font-size="21" font-weight="bold">Browser / PWA</text>
+<text x="65" y="180" font-size="14">Japanese · English · Traditional Chinese</text>
+<rect x="62" y="210" width="255" height="100" rx="8" fill="#e8f0e6"/>
+<text x="80" y="243" font-size="17">NOW / NEXT / AVOID</text>
+<text x="80" y="270" font-size="14">Plan history · Sources · Public trace</text>
+<text x="80" y="292" font-size="14">Explicit simulation + freshness labels</text>
+<rect x="62" y="340" width="255" height="130" rx="8" fill="#f4ead6"/>
+<text x="80" y="373" font-size="17">Offline continuity</text>
+<text x="80" y="402" font-size="14">IndexedDB: validated local snapshot</text>
+<text x="80" y="427" font-size="14">Service Worker: public assets only</text>
+<text x="80" y="452" font-size="14">Emergency pack + local TTL</text>
+<text x="65" y="517" font-size="15">Client may only degrade guidance.</text>
+<text x="65" y="544" font-size="15">No new official information offline.</text>
+<text x="65" y="595" font-size="15" font-weight="bold">Reconnection gate</text>
+<text x="65" y="622" font-size="14">Fetch → verify → reconcile → evaluate</text>
+<text x="65" y="648" font-size="14">Connectivity alone is insufficient.</text>
+<rect x="390" y="115" width="500" height="570" rx="14" fill="#fff" stroke="#5a7fbd" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="415" y="153" font-size="21" font-weight="bold">Cloud Run container</text>
+<text x="415" y="180" font-size="14">Prepared image • deployment not yet verified</text>
+<rect x="415" y="207" width="450" height="52" rx="8" fill="#e8edf5"/>
+<text x="435" y="239" font-size="16">Public Next.js → private FastAPI (localhost)</text>
+<rect x="415" y="282" width="450" height="75" rx="8" fill="#e8f0e6"/>
+<text x="435" y="312" font-size="16">Replay input → source scope / schema validation</text>
+<text x="435" y="338" font-size="14">Evidence + situation projections: trust, TTL, conflict</text>
+<rect x="415" y="380" width="450" height="84" rx="8" fill="#f4ead6"/>
+<text x="435" y="411" font-size="17">Google ADK action-planning agent</text>
+<text x="435" y="439" font-size="14">Typed intent proposals → validated safe action catalogue</text>
+<rect x="415" y="489" width="450" height="92" rx="8" fill="#d8e7d5" stroke="#588064"/>
+<text x="435" y="522" font-size="18" font-weight="bold">Deterministic Safety Core decides</text>
+<text x="435" y="550" font-size="14">Dependencies · expiration · risk · reconnect epoch</text>
+<text x="415" y="620" font-size="16">Append-only plans / evidence / evaluations / trace</text>
+<text x="415" y="649" font-size="14">Bounded in-memory sessions; server restart loses session.</text>
+<rect x="930" y="190" width="235" height="160" rx="10" fill="#e8edf5" stroke="#5a7fbd" stroke-dasharray="6 4"/>
+<text x="948" y="222" font-size="18" font-weight="bold">Vertex AI / Gemini</text>
+<text x="948" y="251" font-size="14">Cloud Run service identity</text>
+<text x="948" y="277" font-size="14">ADC / IAM; no browser key</text>
+<text x="948" y="306" font-size="14">Real call acceptance pending</text>
+<text x="948" y="329" font-size="14">Failure → labeled fallback</text>
+<rect x="930" y="390" width="235" height="295" rx="10" fill="#fff" stroke="#a6afa7" stroke-dasharray="6 4"/>
+<text x="948" y="422" font-size="18" font-weight="bold">Future integrations</text>
+<text x="948" y="455" font-size="14">Live JMA / Safety Tips</text>
+<text x="948" y="483" font-size="14">Ekispert: live wiring pending</text>
+<text x="948" y="526" font-size="14">Firestore persistence</text>
+<text x="948" y="555" font-size="14">Cloud Logging trace export</text>
+<text x="948" y="584" font-size="14">Secret Manager (third party)</text>
+<text x="948" y="630" font-size="14">Do not claim shipped / live.</text>
+<g stroke="#527369" stroke-width="2" fill="none" marker-end="url(#arrow)">
+<path d="M340 235H415"/><path d="M640 259V282"/><path d="M640 357V380"/><path d="M640 464V489"/><path d="M640 581V601"/><path d="M415 655H360V285H317"/>
+<path d="M865 413H909V270H930"/><path d="M930 315H920V442H865"/>
+</g>
+<text x="45" y="743" font-size="17" font-weight="bold">Observed local loop</text>
+<text x="45" y="775" font-size="15">Synthetic event → evidence → situation → evaluate → invalidate → new plan → offline degradation → reconcile</text>
+<text x="45" y="811" font-size="13">Solid blocks: implemented local boundaries. Dashed cloud blocks: external acceptance / future work. Synthetic data never proves real route safety.</text>
+</g></svg>

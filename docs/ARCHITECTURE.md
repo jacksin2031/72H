@@ -194,7 +194,22 @@ Purpose:
 
 > Which transport options currently appear available?
 
-It may integrate with a transport provider or Hackathon partner API/MCP. It must not label a route as safe.
+The planned production-facing mobility provider is the **駅すぱあと API MCP Server**.
+
+Responsibilities of this integration include obtaining supported route/transport candidate information for the Mobility Agent. The provider response is never treated as a disaster-safety verdict.
+
+Expected flow:
+
+```text
+駅すぱあと API MCP Server
+→ route / transport candidates
+→ Mobility Agent normalization
+→ verified disruption + disaster evidence
+→ Deterministic Safety Core
+→ movement action eligibility
+```
+
+The Mobility Agent must not label a route as safe. `AVAILABLE` means transport availability only.
 
 ### Action Agent
 
@@ -339,9 +354,20 @@ DisasterSource
 └── ReplaySource
 
 MobilitySource
-├── TransportProviderSource
-└── ReplayMobilitySource
+├── ReplayMobilitySource
+├── EkispertMcpSource
+└── TransportStatusSource
 ```
+
+`EkispertMcpSource` is the planned adapter for the Hackathon-provided **駅すぱあと API MCP Server**. `TransportStatusSource` represents current disruption/operational evidence when available. Route topology/candidates and current disruption evidence are kept conceptually separate so that route availability is never confused with route safety.
+
+Current implementation boundary (2026-10-05): `EkispertMcpProvider` now lives in
+`services/agent-api/agent_api/mobility`. It exposes bounded MCP discovery/calls
+only; live normalization into eligible evidence and a separate Mobility Agent
+are still pending. The synthetic source registry and Safety Core remain the
+actual replay input path. See [EKISPERT_MCP.md](EKISPERT_MCP.md).
+
+The 駅すぱあと access key is a third-party secret. It is read only by the backend runtime through Secret Manager in production and must never be exposed to the browser or committed to Git.
 
 This allows the judging experience to remain reliable even if a production API is temporarily unavailable.
 

@@ -64,6 +64,15 @@ route_safe
 
 The Mobility Agent may describe availability, disruption, and unknown status. It must not independently declare disaster safety.
 
+The planned live mobility provider is the **駅すぱあと API MCP Server**. Treat its output as route/transport candidate data only:
+
+- use it for route candidates, transfers, travel-time/fare metadata, and other supported mobility information
+- never treat a returned route as proof that the route is safe during a disaster
+- combine mobility data with verified disaster/disruption evidence before any movement recommendation
+- require the deterministic Safety Core to decide whether a movement action is eligible
+- keep the access key backend-only; store production credentials in Secret Manager and never expose them to the browser, Git, logs, replay fixtures, or IndexedDB
+- preserve `ReplayMobilitySource` so the demo remains deterministic when the live MCP service is unavailable
+
 ## 5. Replay Rules
 
 Replay may control:

@@ -2,7 +2,48 @@
 
 ## Phase
 
-**Phase 1 — Domain Foundation + Deterministic Replay Skeleton**
+**Phase 3 — IMPLEMENTED / NOT FULLY VALIDATED**
+
+Canonical development branch: **codex/hackathon-mvp**. Consolidate the requested
+Ekispert provider, Hackathon skills and mobility docs here. Do not continue the
+independent b25f application scaffold. Merge the validated canonical tree into
+main; preserve prior worktree changes as a recoverable record.
+
+Phase 2 core gate accepted: 22 backend tests and a full 11-event HTTP replay
+through the production frontend passed; the actual snapshot passed the frontend
+schema boundary. Four immutable plan versions and twelve actions were produced.
+Independent review found source/claim scope and equal-timestamp reconnect issues.
+Both are fixed with regression tests; independent reproduction now rejects the
+unauthorized claim and keeps pre-restoration evidence behind the reconnect gate.
+Frontend PWA shell, local snapshot/TTL degradation and emergency pack are
+implemented. Nonempty offline-plan browser acceptance passed and is recorded in
+`docs/VALIDATION.md`.
+
+Phase 3 local gate: 40 backend tests and 18 frontend tests (including a real
+11-event API snapshot), typecheck and production build passed on 2026-10-05 JST.
+ADK 1.39.1 / Vertex Gemini integration, bounded typed candidate selection and
+server-owned safety publication are implemented. The real SDK path without ADC
+produced TIMEOUT / MISSING_ADC fallback and four immutable plan versions; no
+successful Gemini request or cloud deployment is claimed. Independent re-review
+found no new blocking issue in this scope. Cloud Shell was selected but its
+browser reached Google sign-in only. Target project access remains unverified.
+
+Consolidation gate: original 40 backend tests (including Gemini) plus 11 Ekispert
+adapter tests pass, **51 total**. Frontend gate remains 17 tests plus one real
+snapshot contract check, **18 total**, with typecheck/build and fallback GUI
+acceptance. MCP 1.30.0 is explicitly locked; Ekispert remains a backend-only
+provider-data boundary and does not promote results into trusted route evidence.
+Its live connection is unverified because no backend key is configured.
+
+Phase 1 foundation accepted on 2026-10-04: 17 backend tests, 5 frontend
+boundary tests (including a live API snapshot), TypeScript and Next.js build
+passed. Replay, immutable domain contracts, isolated sessions and the API/web
+connection are implemented. Secret-pattern checks passed. Browser acceptance
+is tracked separately in `docs/VALIDATION.md`.
+
+The Phase 1 specification below remains the acceptance baseline. Cloud Run
+deployment and real Gemini/ADK execution are still unverified. Target Google
+Cloud project: `h-japan`.
 
 Do not begin production API integration, advanced UI polish, or broad feature expansion until the Phase 1 acceptance criteria below pass.
 
@@ -171,7 +212,7 @@ Do not block Phase 1 on:
 
 - live JMA integration
 - live Safety Tips integration
-- live transport API
+- live transport API / 駅すぱあと API MCP Server integration
 - Secret Manager
 - Firestore persistence
 - production Cloud Run deployment
@@ -183,6 +224,11 @@ Do not block Phase 1 on:
 Those belong to later phases.
 
 However, architecture boundaries must make those integrations possible without replacing the core domain model.
+
+For mobility, preserve the provider boundary for deterministic replay and
+`EkispertMcpProvider`. Live 駅すぱあと output is mobility candidate data only; it
+cannot independently authorize a disaster-safe route or high-risk action.
+The Phase 1 gate was passed before adding this live adapter boundary.
 
 ## Phase 1 Acceptance Gate
 
@@ -206,9 +252,9 @@ Additionally:
 - prior plan versions cannot be silently overwritten
 - all relevant tests pass
 
-## Next Phase
+## Historical Phase 1 → Phase 2 transition
 
-After this gate passes, proceed to:
+This transition was completed locally; retain it as the historical gate:
 
 **Phase 2 — Deterministic Safety Core**
 
@@ -224,3 +270,12 @@ Phase 2 will implement:
 - local offline degradation rules
 
 Do not skip directly to agent polish before the Safety Core is working.
+
+## Current next gate
+
+Use the reviewed Cloud Shell source bundle to build private Cloud Run staging in
+`h-japan`. Record source hash/image digest, prove a successful Gemini/ADK call,
+and perform deployed clean-browser/offline acceptance before configuring judging
+access. Model credentials, project IAM/billing and Docker/cloud build are still
+unverified. No live-feed, persistence or broad feature expansion is authorized
+by completing the local gate alone.

@@ -1,472 +1,136 @@
 # 72H Hackathon Compliance Checklist
 
-**Event:** 第5回 Agentic AI Hackathon with Google Cloud  
-**Project:** 72H  
-**Status:** Design-compliant; implementation and submission evidence pending  
-**Submission deadline:** 2026-10-15 23:59 JST  
-**Final judging date:** 2026-12-01
-
-Official event page: https://zenn.dev/hackathons/google-cloud-japan-ai-hackathon-vol5
-
----
-
-## 1. Participation Eligibility
-
-- [ ] Participant eligibility personally confirmed before submission.
-- [x] Participant registration completed.
-- [ ] If submitting as a team, every member has completed registration.
-
----
-
-## 2. Required Google Cloud Runtime
-
-72H selected runtime:
-
-- **Cloud Run**
-
-Required evidence:
-
-- [ ] Production/judging deployment exists on Google Cloud.
-- [ ] Cloud Run URL is reachable by judges.
-- [ ] Core functionality is actually served through Cloud Run.
-- [ ] Deployment remains available through 2026-12-01.
-
-**DESIGN: PASS**  
-**IMPLEMENTATION: PENDING**
-
----
-
-## 3. Required Google Cloud AI Technology
-
-72H selected technologies:
-
-- **Gemini through Vertex AI**
-- **Agent Development Kit (ADK)**
-
-Gemini/ADK responsibilities:
-
-- situation interpretation
-- evidence claim extraction
-- ambiguity detection
-- candidate action planning
-- multilingual explanation
-- agent orchestration
-
-Deterministic application code remains responsible for:
-
-- source trust
-- freshness / TTL
-- plan expiration
-- plan invalidation
-- safety blocking
-- replay determinism
-- offline degradation
-
-Required evidence:
-
-- [ ] Gemini is called by a real execution path.
-- [ ] ADK is integrated into the real runtime if claimed.
-- [ ] Model output affects the real candidate-plan pipeline.
-- [ ] Demo shows at least one real agent-driven interpretation/planning step.
-
-**DESIGN: PASS**  
-**IMPLEMENTATION: PENDING**
-
----
-
-## 4. Real Implementation vs Replay
-
-Replay is allowed only as deterministic input/control infrastructure. It must not fake the core agent outcome.
-
-Expected flow:
-
-```text
-Replay Event
-→ Real Evidence Pipeline
-→ Real Situation State
-→ Real Gemini/ADK path
-→ Real Safety Core
-→ Real Dependency Evaluation
-→ Real Plan Invalidation
-→ Real Re-planning
-```
-
-Forbidden shortcut:
-
-```text
-Replay Step 3
-→ hard-coded "show Plan v2"
-```
-
-Release checks:
-
-- [ ] Replay events are data, not pre-rendered states.
-- [ ] Plan invalidation is caused by dependency/state change.
-- [ ] Re-planning uses the real planning pipeline.
-- [ ] Safety decisions are computed from current evidence.
-- [ ] No critical demo outcome is timeline-hard-coded.
-
----
-
-## 5. Repository Requirement
-
-Repository:
-
-`jacksin2031/72H`
-
-Current design documentation includes:
-
-- `README.md`
-- `docs/PRODUCT_SPEC.md`
-- `docs/REPLAY_SCENARIO.md`
-- `docs/AGENT_SAFETY_CONTRACT.md`
-- `docs/OFFLINE_CONTINUITY.md`
-- `docs/ARCHITECTURE.md`
-- `docs/DATA_MODEL.md`
-- `docs/IMPLEMENTATION_PLAN.md`
-- `docs/HACKATHON_COMPLIANCE.md`
-- `docs/SECURITY_AND_SECRETS.md`
-
-Submission checks:
-
-- [ ] Repository linked through the Hackathon GitHub integration.
-- [ ] Default branch contains submitted implementation.
-- [ ] README identifies Hackathon-built components and dependencies.
-- [ ] No secrets, credentials, or private user data are committed.
-
----
-
-## 6. Deployment URL
-
-- [ ] Cloud Run deployment URL created.
-- [ ] URL works in a clean browser session.
-- [ ] No local setup is required for judges.
-- [ ] Judges are not required to provide their own API key.
-- [ ] Sample replay data is ready.
-- [ ] Deployment remains available through 2026-12-01.
-
-**STATUS: PENDING**
-
----
-
-## 7. Project Description
-
-72H targets foreign visitors and residents in Japan who may receive disaster information but still do not know how to convert it into context-specific next actions.
-
-Core flow:
-
-```text
-Alert
-→ Verified Situation
-→ Personal Context
-→ Action Plan
-→ Situation Change
-→ Plan Invalidation
-→ Autonomous Re-plan
-```
-
-Release checks:
-
-- [x] 200–300-character Japanese summary drafted.
-- [ ] Full project description finalized.
-- [ ] Description verified against shipped behavior.
-
----
-
-## 8. Architecture Diagram
-
-Final architecture image must show:
-
-- Browser / PWA
-- Cloud Run
-- runtime service account / ADC boundary
-- Vertex AI / Gemini
-- Google ADK
-- Situation / Source / Mobility / Action Agents
-- deterministic Safety Core
-- Firestore
-- Cloud Logging
-- Secret Manager
-- external disaster/mobility sources
-- IndexedDB / Service Worker offline path
-
-Release checks:
-
-- [ ] PNG or SVG exported.
-- [ ] Google Cloud components are obvious.
-- [ ] Agent vs deterministic boundaries are visible.
-- [ ] Credential boundary is visible.
-- [ ] Offline continuity path is visible.
-- [ ] Diagram matches deployment.
-
----
-
-## 9. Demo Video
-
-Target: approximately 3 minutes.
-
-Required beats:
-
-1. Existing Tokyo travel plan.
-2. Earthquake event.
-3. Verified evidence ingested.
-4. Plan v1 generated.
-5. Transport condition changes.
-6. Existing plan becomes invalid.
-7. Autonomous re-plan occurs.
-8. Unverified social information is rejected.
-9. Network is lost.
-10. Continuity Mode retains Last Verified Plan.
-11. Network returns.
-12. Sync → verify → re-evaluate occurs.
-13. Sources/trace demonstrate observability.
-
-Release checks:
-
-- [ ] Product UI readable in video.
-- [ ] At least one genuine agent step shown.
-- [ ] At least one deterministic safety decision shown.
-- [ ] Offline degradation shown.
-- [ ] YouTube URL accessible to judges.
-
----
-
-## 10. Judging: Novelty and Effectiveness
-
-72H differentiates from ordinary alert/translation apps by focusing on changing action plans under changing evidence and connectivity.
-
-Evidence to strengthen:
-
-- [ ] 1–3 target-user interviews if feasible.
-- [ ] README explicitly compares 72H with static alert/translation workflows.
-- [ ] Demo shows changing context, not only one answer.
-
----
-
-## 11. Judging: Agentic Behavior
-
-Target agent loop:
-
-```text
-Observe
-→ Verify
-→ Update Situation
-→ Evaluate Existing Plan
-→ Detect Relevant Change
-→ Invalidate Dependencies
-→ Re-plan
-→ Explain
-→ Monitor
-```
-
-Required evidence:
-
-- [ ] Relevant state changes can trigger plan review without a user manually asking every time.
-- [ ] Agents produce structured candidate actions.
-- [ ] Safety Core can allow/modify/block candidate output.
-- [ ] Trace records lifecycle events.
-
----
-
-## 12. Judging: Implementation Quality
-
-Expected engineering evidence:
-
-- [ ] adapter-based source architecture
-- [ ] structured agent outputs
-- [ ] deterministic Safety Core
-- [ ] evidence provenance
-- [ ] plan versioning
-- [ ] PWA offline continuity
-- [ ] IndexedDB snapshots
-- [ ] Cloud Logging
-- [ ] deterministic replay tests
-- [ ] failure handling for model/API/network errors
-
----
-
-## 13. Offline Continuity
-
-Offline functionality complements rather than replaces required Google Cloud execution.
-
-Normal path:
-
-```text
-External Sources
-→ Cloud Run
-→ ADK / Gemini
-→ Safety Core
-→ Firestore
-→ Client Sync
-```
-
-Offline path:
-
-```text
-Network Lost
-→ Cached UI
-→ Last Verified Situation
-→ Last Verified Plan
-→ Local Evidence Freshness
-→ Local Safety Degradation
-```
-
-Release checks:
-
-- [ ] Connectivity state explicit in UI.
-- [ ] Last verified timestamp visible offline.
-- [ ] Live-dependent actions expire/degrade locally.
-- [ ] Offline mode cannot fabricate current official information.
-- [ ] Reconnection triggers sync and re-evaluation.
-
----
-
-## 14. Security and Secret Handling
-
-Normative document:
-
-`docs/SECURITY_AND_SECRETS.md`
-
-### Google Cloud credentials
-
-Production must use a dedicated Cloud Run runtime service account and Application Default Credentials where possible.
-
-Required:
-
-- [ ] No checked-in service-account JSON key.
-- [ ] No Gemini API key required in the browser.
-- [ ] Vertex AI/Gemini works through Cloud Run service identity / ADC.
-- [ ] Firestore/Logging access uses service identity / ADC.
-
-### Third-party credentials
-
-Required:
-
-- [ ] Third-party API keys/tokens are stored in Secret Manager.
-- [ ] Only the backend runtime can read them.
-- [ ] Secret access follows least privilege.
-
-### Browser / offline
-
-Required:
-
-- [ ] No privileged value is exposed via `NEXT_PUBLIC_*`.
-- [ ] IndexedDB contains no secrets.
-- [ ] Service Worker caches no credentials.
-- [ ] Replay fixtures contain no credentials.
-
-### Git / local development
-
-Required:
-
-- [ ] `.env`, `.env.local`, `.env.*`, private keys, and service-account JSON files are ignored.
-- [ ] `.env.example` contains placeholders only.
-- [ ] Local Google Cloud development uses ADC where possible.
-
-### Logging
-
-Required:
-
-- [ ] Logs do not expose API keys, access tokens, authorization headers, or Secret Manager values.
-
-### Public demo abuse/cost controls
-
-Required before public judging:
-
-- [ ] reasonable per-session limits
-- [ ] request/agent-cycle bounds
-- [ ] backend timeouts
-- [ ] Google Cloud budget alerts
-
-**DESIGN: PASS**  
-**IMPLEMENTATION AUDIT: PENDING**
-
----
-
-## 15. Repository Freeze
-
-After final submission:
-
-```text
-main = frozen submission
-post-submission-development = continued work
-```
-
-Release checks:
-
-- [ ] Final submission commit SHA recorded.
-- [ ] Default branch frozen through 2026-12-01.
-- [ ] Continued work uses another branch.
-- [ ] Deployment remains live.
-
----
-
-## 16. Final Submission Gate
-
-72H must not be marked `SUBMISSION READY` until all mandatory items are complete.
-
-### Mandatory technology
-
-- [ ] Cloud Run actually used.
-- [ ] Gemini actually used.
-- [ ] ADK actually used if claimed.
-
-### Product
-
-- [ ] Situation state works.
-- [ ] Evidence provenance works.
-- [ ] Plan v1 generation works.
-- [ ] Dependency invalidation works.
-- [ ] Autonomous re-planning works.
-- [ ] Unverified-source rejection works.
-- [ ] Agent trace works.
-- [ ] Offline Continuity works.
-- [ ] Reconnect reconciliation works.
-
-### Security
-
-- [ ] Cloud Run runtime identity configured.
-- [ ] No static Google Cloud credential in repository.
-- [ ] Third-party secrets stored in Secret Manager.
-- [ ] No browser/offline secrets.
-- [ ] Secret scan passes.
-- [ ] Budget/rate safeguards configured.
-
-### Quality
-
-- [ ] Replay is deterministic at the state-transition level.
-- [ ] Safety tests pass.
-- [ ] No critical demo path uses hard-coded outcome rendering.
-- [ ] Clean-browser smoke test passes.
-
-### Submission assets
-
-- [ ] GitHub repository linked.
-- [ ] Google Cloud deployment URL submitted.
-- [ ] Project description finalized.
-- [ ] Architecture diagram uploaded.
-- [ ] Approximately 3-minute YouTube demo uploaded.
-- [ ] Judge usage instructions prepared.
-
-### Post-submission
-
-- [ ] Default branch frozen.
-- [ ] Submission SHA recorded.
-- [ ] Deployment monitored through 2026-12-01.
-
----
-
-# Current Compliance Verdict
-
-```text
-72H REGULATION DESIGN CHECK: PASS
-72H REQUIRED TECHNOLOGY DESIGN: PASS
-72H AGENTIC DESIGN: PASS
-72H SAFETY / OBSERVABILITY DESIGN: PASS
-72H CREDENTIAL / SECRET DESIGN: PASS
-72H SUBMISSION READINESS: NOT READY
-```
-
-Reason:
-
-The design is aligned with the current published Hackathon requirements, but implementation, Cloud Run deployment, real Gemini/ADK integration, credential configuration, submission assets, and final verification remain pending.
+**Event:** 第5回 Agentic AI Hackathon with Google Cloud
+
+**Project:** 72H / Google Cloud target `h-japan`
+
+**Audit date:** 2026-10-05 JST
+
+**Verdict:** **PARTIAL — NOT SUBMISSION READY**
+
+[Official event rules](https://zenn.dev/hackathons/google-cloud-japan-ai-hackathon-vol5)
+were checked again on the audit date. Official requirements and the repository's
+stricter product requirements are distinguished below. Detailed local evidence
+is in [VALIDATION.md](VALIDATION.md).
+
+## Official submission requirements
+
+The event requires at least one listed Google Cloud application runtime and at
+least one listed AI technology. Cloud Run, Gemini and ADK are eligible choices;
+the event does not require all three together. **72H's own AGENTS.md requires
+material Cloud Run and Gemini use, plus real ADK integration if claimed.**
+
+| Requirement | Status and evidence |
+|---|---|
+| Eligible participant(s), registration for all team members | UNVERIFIED. Residence/age/exclusion conditions need personal confirmation. An earlier repository checkbox asserted registration; no account evidence was supplied. |
+| Google Cloud application runtime | IMPLEMENTED / NOT DEPLOYED. Cloud Run container and private staging script prepared; no deployed service or image digest. |
+| Google Cloud AI technology | IMPLEMENTED / NOT LIVE VERIFIED. Locked ADK and Vertex/Gemini execution path exist; local calls without ADC fell back. |
+| GitHub App repository integration | UNVERIFIED. Target repository is `jacksin2031/72H`; linkage and default-branch implementation have not been verified. |
+| Deployed judging URL and usable sample data | PARTIAL. Synthetic sample replay works locally; no judging URL or clean-cloud-browser acceptance. |
+| Project explanation, architecture image, self-made approximately 3-minute YouTube demo | PARTIAL. Japanese summary, script and SVG draft exist; final uploads/video remain pending. |
+| Preserve submitted default branch and runnable deployment until 2026-12-01 | PENDING. Submission SHA and service are not yet established. |
+
+The event schedule lists the registration/submission deadline as **2026-10-15**.
+Zenn article publication is optional. A private staging URL requiring Google IAM
+login is not yet suitable judging access; configure public access after acceptance
+or provide a supported test account with sample data.
+
+## Implemented local product gate
+
+Checked items below describe local synthetic replay, not live disaster data or
+deployed cloud behavior.
+
+- [x] Replay events enter the actual evidence → situation → Safety Core pipeline.
+- [x] Relevant state/dependency changes generate plans without timeline-specific
+  UI branches or a manually authored plan for each replay step.
+- [x] Four append-only plan versions emerge from the complete replay; social
+  content does not trigger a trusted replan.
+- [x] Source registry restricts claim type/key/value; invalid input is rejected
+  before mutation.
+- [x] Publication-time TTL, conflicts, expiry and action dependencies are
+  deterministic. Route availability never becomes route safety.
+- [x] Synthetic/unverified/stale evidence cannot authorize high-risk movement.
+- [x] Immutable evidence/plan publications remain separate from evaluations.
+- [x] Typed intent/evidence candidate output is validated before publication.
+- [x] Public trace uses structured reasons/references; no private thoughts.
+- [x] Japanese, English and Traditional Chinese UI and server-owned action text.
+- [x] Service Worker shell, IndexedDB snapshot, static emergency pack and local
+  age/expiration logic retain a nonempty plan during actual offline reload.
+- [x] Replay reconnect requires newly received eligible official and transport
+  evidence after restoration. Actual browser restoration without new evidence
+  correctly stays RECONNECTING.
+- [x] Missing server session exposes a new-demo recovery control.
+- [x] Backend 51 tests (40 original + 11 Ekispert), frontend 18 with real snapshot,
+  typecheck and build pass.
+- [x] Independent reproduction closes source-scope and reconnect P1 findings.
+
+## Google AI scope and honest claims
+
+The implemented ADK agent selects from a closed catalog of safe action intents
+and current eligible evidence IDs. The server owns risk, dependencies, wording
+and publication. A model selection can affect changed action categories only;
+unchanged actions and historical publications are preserved.
+
+The broader specification's semantic source extraction, ambiguity detection and
+separate Situation/Source/Mobility agents are **future work**, not shipped claims.
+Live JMA/Safety Tips/transport evidence normalization, Firestore and Cloud Logging
+export are also not implemented. The Ekispert MCP provider boundary is implemented
+and tested separately; no successful live connection is claimed. Current traces
+are application trace records.
+
+- [x] Actual SDK and ADK boundaries are integrated and tested with controlled
+  provider responses, including the real installed SDK response Part type.
+- [x] Actual SDK attempt without ADC produces labeled TIMEOUT/MISSING_ADC fallback.
+- [ ] Successful credentialed Gemini request and `GEMINI_ADK` trace recorded.
+- [ ] Successful model output changes a real candidate plan in Cloud Run.
+- [ ] Demo recording shows that actual execution and its deterministic guard.
+
+Fallback is operational resilience, **not evidence that required Gemini use has
+been satisfied**. Do not record or submit a fallback run as real-model success.
+
+## Security and operational gate
+
+Normative policy: [SECURITY_AND_SECRETS.md](SECURITY_AND_SECRETS.md).
+
+- [x] No static Google credential, browser model key or secret env value added.
+- [x] Env examples contain non-secret configuration only; private env/key files
+  are ignored. Local secret-pattern gate passes (not a comprehensive audit).
+- [x] Browser schemas project approved data; snapshots/SW exclude credentials and
+  API/authenticated responses.
+- [x] Structured outputs, one model attempt, timeout, token cap, session/global
+  call limits, bounded session storage and sanitized failure codes implemented.
+- [x] Source-hashed Cloud Shell export and manifest verification implemented.
+- [ ] `h-japan` project access, billing, APIs and runtime IAM verified.
+- [ ] Docker/Cloud Build image and Cloud Run service identity / ADC verified.
+- [ ] Cloud budget alerts and public abuse/cost acceptance completed.
+- [ ] Deployed fresh-browser, real-model, offline and restart acceptance passed.
+
+Third-party secret storage is not exercised: replay uses synthetic input and no
+configured third-party key. The Ekispert adapter requires a backend key for live
+use; production must use Secret Manager. Firestore/Logging
+identity claims remain pending with those integrations. Server sessions currently
+live in one process and are lost on restart; cached browser recovery does not
+provide durable cloud persistence.
+
+## Submission assets and final gate
+
+- [x] Japanese summary draft and approximately three-minute script:
+  [DEMO_SCRIPT.md](DEMO_SCRIPT.md).
+- [x] Exported [architecture-mvp.svg](architecture-mvp.svg) shows implemented
+  local boundaries and marks cloud deployment / future integrations as pending.
+- [x] README identifies implemented components, dependencies and limitations.
+- [x] [DEPLOYMENT.md](DEPLOYMENT.md) provides the selected Cloud Shell procedure.
+- [ ] Final description and diagram checked against the actual deployed revision.
+- [ ] GitHub integration and submitted default-branch SHA recorded.
+- [ ] Judging URL accessible without requiring judges' API keys or Google login.
+- [ ] Architecture image and accessible self-made YouTube demo uploaded.
+- [ ] Eligibility/registration confirmed and submission completed.
+- [ ] Default branch frozen; further work moved to another branch; deployed
+  service remains runnable through 2026-12-01.
+
+## Current execution boundary
+
+The selected Cloud Shell browser reached Google sign-in only. No cloud login,
+resource creation, build, deploy or public release was performed. The local MVP,
+tests, diagram and reviewable deployment source are prepared. **Cloud Run actual
+use, successful Gemini actual use and submission assets remain blocking items.**

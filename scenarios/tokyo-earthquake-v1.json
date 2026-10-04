@@ -1,0 +1,142 @@
+{
+  "key": "tokyo-earthquake-v1",
+  "name": "Tokyo Earthquake Replay",
+  "description": "Synthetic, deterministic replay data for the Phase 1 demo.",
+  "mode": "SYNTHETIC_REPLAY",
+  "start_time": "2026-10-04T17:40:00+09:00",
+  "events": [
+    {
+      "id": "evt-earthquake-001",
+      "event_type": "disaster_alert",
+      "occurred_at": "2026-10-04T17:42:00+09:00",
+      "offset_seconds": 0,
+      "label": "Synthetic earthquake alert",
+      "source_key": "jma-replay",
+      "disaster_type": "EARTHQUAKE",
+      "affected_areas": ["Tokyo"],
+      "severity_raw": "synthetic-demo",
+      "summary": "A synthetic earthquake event was added to this replay."
+    },
+    {
+      "id": "official-update-001",
+      "event_type": "official_update",
+      "occurred_at": "2026-10-04T17:43:00+09:00",
+      "offset_seconds": 15,
+      "label": "Synthetic official update",
+      "source_key": "jma-replay",
+      "published_at": "2026-10-04T17:42:50+09:00",
+      "affected_areas": ["Tokyo"],
+      "claims": [
+        {
+          "key": "disaster.tokyo.status",
+          "value": "ACTIVE"
+        }
+      ],
+      "summary": "Synthetic replay evidence records an active earthquake event in Tokyo."
+    },
+    {
+      "id": "transport-update-001",
+      "event_type": "transport_update",
+      "occurred_at": "2026-10-04T17:47:00+09:00",
+      "offset_seconds": 55,
+      "label": "Synthetic transport disruption",
+      "source_key": "transport-replay",
+      "published_at": "2026-10-04T17:46:55+09:00",
+      "origin": "Shibuya",
+      "destination": "Asakusa",
+      "mobility_status": "DISRUPTED",
+      "claims": [
+        {
+          "key": "route.shibuya_asakusa.status",
+          "value": "DISRUPTED"
+        }
+      ],
+      "summary": "Synthetic replay evidence records a transport disruption affecting the demo route."
+    },
+    {
+      "id": "unverified-report-001",
+      "event_type": "unverified_report",
+      "occurred_at": "2026-10-04T17:48:40+09:00",
+      "offset_seconds": 100,
+      "label": "Synthetic unverified social report",
+      "source_key": "social-replay",
+      "published_at": "2026-10-04T17:48:35+09:00",
+      "affected_areas": ["Shinjuku"],
+      "content": "Shinjuku Station is completely closed! Leave this area immediately!",
+      "summary": "Synthetic social-media content is visible but is not verified action evidence."
+    },
+    {
+      "id": "network-degraded-001",
+      "event_type": "network_degraded",
+      "occurred_at": "2026-10-04T17:49:00+09:00",
+      "offset_seconds": 120,
+      "label": "Simulated network degradation"
+    },
+    {
+      "id": "network-lost-001",
+      "event_type": "network_lost",
+      "occurred_at": "2026-10-04T17:49:15+09:00",
+      "offset_seconds": 135,
+      "label": "Simulated network loss"
+    },
+    {
+      "id": "offline-clock-tick-001",
+      "event_type": "clock_tick",
+      "occurred_at": "2026-10-04T17:52:30+09:00",
+      "offset_seconds": 150,
+      "label": "Simulated offline evidence freshness check"
+    },
+    {
+      "id": "network-restored-001",
+      "event_type": "network_restored",
+      "occurred_at": "2026-10-04T17:52:40+09:00",
+      "offset_seconds": 165,
+      "label": "Simulated network restored"
+    },
+    {
+      "id": "reconnect-official-update-001",
+      "event_type": "verified_update",
+      "occurred_at": "2026-10-04T17:52:50+09:00",
+      "offset_seconds": 170,
+      "label": "Synthetic verified official refresh",
+      "source_key": "jma-replay",
+      "published_at": "2026-10-04T17:52:45+09:00",
+      "affected_areas": ["Tokyo"],
+      "claims": [
+        {
+          "key": "disaster.tokyo.status",
+          "value": "ACTIVE"
+        }
+      ],
+      "summary": "Synthetic current official evidence was refreshed after the replay's simulated reconnect."
+    },
+    {
+      "id": "reconnect-transport-update-001",
+      "event_type": "verified_update",
+      "occurred_at": "2026-10-04T17:52:55+09:00",
+      "offset_seconds": 175,
+      "label": "Synthetic verified transport refresh",
+      "source_key": "transport-replay",
+      "published_at": "2026-10-04T17:52:50+09:00",
+      "affected_areas": ["Tokyo"],
+      "origin": "Shibuya",
+      "destination": "Asakusa",
+      "mobility_status": "UNKNOWN",
+      "claims": [
+        {
+          "key": "route.shibuya_asakusa.status",
+          "value": "UNKNOWN"
+        }
+      ],
+      "summary": "Synthetic current transport evidence was refreshed after the replay's simulated reconnect."
+    },
+    {
+      "id": "plan-expiration-001",
+      "event_type": "plan_expiration",
+      "occurred_at": "2026-10-04T17:53:00+09:00",
+      "offset_seconds": 190,
+      "label": "Plan expiration check",
+      "plan_id": "plan_v2"
+    }
+  ]
+}

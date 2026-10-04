@@ -154,9 +154,23 @@ DisasterSource
 └── ReplaySource
 
 MobilitySource
-├── TransportProviderSource
-└── ReplayMobilitySource
+├── ReplayMobilitySource
+├── EkispertMcpSource
+└── TransportStatusSource
 ```
+
+The planned production-facing mobility integration is the **駅すぱあと API MCP Server**. It is used to obtain route candidates and transport information for the Mobility Agent. Its output is mobility data, not a disaster-safety verdict.
+
+```text
+駅すぱあと API MCP Server
+→ route / transfer / travel candidate data
+→ Mobility Agent normalization
+→ combine with verified disruption / disaster evidence
+→ Deterministic Safety Core
+→ ALLOW / MODIFY / BLOCK
+```
+
+`route_available` must never be interpreted as `route_safe`. Live access credentials for the 駅すぱあと API MCP Server are backend-only third-party secrets and must follow `docs/SECURITY_AND_SECRETS.md`.
 
 The replay path exists to make judging deterministic while still exercising the real application pipeline.
 

@@ -1,0 +1,33 @@
+[project]
+name = "72h-agent-api"
+version = "0.1.0"
+description = "72H replay Safety Core with bounded optional Gemini/ADK intent selection"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "fastapi>=0.133,<1.0",
+  "uvicorn==0.34.2",
+  "google-adk==1.39.1",
+  "mcp==1.30.0",
+  "72h-contracts",
+]
+
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["agent_api"]
+
+[tool.uv.sources]
+72h-contracts = { path = "../../packages/contracts", editable = true }
+
+[dependency-groups]
+dev = [
+  "httpx==0.28.1",
+  "pytest==8.3.5",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["."]

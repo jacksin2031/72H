@@ -44,11 +44,11 @@ The implementation plan intentionally prioritizes deterministic behavior, safety
 - Firestore
 - Cloud Logging
 
-### Optional / later
+### Planned later integrations
 
 - Cloud Storage
 - real disaster source connectors
-- Ekispert MCP integration
+- **駅すぱあと API MCP Server** for the production-facing Mobility Agent
 
 ---
 
@@ -541,12 +541,41 @@ Implementations:
 
 ```text
 ReplayMobilityProvider
-EkispertMobilityProvider (optional / production-facing)
+EkispertMcpProvider
+TransportStatusProvider
 ```
 
-### Rule
+### 駅すぱあと API MCP Server
 
-A provider result may return `AVAILABLE`, but only the Safety Core controls whether a movement recommendation is eligible.
+The Hackathon-provided **駅すぱあと API MCP Server** is the planned production-facing route provider.
+
+Use it for supported mobility data such as route candidates, transfers, travel-time/fare metadata, and station/route information. Keep current disruption evidence as a separate input when needed.
+
+Expected pipeline:
+
+```text
+EkispertMcpProvider
+→ candidate routes
+→ Mobility Agent
+→ merge with verified transport/disaster evidence
+→ Safety Core
+→ candidate movement action
+```
+
+The access key must remain backend-only and follow the Secret Manager policy in `SECURITY_AND_SECRETS.md`.
+
+Implementation update (2026-10-05): the provider boundary has been migrated from
+b25f into the canonical `services/agent-api` backend using MCP 1.x alongside ADK.
+Transport tests and safe failure handling are implemented. Live credentials,
+provider connectivity and route normalization into evidence require separate
+acceptance; replay still uses deterministic synthetic evidence.
+
+### Rules
+
+- A provider result may return `AVAILABLE`, but only the Safety Core controls whether a movement recommendation is eligible.
+- `route_available` is not `route_safe`.
+- Live MCP failure must fall back safely; it must not fabricate route status.
+- ReplayMobilityProvider remains the deterministic judging/test path.
 
 ---
 
