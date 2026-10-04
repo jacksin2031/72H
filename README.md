@@ -11,6 +11,12 @@ The project focuses on one question:
 
 72H combines verified disaster information, transport conditions, the user's current situation, and an agentic planning loop to maintain an actionable plan as conditions change.
 
+## Public demo
+
+**https://h72-602701455122.asia-northeast1.run.app**
+
+The public judging deployment runs on Google Cloud Run in `asia-northeast1`. Vertex AI / Gemini + Google ADK is enabled through the dedicated runtime service account. The Ekispert MCP credential is supplied from Secret Manager and was verified from Google Cloud with a names-only smoke job; route data is still treated as provider data rather than disaster-safety evidence.
+
 ## Core concept
 
 ```text
@@ -89,12 +95,12 @@ freshness/conflict projections and append-only plan evaluations.
 
 ## Development source of truth
 
-Use **`codex/hackathon-mvp`** for development and integration. The previous
-`b25f` foundation is a migration source only; do not develop a second application
-there. `main` receives the validated implementation. This repository uses
-`apps/web` and `services/agent-api`; no parallel `services/api` / pnpm backend
-has been imported. Hackathon skills are retained under `.codex/skills`, sourced
-from [Zenn's participant skills](https://github.com/zenn-dev/hackathon-agent-skills).
+Use **`main`** as the canonical source of truth. The former `codex/hackathon-mvp`
+worktree supplied the integrated MVP baseline and `b25f` is retained only as an
+older migration source; neither should be developed as a second application. This
+repository uses `apps/web` and `services/agent-api`; no parallel `services/api` /
+pnpm backend has been imported. Hackathon skills are retained under `.codex/skills`,
+sourced from [Zenn's participant skills](https://github.com/zenn-dev/hackathon-agent-skills).
 
 ## Run locally
 
@@ -169,11 +175,13 @@ npm run typecheck --prefix apps/web
 npm run build --prefix apps/web
 ```
 
-Target Google Cloud project: **h-japan**. The prepared Cloud Run image uses
-Next.js standalone, FastAPI and the locked Python dependency graph. Deployment,
-project/IAM access and real Gemini execution are not established by the existence
-of a Dockerfile. Follow [DEPLOYMENT.md](docs/DEPLOYMENT.md) and preserve recorded
-source SHA/image digest. No credential file or browser API key is needed.
+Target Google Cloud project: **h-japan**. The deployed Cloud Run image uses
+Next.js standalone, FastAPI and the locked Python dependency graph. Public revision
+`h72-00005-vql` serves 100% of traffic from image digest
+`sha256:64e1026d3cd46b2e787d9a2866a016a73005b15a2c491bae2f85bf9f3a18f31b`.
+The runtime code image was built from source commit `2328ac5`; later commits only
+updated validation/deployment documentation. Follow [DEPLOYMENT.md](docs/DEPLOYMENT.md)
+for repeatable deployment. No credential file or browser API key is needed.
 
 The local implementation and tests were created during the hackathon work;
 pre-existing repository material was product/architecture documentation. Review
@@ -196,10 +204,15 @@ the event's eligibility and existing-project policy with that distinction.
 
 ## Status
 
-**PARTIAL — canonical local MVP, Gemini/ADK and Ekispert adapters implemented.**
-Local replay, deterministic safety, PWA continuity and failure handling passed
-validation. A real SDK attempt without ADC returned labeled fallback; it is not
-successful model execution evidence. Local API, frontend and
-browser evidence are recorded separately. Cloud Run deployment, a successful real
-Gemini/ADK call, live integrations and submission uploads remain unverified or
-pending; this repository is **not yet submission ready**.
+**DEPLOYED MVP — public judging URL and core cloud paths verified.**
+
+Local tests, deterministic safety, PWA continuity, Cloud Build, public Cloud Run,
+Vertex AI / Gemini + ADK, Secret Manager injection, production Ekispert MCP smoke,
+and clean desktop/mobile browser acceptance have passed. Public replay completed
+with four plan versions, twelve actions and `GEMINI_ADK` without fallback. A
+project-scoped ¥5,000 monthly billing budget sends alerts at 50% / 80% / 100%.
+
+Remaining submission work is primarily external assets/process: final architecture
+upload, approximately three-minute YouTube demo, Hackathon form/GitHub integration,
+and final submission verification. Live JMA/Safety Tips ingestion and Firestore
+persistence are intentionally outside the current MVP and are not claimed as done.

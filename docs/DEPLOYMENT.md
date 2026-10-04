@@ -1,14 +1,20 @@
 # 72H deployment runbook
 
 Target project: **h-japan**. Cloud Run region: **asia-northeast1**.
-This is a prepared deployment procedure, not evidence of an existing deployment.
-The current machine has no available `gcloud`, Docker engine or ADC; project access,
-billing, IAM and cloud APIs have not been verified.
 
-## Selected route: Google Cloud Shell
+Current public service: **https://h72-602701455122.asia-northeast1.run.app**.
+Validated revision: `h72-00005-vql` (100% traffic). Runtime image digest:
+`sha256:64e1026d3cd46b2e787d9a2866a016a73005b15a2c491bae2f85bf9f3a18f31b`.
+Runtime service account: `h72-runtime@h-japan.iam.gserviceaccount.com`.
+Secret Manager injects `EKISPERT_API_ACCESS_KEY` from `h72-ekispert-api-key:2`.
+The service is publicly invokable for judging; `max-instances=1` and application
+rate/model limits remain enabled.
 
-The user selected Cloud Shell. A separate browser readiness check redirected to
-Google sign-in; no credentials were entered and no cloud resource was changed.
+## Repeatable route: Google Cloud Shell
+
+The production deployment was completed with an authenticated portable Google
+Cloud CLI on the authorized Windows machine. The Cloud Shell bundle remains a
+repeatable fallback/review path.
 Open [Cloud Shell for h-japan](https://shell.cloud.google.com/?project=h-japan)
 in your authenticated browser. Cloud Shell includes the Google Cloud CLI; see
 [the official Cloud Shell guide](https://docs.cloud.google.com/shell/docs/using-cloud-shell).
@@ -36,9 +42,11 @@ bash infra/cloud-run/deploy-cloud-shell.sh --deploy
 ```
 
 The script stages a **private** Cloud Run revision, does not change IAM or enable
-APIs implicitly, and labels the image with the source snapshot hash. It has not
-been executed against Google Cloud. The commands below work in Cloud Shell Bash
-and PowerShell; the later release-tag example uses PowerShell variables.
+APIs implicitly, and labels the image with the source snapshot hash. The current
+production service was deployed separately with equivalent reviewed settings and
+then made public only after model, secret, cost and clean-browser acceptance passed.
+The commands below work in Cloud Shell Bash and PowerShell; the later release-tag
+example uses PowerShell variables.
 
 ## Runtime boundary
 
@@ -106,9 +114,10 @@ gcloud builds submit --project h-japan --config infra/cloud-run/cloudbuild.yaml 
 gcloud run deploy h72 --project h-japan --region asia-northeast1 --image "asia-northeast1-docker.pkg.dev/h-japan/h72/72h:$release" --service-account h72-runtime@h-japan.iam.gserviceaccount.com --port 8080 --cpu 1 --memory 1Gi --min-instances 0 --max-instances 1 --concurrency 8 --timeout 60 --no-allow-unauthenticated --set-secrets 'EKISPERT_API_ACCESS_KEY=h72-ekispert-api-key:latest' --set-env-vars 'GOOGLE_CLOUD_PROJECT=h-japan,GOOGLE_CLOUD_LOCATION=global,GOOGLE_GENAI_USE_VERTEXAI=true,GEMINI_MODEL=gemini-3.5-flash-lite,PLANNER_MODE=gemini'
 ```
 
-The initial service is private for review. Public judging access is a separate
-release step after real model execution, rate/cost safeguards and clean-browser
-acceptance pass. Do not submit a deterministic fallback run as Gemini evidence.
+For a new release, stage privately first. Public judging access should only be
+enabled after real model execution, rate/cost safeguards and clean-browser
+acceptance pass. The current service has completed those gates and is public. Do
+not submit a deterministic fallback run as Gemini evidence.
 Deployment flags are documented by [gcloud run deploy](https://docs.cloud.google.com/sdk/gcloud/reference/run/deploy).
 
 ## Acceptance and submission
@@ -119,6 +128,9 @@ dependency invalidation, offline reload and reconnect reconciliation. Check that
 the browser contains no credentials and that a model failure produces labeled
 conservative fallback. Verify restart behavior and the bounded session limit.
 
-Only then configure judging access, submit the URL and GitHub integration,
-architecture image and approximately three-minute YouTube demo. Preserve the
-submitted default branch and service availability through 2026-12-01.
+Judging access is now configured and the public URL has passed unauthenticated
+API plus clean desktop/mobile browser acceptance. Remaining submission work is to
+provide the URL and GitHub integration in the Hackathon form, upload the final
+architecture image, publish the approximately three-minute YouTube demo, and
+complete the submission checklist. Preserve the submitted default branch and
+service availability through 2026-12-01.

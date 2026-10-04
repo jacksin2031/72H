@@ -1,7 +1,7 @@
 # 72H validation evidence
 
 Date: 2026-10-05 (JST). Branch: `main`.
-Scope: synthetic Tokyo replay validated locally and on private Google Cloud Run staging. No live disaster feed is claimed. Overall submission status: **PARTIAL / NOT SUBMISSION READY**.
+Scope: synthetic Tokyo replay validated locally and on the public Google Cloud Run judging deployment. No live disaster feed is claimed. Overall implementation/deployment status: **PUBLIC MVP VERIFIED; SUBMISSION ASSETS STILL PENDING**.
 
 ## Accepted foundation and Safety Core
 
@@ -65,6 +65,10 @@ time. These are API/test results, distinct from browser acceptance below.
 - A live names-only Ekispert MCP smoke succeeded using the backend-only user secret:
   `EKISPERT_MCP=OK`, returning six tools including `ekispert_api_search_routes` and
   `ekispert_api_get_stations_from_geo`. No secret value was printed or committed.
+- Secret Manager `h72-ekispert-api-key` version 2 is injected into Cloud Run. A
+  one-off Cloud Run Job using the production image, `h72-runtime` identity and the
+  same secret completed successfully (`h72-ekispert-smoke-9k6rs`), proving the
+  production Cloud-to-Ekispert MCP path without exposing provider payloads or the key.
 - The copied skill schedule contained the old office-hours date. It was corrected
   to 2026-10-05 from the current official event page; an unconfirmed old summit
   entry is marked as such.
@@ -118,16 +122,30 @@ session translates the fallback label/navigation, but does not retranslate its
 immutable published action text. Start a new demo in the selected language for
 new server-owned action text. Public trace reason bodies currently remain English.
 
-## Unverified or incomplete
+### Public Cloud Run clean-browser acceptance
 
-- Successful Gemini/ADK invocation and credentialed output: **VERIFIED LOCALLY AND ON CLOUD RUN**. Private staging revision `h72-00003-z9w` completed the full 11-event replay with `GEMINI_ADK`, four plan versions and twelve actions. A paced production golden-path run passed 10/10 with no Gemini fallback.
-- Cloud project `h-japan`, billing, ADC, required APIs, Artifact Registry `h72`, runtime service account `h72-runtime`, Cloud Build and private Cloud Run staging are configured. Current image digest: `sha256:64e1026d3cd46b2e787d9a2866a016a73005b15a2c491bae2f85bf9f3a18f31b`.
-- The current Cloud Run service is still private. Public judging access and clean-browser acceptance are **PENDING**.
+- Public URL: `https://h72-602701455122.asia-northeast1.run.app`.
+- Unauthenticated `/api/health` returned `ok`; an unauthenticated full replay
+  completed with four plans, twelve actions, `GEMINI_ADK`, candidate-applied trace
+  and no Gemini fallback.
+- A fresh Chromium context with no saved storage, cookies or Google authorization
+  completed the UI replay to `11 / 11`, displayed Plan v4 and the Gemini/ADK label,
+  exposed Sources and `GEMINI_CANDIDATE_APPLIED` in Agent trace, and reported zero
+  browser console errors/warnings.
+- A separate fresh 390x844 context showed all five navigation links and Start demo
+  with zero console errors/warnings. Screenshots are local ignored evidence under
+  `output/playwright/cloud-public/` (`desktop-home.png`, `desktop-complete.png`,
+  `desktop-trace.png`, `mobile-home.png`).
+
+## Remaining / intentionally incomplete
+
+- Successful Gemini/ADK invocation and credentialed output: **VERIFIED LOCALLY AND ON PUBLIC CLOUD RUN**. The production replay path completed with `GEMINI_ADK`; a paced 10-run Cloud Run golden path passed 10/10 with no model fallback.
+- Google Cloud deployment: **VERIFIED**. Project `h-japan`, billing, required APIs, Artifact Registry `h72`, runtime service account `h72-runtime`, Cloud Build, Secret Manager and public Cloud Run are configured. Public revision `h72-00005-vql` serves 100% traffic from image digest `sha256:64e1026d3cd46b2e787d9a2866a016a73005b15a2c491bae2f85bf9f3a18f31b`.
+- Public cost guardrail: **VERIFIED**. Cloud Run remains capped at one instance and application request/model bounds stay enabled. Billing budget `72H Hackathon Guardrail` is scoped to `h-japan` at ¥5,000/month with 50%, 80% and 100% alert thresholds; this is notification-only, not a hard cap.
 - Remote GitHub Actions: **NOT RUN**. Workflow exists; local checks and Cloud Build passed.
-- Live JMA and Safety Tips integrations are **NOT IMPLEMENTED**; replay provenance explicitly uses synthetic data. Ekispert MCP live connectivity is verified locally, and the Secret Manager container plus runtime accessor IAM are configured, but a production secret version has not yet been supplied to Cloud Run. Ekispert route data is not promoted into trusted disaster/safety evidence.
-- Firestore persistence: **NOT IMPLEMENTED**. Server sessions are ephemeral.
-- Public cost/abuse acceptance and billing budget alerts are **PENDING**. Application call bounds, model timeouts, one-instance Cloud Run cap and conservative fallback are implemented; budget alerts are notifications rather than a hard cap.
-- Hackathon GitHub integration, participant eligibility, public judging URL, final architecture upload and YouTube demo are **UNVERIFIED / PENDING**.
+- Live JMA and Safety Tips integrations are **NOT IMPLEMENTED**; replay provenance explicitly uses synthetic data. Ekispert MCP production connectivity is verified, but route output is not promoted into trusted disaster/safety evidence.
+- Firestore persistence: **NOT IMPLEMENTED**. Server sessions are ephemeral by design for the Hackathon MVP.
+- External submission assets/process remain **PENDING**: Hackathon GitHub integration/form, final architecture upload, approximately three-minute YouTube demo and final submission confirmation.
 
 ## Reproduce
 
