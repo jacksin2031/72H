@@ -199,6 +199,7 @@ the event's eligibility and existing-project policy with that distinction.
 - [Ekispert MCP adapter boundary](docs/EKISPERT_MCP.md)
 - [Worktree consolidation](docs/WORKTREE_CONSOLIDATION.md)
 - [Three-minute demo script and Japanese summary](docs/DEMO_SCRIPT.md)
+- [Hackathon submission package](docs/SUBMISSION_PACKAGE.md)
 - [MVP architecture image](docs/architecture-mvp.svg)
 - [Hackathon compliance checklist](docs/HACKATHON_COMPLIANCE.md)
 
