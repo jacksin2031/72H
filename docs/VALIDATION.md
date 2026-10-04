@@ -1,8 +1,7 @@
 # 72H validation evidence
 
 Date: 2026-10-05 (JST). Branch: `main`.
-Scope: local synthetic Tokyo replay. No live disaster-feed or cloud execution is
-claimed. Overall submission status: **PARTIAL / NOT SUBMISSION READY**.
+Scope: synthetic Tokyo replay validated locally and on private Google Cloud Run staging. No live disaster feed is claimed. Overall submission status: **PARTIAL / NOT SUBMISSION READY**.
 
 ## Accepted foundation and Safety Core
 
@@ -16,7 +15,7 @@ claimed. Overall submission status: **PARTIAL / NOT SUBMISSION READY**.
 | Frontend unit/boundary tests | PASS | 17 tests normally; 18 with a real complete API snapshot fixture. |
 | Frontend type/build | PASS | TypeScript and Next.js standalone production build; 12 static assets precached. |
 | API → proxy → frontend schema | PASS | Browser-origin HTTP start, all 11 events and actual snapshot parsed by Zod. |
-| Backend packaging and lock | PASS | Phase 1 wheel built; final `uv lock --check` and frozen sync passed with ADK 1.39.1. Docker execution remains untested. |
+| Backend packaging and lock | PASS | Final `uv lock --check` and frozen sync passed with ADK 1.39.1. Cloud Build built the production Docker image successfully and verified `agent_api` / `uvicorn` imports inside the runtime venv. |
 
 The complete API run produced four plan versions and twelve actions. Social
 input left Plan v2 unchanged. The local clock event produced `OFFLINE_STALE`.
@@ -121,20 +120,14 @@ new server-owned action text. Public trace reason bodies currently remain Englis
 
 ## Unverified or incomplete
 
-- Successful Gemini/ADK invocation and credentialed output: **VERIFIED LOCALLY**.
-  Production Cloud Run execution still requires deployment acceptance.
-- Cloud project `h-japan`, billing, ADC, required APIs, Artifact Registry `h72`,
-  and runtime service account `h72-runtime` are configured. Docker image build and
-  Cloud Run service deployment are still **PENDING**.
-- Remote GitHub Actions: **NOT RUN**. Workflow exists, local checks passed.
-- Live JMA and Safety Tips integrations are **NOT IMPLEMENTED**; replay provenance
-  explicitly uses synthetic data. Ekispert MCP live connectivity is verified, but
-  its route data is not yet promoted into trusted disaster/safety evidence.
+- Successful Gemini/ADK invocation and credentialed output: **VERIFIED LOCALLY AND ON CLOUD RUN**. Private staging revision `h72-00003-z9w` completed the full 11-event replay with `GEMINI_ADK`, four plan versions and twelve actions. A paced production golden-path run passed 10/10 with no Gemini fallback.
+- Cloud project `h-japan`, billing, ADC, required APIs, Artifact Registry `h72`, runtime service account `h72-runtime`, Cloud Build and private Cloud Run staging are configured. Current image digest: `sha256:64e1026d3cd46b2e787d9a2866a016a73005b15a2c491bae2f85bf9f3a18f31b`.
+- The current Cloud Run service is still private. Public judging access and clean-browser acceptance are **PENDING**.
+- Remote GitHub Actions: **NOT RUN**. Workflow exists; local checks and Cloud Build passed.
+- Live JMA and Safety Tips integrations are **NOT IMPLEMENTED**; replay provenance explicitly uses synthetic data. Ekispert MCP live connectivity is verified locally, and the Secret Manager container plus runtime accessor IAM are configured, but a production secret version has not yet been supplied to Cloud Run. Ekispert route data is not promoted into trusted disaster/safety evidence.
 - Firestore persistence: **NOT IMPLEMENTED**. Server sessions are ephemeral.
-- Public cost/abuse acceptance, budget alerts and production identity: **PENDING**.
-  Application call bounds are implemented; these do not prove cloud budget setup.
-- Hackathon GitHub integration, participant eligibility, deployed judging URL,
-  uploaded architecture and YouTube demo: **UNVERIFIED / PENDING**.
+- Public cost/abuse acceptance and billing budget alerts are **PENDING**. Application call bounds, model timeouts, one-instance Cloud Run cap and conservative fallback are implemented; budget alerts are notifications rather than a hard cap.
+- Hackathon GitHub integration, participant eligibility, public judging URL, final architecture upload and YouTube demo are **UNVERIFIED / PENDING**.
 
 ## Reproduce
 
