@@ -6,7 +6,7 @@ images:
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/72h:${_RELEASE}'
 substitutions:
   _REGION: asia-northeast1
-  _REPOSITORY: 72h
+  _REPOSITORY: h72
   _RELEASE: local-review
 options:
   logging: CLOUD_LOGGING_ONLY

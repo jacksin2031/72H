@@ -144,7 +144,7 @@ Production must not depend on a checked-in service-account JSON key.
 A suggested runtime identity is:
 
 ```text
-72h-runtime@PROJECT_ID.iam.gserviceaccount.com
+h72-runtime@PROJECT_ID.iam.gserviceaccount.com
 ```
 
 Grant only the permissions required by the shipped implementation. Do not grant broad Owner or Editor access.

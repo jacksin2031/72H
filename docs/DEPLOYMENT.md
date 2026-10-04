@@ -72,8 +72,8 @@ notifications, not a hard spending cap.
 ```bash
 gcloud projects describe h-japan
 gcloud billing projects describe h-japan
-gcloud artifacts repositories describe 72h --location asia-northeast1 --project h-japan
-gcloud iam service-accounts describe 72h-runtime@h-japan.iam.gserviceaccount.com --project h-japan
+gcloud artifacts repositories describe h72 --location asia-northeast1 --project h-japan
+gcloud iam service-accounts describe h72-runtime@h-japan.iam.gserviceaccount.com --project h-japan
 ```
 
 Use the following setup commands only for missing resources / required role
@@ -82,10 +82,10 @@ authenticated CLI session after Google sign-in; deployed Gemini uses the runtime
 identity. Local model development separately requires ADC login.
 
 ```bash
-gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com aiplatform.googleapis.com --project h-japan
-gcloud artifacts repositories create 72h --repository-format docker --location asia-northeast1 --project h-japan
-gcloud iam service-accounts create 72h-runtime --display-name '72H runtime' --project h-japan
-gcloud projects add-iam-policy-binding h-japan --member 'serviceAccount:72h-runtime@h-japan.iam.gserviceaccount.com' --role roles/aiplatform.user
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com aiplatform.googleapis.com secretmanager.googleapis.com --project h-japan
+gcloud artifacts repositories create h72 --repository-format docker --location asia-northeast1 --project h-japan
+gcloud iam service-accounts create h72-runtime --display-name '72H runtime' --project h-japan
+gcloud projects add-iam-policy-binding h-japan --member 'serviceAccount:h72-runtime@h-japan.iam.gserviceaccount.com' --role roles/aiplatform.user
 ```
 
 Grant the actual Cloud Build identity Artifact Registry write and required
@@ -103,7 +103,7 @@ tags the build with the exported working-tree source hash.
 ```powershell
 $release = git rev-parse HEAD
 gcloud builds submit --project h-japan --config infra/cloud-run/cloudbuild.yaml --substitutions "_RELEASE=$release"
-gcloud run deploy 72h --project h-japan --region asia-northeast1 --image "asia-northeast1-docker.pkg.dev/h-japan/72h/72h:$release" --service-account 72h-runtime@h-japan.iam.gserviceaccount.com --port 8080 --cpu 1 --memory 1Gi --min-instances 0 --max-instances 1 --concurrency 8 --timeout 60 --no-allow-unauthenticated --set-env-vars 'GOOGLE_CLOUD_PROJECT=h-japan,GOOGLE_CLOUD_LOCATION=global,GOOGLE_GENAI_USE_VERTEXAI=true,GEMINI_MODEL=gemini-3.5-flash-lite,PLANNER_MODE=gemini'
+gcloud run deploy h72 --project h-japan --region asia-northeast1 --image "asia-northeast1-docker.pkg.dev/h-japan/h72/72h:$release" --service-account h72-runtime@h-japan.iam.gserviceaccount.com --port 8080 --cpu 1 --memory 1Gi --min-instances 0 --max-instances 1 --concurrency 8 --timeout 60 --no-allow-unauthenticated --set-secrets 'EKISPERT_API_ACCESS_KEY=h72-ekispert-api-key:latest' --set-env-vars 'GOOGLE_CLOUD_PROJECT=h-japan,GOOGLE_CLOUD_LOCATION=global,GOOGLE_GENAI_USE_VERTEXAI=true,GEMINI_MODEL=gemini-3.5-flash-lite,PLANNER_MODE=gemini'
 ```
 
 The initial service is private for review. Public judging access is a separate

@@ -68,7 +68,7 @@ The browser never receives:
 72H should use a dedicated user-managed Cloud Run runtime service account, for example:
 
 ```text
-72h-runtime@PROJECT_ID.iam.gserviceaccount.com
+h72-runtime@PROJECT_ID.iam.gserviceaccount.com
 ```
 
 Use least privilege. Grant only permissions required by the shipped implementation.
@@ -105,8 +105,8 @@ Third-party secrets must be stored in Google Secret Manager.
 Recommended naming:
 
 ```text
-72h-transport-api-key
-72h-partner-api-token
+h72-ekispert-api-key
+h72-partner-api-token
 ```
 
 Access should be limited to the 72H runtime service account and ideally scoped to individual secrets rather than granting broad project-level access.

@@ -1,6 +1,6 @@
 # 72H validation evidence
 
-Date: 2026-10-04–05 (JST). Branch: `codex/hackathon-mvp`.
+Date: 2026-10-05 (JST). Branch: `main`.
 Scope: local synthetic Tokyo replay. No live disaster-feed or cloud execution is
 claimed. Overall submission status: **PARTIAL / NOT SUBMISSION READY**.
 
@@ -37,12 +37,11 @@ time. These are API/test results, distinct from browser acceptance below.
 - One attempt / 15-second timeout / output token and session/global call budgets
   bound execution. Session reset does not replenish its call budget. No raw model
   reasoning or provider exception is exposed in public trace.
-- The real HTTP server was started with `PLANNER_MODE=gemini`, project `h-japan`,
-  `global` and `gemini-3.5-flash-lite`. All 11 events completed through the web
-  proxy. The first attempt timed out; subsequent attempts returned `MISSING_ADC`.
-  All were `GEMINI_ADK_FALLBACK`, not `GEMINI_ADK`. Four plan versions and safe
-  reconnect behavior remained intact. The resulting snapshot passed frontend
-  contract validation (`.work/phase3-snapshot.json`, ignored local evidence).
+- After Google Cloud authentication and ADC quota-project configuration, a real
+  Vertex AI / Gemini + ADK smoke call succeeded against project `h-japan`, location
+  `global`, model `gemini-3.5-flash-lite`. The bounded structured selection returned
+  `GEMINI_ADK` with no fallback and selected the allowed `protect_and_monitor` intent.
+  This proves the live model/ADK/ADC path independently of the deterministic replay.
 - Independent re-review closed both prior P1 findings: transport sources cannot
   assert disaster-status claims, and equal-timestamp evidence preceding network
   restoration cannot complete reconciliation. The source page now gives
@@ -64,9 +63,9 @@ time. These are API/test results, distinct from browser acceptance below.
 - Final independent re-review repeated all 51 backend tests and the actual SDK
   redirect regression. Both original P1 reproductions remain closed; no remaining
   P1/P2 blocker was found in this scope. Review made no source or Git changes.
-- Smoke returned `DRY_RUN` / `UNCONFIGURED` as expected. Backend process key
-  presence was false; no User registry/other-worktree secret was loaded and no
-  paid live route request was made.
+- A live names-only Ekispert MCP smoke succeeded using the backend-only user secret:
+  `EKISPERT_MCP=OK`, returning six tools including `ekispert_api_search_routes` and
+  `ekispert_api_get_stations_from_geo`. No secret value was printed or committed.
 - The copied skill schedule contained the old office-hours date. It was corrected
   to 2026-10-05 from the current official event page; an unconfirmed old summit
   entry is marked as such.
@@ -122,15 +121,15 @@ new server-owned action text. Public trace reason bodies currently remain Englis
 
 ## Unverified or incomplete
 
-- Successful Gemini/ADK invocation and credentialed output: **UNVERIFIED**.
-  The adapter is implemented and the real SDK failure path ran without ADC.
-- Docker image build and Cloud Run `h-japan` deployment: **BLOCKED** by absent
-  local CLI/engine/ADC; Cloud Shell readiness reached Google sign-in only.
-  Cloud project access, billing and IAM are unverified.
+- Successful Gemini/ADK invocation and credentialed output: **VERIFIED LOCALLY**.
+  Production Cloud Run execution still requires deployment acceptance.
+- Cloud project `h-japan`, billing, ADC, required APIs, Artifact Registry `h72`,
+  and runtime service account `h72-runtime` are configured. Docker image build and
+  Cloud Run service deployment are still **PENDING**.
 - Remote GitHub Actions: **NOT RUN**. Workflow exists, local checks passed.
-- Live JMA, Safety Tips and transport integrations: **NOT IMPLEMENTED**; replay
-  provenance explicitly uses synthetic data. Ekispert's MCP adapter is implemented,
-  but live connectivity and evidence normalization are **NOT RUN / NOT INTEGRATED**.
+- Live JMA and Safety Tips integrations are **NOT IMPLEMENTED**; replay provenance
+  explicitly uses synthetic data. Ekispert MCP live connectivity is verified, but
+  its route data is not yet promoted into trusted disaster/safety evidence.
 - Firestore persistence: **NOT IMPLEMENTED**. Server sessions are ephemeral.
 - Public cost/abuse acceptance, budget alerts and production identity: **PENDING**.
   Application call bounds are implemented; these do not prove cloud budget setup.
