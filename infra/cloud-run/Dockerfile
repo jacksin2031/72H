@@ -16,6 +16,7 @@ COPY packages/contracts/ ./packages/contracts/
 COPY services/agent-api/ ./services/agent-api/
 ENV UV_PYTHON_DOWNLOADS=never
 RUN uv sync --project services/agent-api --frozen --no-dev
+RUN /app/services/agent-api/.venv/bin/python -c "import agent_api, uvicorn"
 COPY scenarios/ ./scenarios/
 COPY --from=web-build /web/.next/standalone ./web/
 COPY --from=web-build /web/.next/static ./web/.next/static/
