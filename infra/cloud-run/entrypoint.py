@@ -1,5 +1,6 @@
 """Run the private API and public Next server in one bounded demo instance."""
 import os
+import shutil
 import signal
 import subprocess
 import sys
@@ -22,8 +23,22 @@ def stop(_signum=None, _frame=None):
 signal.signal(signal.SIGTERM, stop)
 signal.signal(signal.SIGINT, stop)
 try:
-    children.append(subprocess.Popen([sys.executable, "-m", "uvicorn", "agent_api.main:app", "--host", "127.0.0.1", "--port", "8000", "--workers", "1"], cwd="/app/services/agent-api"))
-    children.append(subprocess.Popen(["node", "server.js"], cwd="/app/web", env={**os.environ, "PORT": os.environ.get("PORT", "8080")}))
+    uvicorn = shutil.which("uvicorn")
+    if uvicorn is None:
+        raise RuntimeError("uvicorn executable not found on container PATH")
+    children.append(
+        subprocess.Popen(
+            [uvicorn, "agent_api.main:app", "--host", "127.0.0.1", "--port", "8000", "--workers", "1"],
+            cwd="/app/services/agent-api",
+        )
+    )
+    children.append(
+        subprocess.Popen(
+            ["node", "server.js"],
+            cwd="/app/web",
+            env={**os.environ, "PORT": os.environ.get("PORT", "8080")},
+        )
+    )
     while all(process.poll() is None for process in children):
         time.sleep(0.5)
     sys.exit(1)
