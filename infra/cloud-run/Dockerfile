@@ -2,6 +2,7 @@
 FROM node:24-bookworm-slim AS web-build
 WORKDIR /web
 COPY apps/web/package.json apps/web/package-lock.json ./
+COPY apps/web/scripts/prepare-map-worker.mjs ./scripts/
 RUN npm ci --no-audit --no-fund
 COPY apps/web/ ./
 ENV NEXT_TELEMETRY_DISABLED=1
