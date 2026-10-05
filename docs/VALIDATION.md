@@ -1,5 +1,22 @@
 # 72H validation evidence
 
+## Current vNext release
+
+Exact runtime/build/production evidence is maintained in
+[VNEXT_PRODUCTION_RELEASE.md](VNEXT_PRODUCTION_RELEASE.md). The MVP counts,
+revision `h72-00005-vql`, 10/10 golden path and provider smoke below are
+**historical baseline evidence**, not acceptance of the vNext image.
+
+Current vNext gate: **PRODUCTION PASS**. Runtime `8d1836e`, revision
+`h72-vnext-8d1836e` at 100% traffic, build `kwavxW-VSKN8tUxQJoWo4`.
+69 backend tests, 77 frontend with fresh deployed fixtures, CI, Cloud Build,
+actual canonical Gemini/ADK replay, clean desktop/mobile browser, mocked local
+location and same-session physical offline/reconciliation acceptance passed.
+See the release record for exact digests, evidence and limits; no live disaster
+feed, actual device GPS or battery endurance is claimed.
+
+## Historical MVP validation
+
 Date: 2026-10-05 (JST). Branch: `main`.
 Scope: synthetic Tokyo replay validated locally and on the public Google Cloud Run judging deployment. No live disaster feed is claimed. Overall implementation/deployment status: **PUBLIC MVP VERIFIED; SUBMISSION ASSETS STILL PENDING**.
 

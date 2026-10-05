@@ -2,9 +2,13 @@
 
 Target project: **h-japan**. Cloud Run region: **asia-northeast1**.
 
+The current vNext release identity and acceptance gates are tracked in
+[VNEXT_PRODUCTION_RELEASE.md](VNEXT_PRODUCTION_RELEASE.md). Stable rollback
+revision: `h72-00005-vql`.
+
 Current public service: **https://h72-602701455122.asia-northeast1.run.app**.
-Validated revision: `h72-00005-vql` (100% traffic). Runtime image digest:
-`sha256:64e1026d3cd46b2e787d9a2866a016a73005b15a2c491bae2f85bf9f3a18f31b`.
+Current revision: `h72-vnext-8d1836e` (100% traffic). Runtime source: `8d1836e`.
+Image digest: `sha256:9d7e22b877aff64502903cfe90b233c8365a8df065e8e3b75fee5bcda6eb3005`.
 Runtime service account: `h72-runtime@h-japan.iam.gserviceaccount.com`.
 Secret Manager injects `EKISPERT_API_ACCESS_KEY` from `h72-ekispert-api-key:2`.
 The service is publicly invokable for judging; `max-instances=1` and application
@@ -41,10 +45,12 @@ After the prerequisites below are met and budget controls reviewed, run:
 bash infra/cloud-run/deploy-cloud-shell.sh --deploy
 ```
 
-The script stages a **private** Cloud Run revision, does not change IAM or enable
-APIs implicitly, and labels the image with the source snapshot hash. The current
-production service was deployed separately with equivalent reviewed settings and
-then made public only after model, secret, cost and clean-browser acceptance passed.
+The legacy script targets the existing `h72` service, does not use `--no-traffic`,
+and passes `--no-allow-unauthenticated`. It is **not** the preview route for an
+existing public service and may change traffic/IAM. Use the digest-pinned,
+zero-traffic procedure below for release staging. A tagged revision inherits the
+service's public invoker policy; it is not private staging. A genuinely private
+staging service requires a separate service and reviewed IAM.
 The commands below work in Cloud Shell Bash and PowerShell; the later release-tag
 example uses PowerShell variables.
 
@@ -105,19 +111,31 @@ project Owner just to make deployment work.
 
 First run the checks in `VALIDATION.md` and commit the reviewed implementation.
 Require a clean working tree so the image tag identifies the actual source.
+For the vNext release, build an immutable `git archive` of the runtime SHA;
+exclude subsequent documentation edits and ignored local evidence from the image.
 Alternatively, the Cloud Shell ZIP procedure above verifies its manifest and
 tags the build with the exported working-tree source hash.
 
 ```powershell
 $release = git rev-parse HEAD
-gcloud builds submit --project h-japan --config infra/cloud-run/cloudbuild.yaml --substitutions "_RELEASE=$release"
-gcloud run deploy h72 --project h-japan --region asia-northeast1 --image "asia-northeast1-docker.pkg.dev/h-japan/h72/72h:$release" --service-account h72-runtime@h-japan.iam.gserviceaccount.com --port 8080 --cpu 1 --memory 1Gi --min-instances 0 --max-instances 1 --concurrency 8 --timeout 60 --no-allow-unauthenticated --set-secrets 'EKISPERT_API_ACCESS_KEY=h72-ekispert-api-key:latest' --set-env-vars 'GOOGLE_CLOUD_PROJECT=h-japan,GOOGLE_CLOUD_LOCATION=global,GOOGLE_GENAI_USE_VERTEXAI=true,GEMINI_MODEL=gemini-3.5-flash-lite,PLANNER_MODE=gemini'
+gcloud builds submit --project h-japan --config infra/cloud-run/cloudbuild.yaml --substitutions "_RELEASE=$release" --async
+# Observe this build ID until SUCCESS; obtain results.images[0].digest.
+$runtimeDigest = 'sha256:<successful-build-digest>'
+$revisionSuffix = "vnext-$($release.Substring(0, 7))"
+gcloud run deploy h72 --project h-japan --region asia-northeast1 --image "asia-northeast1-docker.pkg.dev/h-japan/h72/72h@$runtimeDigest" --revision-suffix $revisionSuffix --no-traffic --tag vnext
+# After preview acceptance, promote this explicit revision (not latest).
+gcloud run services update-traffic h72 --project h-japan --region asia-northeast1 --to-revisions "h72-$revisionSuffix=100"
+# If production acceptance finds a critical regression, restore the known baseline.
+gcloud run services update-traffic h72 --project h-japan --region asia-northeast1 --to-revisions 'h72-00005-vql=100'
 ```
 
-For a new release, stage privately first. Public judging access should only be
-enabled after real model execution, rate/cost safeguards and clean-browser
-acceptance pass. The current service has completed those gates and is public. Do
-not submit a deterministic fallback run as Gemini evidence.
+For an existing public service, preserve service identity, env configuration,
+fixed secret version `h72-ekispert-api-key:2`, scaling/resource limits and invoker
+IAM; do not replace them with `latest` or change public access during a release.
+Verify actual model execution, rate/cost safeguards and browser acceptance on
+the zero-traffic preview before promoting. Re-run acceptance on the canonical
+production origin after promotion. Do not submit a deterministic fallback run as
+Gemini evidence.
 Deployment flags are documented by [gcloud run deploy](https://docs.cloud.google.com/sdk/gcloud/reference/run/deploy).
 
 ## Acceptance and submission

@@ -1,63 +1,116 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="850" viewBox="0 0 1400 850" role="img" aria-labelledby="title desc">
-<title id="title">72H MVP runtime and safety boundaries</title>
-<desc id="desc">The browser retains a local snapshot and emergency pack. Public Cloud Run hosts Next.js and private FastAPI. Replay data enters deterministic evidence and safety logic. ADK Gemini proposes typed intents; application rules validate and publish append-only plans. Gemini/ADK and Ekispert MCP production connectivity are verified; JMA, Firestore and log export remain future work.</desc>
-<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#527369"/></marker></defs>
-<rect width="1400" height="850" fill="#f5f5ef"/>
-<g font-family="Arial, sans-serif" fill="#173d32">
-<text x="45" y="55" font-size="30" font-weight="bold">72H — From Alert to Action</text>
-<text x="45" y="85" font-size="15">MVP implementation / public Google Cloud deployment • project h-japan</text>
-<rect x="40" y="115" width="300" height="570" rx="14" fill="#fff" stroke="#8ca99a" stroke-width="2"/>
-<text x="65" y="153" font-size="21" font-weight="bold">Browser / PWA</text>
-<text x="65" y="180" font-size="14">Japanese · English · Traditional Chinese</text>
-<rect x="62" y="210" width="255" height="100" rx="8" fill="#e8f0e6"/>
-<text x="80" y="243" font-size="17">NOW / NEXT / AVOID</text>
-<text x="80" y="270" font-size="14">Plan history · Sources · Public trace</text>
-<text x="80" y="292" font-size="14">Explicit simulation + freshness labels</text>
-<rect x="62" y="340" width="255" height="130" rx="8" fill="#f4ead6"/>
-<text x="80" y="373" font-size="17">Offline continuity</text>
-<text x="80" y="402" font-size="14">IndexedDB: validated local snapshot</text>
-<text x="80" y="427" font-size="14">Service Worker: public assets only</text>
-<text x="80" y="452" font-size="14">Emergency pack + local TTL</text>
-<text x="65" y="517" font-size="15">Client may only degrade guidance.</text>
-<text x="65" y="544" font-size="15">No new official information offline.</text>
-<text x="65" y="595" font-size="15" font-weight="bold">Reconnection gate</text>
-<text x="65" y="622" font-size="14">Fetch → verify → reconcile → evaluate</text>
-<text x="65" y="648" font-size="14">Connectivity alone is insufficient.</text>
-<rect x="390" y="115" width="500" height="570" rx="14" fill="#fff" stroke="#5a7fbd" stroke-width="2" stroke-dasharray="8 5"/>
-<text x="415" y="153" font-size="21" font-weight="bold">Cloud Run container</text>
-<text x="415" y="180" font-size="14">Public Cloud Run • production acceptance verified</text>
-<rect x="415" y="207" width="450" height="52" rx="8" fill="#e8edf5"/>
-<text x="435" y="239" font-size="16">Public Next.js → private FastAPI (localhost)</text>
-<rect x="415" y="282" width="450" height="75" rx="8" fill="#e8f0e6"/>
-<text x="435" y="312" font-size="16">Replay input → source scope / schema validation</text>
-<text x="435" y="338" font-size="14">Evidence + situation projections: trust, TTL, conflict</text>
-<rect x="415" y="380" width="450" height="84" rx="8" fill="#f4ead6"/>
-<text x="435" y="411" font-size="17">Google ADK action-planning agent</text>
-<text x="435" y="439" font-size="14">Typed intent proposals → validated safe action catalogue</text>
-<rect x="415" y="489" width="450" height="92" rx="8" fill="#d8e7d5" stroke="#588064"/>
-<text x="435" y="522" font-size="18" font-weight="bold">Deterministic Safety Core decides</text>
-<text x="435" y="550" font-size="14">Dependencies · expiration · risk · reconnect epoch</text>
-<text x="415" y="620" font-size="16">Append-only plans / evidence / evaluations / trace</text>
-<text x="415" y="649" font-size="14">Bounded in-memory sessions; server restart loses session.</text>
-<rect x="930" y="190" width="420" height="160" rx="10" fill="#e8edf5" stroke="#5a7fbd" stroke-dasharray="6 4"/>
-<text x="948" y="222" font-size="18" font-weight="bold">Vertex AI / Gemini</text>
-<text x="948" y="251" font-size="14">Cloud Run service identity</text>
-<text x="948" y="277" font-size="14">ADC / IAM; no browser key</text>
-<text x="948" y="306" font-size="14">Real Gemini / ADK calls verified</text>
-<text x="948" y="329" font-size="14">Failure → labeled fallback</text>
-<rect x="930" y="390" width="420" height="295" rx="10" fill="#fff" stroke="#a6afa7" stroke-dasharray="6 4"/>
-<text x="948" y="422" font-size="18" font-weight="bold">External services / future integrations</text>
-<text x="948" y="455" font-size="14">Live JMA / Safety Tips</text>
-<text x="948" y="483" font-size="14">Ekispert MCP: production connectivity verified</text>
-<text x="948" y="526" font-size="14">Firestore persistence</text>
-<text x="948" y="555" font-size="14">Cloud Logging trace export</text>
-<text x="948" y="584" font-size="14">Secret Manager: production credential</text>
-<text x="948" y="630" font-size="14">JMA / Firestore / log export remain future work.</text>
-<g stroke="#527369" stroke-width="2" fill="none" marker-end="url(#arrow)">
-<path d="M340 235H415"/><path d="M640 259V282"/><path d="M640 357V380"/><path d="M640 464V489"/><path d="M640 581V601"/><path d="M415 655H360V285H317"/>
-<path d="M865 413H909V270H930"/><path d="M930 315H920V442H865"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="960" viewBox="0 0 1600 960" role="img" aria-labelledby="title desc">
+<title id="title">72H vNext architecture and safety boundaries</title>
+<desc id="desc">Japanese architecture overview of the implemented vNext app: Home Plan More, central Tokyo reference map, consented local single-point last-known location, in-app safety check and power modes, generic area-scoped disaster assessments, deterministic Safety Core and immutable plans. Osaka is schema and pipeline validation only without a map pack. vNext production acceptance passed. Live feeds, rescue services and native background behavior are not claimed.</desc>
+<defs>
+  <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#527369"/></marker>
+  <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#5a7fbd"/></marker>
+</defs>
+<rect width="1600" height="960" fill="#f5f5ef"/>
+<g font-family="Yu Gothic UI, Meiryo, Noto Sans CJK JP, sans-serif" fill="#173d32">
+  <text x="40" y="52" font-size="30" font-weight="bold">72H — vNextの構成と安全境界</text>
+  <text x="40" y="82" font-size="15">Source SHA 8d1836ef6cc973cd98597e2f090329e4e6351535 · Cloud Build成功 · 100% rollout済み · acceptance: PASS</text>
+
+  <rect x="40" y="115" width="400" height="710" rx="14" fill="#fff" stroke="#8ca99a" stroke-width="2"/>
+  <text x="64" y="151" font-size="21" font-weight="bold">利用者端末 / PWA</text>
+  <text x="64" y="177" font-size="14">Home / Plan / More · 日本語 / English / 繁體中文</text>
+
+  <rect x="62" y="198" width="356" height="145" rx="9" fill="#e8f0e6"/>
+  <text x="80" y="228" font-size="17" font-weight="bold">Home · NOW + 参照地図</text>
+  <text x="80" y="255" font-size="13">Catalogで地図パックを選択</text>
+  <text x="80" y="279" font-size="13">中央東京の参照用道路データのみ</text>
+  <text x="80" y="303" font-size="13">プロフィール座標は参考ピン</text>
+  <text x="80" y="327" font-size="13">Osaka: パックなし・地図非対応</text>
+
+  <rect x="62" y="358" width="356" height="132" rx="9" fill="#f4ead6"/>
+  <text x="80" y="388" font-size="17" font-weight="bold">位置 / Last Known Location</text>
+  <text x="80" y="416" font-size="13">明示的な取得操作 + 保存同意</text>
+  <text x="80" y="440" font-size="13">端末内に最新の1点だけを保存</text>
+  <text x="80" y="464" font-size="13">履歴・サーバー送信なし · LIVEとは別</text>
+
+  <rect x="62" y="505" width="356" height="151" rx="9" fill="#e8edf5"/>
+  <text x="80" y="535" font-size="17" font-weight="bold">安全確認 / Power modes</text>
+  <text x="80" y="562" font-size="13">同意ベースのアプリ内自己申告</text>
+  <text x="80" y="586" font-size="13">無応答 = 状態不明 · 救助連絡なし</text>
+  <text x="80" y="610" font-size="12">AUTO / CONSERVE / EMERGENCY / SURVIVAL</text>
+  <text x="80" y="634" font-size="13">OS電池予約・背景動作は保証しない</text>
+
+  <rect x="62" y="671" width="356" height="131" rx="9" fill="#fff" stroke="#a6afa7"/>
+  <text x="80" y="701" font-size="17" font-weight="bold">Offline Continuity</text>
+  <text x="80" y="729" font-size="13">保存済みPlan / Evidence / 地図</text>
+  <text x="80" y="753" font-size="13">通信断中に新しい公式情報を作らない</text>
+  <text x="80" y="777" font-size="13">再接続 → 再取得 → 検証 → 照合</text>
+
+  <rect x="480" y="115" width="640" height="710" rx="14" fill="#fff" stroke="#5a7fbd" stroke-width="2" stroke-dasharray="8 5"/>
+  <text x="504" y="151" font-size="21" font-weight="bold">Cloud Run アプリ構成</text>
+  <text x="504" y="177" font-size="14">Next.js / FastAPI · vNext production acceptance: PASS</text>
+
+  <rect x="505" y="198" width="590" height="62" rx="8" fill="#e8edf5"/>
+  <text x="525" y="225" font-size="16" font-weight="bold">Web UI → private FastAPI</text>
+  <text x="525" y="248" font-size="13">プロフィール設定 · scenario選択 · snapshot projection</text>
+
+  <rect x="505" y="278" width="590" height="94" rx="8" fill="#e8f0e6"/>
+  <text x="525" y="307" font-size="16" font-weight="bold">Server-owned scenario / area catalog</text>
+  <text x="525" y="334" font-size="13">TokyoとOsakaの合成scenario · 明示的なcanonical area ID / ancestry</text>
+  <text x="525" y="358" font-size="13">プロフィール・座標の変更はsource authorityを与えない</text>
+
+  <rect x="505" y="390" width="590" height="102" rx="8" fill="#f4ead6"/>
+  <text x="525" y="420" font-size="16" font-weight="bold">Typed Evidence / disaster assessment</text>
+  <text x="525" y="447" font-size="13">area scope · source registry · freshness · conflict</text>
+  <text x="525" y="473" font-size="13">severityは対象地域・event type・有効性を照合して投影</text>
+
+  <rect x="505" y="510" width="590" height="70" rx="8" fill="#e8edf5" stroke="#5a7fbd"/>
+  <text x="525" y="539" font-size="16" font-weight="bold">Gemini / ADK · bounded intent proposal</text>
+  <text x="525" y="563" font-size="11">Canonical CLI PASS: 11 events / 4 plans / 12 actions / 4 candidate-applied / fallback 0</text>
+  <text x="525" y="576" font-size="10">Canonical GUI PASS · offline/reconnect/LKL/mobile checks</text>
+
+  <rect x="505" y="598" width="590" height="102" rx="8" fill="#d8e7d5" stroke="#588064" stroke-width="2"/>
+  <text x="525" y="629" font-size="18" font-weight="bold">Deterministic Safety Core</text>
+  <text x="525" y="656" font-size="13">eligibility · dependency · TTL · conflict · plan invalidation</text>
+  <text x="525" y="672" font-size="11">ACTIVE + levelなし → L1 / MONITOR（危険解除の確認ではない）</text>
+  <text x="525" y="690" font-size="10">severityだけで避難・移動を指示しない · route safetyを推定しない</text>
+
+  <rect x="505" y="718" width="590" height="84" rx="8" fill="#fff" stroke="#8ca99a"/>
+  <text x="525" y="748" font-size="16" font-weight="bold">Immutable Plan history / in-app inbox / trace</text>
+  <text x="525" y="775" font-size="13">NOW / NEXT / AVOID · offline degrade · reconnect gate</text>
+
+  <rect x="1160" y="115" width="400" height="385" rx="14" fill="#fff" stroke="#a6afa7" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="1184" y="151" font-size="20" font-weight="bold">現在の対象外・未提供</text>
+  <text x="1184" y="186" font-size="14">Live JMA / hazard feed</text>
+  <text x="1184" y="216" font-size="14">避難所・safe-routeの判定</text>
+  <text x="1184" y="246" font-size="14">Web Push / Rescue Beacon</text>
+  <text x="1184" y="276" font-size="14">Native background rescue / GPS</text>
+  <text x="1184" y="306" font-size="14">OS電池予約・実機動作保証</text>
+  <text x="1184" y="346" font-size="13">地図は参照用道路データです。</text>
+  <text x="1184" y="370" font-size="13">危険度overlayや安全経路を示しません。</text>
+  <text x="1184" y="417" font-size="13">合成scenarioはlive情報ではありません。</text>
+  <text x="1184" y="441" font-size="13">Osakaに対応地図はありません。</text>
+
+  <rect x="1160" y="520" width="400" height="305" rx="14" fill="#f4ead6" stroke="#8c7653" stroke-width="2"/>
+  <text x="1184" y="557" font-size="20" font-weight="bold">vNext release gate</text>
+  <text x="1184" y="591" font-size="12">Source: 8d1836ef6cc973cd98597e2f090329e4e6351535</text>
+  <text x="1184" y="614" font-size="11">Image digest:</text>
+  <text x="1184" y="633" font-size="10">sha256:9d7e22b877aff64502903cfe90b233c8</text>
+  <text x="1184" y="651" font-size="10">365a8df065e8e3b75fee5bcda6eb3005</text>
+  <text x="1184" y="677" font-size="10">Cloud Build: 623824c3-128e-403e-8d12-cc883e699182 · SUCCESS</text>
+  <text x="1184" y="705" font-size="12">Production: h72-vnext-8d1836e · 100% traffic</text>
+  <text x="1184" y="733" font-size="14" font-weight="bold">100% traffic切替: PASS</text>
+  <text x="1184" y="761" font-size="14" font-weight="bold">Acceptance: PASS</text>
+  <text x="1184" y="787" font-size="11">Canonical GUI PASS · offline/reconnect/LKL/mobile</text>
+  <text x="1184" y="807" font-size="11">旧revisionの10/10は履歴のみ。</text>
+
+  <g stroke="#527369" stroke-width="2" fill="none" marker-end="url(#arrow)">
+    <path d="M440 230H480"/>
+    <path d="M480 755H440"/>
+    <path d="M800 260V278"/>
+    <path d="M800 372V390"/>
+    <path d="M800 492V510"/>
+    <path d="M800 580V598"/>
+    <path d="M800 700V718"/>
+  </g>
+  <path d="M1120 548H1146" stroke="#5a7fbd" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrowBlue)"/>
+
+  <text x="40" y="872" font-size="17" font-weight="bold">処理の流れ</text>
+  <text x="40" y="901" font-size="15">合成入力 → 型付き・地域限定Evidence → 決定論的評価 → immutable Plan → offline / reconnect再評価</text>
+  <text x="40" y="932" font-size="13">live災害情報・safe route・救助連絡を提供するシステムとは主張しません。</text>
 </g>
-<text x="45" y="743" font-size="17" font-weight="bold">Observed local loop</text>
-<text x="45" y="775" font-size="15">Synthetic event → evidence → situation → evaluate → invalidate → new plan → offline degradation → reconcile</text>
-<text x="45" y="811" font-size="13">Solid blocks: shipped boundaries. Dashed blocks: external services or future work; status is labeled. Synthetic replay never proves real route safety.</text>
-</g></svg>
+</svg>

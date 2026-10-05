@@ -1,85 +1,134 @@
-# 72H — Final 3-minute demo script
+# 72H — 最終3分デモ台本（vNext）
 
-Public demo: https://h72-602701455122.asia-northeast1.run.app
+公開サービスURL: https://h72-602701455122.asia-northeast1.run.app
 
-This recording must keep the simulation banner visible and must never describe the replay as a live earthquake alert. Record with the production URL, not localhost.
+**録画ゲート: vNext revision `h72-vnext-8d1836e` は100% trafficに切替済みで、Cloud Run上のcanonical replay、clean-browser、offline/reconnect、LKL、mobile checksを含むvNext production acceptanceはPASSです。公開URLで最終デモを収録できます。** 以前のrevisionのproduction golden path 10/10は、このvNextデモの証拠ではありません。
 
-## Japanese narration script
+この台本は、確認済みrevisionで後日録画するための草稿です。全編で合成シナリオ表示を維持し、実際の地震・JMA更新として説明しません。
 
-### 0:00–0:20 — Problem
+## 日本語ナレーションと画面
 
-画面: トップページ、`SHIBUYA → ASAKUSA`、地震シミュレーション表示。
+### 0:00–0:15 — 課題とHome
 
-ナレーション:
-
-「72Hは、訪日外国人や在住外国人が、災害情報を受け取った“その後”の行動を判断するためのAIエージェントです。警報を見るだけでは、今どこに留まるべきか、移動してよいのか、情報が変わったらどうすべきかまでは分かりません。このデモでは、東京で地震が発生した合成シナリオを使います。」
-
-### 0:20–0:50 — Start / first plan
-
-操作: `Start demo` → 必要なら Pause → `Next update`。NOW / NEXT / AVOID と Gemini / ADK 表示を見せる。
+画面: Home。合成シナリオ表示、NOWカード、プロフィール参考地点、地図の範囲表示。
 
 ナレーション:
 
-「72Hでは、情報をそのままAIに渡して自由に回答させません。出典、信頼状態、鮮度、依存関係をまず状態として管理します。GeminiとGoogle ADKは、許可された候補の中から行動意図を選びます。最終的に公開できる行動は、決定論的なSafety Coreが検証します。」
+「災害の情報を受け取っても、その後に何を確認し、どの計画を見直すべきかはすぐには分かりません。72Hは、出典と情報の鮮度、対象地域を整理し、確認できる次の行動を示すアプリです。この画面は合成データによるデモです。」
 
-### 0:50–1:20 — Plan invalidation / re-plan
+### 0:15–0:35 — 参照地図と位置
 
-操作: 交通更新まで進める → Plan history を開く。
-
-ナレーション:
-
-「交通条件が変わると、既存計画の依存条件を再評価します。古い計画を書き換えるのではなく、失効理由を残したまま新しいPlan versionを追加します。重要なのは、経路が存在することと、災害時に安全であることを同一視しない点です。」
-
-### 1:20–1:40 — Unverified social information
-
-操作: SNS/unverified update → Sources。
+画面: 中央東京の参照用オフライン道路地図と、プロフィール座標由来の参考ピンを見せる。位置設定の同意・最新1点の説明を示す。
 
 ナレーション:
 
-「未確認のSNS情報も観測結果として表示できますが、信頼できる行動根拠には昇格しません。No Source、No High-Risk Actionというルールで、出典のない高リスク行動を防ぎます。」
+「Homeの地図はカタログから利用可能なパックを選びます。現在のパックは中央東京の参照用道路地図で、安全な経路や危険区域を示すものではありません。プロフィール位置は参考地点です。端末位置の保存は別途同意が必要で、保存するのは最新の1点だけです。」
 
-### 1:40–2:10 — Offline continuity
+端末位置の保存が録画環境で使えない場合は位置取得を試さず、設定項目とプロフィール参考地点だけを示します。実GPSの取得や精度を主張しません。
 
-操作: replay の network-loss / local-clock event を進める。可能なら DevTools などで実ネットワークを一度 offline にして reload し、保存済み Plan と emergency pack が残る様子を短く見せる。
+### 0:35–0:55 — Demoと地域スコープ
 
-ナレーション:
+操作: More → Demo / Judge Modeを開き、scenario selectorで「Tokyo Earthquake Replay」を明示選択してから開始する（Osakaが先頭に表示される場合がある）。安全確認を見せる場合は、重大イベントの前に同意を設定する。
 
-「通信が切れても、72Hは新しいリアルタイム情報を捏造しません。最後に検証された計画、保存済み根拠、防災情報を表示し、時間経過で古くなった情報は明示的にstaleへ降格します。」
-
-### 2:10–2:35 — Reconnect / verification gate
-
-操作: network restored → official update → transport update。
+表示上の注意: 最終snapshotのseverityはL1 / MONITORです。これは同じ地域の最新assessmentがACTIVEでseverity値を含まないためで、確定的な危険解除やL4からの安全なde-escalationを示すものではありません。
 
 ナレーション:
 
-「再接続しただけでは、計画を最新とは扱いません。必要な公式情報と交通情報が再取得され、依存条件が確認されて初めてONLINE_VERIFIEDへ戻ります。」
+「area IDとarea catalogはサーバー側で検証され、表示名や座標だけでは出典の権限は変わりません。災害評価は対象areaとevent typeを持つ型付きデータです。Osakaも同じデータ経路の構成検証に使いますが、現地の地図対応を意味しません。」
 
-### 2:35–3:00 — Trace / deployed proof
+### 0:55–1:20 — Gemini / ADK候補とSafety Core
 
-操作: Agent trace、Sources、Cloud Run URLが見える状態。
+操作: 合成公式更新を進め、Agent Traceで`GEMINI_CANDIDATE_APPLIED`を確認する。対応するNOW actionと根拠を見せる。
 
 ナレーション:
 
-「この公開版はGoogle Cloud Run上で動作し、Vertex AIのGeminiとGoogle ADKを実際に使用しています。公開traceでは、どの根拠からどの計画が生成・失効したかを確認できますが、モデルの非公開な思考過程は表示しません。72Hは、警報を“次の行動”へ変えることを目指しています。」
+「GeminiとGoogle ADKは許可された候補から行動意図を提案します。Safety Coreは根拠と依存条件を決定論的に検証してからPlanへ反映します。公開traceでは候補が適用された事実を確認できます。」
 
-## Recording checklist
+### 1:20–1:40 — Plan invalidation / re-plan
 
-- Use the public Cloud Run URL.
-- Keep the synthetic simulation banner visible.
-- Show `Gemini / ADK` on a successful production run; do not submit a fallback run.
-- Show at least one plan invalidation and a later plan version.
-- Show unverified evidence excluded from trusted action evidence.
-- Show Sources and Agent Trace.
-- If demonstrating actual browser offline mode, clearly distinguish it from replayed network events.
-- Keep total duration around 3 minutes.
-- Do not expose Google credentials, Ekispert key, Cloud Console secrets, or private logs.
-- Upload the self-made recording to YouTube and register the URL in the Hackathon dashboard.
+操作: transport updateまで進め、Plan画面で旧versionの失効、新しいversionと根拠を見せる。
 
-## Verified production facts for narration
+ナレーション:
 
-- Public revision: `h72-00005-vql`
-- Full replay result: four plans / twelve actions
-- Planner mode: `GEMINI_ADK`
-- Production golden path: 10/10 paced runs passed with no model fallback
-- Ekispert MCP production connectivity: verified by Cloud Run Job
-- Safety decision remains deterministic application logic
+「交通情報が変わると、計画の依存条件を再評価します。古いPlanを消したり上書きしたりせず、失効理由を残して新しいversionを追加します。交通状態だけから経路の安全性は判断しません。」
+
+### 1:40–1:55 — 未確認情報
+
+操作: unverified reportまで進め、MoreのSourcesまたはDemo / Judge Modeの根拠表示を開く。
+
+ナレーション:
+
+「未確認情報は確認対象として表示できますが、検証済みの行動根拠へ昇格しません。出典が不足しているとき、Safety Coreは高リスク行動を許可しません。」
+
+### 1:55–2:15 — Offline Continuity / 再接続
+
+操作: network lossを進め、保存済みPlanと情報の鮮度を確認。その後、network restoredと再取得した根拠を進める。
+
+ナレーション:
+
+「通信が切れた間は保存済みのPlanと根拠を使い、新しい公式情報を作りません。再接続だけでは最新扱いへ戻しません。必要な根拠を再取得し、照合できてから状態を更新します。」
+
+### 2:15–2:30 — 同意ベースの安全確認
+
+操作: 対象地域の重大評価がある状態で安全確認カードを見せ、自己申告の選択肢を短く表示する。
+
+ナレーション:
+
+「同意済みの場合に限り、アプリ内で安全状態を確認します。応答がない場合は危険と決めつけず、状態不明として残します。」
+
+### 2:30–2:40 — Power modes
+
+操作: Power modeのAUTO、CONSERVE、EMERGENCY POWER、SURVIVALを示し、SURVIVALの最小画面を短く確認してHomeへ戻る。
+
+ナレーション:
+
+「Power modesはアプリ内の節電ポリシーです。状態不明時も保守的に動き、SURVIVALでは重要な表示を優先します。OSレベルで電池を予約したり、アプリ終了後の処理を保証したりする機能ではありません。」
+
+### 2:40–3:00 — 公開実行とAgent Trace
+
+画面: 確認済みの公開Cloud Run URL、Agent Traceの`GEMINI_CANDIDATE_APPLIED`、plan invalidationと再生成を見せる。記録時点での公開revisionが確認済みであることをチェックする。
+
+ナレーション:
+
+「この公開版はGoogle Cloud Run上で動き、GeminiとGoogle ADKが制約された行動意図を提案します。公開traceでは提案の適用と、状況変化後のPlan失効・再生成を確認できます。最終判断は決定論的なSafety Coreが行います。」
+
+## 録画チェックリスト
+
+- [x] 主線がclean-browser verificationとoverall production acceptanceを確認済み（PASS）
+- [ ] scenario selectorで「Tokyo Earthquake Replay」を選択してから開始する（Osakaは地図なしの構成検証用）
+- [ ] 公開URLが確認済みのvNext revisionを返すことを確認する
+- [ ] 合成シナリオ表示を維持する
+- [ ] Home / Plan / Moreの構成と中央東京参照地図の範囲を示す
+- [ ] Agent Traceで`GEMINI_CANDIDATE_APPLIED`を確認する
+- [ ] TokyoのPlan version変更と根拠を示す
+- [ ] 少なくとも一度Plan invalidationと再生成を示す
+- [ ] 未確認SNS情報が検証済みaction evidenceから除外されることを示す
+- [ ] Offline Continuityと再接続後の検証ゲートを示す
+- [ ] Osakaの地図非対応表示を、地域対応の証拠として説明しない
+- [ ] 位置取得が使えない環境では操作を試さず、参考地点と同意境界だけを示す
+- [ ] 安全確認への同意と、無応答が不明であることを示す
+- [ ] 通信断中の保存情報と再接続検証を示す
+- [ ] Power modesをOS機能や実機保証として説明しない
+- [ ] Live JMA、hazard/shelter情報、safe route、Web Push、Rescue Beacon、native background serviceを完成機能として説明しない
+- [ ] YouTube URLをHackathon dashboardに登録する
+- [ ] 参加資格と最終提出状態をdashboardで確認する
+- [ ] Google credentials、transport keys、Cloud Console secrets、private logsを映さない
+
+## 現在の記録項目
+
+- Source SHA: `8d1836ef6cc973cd98597e2f090329e4e6351535`（merge / push 済み）
+- Image digest: `sha256:9d7e22b877aff64502903cfe90b233c8365a8df065e8e3b75fee5bcda6eb3005`
+- Cloud Build: `623824c3-128e-403e-8d12-cc883e699182`（**SUCCESS**）
+- vNext production revision: `h72-vnext-8d1836e`（100% traffic）
+- Canonical CLI: **PASS** — 11 events / 4 plans / 12 actions / 4 candidate-applied / fallback 0 / `ONLINE_VERIFIED`（build `kwavxW-VSKN8tUxQJoWo4`）
+- Focused frontend boundary tests: **PASS** — 8 tests
+- Preview browser GUI checks: **PASS** — map/profile, consented LKL, offline/SURVIVAL, mobile 390×844, console errors 0
+- 100% traffic切替: **PASS**
+- Canonical clean-browser / UI acceptance: **PASS** — Tokyo 11 events / 4 plans / final `L1 / MONITOR` / `ONLINE_VERIFIED`; 4 `GEMINI_CANDIDATE_APPLIED`, fallback 0
+- Physical offline / cached reload / reconnect: **PASS** — cached Plan v2 + SURVIVAL → physical online `RECONNECTING` → fresh official + transport at step 10 → `ONLINE_VERIFIED`
+- Mobile 390×844 and consented mock LKL opt-in / save / reload LAST with same capture time / forget: **PASS**
+- vNext production acceptance: **PASS**
+- Expected offline RSC `ERR_INTERNET_DISCONNECTED` once: not a runtime defect
+- Real GPS / device battery behavior: **NOT RUN**
+- YouTube URL: **PENDING**
+- Dashboard registration / eligibility / final submission: **PENDING**

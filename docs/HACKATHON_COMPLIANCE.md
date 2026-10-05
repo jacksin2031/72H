@@ -1,5 +1,22 @@
 # 72H Hackathon Compliance Checklist
 
+Current vNext release and submission-freeze decision:
+[VNEXT_PRODUCTION_RELEASE.md](VNEXT_PRODUCTION_RELEASE.md). The older revision,
+test counts and 10/10 replay below are preserved as historical MVP evidence.
+Updated Japanese copy, diagram and recording instructions are in
+[SUBMISSION_PACKAGE.md](SUBMISSION_PACKAGE.md) and [DEMO_SCRIPT.md](DEMO_SCRIPT.md).
+
+**Current vNext gate: PASS.** Runtime `8d1836e`, Cloud Build
+`623824c3-128e-403e-8d12-cc883e699182`, revision `h72-vnext-8d1836e` at 100% traffic.
+Canonical API and clean desktop/mobile GUI each completed 11-event replay with
+4 plans, 4 real Gemini/ADK candidates and no fallback. Same-session physical
+offline/cached reload/reconnect and mock LKL persistence passed. CI ran 69 backend
+and 73 frontend tests (3 ignored-fixture skips); fresh deployed replay fixtures
+passed all 77 frontend tests locally. Freeze is deferred while external submission
+steps below remain pending. Physical-device GPS/battery acceptance is NOT RUN.
+
+## Historical MVP technical gate
+
 **Event:** 第5回 Agentic AI Hackathon with Google Cloud
 **Project:** 72H
 **Google Cloud project:** `h-japan`
@@ -99,6 +116,9 @@ The following are intentionally **not** claimed as shipped:
 - Firestore durable server session persistence
 - Cloud Logging export as the product trace store
 - A fully decomposed four-agent production orchestration topology
+- Live municipal shelter/JARTIC ingestion, hazard/shelter/route overlays
+- Web Push/FCM, Rescue Beacon or native background life-protection service
+- Real-device GPS/battery endurance acceptance or guaranteed background alarms
 
 The judged MVP uses a synthetic earthquake scenario to exercise the real state, planning, safety, invalidation, offline and reconciliation paths. Synthetic input is always labeled and never presented as live disaster data.
 

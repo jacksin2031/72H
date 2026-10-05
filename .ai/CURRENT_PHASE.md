@@ -1,5 +1,22 @@
 # 72H — Current Development Phase
 
+## Current authorized release — vNext (2026-10-05 JST)
+
+The user explicitly authorized final RC review, blocker-only fixes, merge to
+`main`, push, Cloud Run deployment, production smoke/browser acceptance, production
+documentation/submission assets, and a submission-freeze decision. These release
+actions no longer require the earlier local-only approval gate. Live official
+feeds, Web Push, rescue dispatch and native/device endurance work remain outside
+this release scope. Current evidence and exact runtime identity are maintained
+in `docs/VNEXT_PRODUCTION_RELEASE.md`; local RC records below are historical.
+
+This authorized release is now deployed and accepted: runtime `8d1836e`,
+Cloud Run revision `h72-vnext-8d1836e`, 100% traffic, actual Gemini/ADK and clean
+canonical browser/offline/mobile/mock-location gates PASS. Submission freeze is
+deferred pending YouTube/dashboard/eligibility/final submission. Start new feature
+work on a separate `codex/` branch; do not silently expand the accepted release
+into live feeds, Web Push, Rescue Beacon or native/device endurance work.
+
 ## Current authorized work — vNext P0 (2026-10-05 JST)
 
 The user explicitly authorized all P0 implementation and testing. Work is isolated

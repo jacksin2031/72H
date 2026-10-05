@@ -1,6 +1,7 @@
 # 72H vNext Product Plan
 
-> Status: P0 LOCAL IMPLEMENTATION AND VALIDATION COMPLETE on 2026-10-05 JST; not deployed.
+> Status: P0 LOCAL IMPLEMENTATION AND VALIDATION COMPLETE on 2026-10-05 JST.
+> Subsequent production release status and evidence: [VNEXT_PRODUCTION_RELEASE.md](VNEXT_PRODUCTION_RELEASE.md).
 > Local stable baseline: `772c264`.
 > P0 module contracts: [VNEXT_P0_CONTRACTS.md](VNEXT_P0_CONTRACTS.md). The user subsequently approved local commit and Release Candidate preparation; see [VNEXT_RELEASE_CANDIDATE.md](VNEXT_RELEASE_CANDIDATE.md). Merge/push, deployment, billing and paid services remain separate gates.
 > Results and remaining production boundaries: [VNEXT_VALIDATION.md](VNEXT_VALIDATION.md). The seven P0 modules in section 18 are implemented; section 14 lists candidate live sources, which are not activated by this local implementation.

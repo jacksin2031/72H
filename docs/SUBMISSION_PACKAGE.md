@@ -1,110 +1,77 @@
-# 72H — Hackathon submission package
+# 72H — ハッカソン提出パッケージ（vNext）
 
-Official event: 第5回 Agentic AI Hackathon with Google Cloud  
-Deadline: 2026-10-15 23:59 JST  
-Public judging URL: https://h72-602701455122.asia-northeast1.run.app  
-GitHub: https://github.com/jacksin2031/72H
+- 公式イベント: 第5回 Agentic AI Hackathon with Google Cloud
+- 締切: 2026-10-15 23:59 JST
+- サービスURL: https://h72-602701455122.asia-northeast1.run.app
+- GitHub: https://github.com/jacksin2031/72H
 
-## プロジェクト名
+## vNext 公開状況
+
+- Source SHA: `8d1836ef6cc973cd98597e2f090329e4e6351535`（merge / push 済み）
+- Cloud Build: `623824c3-128e-403e-8d12-cc883e699182`（**SUCCESS**）
+- Image digest: `sha256:9d7e22b877aff64502903cfe90b233c8365a8df065e8e3b75fee5bcda6eb3005`
+- vNext production revision: `h72-vnext-8d1836e`（100% traffic）
+- Canonical CLI: **PASS** — 11 events / 4 plans / 12 actions / 4 candidate-applied / fallback 0 / `ONLINE_VERIFIED`（build `kwavxW-VSKN8tUxQJoWo4`）
+- Focused frontend boundary tests: **PASS** — 8 tests
+- Canonical clean-browser / UI acceptance: **PASS** — Tokyo 11 events / 4 plans / final `L1 / MONITOR` / `ONLINE_VERIFIED`; 4 `GEMINI_CANDIDATE_APPLIED`, fallback 0
+- Physical offline / cached reload / reconnect: **PASS** — cached Plan v2 + SURVIVAL → physical online `RECONNECTING` → fresh official + transport at step 10 → `ONLINE_VERIFIED`
+- Mobile 390×844 and consented mock LKL opt-in / save / reload LAST with same capture time / forget: **PASS**
+- サービスの100% traffic切替: **PASS**
+- vNext revision のproduction acceptance: **PASS**
+- YouTube URL、Hackathon dashboard 登録、参加資格確認、final submission: **PENDING**
+
+Cloud Buildは成功し、vNext revisionを100% trafficへ切り替えました。Canonical CLI run、focused frontend boundary tests、clean-browser replay、physical offline/reconnect、consented mock LKL、mobile checksがPASSし、vNext production acceptanceを確認しました。canonical replayの最終Home表示は`L1 / MONITOR`です。これは最新の同地域assessmentが`ACTIVE`でseverity値を含まない結果であり、危険が確定的に解除されたことを意味しません。以前のrevisionで記録されたproduction golden path 10/10は履歴情報で、このvNext revisionの受け入れ結果としては扱いません。
+
+## プロジェクト名とキャッチコピー
 
 **72H**
-
-## キャッチコピー
-
-**警報から、行動へ。**
+**警報から、次の行動へ。**
 
 ## プロジェクト説明
 
-72Hは、日本を訪れる旅行者や在住外国人が、地震などの災害情報を受け取った後に「今何をすべきか」「次に何を確認すべきか」「避けるべき行動は何か」を判断するための災害時行動支援AIエージェントです。
+72Hは、災害情報を受け取った後に「今できること」「次に確認すること」「避ける行動」を整理する災害時行動支援アプリです。出典、鮮度、対象地域、情報の矛盾を決定論的に評価し、現在の計画に必要な根拠が変わったときは、過去の計画を残したまま新しいversionを作成します。
 
-災害時には、警報や交通情報を受け取るだけでは十分ではありません。利用者は、情報の出典が信頼できるか、まだ有効か、移動経路が現在も使えるか、状況変化によって以前の判断が無効になっていないかを短時間で判断する必要があります。特に日本の防災情報や交通事情に慣れていない外国人旅行者にとって、この判断負荷は大きな課題です。
+通常画面は **Home / Plan / More** です。Homeでは利用可能なNOW行動を先に示し、利用者プロフィールの参考地点と地図カタログを使って地図を表示します。現在インストール済みの地図パックは中央東京の参照用道路地図だけです。ShibuyaやAsakusaのプロフィール座標はデモ設定上の参考地点で、端末位置や安全な経路を意味しません。
 
-72Hは、情報の出典・信頼状態・鮮度・依存関係を管理し、NOW / NEXT / AVOIDの行動計画として整理します。状況が変わると既存計画の依存条件を再評価し、古い計画を上書きせず失効理由を残したまま新しいPlan versionを生成します。
+Last Known Locationは、利用者が明示的に位置取得を開始し、保存にも同意した場合に、最新の1点だけを端末内へ保持します。位置履歴やサーバー送信はありません。保存位置は再表示しても最新位置へ更新されず、LIVE位置とLast Known Locationを区別します。
 
-GeminiとGoogle Agent Development Kit（ADK）は、サーバー側で定義された安全な候補の中から行動意図と根拠を選択します。最終的な行動公開可否、リスク、依存関係、失効判定は決定論的なSafety Coreが担当します。これにより、LLMの提案能力を利用しながら、重要な安全判断をモデルの自由生成だけに任せない設計にしています。
+安全確認は、同意済みの利用者に対するアプリ内の自己申告確認です。対象地域に関係する鮮度のある重大評価を条件とし、応答がない場合は「状態不明」として扱います。確認結果から救助機関へ連絡したり、救助Beaconを起動したりしません。
 
-また、未確認のSNS情報は観測できますが、高リスク行動の根拠には昇格しません。通信が切れた場合は、最後に検証された計画、保存済み根拠、静的な防災情報を表示し、新しいリアルタイム情報を推測で作りません。再接続後も、必要な公式・交通情報が再取得されるまで計画を最新とは扱いません。
+Power modesはアプリ内の更新頻度・表示を保守的に切り替える設定です。AUTO、CONSERVE、EMERGENCY POWER、SURVIVALを備え、電池情報が不明な場合も安全側へ扱います。OSの電池予約、実機での電池測定の保証、バックグラウンド動作は主張しません。
 
-今回の提出版では、東京・渋谷にいる旅行者が浅草の宿泊先へ戻る予定という合成地震シナリオを使用し、実際のEvidence → Situation → Plan → Safety → Invalidation → Re-plan → Offline → Reconciliationの処理経路を再現可能な形で確認できます。合成データは常にシミュレーションとして明示し、実際の災害情報として表示しません。
+TokyoとOsakaの登録済みシナリオは合成データです。Osakaは汎用プロフィール・area catalog・typed disaster assessmentが同一のSafety Coreを通ることを確認するための構成検証で、対応地図パックはありません。Osakaの地図・現地情報対応を示すものではありません。
 
-## 主な特徴
+## 実装範囲と安全境界
 
-- 出典・信頼状態・鮮度を持つEvidence管理
-- NOW / NEXT / AVOID形式の行動計画
-- Plan versioningと依存条件による自動失効
-- 状況変化後の自動再計画
-- 未確認情報を高リスク行動の根拠から除外
-- Gemini + Google ADKによるbounded candidate planning
-- 決定論的Safety Coreによる最終検証
-- 公開Agent Traceによる可観測性
-- PWA / IndexedDB / Service Workerを利用したOffline Continuity
-- 日本語・英語・繁体字中国語UI
-- 駅すぱあと API MCP Serverのproduction connectivityをSecret Manager経由で検証
+- **Evidence / Safety Core**: source registry、明示的なcanonical area IDと祖先関係、typed disaster assessment、freshness、conflict、plan dependencyを使った決定論的評価。
+- **Plan**: immutable plan history、NOW / NEXT / AVOID、根拠失効後の再評価とversion追加。
+- **Offline Continuity**: アプリ内に保存済みの計画・根拠・静的参照地図を利用し、通信断中に新しい公式情報を作りません。再接続だけでは最新と扱わず、必要な根拠を再検証します。
+- **通知**: アプリ内通知Inbox。Web Pushは提供しません。
+- **安全確認**: 端末内の同意ベース自己申告確認。無応答は不明であり、救助連絡・Rescue Beaconはありません。
+- **地図**: catalog選択式の中央東京参照用道路データのみ。hazard overlay、避難所判定、safe-route判定はありません。
 
-## Google Cloud / 技術構成
+Gemini / Google ADKは候補となるaction intentの選択に使い、公開可能な行動とplan dependencyはSafety Coreが検証する構成です。Canonical CLIとclean-browser replayがPASSし、vNext production acceptanceは **PASS** です。最終状態の`L1 / MONITOR`は、最新assessmentの`ACTIVE`にseverity情報がないことを示し、確定的な危険解除を意味しません。
 
-- Google Cloud Run
-- Vertex AI / Gemini
-- Google Agent Development Kit（ADK）
-- Google Secret Manager
-- Google Cloud Build
-- Artifact Registry
-- Next.js / TypeScript
-- FastAPI / Python
-- PWA / IndexedDB / Service Worker
-- 駅すぱあと API MCP Server
+次の機能は今回の完成機能として扱いません: JMA live feed、live hazard / shelter情報、safe-route判定、Web Push、Rescue Beacon、native background service、OS電池予約。
 
-公開Cloud Runでは、Vertex AI / Gemini + ADKの実リクエストが成功し、完全なリプレイで4つのPlan version・12 actionsを生成しました。paced production golden pathは10/10で成功し、モデルfallbackは発生しませんでした。
+## デモの確認方法
 
-## 動作確認の方法
+vNext production acceptanceは **PASS** です。[DEMO_SCRIPT.md](DEMO_SCRIPT.md)の順序で公開デモを収録できます。scenario selectorで「Tokyo Earthquake Replay」を明示選択してから開始してください。合成シナリオの表示を保ち、live災害情報と説明しないでください。
 
-1. `https://h72-602701455122.asia-northeast1.run.app` をブラウザで開きます。
-2. 「地震シミュレーション」であることを確認します。
-3. 「デモを開始」を押します。
-4. 必要に応じてPauseし、「次の更新」を使ってイベントを1件ずつ進めます。
-5. NOW / NEXT / AVOIDの変化とPlan versionを確認します。
-6. 「計画の履歴」で旧Planの失効と新Planを確認します。
-7. 「情報源」でofficial / transport / unverified evidenceの扱いを確認します。
-8. 「Agentの記録」で`GEMINI_CANDIDATE_APPLIED`やplan invalidationの公開traceを確認します。
+## 提出アセットと最終チェック
 
-認証は不要です。シミュレーション用サンプルデータはアプリ内に含まれています。
-
-## 安全性に関する設計原則
-
-- No Source → No High-Risk Action
-- 経路が利用可能であることと、災害時に安全であることを同一視しない
-- 未確認情報は高リスク行動を直接駆動しない
-- 古い情報は明示的にstaleへ降格する
-- LLM推論を公式情報として表示しない
-- オフライン時に新しいリアルタイム情報を捏造しない
-
-## 今回のMVPで意図的に含めていないもの
-
-- JMAのlive feed ingestion
-- Safety Tipsのlive feed ingestion
-- 駅すぱあと経路結果の災害安全Evidenceへの自動昇格
-- Firestoreによるdurable session persistence
-- Cloud Loggingを製品trace storeとして利用する機能
-
-これらは未実装であり、提出時にも実装済みとは主張しません。
-
-## 提出アセット
-
-- Deployed URL: `https://h72-602701455122.asia-northeast1.run.app`
-- GitHub: `https://github.com/jacksin2031/72H`
-- Architecture SVG: `docs/architecture-mvp.svg`
-- Architecture upload PNG: `docs/architecture-mvp.png`
-- Demo narration / shot list: `docs/DEMO_SCRIPT.md`
+- Architecture SVG: [docs/architecture-mvp.svg](architecture-mvp.svg)
+- Architecture PNG: [docs/architecture-mvp.png](architecture-mvp.png)
+- Demo narration / shot list: [docs/DEMO_SCRIPT.md](DEMO_SCRIPT.md)
 - YouTube URL: **PENDING**
 
-## 最終提出前チェック
-
-- [ ] Hackathon dashboardでGitHub Appを`jacksin2031/72H`に連携
+- [x] vNext公開revisionとacceptanceを確認して記入
+- [ ] Hackathon dashboardにGitHub Appを`jacksin2031/72H`へ連携
 - [ ] architecture-mvp.pngをアップロード
-- [ ] 上記プロジェクト説明を最終フォームに合わせて貼り付け
+- [ ] プロジェクト説明を最終フォームへ登録
 - [ ] 約3分の自作デモ動画をYouTubeへ公開しURLを登録
 - [ ] 参加者情報・資格条件をdashboard上で確認
-- [ ] 提出前にpublic URLを再確認
-- [ ] 提出ボタンを押して提出完了を確認
+- [x] 公開URLがvNext revisionを返すことを確認
+- [ ] 提出ボタンを押し、submission完了を確認
 - [ ] 提出時の`main` SHAを記録
 - [ ] 2026-12-01までdefault branchを変更せず、以後の開発は別branchで実施

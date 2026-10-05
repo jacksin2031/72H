@@ -177,10 +177,12 @@ npm run build --prefix apps/web
 
 Target Google Cloud project: **h-japan**. The deployed Cloud Run image uses
 Next.js standalone, FastAPI and the locked Python dependency graph. Public revision
-`h72-00005-vql` serves 100% of traffic from image digest
-`sha256:64e1026d3cd46b2e787d9a2866a016a73005b15a2c491bae2f85bf9f3a18f31b`.
-The runtime code image was built from source commit `2328ac5`; later commits only
-updated validation/deployment documentation. Follow [DEPLOYMENT.md](docs/DEPLOYMENT.md)
+`h72-vnext-8d1836e` serves 100% of traffic from image digest
+`sha256:9d7e22b877aff64502903cfe90b233c8365a8df065e8e3b75fee5bcda6eb3005`.
+The runtime image was built from source commit `8d1836e`; subsequent release
+documentation does not change that runtime identity. Current acceptance evidence
+is in [VNEXT_PRODUCTION_RELEASE.md](docs/VNEXT_PRODUCTION_RELEASE.md).
+Follow [DEPLOYMENT.md](docs/DEPLOYMENT.md)
 for repeatable deployment. No credential file or browser API key is needed.
 
 The local implementation and tests were created during the hackathon work;
@@ -193,9 +195,10 @@ the event's eligibility and existing-project policy with that distinction.
 - [Authorized P0 module contracts](docs/VNEXT_P0_CONTRACTS.md)
 - [vNext local validation](docs/VNEXT_VALIDATION.md)
 - [vNext P0 Release Candidate 1](docs/VNEXT_RELEASE_CANDIDATE.md)
+- [vNext production release evidence](docs/VNEXT_PRODUCTION_RELEASE.md)
 - [Configurable area/map and Last Known Location contract](docs/VNEXT_AREA_LOCATION.md)
 
-The `codex/vnext-p0` branch adds MapLibre with a 2.39 MB bounded central-Tokyo
+The merged vNext release adds MapLibre with a 2.39 MB bounded central-Tokyo
 OpenStreetMap road pack, Home / Plan / More, deterministic severity/authority,
 in-app transition notifications, consent-based local safety checks and power
 degradation. The map is a licensed geographic reference, not verified route or
@@ -207,14 +210,14 @@ scenario/pack configuration. Tokyo and Osaka replay profiles use the same typed
 area hierarchy, source authorization and Safety Core; uncovered map regions stay
 unsupported. Explicit consent retains only one local Last Known Location with
 its original capture time. Restored/offline points are labeled last known and
-never grant official area authority. These changes remain on the local branch.
+never grant official area authority. These changes are merged into `main`.
 
 Map worker modules are prepared by npm postinstall/build. Refresh the data pack
 only explicitly with `uv run --project services/agent-api python scripts/build_offline_map.py`;
 the application never queries Overpass at runtime. Attribution and database license
-are in `apps/web/public/maps/LICENSE.md`. The public deployment below remains the
-previous MVP until a separately authorized release; local vNext results are in
-`docs/VNEXT_VALIDATION.md`.
+are in `apps/web/public/maps/LICENSE.md`. The public service now runs the vNext
+image; local evidence remains in `docs/VNEXT_VALIDATION.md`, and deployed
+acceptance is recorded separately in `docs/VNEXT_PRODUCTION_RELEASE.md`.
 
 - [Product Specification](docs/PRODUCT_SPEC.md)
 - [Replay Scenario](docs/REPLAY_SCENARIO.md)
@@ -232,15 +235,21 @@ previous MVP until a separately authorized release; local vNext results are in
 
 ## Status
 
-**DEPLOYED MVP — public judging URL and core cloud paths verified.**
+**DEPLOYED vNext P0 — production acceptance PASS; external submission pending.**
 
-Local tests, deterministic safety, PWA continuity, Cloud Build, public Cloud Run,
-Vertex AI / Gemini + ADK, Secret Manager injection, production Ekispert MCP smoke,
-and clean desktop/mobile browser acceptance have passed. Public replay completed
-with four plan versions, twelve actions and `GEMINI_ADK` without fallback. A
+Local 69 backend / 77 frontend tests, deterministic safety, PWA continuity, CI,
+Cloud Build and public Cloud Run have passed. Both preview and canonical-origin
+replays completed with four plan versions, twelve actions and four real
+Gemini / ADK candidates without fallback. Clean canonical desktop/mobile browser,
+mocked Last Known Location, cached nonempty plan and same-session physical
+offline/reconciliation acceptance passed. The Ekispert MCP smoke is historical
+baseline evidence; a fresh vNext provider-connectivity test is not claimed. A
 project-scoped ¥5,000 monthly billing budget sends alerts at 50% / 80% / 100%.
 
 Remaining submission work is primarily external assets/process: final architecture
 upload, approximately three-minute YouTube demo, Hackathon form/GitHub integration,
 and final submission verification. Live JMA/Safety Tips ingestion and Firestore
 persistence are intentionally outside the current MVP and are not claimed as done.
+Hazard/shelter/route layers, Web Push/FCM, Rescue Beacon, native background service
+and real-device GPS/battery endurance also remain future work. Submission freeze
+is deferred until the external assets and final dashboard submission are ready.

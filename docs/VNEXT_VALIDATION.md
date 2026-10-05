@@ -1,5 +1,10 @@
 # vNext P0 validation — 2026-10-05 JST
 
+Production release evidence is recorded separately in
+[VNEXT_PRODUCTION_RELEASE.md](VNEXT_PRODUCTION_RELEASE.md). The local builds,
+fixture counts and pre-release authorization statements below are historical;
+they do not establish acceptance of a later deployed image.
+
 ## Map/profile, Last Known Location and generic area follow-up
 
 User-authorized on 2026-10-05 JST. Status: **COMPLETE — implementation and required
