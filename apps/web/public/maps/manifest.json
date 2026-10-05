@@ -1,0 +1,23 @@
+{
+  "id": "tokyo-central-v1",
+  "version": 1,
+  "bounds": [
+    139.68,
+    35.64,
+    139.82,
+    35.74
+  ],
+  "captured_at": "2026-10-05T07:29:40.982908+00:00",
+  "data_timestamp": "2026-10-05T07:27:41Z",
+  "source": "OpenStreetMap contributors",
+  "source_url": "https://www.openstreetmap.org/copyright",
+  "license": "ODbL-1.0",
+  "license_url": "https://opendatacommons.org/licenses/odbl/1.0/",
+  "endpoint": "https://overpass-api.de/api/interpreter",
+  "query": "[out:json][timeout:30];way[\"highway\"~\"^(motorway|trunk|primary|secondary|tertiary)$\"](35.64,139.68,35.74,139.82);out geom;",
+  "asset": "/maps/tokyo-central.geojson",
+  "bytes": 2386863,
+  "sha256": "435055cff10f664da638c0c7d1472e466ef9da6013c00eada56b7cf89cd04db1",
+  "feature_count": 7639,
+  "scope": "Central Tokyo reference roads only; no hazard, shelters, route safety or live status."
+}

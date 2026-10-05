@@ -1,5 +1,26 @@
 # 72H Product Specification v0.1
 
+## Authorized vNext P0 extension
+
+On 2026-10-05 JST the user approved the P0 extension in
+[VNEXT_PRODUCT_PLAN.md](VNEXT_PRODUCT_PLAN.md). Its module acceptance contracts
+are in [VNEXT_P0_CONTRACTS.md](VNEXT_P0_CONTRACTS.md). Normal navigation becomes
+Home / Plan / More; Home uses an offline-capable reference map and one usable NOW
+action. Evidence remains accessible from More; Replay and Agent Trace are inside
+Demo / Judge Mode. The routes below remain available for existing links.
+
+Deterministic severity, source authority, in-app event notifications, battery
+degradation and consent-based local safety checks are additive. Safety checks
+never dispatch rescue; silence is unknown. The existing Safety Core, immutable
+plans, Gemini/ADK and reconnection rules remain authoritative. Live feed/route
+safety and native background service claims are not introduced by this extension.
+
+The separately authorized architecture follow-up makes profile/map selection
+configurable, adds opt-in one-point Last Known Location persistence, and scopes
+severity to a canonical area hierarchy. Registered Tokyo and Osaka synthetic
+replays exercise the same pipeline; only central Tokyo map coverage is installed.
+See [VNEXT_AREA_LOCATION.md](VNEXT_AREA_LOCATION.md).
+
 ## 1. Product Goal
 
 72H is a disaster-action AI agent designed to turn verified alerts into practical next actions.

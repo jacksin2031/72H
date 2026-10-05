@@ -11,6 +11,7 @@ from seventytwoh_contracts.models import (
     CandidateActionSelection,
     CandidatePlanSelection,
     DependencyExpectation,
+    DisasterEventType,
     Evidence,
     EvidenceProjection,
     FreshnessStatus,
@@ -40,12 +41,44 @@ from .safety import (
     derive_claim_states,
     expires_at_for,
     project_evidence,
+    disaster_claim_key,
+    route_claim_key,
 )
 from .state import CoreState
 
 TRUSTED_STATUSES = {TrustStatus.VERIFIED_OFFICIAL, TrustStatus.VERIFIED_PARTNER}
-DISASTER_STATUS_KEY = "disaster.tokyo.status"
-ROUTE_STATUS_KEY = "route.shibuya_asakusa.status"
+
+
+def disaster_status_claim_keys(state: CoreState) -> tuple[str, ...]:
+    area_ids = state.profile.current_location.area_ids
+    if not area_ids:
+        return ()
+    event_types = {
+        event.event_type for event in state.events
+    } | {
+        assessment.event_type
+        for evidence in state.evidence
+        for assessment in evidence.disaster_assessments
+    }
+    if not event_types:
+        return ()
+    return tuple(
+        disaster_claim_key(area_id, event_type.value, "status")
+        for event_type in sorted(event_types, key=lambda item: item.value)
+        for area_id in area_ids
+    )
+
+
+def route_status_claim_key(state: CoreState) -> str | None:
+    current = state.profile.current_location.area_ids
+    destination = (
+        state.profile.current_destination.area_ids
+        if state.profile.current_destination is not None
+        else ()
+    )
+    if not current or not destination:
+        return None
+    return route_claim_key(current[0], destination[0])
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,10 +154,14 @@ def candidate_context_for_preview(
         )
     }
     claims = {item.key: item for item in preview.situation.claim_states}
-    route_value = current_claim_value(claims.get(ROUTE_STATUS_KEY))
+    route_key = route_status_claim_key(preview)
+    route_value = current_claim_value(claims.get(route_key)) if route_key else ClaimStateStatus.UNKNOWN.value
     choices: list[dict[str, object]] = []
     for action in target_actions:
-        key = DISASTER_STATUS_KEY if action.category == PlanActionCategory.NOW else ROUTE_STATUS_KEY
+        key = next(
+            (dependency for dependency in action.dependency_keys if dependency.startswith("disaster.")),
+            None,
+        ) if action.category == PlanActionCategory.NOW else route_key
         eligible_ids = _eligible_ids_for_claim(claims.get(key), projections)
         options = [
             {
@@ -139,7 +176,12 @@ def candidate_context_for_preview(
         "language": preview.profile.preferred_language.value,
         "verified_claims": [
             {"key": key, "status": claims[key].status.value, "value": claims[key].value}
-            for key in (DISASTER_STATUS_KEY, ROUTE_STATUS_KEY)
+            for key in sorted(
+                {
+                    *disaster_status_claim_keys(preview),
+                    *((route_key,) if route_key else ()),
+                }
+            )
             if key in claims
         ],
         "choices": choices,
@@ -293,13 +335,20 @@ def evaluate_and_replan(
     expired_current = bool(
         current_plan and after.current_time >= current_plan.expires_at
     )
-    verified_disaster = claim_by_key.get(DISASTER_STATUS_KEY)
+    verified_disaster = next(
+        (
+            claim_by_key[key]
+            for key in disaster_status_claim_keys(after)
+            if key in claim_by_key
+            and claim_by_key[key].status == ClaimStateStatus.VERIFIED
+            and claim_by_key[key].value == "ACTIVE"
+        ),
+        None,
+    )
     can_start_initial_plan = bool(
         current_plan is None
         and after.situation.active_event_ids
         and verified_disaster is not None
-        and verified_disaster.status == ClaimStateStatus.VERIFIED
-        and verified_disaster.value == "ACTIVE"
     )
     should_review = bool(
         changed_dependencies
@@ -470,14 +519,19 @@ def _reconcile_network_if_ready(
     if reconnect is None:
         return state
 
-    # A disaster replay is not reconciled from a single source. Both the
-    # current official situation and transport state must be refreshed.
-    required_classes = {"OFFICIAL", "PARTNER"} if state.situation.active_event_ids else set()
-
+    official_keys = set(disaster_status_claim_keys(state))
+    route_key = route_status_claim_key(state)
     required_claim_keys = {
-        "OFFICIAL": DISASTER_STATUS_KEY,
-        "PARTNER": ROUTE_STATUS_KEY,
+        "OFFICIAL": official_keys,
+        "PARTNER": {route_key} if route_key else set(),
     }
+    required_classes = set()
+    if state.situation.active_event_ids:
+        required_classes.add("OFFICIAL")
+        if route_key is not None:
+            required_classes.add("PARTNER")
+    if not required_classes:
+        return state
     fresh_after_reconnect: dict[str, list[Evidence]] = {
         source_class: [] for source_class in required_classes
     }
@@ -489,14 +543,15 @@ def _reconcile_network_if_ready(
         if source_class not in fresh_after_reconnect:
             continue
         projection = projections.get(evidence.id)
-        claim_key = required_claim_keys.get(source_class)
+        claim_keys = required_claim_keys.get(source_class, set())
         if (
             evidence.trust_status in TRUSTED_STATUSES
             and evidence.received_at >= reconnect.timestamp
+            and evidence.published_at >= reconnect.timestamp
             and projection is not None
             and projection.eligible_for_claims
-            and claim_key is not None
-            and any(claim.key == claim_key for claim in evidence.claims)
+            and claim_keys
+            and any(claim.key in claim_keys for claim in evidence.claims)
         ):
             fresh_after_reconnect[source_class].append(evidence)
 
@@ -719,10 +774,20 @@ def _new_action(
     evidence_by_id: dict[str, Evidence],
     candidate: CandidateActionSelection | None = None,
 ) -> PlanAction:
-    route_state = claims.get(ROUTE_STATUS_KEY)
+    route_key = route_status_claim_key(state)
+    route_state = claims.get(route_key) if route_key else None
     route_value = current_claim_value(route_state)
-    disaster_state = claims.get(DISASTER_STATUS_KEY)
-    official_ids = _eligible_ids_for_claim(disaster_state, projections)
+    disaster_keys = disaster_status_claim_keys(state)
+    official_ids = tuple(
+        sorted(
+            {
+                evidence_id
+                for key in disaster_keys
+                for evidence_id in _eligible_ids_for_claim(claims.get(key), projections)
+            }
+        )
+    )
+    route_dependencies = (route_key,) if route_key else ()
     route_ids = _eligible_ids_for_claim(route_state, projections)
     intent_id = candidate.intent_id if candidate is not None else _default_intent(category, route_value)
     if category == PlanActionCategory.NOW:
@@ -734,11 +799,12 @@ def _new_action(
             }
             text = words[state.profile.preferred_language.value]
             reason = _now_reason(state.profile.preferred_language.value, bool(official_ids))
-            risk, dependencies, evidence_ids = RiskLevel.LOW, (DISASTER_STATUS_KEY,), official_ids
+            risk, dependencies, evidence_ids = RiskLevel.LOW, disaster_keys, official_ids
         else:
             text, reason, risk, dependencies, evidence_ids = _now_content(
                 state.profile.preferred_language,
                 official_ids,
+                disaster_keys,
             )
     elif category == PlanActionCategory.NEXT:
         if intent_id == SafeIntentId.RECHECK_TRANSPORT_STATUS:
@@ -748,13 +814,16 @@ def _new_action(
                 "zh-TW": "重新考慮原定返程前，再確認一次已驗證的交通資訊。",
             }
             text = words[state.profile.preferred_language.value]
-            _, reason, risk, dependencies, _ = _next_content(state.profile.preferred_language, route_value, route_ids)
+            _, reason, risk, dependencies, _ = _next_content(
+                state.profile.preferred_language, route_value, route_ids, route_dependencies
+            )
             evidence_ids = route_ids
         else:
             text, reason, risk, dependencies, evidence_ids = _next_content(
                 state.profile.preferred_language,
                 route_value,
                 route_ids,
+                route_dependencies,
             )
     else:
         if intent_id == SafeIntentId.DO_NOT_ASSUME_ROUTE_SAFETY:
@@ -764,13 +833,16 @@ def _new_action(
                 "zh-TW": "不要只根據交通狀態判斷路線或自身安全。",
             }
             text = words[state.profile.preferred_language.value]
-            _, reason, risk, dependencies, _ = _avoid_content(state.profile.preferred_language, route_value, route_ids)
+            _, reason, risk, dependencies, _ = _avoid_content(
+                state.profile.preferred_language, route_value, route_ids, route_dependencies
+            )
             evidence_ids = route_ids
         else:
             text, reason, risk, dependencies, evidence_ids = _avoid_content(
                 state.profile.preferred_language,
                 route_value,
                 route_ids,
+                route_dependencies,
             )
     if candidate is not None:
         evidence_ids = candidate.evidence_ids
@@ -799,7 +871,7 @@ def _new_action(
     )
 
 
-def _now_content(language, evidence_ids):
+def _now_content(language, evidence_ids, dependencies):
     words = {
         "ja": (
             "自身の安全に注意し、現場や公式の指示に従いながら、確認済みの更新を確認してください。",
@@ -819,7 +891,7 @@ def _now_content(language, evidence_ids):
         text,
         reason if evidence_ids else _now_reason(language.value, False),
         RiskLevel.LOW,
-        (DISASTER_STATUS_KEY,),
+        dependencies,
         evidence_ids,
     )
 
@@ -838,7 +910,7 @@ def _now_reason(language: str, evidence_available: bool) -> str:
     }[language]
 
 
-def _next_content(language, route_value, evidence_ids):
+def _next_content(language, route_value, evidence_ids, dependencies):
     if route_value == "DISRUPTED":
         words = {
             "ja": (
@@ -904,12 +976,12 @@ def _next_content(language, route_value, evidence_ids):
         text,
         reason,
         RiskLevel.MEDIUM,
-        (ROUTE_STATUS_KEY,),
+        dependencies,
         evidence_ids,
     )
 
 
-def _avoid_content(language, route_value, evidence_ids):
+def _avoid_content(language, route_value, evidence_ids, dependencies):
     if route_value == "DISRUPTED":
         words = {
             "ja": (
@@ -975,7 +1047,7 @@ def _avoid_content(language, route_value, evidence_ids):
         text,
         reason,
         RiskLevel.MEDIUM,
-        (ROUTE_STATUS_KEY,),
+        dependencies,
         evidence_ids,
     )
 

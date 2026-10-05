@@ -1,5 +1,40 @@
 # 72H — Current Development Phase
 
+## Current authorized work — vNext P0 (2026-10-05 JST)
+
+The user explicitly authorized all P0 implementation and testing. Work is isolated
+on `codex/vnext-p0`, baseline `772c264`; `main` remains the release source of truth.
+`docs/VNEXT_PRODUCT_PLAN.md` and `docs/VNEXT_P0_CONTRACTS.md` define this expansion.
+The safety contract still controls action eligibility. The user subsequently
+authorized a local commit and Release Candidate preparation. Merge/push,
+deployment, billing and P1/native rescue work remain separate gates.
+
+The older phase/branch/cloud statements below are historical development records;
+current baseline deployment evidence is in `docs/VALIDATION.md`. This branch's
+local P0 acceptance is recorded separately in `docs/VNEXT_VALIDATION.md`.
+The seven P0 modules are now locally implemented and validated (61 frontend
+tests with real API fixtures, 55 backend tests, typecheck/build and browser
+desktop/mobile/offline checks). This branch has not been deployed or pushed.
+
+The user additionally authorized configurable map/profile, consented local Last
+Known Location persistence, and a generic area/severity schema. This follow-up
+is tracked in `docs/VNEXT_AREA_LOCATION.md` and is locally COMPLETE: 69 backend
+tests, 77 frontend tests with fresh API fixtures, typecheck/build, independent
+source/contract review, and map/profile/LKL browser checks pass. Build
+`qsh1YmaIahspngAHgjxoR` runs on local port 3005. LKL QA uses browser mock
+geolocation, not real GPS. Only the central Tokyo map is installed. Earlier P0
+results below are historical; no deployment or push was performed.
+
+## Current delivery — vnext-p0-rc1
+
+Local commit and Release Candidate preparation are authorized and recorded in
+`docs/VNEXT_RELEASE_CANDIDATE.md`. The exact candidate commit/tree and source ZIP,
+fixture and screenshot hashes are in the local `.work/releases/` package.
+The RC gate re-ran 69 backend / 77 frontend tests with fresh canonical fixtures
+and TypeScript. Accepted browser-tested web build remains
+`qsh1YmaIahspngAHgjxoR`. Runtime code was frozen during this preparation.
+Historical uncommitted-state statements below describe the pre-RC stage.
+
 ## Phase
 
 **Phase 3 — IMPLEMENTED / NOT FULLY VALIDATED**

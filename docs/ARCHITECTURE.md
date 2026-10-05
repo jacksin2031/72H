@@ -1,5 +1,36 @@
 # 72H Architecture v0.2
 
+## vNext P0 read-projection extension
+
+The authorized P0 extension retains the backend evidence, Gemini/ADK and Safety
+Core pipeline. `apps/web/lib/vnext.ts` derives severity/authority/notifications
+and reduces local check-in state deterministically from schema-validated public
+snapshots. It cannot publish plans or assign source trust. `continuity.ts` still
+degrades cached actions and adds deadline-driven expiration independent of power
+mode refresh frequency.
+
+MapLibre selects a bounded app-owned OpenStreetMap road extract from an installed
+pack catalog using coordinates, with profile reference pins and viewport derived
+from configuration. Uncovered regions remain explicitly unsupported. A manifest
+validates bytes/SHA-256, feature count, geographic extent, capture timestamp and
+license. The Service Worker precaches the map, worker modules and application
+shell. Map data never enters trusted disaster evidence. No remote tiles, fonts,
+Overpass calls or maps API secrets are required at runtime.
+
+Safety checks, notification ledgers and power preference persist locally with
+schema validation. Explicit storage consent can retain one last browser position
+with accuracy and capture time, never a location history. Restore/offline/aging
+show LAST_KNOWN_LOCATION. Location is an optional single foreground fix. Low-power
+modes stop noncritical POST/replay work,
+and SURVIVAL removes map rendering. Timers remain foreground best effort. See
+[VNEXT_P0_CONTRACTS.md](VNEXT_P0_CONTRACTS.md) and
+[VNEXT_VALIDATION.md](VNEXT_VALIDATION.md) for current acceptance evidence.
+
+Canonical area IDs, a server-owned ancestry catalog, typed scoped assessments,
+source area authorization and configurable replay profile seeds remove city-name
+assumptions from severity/planning consumers. GPS never grants official scope.
+The detailed follow-up contract is [VNEXT_AREA_LOCATION.md](VNEXT_AREA_LOCATION.md).
+
 ## 1. Architecture Goals
 
 72H must support five properties:

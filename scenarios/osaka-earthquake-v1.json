@@ -1,0 +1,69 @@
+{
+  "key": "osaka-earthquake-v1",
+  "name": "Osaka Earthquake Replay",
+  "description": "Synthetic, deterministic alternate-region replay. Coordinates are scenario profile references, not device GPS or official observations.",
+  "mode": "SYNTHETIC_REPLAY",
+  "start_time": "2026-10-05T09:00:00+09:00",
+  "area_catalog": [
+    { "id": "JP", "label": "Japan", "parent_id": null },
+    { "id": "JP-13", "label": "Tokyo", "parent_id": "JP" },
+    { "id": "JP-13-SHIBUYA", "label": "Shibuya", "parent_id": "JP-13" },
+    { "id": "JP-13-ASAKUSA", "label": "Asakusa", "parent_id": "JP-13" },
+    { "id": "JP-13-SHINJUKU", "label": "Shinjuku", "parent_id": "JP-13" },
+    { "id": "JP-27", "label": "Osaka", "parent_id": "JP" },
+    { "id": "JP-27-OSAKA-CITY", "label": "Osaka City", "parent_id": "JP-27" },
+    { "id": "JP-27-KITA", "label": "Kita", "parent_id": "JP-27-OSAKA-CITY" }
+  ],
+  "profile_seed": {
+    "current_location": {
+      "label": "Kita",
+      "lat": 34.7,
+      "lng": 135.5,
+      "area_ids": ["JP-27-KITA", "JP-27-OSAKA-CITY", "JP-27", "JP"],
+      "observed_at": "2026-10-05T09:00:00+09:00"
+    },
+    "accommodation_location": {
+      "label": "Osaka City",
+      "lat": 34.7,
+      "lng": 135.5,
+      "area_ids": ["JP-27-OSAKA-CITY", "JP-27", "JP"],
+      "observed_at": "2026-10-05T09:00:00+09:00"
+    },
+    "current_destination": null,
+    "party_size": 1,
+    "self_reported_safety_status": "UNKNOWN",
+    "current_plan_summary": "",
+    "accessibility_constraints": []
+  },
+  "events": [
+    {
+      "id": "osaka-earthquake-001",
+      "event_type": "disaster_alert",
+      "occurred_at": "2026-10-05T09:01:00+09:00",
+      "offset_seconds": 0,
+      "label": "Synthetic Osaka earthquake alert",
+      "source_key": "osaka-jma-replay",
+      "disaster_type": "EARTHQUAKE",
+      "affected_areas": ["Osaka"],
+      "affected_area_ids": ["JP-27"],
+      "severity_raw": "synthetic-demo",
+      "summary": "A synthetic earthquake event was added to this Osaka replay."
+    },
+    {
+      "id": "osaka-official-update-001",
+      "event_type": "official_update",
+      "occurred_at": "2026-10-05T09:02:00+09:00",
+      "offset_seconds": 15,
+      "label": "Synthetic Osaka official update",
+      "source_key": "osaka-jma-replay",
+      "published_at": "2026-10-05T09:01:50+09:00",
+      "affected_areas": ["Osaka"],
+      "affected_area_ids": ["JP-27"],
+      "disaster_assessments": [
+        { "area_id": "JP-27", "event_type": "EARTHQUAKE", "level": "L2", "status": "ACTIVE" }
+      ],
+      "claims": [],
+      "summary": "A synthetic typed assessment records an active earthquake in Osaka."
+    }
+  ]
+}

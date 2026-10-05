@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
 export const metadata: Metadata = {
   title: '72H — 警報から、行動へ。',
   description: 'Evidence-backed disaster action planning. Synthetic earthquake demonstration.',

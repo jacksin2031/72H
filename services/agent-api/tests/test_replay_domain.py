@@ -138,9 +138,13 @@ def test_reconnect_waits_for_current_official_and_transport_claims(initial_state
         "offset_seconds": 164,
         "label": "Official update ordered before same-time reconnect",
         "source_key": "jma-replay",
-        "published_at": "2026-10-04T17:52:39+09:00",
-        "affected_areas": ["Tokyo"],
-        "claims": [{"key": "disaster.tokyo.status", "value": "ACTIVE"}],
+            "published_at": "2026-10-04T17:52:39+09:00",
+            "affected_areas": ["Tokyo"],
+            "affected_area_ids": ["JP-13"],
+            "disaster_assessments": [
+                {"area_id": "JP-13", "event_type": "EARTHQUAKE", "status": "ACTIVE"}
+            ],
+            "claims": [{"key": "disaster.tokyo.status", "value": "ACTIVE"}],
         "summary": "A validated official state before the replay reconnect marker.",
     }
     pre_restore_transport = {
@@ -151,8 +155,10 @@ def test_reconnect_waits_for_current_official_and_transport_claims(initial_state
         "label": "Transport update ordered before same-time reconnect",
         "source_key": "transport-replay",
         "published_at": "2026-10-04T17:52:39+09:00",
-        "origin": "Shibuya",
-        "destination": "Asakusa",
+            "origin": "Shibuya",
+            "destination": "Asakusa",
+            "origin_area_id": "JP-13-SHIBUYA",
+            "destination_area_id": "JP-13-ASAKUSA",
         "mobility_status": "UNKNOWN",
         "claims": [{"key": "route.shibuya_asakusa.status", "value": "UNKNOWN"}],
         "summary": "A validated route state before the replay reconnect marker.",
@@ -227,6 +233,8 @@ def test_resolved_disaster_never_gets_rendered_as_active(language, expected_reas
         profile=state.profile.model_copy(update={"preferred_language": language}),
         situation=state.situation,
         current_time=state.current_time,
+        scenario_key=state.scenario_key,
+        area_catalog=state.area_catalog,
     )
     state = _reduce_ids(state, "evt-earthquake-001", "official-update-001", "transport-update-001")
     resolved = {
@@ -269,6 +277,8 @@ def test_now_reason_stays_localized_when_official_evidence_expires(language, exp
         profile=state.profile.model_copy(update={"preferred_language": language}),
         situation=state.situation,
         current_time=state.current_time,
+        scenario_key=state.scenario_key,
+        area_catalog=state.area_catalog,
     )
     state = _reduce_ids(state, "evt-earthquake-001", "official-update-001")
     stale_tick = {
@@ -347,6 +357,10 @@ def test_conflict_projections_invalidate_plan_without_mutating_history(initial_s
         {
             "id": "official-conflict-001",
             "occurred_at": "2026-10-04T17:44:00+09:00",
+            "published_at": "2026-10-04T17:42:50+09:00",
+            "disaster_assessments": [
+                {"area_id": "JP-13", "event_type": "EARTHQUAKE", "status": "RESOLVED"}
+            ],
             "claims": [{"key": "disaster.tokyo.status", "value": "RESOLVED"}],
         }
     )
@@ -354,7 +368,7 @@ def test_conflict_projections_invalidate_plan_without_mutating_history(initial_s
 
     claim = next(item for item in state.situation.claim_states if item.key == "disaster.tokyo.status")
     assert claim.status == ClaimStateStatus.CONFLICT
-    assert "disaster.tokyo.status" in state.situation.conflict_flags
+    assert "disaster.EARTHQUAKE.JP-13.status" in state.situation.conflict_flags
     projections = evidence_projections(state.evidence, state.situation, state.current_time)
     assert all(item.conflict and not item.eligible_for_claims for item in projections)
     assert state.plan_evaluations[-1].status in {

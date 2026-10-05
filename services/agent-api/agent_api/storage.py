@@ -10,21 +10,28 @@ from uuid import UUID, uuid4
 from seventytwoh_contracts.models import (
     IncidentStatus,
     Language,
-    Location,
     NetworkState,
+    ProfileSeed,
     ReplayScenario,
+    ReplayScenarioOption,
     ReplaySession,
     ReplaySnapshot,
     ReplayStatus,
     Situation,
     StartReplayRequest,
     UserProfile,
+    validate_location_area_path,
 )
 
 from .domain import CoreState, reduce_event, reduce_event_with_planner
 from .planning import evidence_projections
 from .planner import CandidatePlanner
-from .scenario import load_scenario, timeline_event
+from .scenario import (
+    DEFAULT_SCENARIO_KEY,
+    load_registered_scenarios,
+    scenario_options,
+    timeline_event,
+)
 from .safety import SafetyPolicy, derive_claim_states
 
 SESSION_TTL_SECONDS = 6 * 60 * 60
@@ -45,11 +52,20 @@ class SessionCapacityReached(RuntimeError):
     pass
 
 
+class InvalidReplayProfile(ValueError):
+    pass
+
+
+class InvalidReplayScenario(ValueError):
+    pass
+
+
 @dataclass(slots=True)
 class SessionAggregate:
     session: ReplaySession
     state: CoreState
     scenario: ReplayScenario
+    profile_seed: ProfileSeed
     expires_at: float
     lock: RLock = field(default_factory=RLock)
 
@@ -66,7 +82,16 @@ class ReplayStore:
         max_sessions: int = MAX_SESSIONS,
         ttl_seconds: int = SESSION_TTL_SECONDS,
     ) -> None:
-        self._scenario = scenario or load_scenario()
+        self._scenarios = (
+            {scenario.key: scenario}
+            if scenario is not None
+            else load_registered_scenarios()
+        )
+        self._default_scenario_key = (
+            scenario.key if scenario is not None else DEFAULT_SCENARIO_KEY
+        )
+        if self._default_scenario_key not in self._scenarios:
+            raise ValueError("default replay scenario is not registered")
         self._policy = policy or SafetyPolicy.from_env()
         self._planner = planner or CandidatePlanner()
         self._max_sessions = max_sessions
@@ -76,20 +101,40 @@ class ReplayStore:
 
     def start(self, request: StartReplayRequest | None = None) -> ReplaySnapshot:
         language = request.language if request else Language.TRADITIONAL_CHINESE
+        scenario_key = (
+            request.scenario_key
+            if request and request.scenario_key is not None
+            else self._default_scenario_key
+        )
+        scenario = self._scenarios.get(scenario_key)
+        if scenario is None:
+            raise InvalidReplayScenario("scenario_key is not present in the server registry")
+        profile_seed = request.profile if request and request.profile is not None else scenario.profile_seed
+        try:
+            area_by_id = {area.id: area for area in scenario.area_catalog}
+            for location in (
+                profile_seed.current_location,
+                profile_seed.accommodation_location,
+                profile_seed.current_destination,
+            ):
+                if location is not None:
+                    validate_location_area_path(location, area_by_id)
+        except ValueError as exc:
+            raise InvalidReplayProfile(f"profile location is outside the scenario area catalog: {exc}") from exc
         with self._lock:
             self._purge_expired_locked()
             if len(self._sessions) >= self._max_sessions:
                 raise SessionCapacityReached("replay session capacity reached")
             session_id = uuid4()
             situation_id = f"sit_{session_id.hex}"
-            initial = self._initial_state(session_id, situation_id, language)
+            initial = self._initial_state(session_id, situation_id, language, profile_seed, scenario)
             session = ReplaySession(
                 id=session_id,
-                scenario_key=self._scenario.key,
+                scenario_key=scenario.key,
                 status=ReplayStatus.RUNNING,
                 speed=1,
-                started_at=self._scenario.start_time,
-                current_time=self._scenario.start_time,
+                started_at=scenario.start_time,
+                current_time=scenario.start_time,
                 current_event_index=0,
                 deterministic_seed=DETERMINISTIC_SEED,
                 situation_id=situation_id,
@@ -101,11 +146,15 @@ class ReplayStore:
             aggregate = SessionAggregate(
                 session=session,
                 state=initial,
-                scenario=self._scenario,
+                scenario=scenario,
+                profile_seed=profile_seed,
                 expires_at=monotonic() + self._ttl_seconds,
             )
             self._sessions[session_id] = aggregate
             return self._snapshot(aggregate)
+
+    def available_scenarios(self) -> tuple[ReplayScenarioOption, ...]:
+        return scenario_options(self._scenarios)
 
     def get(self, session_id: UUID) -> ReplaySnapshot:
         aggregate = self._get_aggregate(session_id)
@@ -217,6 +266,8 @@ class ReplayStore:
                 aggregate.session.id,
                 situation_id,
                 language,
+                aggregate.profile_seed,
+                aggregate.scenario,
                 user_id=user_id,
             )
             aggregate.session = aggregate.session.model_copy(
@@ -285,6 +336,7 @@ class ReplayStore:
         )
         return ReplaySnapshot(
             profile=aggregate.state.profile,
+            area_catalog=aggregate.scenario.area_catalog,
             situation=aggregate.state.situation,
             events=aggregate.state.events,
             evidence=aggregate.state.evidence,
@@ -308,22 +360,17 @@ class ReplayStore:
         session_id: UUID,
         situation_id: str,
         language: Language,
+        profile_seed: ProfileSeed,
+        scenario: ReplayScenario,
         *,
         user_id: str | None = None,
     ) -> CoreState:
         user_id = user_id or f"user_demo_{session_id.hex}"
-        initial_time = self._scenario.start_time
-        shibuya = Location(label="Shibuya")
-        asakusa = Location(label="Asakusa")
+        initial_time = scenario.start_time
         profile = UserProfile(
             id=user_id,
             preferred_language=language,
-            current_location=shibuya,
-            accommodation_location=asakusa,
-            current_destination=asakusa,
-            party_size=1,
-            self_reported_safety_status="SAFE",
-            current_plan_summary="Return to Asakusa at 18:00",
+            **profile_seed.model_dump(),
             created_at=initial_time,
             updated_at=initial_time,
         )
@@ -339,4 +386,10 @@ class ReplayStore:
             situation, (), initial_time, self._policy
         )
         situation = situation.model_copy(update={"claim_states": initial_claim_states})
-        return CoreState(profile=profile, situation=situation, current_time=initial_time)
+        return CoreState(
+            profile=profile,
+            situation=situation,
+            current_time=initial_time,
+            scenario_key=scenario.key,
+            area_catalog=scenario.area_catalog,
+        )

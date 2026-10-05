@@ -8,12 +8,15 @@ from fastapi import Body, FastAPI, HTTPException, status
 from seventytwoh_contracts.models import (
     ApiVersion,
     ReplaySnapshot,
+    ReplayScenarioOption,
     SpeedRequest,
     StartReplayRequest,
 )
 
 from . import __version__
 from .storage import (
+    InvalidReplayProfile,
+    InvalidReplayScenario,
     InvalidReplayTransition,
     ReplayStore,
     SessionCapacityReached,
@@ -38,12 +41,20 @@ def create_app(store: ReplayStore | None = None) -> FastAPI:
     def version() -> ApiVersion:
         return ApiVersion(service="72h-agent-api", version=__version__, phase="phase-3")
 
+    @application.get("/api/replay/scenarios", response_model=tuple[ReplayScenarioOption, ...])
+    def replay_scenarios() -> tuple[ReplayScenarioOption, ...]:
+        return replay_store.available_scenarios()
+
     @application.post("/api/replay/start", response_model=ReplaySnapshot, status_code=status.HTTP_201_CREATED)
     def start_replay(
         request: StartReplayRequest | None = Body(default=None),
     ) -> ReplaySnapshot:
         try:
             return replay_store.start(request)
+        except InvalidReplayScenario as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except InvalidReplayProfile as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
         except SessionCapacityReached as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
 

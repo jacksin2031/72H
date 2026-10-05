@@ -1,9 +1,46 @@
 {
   "key": "tokyo-earthquake-v1",
   "name": "Tokyo Earthquake Replay",
-  "description": "Synthetic, deterministic replay data for the Phase 1 demo.",
+  "description": "Synthetic deterministic replay; profile-reference coordinates are demo configuration, not device GPS or official observations.",
   "mode": "SYNTHETIC_REPLAY",
   "start_time": "2026-10-04T17:40:00+09:00",
+  "area_catalog": [
+    { "id": "JP", "label": "Japan", "parent_id": null },
+    { "id": "JP-13", "label": "Tokyo", "parent_id": "JP" },
+    { "id": "JP-13-SHIBUYA", "label": "Shibuya", "parent_id": "JP-13" },
+    { "id": "JP-13-ASAKUSA", "label": "Asakusa", "parent_id": "JP-13" },
+    { "id": "JP-13-SHINJUKU", "label": "Shinjuku", "parent_id": "JP-13" },
+    { "id": "JP-27", "label": "Osaka", "parent_id": "JP" },
+    { "id": "JP-27-OSAKA-CITY", "label": "Osaka City", "parent_id": "JP-27" },
+    { "id": "JP-27-KITA", "label": "Kita", "parent_id": "JP-27-OSAKA-CITY" }
+  ],
+  "profile_seed": {
+    "current_location": {
+      "label": "Shibuya",
+      "lat": 35.6595,
+      "lng": 139.7005,
+      "area_ids": ["JP-13-SHIBUYA", "JP-13", "JP"],
+      "observed_at": "2026-10-04T17:40:00+09:00"
+    },
+    "accommodation_location": {
+      "label": "Asakusa",
+      "lat": 35.7148,
+      "lng": 139.7967,
+      "area_ids": ["JP-13-ASAKUSA", "JP-13", "JP"],
+      "observed_at": "2026-10-04T17:40:00+09:00"
+    },
+    "current_destination": {
+      "label": "Asakusa",
+      "lat": 35.7148,
+      "lng": 139.7967,
+      "area_ids": ["JP-13-ASAKUSA", "JP-13", "JP"],
+      "observed_at": "2026-10-04T17:40:00+09:00"
+    },
+    "party_size": 1,
+    "self_reported_safety_status": "SAFE",
+    "current_plan_summary": "Return to Asakusa at 18:00",
+    "accessibility_constraints": []
+  },
   "events": [
     {
       "id": "evt-earthquake-001",
@@ -14,6 +51,7 @@
       "source_key": "jma-replay",
       "disaster_type": "EARTHQUAKE",
       "affected_areas": ["Tokyo"],
+      "affected_area_ids": ["JP-13"],
       "severity_raw": "synthetic-demo",
       "summary": "A synthetic earthquake event was added to this replay."
     },
@@ -26,7 +64,15 @@
       "source_key": "jma-replay",
       "published_at": "2026-10-04T17:42:50+09:00",
       "affected_areas": ["Tokyo"],
+      "affected_area_ids": ["JP-13"],
+      "disaster_assessments": [
+        { "area_id": "JP-13", "event_type": "EARTHQUAKE", "level": "L4", "status": "ACTIVE" }
+      ],
       "claims": [
+        {
+          "key": "disaster.tokyo.severity",
+          "value": "L4"
+        },
         {
           "key": "disaster.tokyo.status",
           "value": "ACTIVE"
@@ -44,6 +90,8 @@
       "published_at": "2026-10-04T17:46:55+09:00",
       "origin": "Shibuya",
       "destination": "Asakusa",
+      "origin_area_id": "JP-13-SHIBUYA",
+      "destination_area_id": "JP-13-ASAKUSA",
       "mobility_status": "DISRUPTED",
       "claims": [
         {
@@ -62,6 +110,7 @@
       "source_key": "social-replay",
       "published_at": "2026-10-04T17:48:35+09:00",
       "affected_areas": ["Shinjuku"],
+      "affected_area_ids": ["JP-13-SHINJUKU"],
       "content": "Shinjuku Station is completely closed! Leave this area immediately!",
       "summary": "Synthetic social-media content is visible but is not verified action evidence."
     },
@@ -102,6 +151,10 @@
       "source_key": "jma-replay",
       "published_at": "2026-10-04T17:52:45+09:00",
       "affected_areas": ["Tokyo"],
+      "affected_area_ids": ["JP-13"],
+      "disaster_assessments": [
+        { "area_id": "JP-13", "event_type": "EARTHQUAKE", "status": "ACTIVE" }
+      ],
       "claims": [
         {
           "key": "disaster.tokyo.status",
@@ -119,8 +172,11 @@
       "source_key": "transport-replay",
       "published_at": "2026-10-04T17:52:50+09:00",
       "affected_areas": ["Tokyo"],
+      "affected_area_ids": ["JP-13-SHIBUYA", "JP-13-ASAKUSA"],
       "origin": "Shibuya",
       "destination": "Asakusa",
+      "origin_area_id": "JP-13-SHIBUYA",
+      "destination_area_id": "JP-13-ASAKUSA",
       "mobility_status": "UNKNOWN",
       "claims": [
         {

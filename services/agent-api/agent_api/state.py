@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from seventytwoh_contracts.models import (
+    AreaDefinition,
     DisasterEvent,
     Evidence,
     MobilitySnapshot,
@@ -23,6 +24,8 @@ class CoreState:
     profile: UserProfile
     situation: Situation
     current_time: datetime
+    scenario_key: str = ""
+    area_catalog: tuple[AreaDefinition, ...] = ()
     reconnect_evidence_count: int | None = None
     events: tuple[DisasterEvent, ...] = ()
     evidence: tuple[Evidence, ...] = ()

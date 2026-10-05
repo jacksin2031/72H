@@ -5,10 +5,13 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from hashlib import sha256
 from typing import Mapping
 
 from seventytwoh_contracts.models import (
+    Claim,
     ClaimStateStatus,
+    DisasterAssessment,
     Evidence,
     EvidenceProjection,
     FreshnessStatus,
@@ -17,11 +20,47 @@ from seventytwoh_contracts.models import (
     TrustStatus,
 )
 
-DEFAULT_CLAIM_KEYS = (
-    "disaster.tokyo.status",
-    "route.shibuya_asakusa.status",
-)
 TRUSTED_STATUSES = {TrustStatus.VERIFIED_OFFICIAL, TrustStatus.VERIFIED_PARTNER}
+
+
+def disaster_claim_key(area_id: str, event_type: str, measure: str) -> str:
+    if measure not in {"status", "severity"}:
+        raise ValueError("unsupported disaster assessment measure")
+    return f"disaster.{event_type}.{area_id}.{measure}"
+
+
+def route_claim_key(origin_area_id: str, destination_area_id: str) -> str:
+    route_identity = f"{origin_area_id}>{destination_area_id}".encode("utf-8")
+    return f"route.{sha256(route_identity).hexdigest()}"
+
+
+def claims_from_disaster_assessments(
+    assessments: tuple[DisasterAssessment, ...],
+) -> tuple[Claim, ...]:
+    result: list[Claim] = []
+    for assessment in assessments:
+        result.append(
+            Claim(
+                key=disaster_claim_key(
+                    assessment.area_id,
+                    assessment.event_type.value,
+                    "status",
+                ),
+                value=assessment.status.value,
+            )
+        )
+        if assessment.level is not None:
+            result.append(
+                Claim(
+                    key=disaster_claim_key(
+                        assessment.area_id,
+                        assessment.event_type.value,
+                        "severity",
+                    ),
+                    value=assessment.level.value,
+                )
+            )
+    return tuple(result)
 
 
 @dataclass(frozen=True, slots=True)
@@ -134,7 +173,7 @@ def derive_claim_states(
         item.id: project_evidence(item, current_time, policy)
         for item in evidence
     }
-    keys = set(DEFAULT_CLAIM_KEYS)
+    keys: set[str] = set()
     keys.update(claim.key for item in evidence for claim in item.claims)
     keys.update(item.key for item in previous.claim_states)
 

@@ -189,6 +189,33 @@ the event's eligibility and existing-project policy with that distinction.
 
 ## Documentation
 
+- [vNext product plan](docs/VNEXT_PRODUCT_PLAN.md)
+- [Authorized P0 module contracts](docs/VNEXT_P0_CONTRACTS.md)
+- [vNext local validation](docs/VNEXT_VALIDATION.md)
+- [vNext P0 Release Candidate 1](docs/VNEXT_RELEASE_CANDIDATE.md)
+- [Configurable area/map and Last Known Location contract](docs/VNEXT_AREA_LOCATION.md)
+
+The `codex/vnext-p0` branch adds MapLibre with a 2.39 MB bounded central-Tokyo
+OpenStreetMap road pack, Home / Plan / More, deterministic severity/authority,
+in-app transition notifications, consent-based local safety checks and power
+degradation. The map is a licensed geographic reference, not verified route or
+hazard information. Browser battery/location support is optional and foreground
+only. No rescue dispatch or guaranteed background alarm is claimed.
+
+The area/location follow-up moves map viewport and profile-reference pins into
+scenario/pack configuration. Tokyo and Osaka replay profiles use the same typed
+area hierarchy, source authorization and Safety Core; uncovered map regions stay
+unsupported. Explicit consent retains only one local Last Known Location with
+its original capture time. Restored/offline points are labeled last known and
+never grant official area authority. These changes remain on the local branch.
+
+Map worker modules are prepared by npm postinstall/build. Refresh the data pack
+only explicitly with `uv run --project services/agent-api python scripts/build_offline_map.py`;
+the application never queries Overpass at runtime. Attribution and database license
+are in `apps/web/public/maps/LICENSE.md`. The public deployment below remains the
+previous MVP until a separately authorized release; local vNext results are in
+`docs/VNEXT_VALIDATION.md`.
+
 - [Product Specification](docs/PRODUCT_SPEC.md)
 - [Replay Scenario](docs/REPLAY_SCENARIO.md)
 - [Agent & Safety Contract](docs/AGENT_SAFETY_CONTRACT.md)

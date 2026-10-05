@@ -11,13 +11,16 @@ from seventytwoh_contracts.models import (
     AgentName,
     Claim,
     ClaimType,
+    DisasterAssessment,
     DisasterAlertReplayEvent,
     DisasterEvent,
     DisasterEventStatus,
+    DisasterEventType,
     Evidence,
     FreshnessStatus,
     IncidentStatus,
     MobilitySnapshot,
+    MobilityStatus,
     NetworkDegradedReplayEvent,
     NetworkLostReplayEvent,
     NetworkRestoredReplayEvent,
@@ -38,8 +41,20 @@ from seventytwoh_contracts.models import (
     VerifiedUpdateReplayEvent,
 )
 
-from .scenario import ReplayEventAdapter, SIMULATION_SOURCE_REGISTRY
-from .safety import DEFAULT_POLICY, SafetyPolicy, expires_at_for
+from .scenario import (
+    ReplayEventAdapter,
+    SIMULATION_SOURCE_REGISTRY,
+    source_authorizes_area,
+    source_authorizes_disaster_assessments,
+    source_authorizes_transport,
+)
+from .safety import (
+    DEFAULT_POLICY,
+    SafetyPolicy,
+    claims_from_disaster_assessments,
+    expires_at_for,
+    route_claim_key,
+)
 from .state import CoreState
 
 MAX_EVENTS = 64
@@ -120,6 +135,7 @@ async def reduce_event_with_planner(
 def _reduce_event_input(state: CoreState, event: ReplayEvent, policy: SafetyPolicy) -> CoreState:
     if event.event_type == "disaster_alert" and isinstance(event, DisasterAlertReplayEvent):
         source = SIMULATION_SOURCE_REGISTRY[event.source_key]
+        _validate_area_authority(state, event.source_key, event.affected_area_ids)
         disaster = DisasterEvent(
             id=f"evt_{event.id}",
             situation_id=state.situation.id,
@@ -127,11 +143,12 @@ def _reduce_event_input(state: CoreState, event: ReplayEvent, policy: SafetyPoli
             occurred_at=event.occurred_at,
             received_at=event.occurred_at,
             affected_areas=event.affected_areas,
+            affected_area_ids=event.affected_area_ids,
             source_name=source.source_name,
             source_class=source.source_class,
             severity_raw=event.severity_raw,
             status=DisasterEventStatus.ACTIVE,
-            raw_reference=f"replay://tokyo-earthquake-v1/{event.id}",
+            raw_reference=f"replay://{state.scenario_key}/{event.id}",
             is_synthetic=True,
         )
         situation = state.situation.model_copy(
@@ -165,6 +182,8 @@ def _reduce_event_input(state: CoreState, event: ReplayEvent, policy: SafetyPoli
             event.claims,
             event.summary,
             policy,
+            affected_area_ids=event.affected_area_ids,
+            disaster_assessments=event.disaster_assessments,
         )
         return _append_evidence(state, event.id, evidence, "OFFICIAL_REPLAY_EVIDENCE_ADDED")
 
@@ -181,12 +200,21 @@ def _reduce_event_input(state: CoreState, event: ReplayEvent, policy: SafetyPoli
             event.claims,
             event.summary,
             policy,
+            affected_area_ids=tuple(
+                value for value in (event.origin_area_id, event.destination_area_id) if value
+            ),
+            route_area_ids=(event.origin_area_id, event.destination_area_id)
+            if event.origin_area_id and event.destination_area_id
+            else None,
+            mobility_status=event.mobility_status,
         )
         mobility = MobilitySnapshot(
             id=f"mob_{event.id}",
             situation_id=state.situation.id,
             origin=event.origin,
             destination=event.destination,
+            origin_area_id=event.origin_area_id,
+            destination_area_id=event.destination_area_id,
             status=event.mobility_status,
             evidence_ids=(evidence.id,),
             checked_at=event.occurred_at,
@@ -207,6 +235,7 @@ def _reduce_event_input(state: CoreState, event: ReplayEvent, policy: SafetyPoli
             (Claim(key="unverified.content", value=event.content),),
             event.summary,
             policy,
+            affected_area_ids=event.affected_area_ids,
         )
         state = _append_evidence(state, event.id, evidence, "UNVERIFIED_SOURCE_REJECTED")
         return state
@@ -251,12 +280,26 @@ def _reduce_event_input(state: CoreState, event: ReplayEvent, policy: SafetyPoli
         )
 
     if event.event_type == "verified_update" and isinstance(event, VerifiedUpdateReplayEvent):
-        expected_trust = (
-            TrustStatus.VERIFIED_OFFICIAL
-            if event.source_key == "jma-replay"
-            else TrustStatus.VERIFIED_PARTNER
-        )
         source = SIMULATION_SOURCE_REGISTRY[event.source_key]
+        has_route_context = any(
+            value is not None
+            for value in (
+                event.origin,
+                event.destination,
+                event.origin_area_id,
+                event.destination_area_id,
+                event.mobility_status,
+            )
+        )
+        if has_route_context and not source_authorizes_transport(source):
+            raise ValueError(
+                "source registry does not authorize verified route context or generated route claims"
+            )
+        if event.disaster_assessments and not source_authorizes_disaster_assessments(source):
+            raise ValueError(
+                "source registry does not authorize verified disaster assessments or generated disaster claims"
+            )
+        expected_trust = source.trust_status
         claim_type = (
             ClaimType.DISASTER_STATUS
             if source.source_class == SourceClass.OFFICIAL
@@ -264,6 +307,11 @@ def _reduce_event_input(state: CoreState, event: ReplayEvent, policy: SafetyPoli
         )
         areas = event.affected_areas or tuple(
             value for value in (event.origin, event.destination) if value is not None
+        )
+        route_area_ids = (
+            (event.origin_area_id, event.destination_area_id)
+            if event.origin_area_id and event.destination_area_id
+            else None
         )
         evidence = _evidence(
             state,
@@ -277,6 +325,14 @@ def _reduce_event_input(state: CoreState, event: ReplayEvent, policy: SafetyPoli
             event.claims,
             event.summary,
             policy,
+            affected_area_ids=tuple(
+                dict.fromkeys(
+                    (*event.affected_area_ids, *(item for item in route_area_ids or () if item))
+                )
+            ),
+            disaster_assessments=event.disaster_assessments,
+            route_area_ids=route_area_ids,
+            mobility_status=event.mobility_status,
         )
         state = _append_evidence(state, event.id, evidence, "VERIFIED_REPLAY_EVIDENCE_ADDED")
         return _bounded(state)
@@ -420,6 +476,11 @@ def _evidence(
     claims: tuple[Claim, ...],
     summary: str,
     policy: SafetyPolicy,
+    *,
+    affected_area_ids: tuple[str, ...] = (),
+    disaster_assessments: tuple[DisasterAssessment, ...] = (),
+    route_area_ids: tuple[str, str] | None = None,
+    mobility_status: MobilityStatus | None = None,
 ) -> Evidence:
     source = SIMULATION_SOURCE_REGISTRY[source_key]
     if trust_status != source.trust_status:
@@ -435,6 +496,39 @@ def _evidence(
         for claim in claims
     ):
         raise ValueError("source registry does not authorize one or more claim keys or values")
+    normalized_assessments = _normalize_legacy_disaster_assessments(
+        source_key,
+        disaster_assessments,
+        claims,
+    )
+    if normalized_assessments and not source_authorizes_disaster_assessments(source):
+        raise ValueError(
+            "source registry does not authorize generated disaster assessment claims"
+        )
+    if (route_area_ids is not None or mobility_status is not None) and not source_authorizes_transport(
+        source
+    ):
+        raise ValueError("source registry does not authorize generated route claims")
+    if route_area_ids is not None and mobility_status is None:
+        raise ValueError("route area IDs require an authorized mobility status")
+    all_area_ids = tuple(
+        dict.fromkeys(
+            (
+                *affected_area_ids,
+                *(assessment.area_id for assessment in normalized_assessments),
+                *(route_area_ids or ()),
+            )
+        )
+    )
+    _validate_area_authority(state, source_key, all_area_ids)
+    normalized_claims = [*claims, *claims_from_disaster_assessments(normalized_assessments)]
+    if route_area_ids is not None and mobility_status is not None:
+        normalized_claims.append(
+            Claim(key=route_claim_key(*route_area_ids), value=mobility_status.value)
+        )
+    claim_keys = [claim.key for claim in normalized_claims]
+    if len(claim_keys) != len(set(claim_keys)):
+        raise ValueError("normalized evidence contains duplicate claim keys")
     expires_at = published_at + timedelta(seconds=policy.ttl_for_claim_type(claim_type.value))
     freshness_status = (
         FreshnessStatus.CURRENT
@@ -450,14 +544,82 @@ def _evidence(
         freshness_status=freshness_status,
         published_at=published_at,
         received_at=received_at,
-        relevant_areas=areas or ("Tokyo",),
+        relevant_areas=areas,
+        affected_area_ids=all_area_ids,
+        disaster_assessments=normalized_assessments,
         claim_type=claim_type,
-        claims=claims,
+        claims=tuple(normalized_claims),
         summary=summary,
         expires_at=expires_at,
-        raw_reference=f"replay://tokyo-earthquake-v1/{event_id}",
+        raw_reference=f"replay://{state.scenario_key}/{event_id}",
         is_synthetic=True,
     )
+
+
+def _validate_area_authority(
+    state: CoreState,
+    source_key: str,
+    area_ids: tuple[str, ...] | set[str],
+) -> None:
+    source = SIMULATION_SOURCE_REGISTRY[source_key]
+    catalog = {area.id: area for area in state.area_catalog}
+    for area_id in area_ids:
+        if area_id not in catalog:
+            raise ValueError("evidence references an area outside the scenario catalog")
+        if source.trust_status in {TrustStatus.VERIFIED_OFFICIAL, TrustStatus.VERIFIED_PARTNER} and not source_authorizes_area(
+            source, area_id, catalog
+        ):
+            raise ValueError(f"source registry does not authorize area {area_id}")
+
+
+def _normalize_legacy_disaster_assessments(
+    source_key: str,
+    assessments: tuple[DisasterAssessment, ...],
+    claims: tuple[Claim, ...],
+) -> tuple[DisasterAssessment, ...]:
+    """Normalize legacy Tokyo keys only at their explicitly registered source adapter."""
+    legacy_area = SIMULATION_SOURCE_REGISTRY[source_key].legacy_disaster_area_id
+    if legacy_area is None:
+        return assessments
+
+    status_key = "disaster.tokyo.status"
+    level_key = "disaster.tokyo.severity"
+    legacy_status = next((item.value for item in claims if item.key == status_key), None)
+    legacy_level = next((item.value for item in claims if item.key == level_key), None)
+    if legacy_status is None and legacy_level is None:
+        return assessments
+
+    existing = next(
+        (
+            item
+            for item in assessments
+            if item.area_id == legacy_area and item.event_type == DisasterEventType.EARTHQUAKE
+        ),
+        None,
+    )
+    if existing is not None and (
+        (legacy_status is not None and existing.status.value != legacy_status)
+        or (
+            legacy_level is not None
+            and existing.level is not None
+            and existing.level.value != legacy_level
+        )
+    ):
+        raise ValueError("typed disaster assessment conflicts with legacy Tokyo claim")
+    remaining = tuple(item for item in assessments if item is not existing)
+    status = (
+        DisasterEventStatus(legacy_status)
+        if legacy_status is not None
+        else existing.status if existing is not None else DisasterEventStatus.UNKNOWN
+    )
+    level = legacy_level if legacy_level is not None else existing.level if existing is not None else None
+    normalized = DisasterAssessment(
+        area_id=legacy_area,
+        event_type=DisasterEventType.EARTHQUAKE,
+        level=level,
+        status=status,
+    )
+    return (*remaining, normalized)
 
 
 def _network_transition(

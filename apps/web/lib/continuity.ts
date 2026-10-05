@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { snapshotSchema, type Action, type Evidence, type Snapshot } from './contracts';
+import { evidenceMatchesProfile } from './area-scoping';
 
 export const cacheEnvelopeSchema = z.object({
   schema_version: z.literal(1), saved_at: z.number().finite().nonnegative(), snapshot: snapshotSchema,
@@ -38,7 +39,7 @@ export function projectContinuity(snapshot: Snapshot, now: number, connection: '
     return evidenceAt(p ? { ...e, freshness_status: p.freshness_status, conflict: e.conflict || p.conflict, expires_at: p.expires_at } : e, now);
   });
   const byId = new Map(evidence.map(e => [e.id, e]));
-  const dependencies = dependencyValues(evidence);
+  const dependencies = dependencyValues(evidence.filter(e => evidenceMatchesProfile(e, snapshot)));
   const plan = snapshot.plans.find(p => p.id === snapshot.situation.current_plan_id) || snapshot.plans.at(-1);
   const evaluation = plan && snapshot.plan_evaluations.findLast(e => e.plan_id === plan.id);
   const expired = !!plan && now >= Date.parse(plan.expires_at);
@@ -48,20 +49,34 @@ export function projectContinuity(snapshot: Snapshot, now: number, connection: '
     // The client can only degrade. High-risk movement is unavailable in continuity mode.
     if (action.risk_level === 'HIGH') return true;
     if (action.evidence_ids.some(id => !byId.has(id))) return true;
-    if (action.risk_level !== 'LOW' && (!action.evidence_ids.length || action.evidence_ids.some(id => !eligible(byId.get(id)!)))) return true;
+    if (action.risk_level !== 'LOW' && (!action.evidence_ids.length || action.evidence_ids.some(id => !eligible(byId.get(id)!) || !evidenceMatchesProfile(byId.get(id)!, snapshot)))) return true;
     return action.dependency_keys.some(key => {
       const actual = dependencies.get(key) ?? 'UNKNOWN';
       return actual === 'CONFLICT' || actual !== (action.dependency_values[key] ?? 'UNKNOWN');
     });
   };
-  const invalidActionIds = snapshot.plan_actions.filter(a => a.plan_id === plan?.id && actionInvalid(a)).map(a => a.id);
+  const currentActions = snapshot.plan_actions.filter(a => a.plan_id === plan?.id);
+  const invalidActionIds = currentActions.filter(actionInvalid).map(a => a.id);
   const stale = evidence.some(e => e.freshness_status !== 'CURRENT' && ['VERIFIED_OFFICIAL', 'VERIFIED_PARTNER'].includes(e.trust_status));
   const networkState = connection === 'offline' ? (stale || expired ? 'OFFLINE_STALE' : 'OFFLINE_RECENT') : connection === 'reconnecting' ? 'RECONNECTING' : snapshot.situation.network_state;
-  return { evidence, plan, invalidActionIds, networkState, planStatus: expired ? 'EXPIRED' : invalidActionIds.length ? 'INVALIDATED' : evaluation?.status || plan?.status || 'UNKNOWN' };
+  const localStatus = invalidActionIds.length === currentActions.length ? 'INVALIDATED' : 'PARTIALLY_INVALID';
+  return { evidence, plan, invalidActionIds, networkState, planStatus: expired ? 'EXPIRED' : evaluation?.status === 'INVALIDATED' ? 'INVALIDATED' : invalidActionIds.length ? localStatus : evaluation?.status || plan?.status || 'UNKNOWN' };
 }
 
 export function replayClock(envelope: CacheEnvelope, wallNow: number) {
   return Date.parse(envelope.snapshot.replay.current_time) + Math.max(0, wallNow - envelope.saved_at);
+}
+
+/** Wake exactly when safety-relevant cached evidence/plan expires, even in survival mode. */
+export function nextSafetyDeadline(snapshot: Snapshot, now: number): number | null {
+  const dates = snapshot.evidence.filter(e => ['VERIFIED_OFFICIAL', 'VERIFIED_PARTNER'].includes(e.trust_status) && e.freshness_status === 'CURRENT').map(e => {
+    const policyExpiry = Date.parse(e.published_at) + (ttl[e.claim_type] || 0);
+    return e.expires_at ? Math.min(Date.parse(e.expires_at), policyExpiry) : policyExpiry;
+  });
+  const plan = snapshot.plans.find(p => p.id === snapshot.situation.current_plan_id) || snapshot.plans.at(-1);
+  if (plan) dates.push(Date.parse(plan.expires_at));
+  const future = dates.filter(at => Number.isFinite(at) && at > now);
+  return Number.isFinite(now) && future.length ? Math.min(...future) : null;
 }
 
 export function canReconcile(previous: Snapshot, received: Snapshot, now: number) {
@@ -70,7 +85,7 @@ export function canReconcile(previous: Snapshot, received: Snapshot, now: number
   const values = dependencyValues(received.evidence.map(e => evidenceAt(e, now)));
   if ([...values.values()].includes('CONFLICT')) return false;
   const previousIds = new Set(previous.evidence.map(e => e.id));
-  const fresh = received.evidence.filter(e => !previousIds.has(e.id)).map(e => evidenceAt(e, now)).filter(eligible);
+  const fresh = received.evidence.filter(e => !previousIds.has(e.id) && evidenceMatchesProfile(e, received)).map(e => evidenceAt(e, now)).filter(eligible);
   return fresh.some(e => e.source_class === 'OFFICIAL') && fresh.some(e => e.source_class === 'PARTNER');
 }
 

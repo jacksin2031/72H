@@ -1,5 +1,22 @@
 # 72H Offline Continuity Specification v0.1
 
+## Authorized area / location extension
+
+Offline snapshots now retain a validated canonical area catalog and explicit
+profile/evidence area IDs. Legacy snapshots without these fields remain readable
+but cannot establish regional severity, medium-risk action eligibility or
+reconnection proof. New relevant official/partner evidence must match the current
+profile's declared catalog ancestry. Labels, coordinates and accommodation-only
+evidence never bypass this gate.
+
+Installed map packs are selected through local catalog bounds and verified
+byte/hash metadata. No coverage means an explicit unsupported state, with profile
+text and offline guidance retained. An opt-in local Last Known Location keeps
+only the latest browser point/accuracy/capture time. Offline, restored or aged
+points are visibly last known, never silently refreshed; power-mode map removal
+does not erase that point. See [VNEXT_AREA_LOCATION.md](VNEXT_AREA_LOCATION.md)
+for consent, retention, denial and deletion behavior.
+
 ## 1. Purpose
 
 Disasters may degrade or interrupt mobile and internet connectivity. 72H must therefore remain useful even when cloud services, transport APIs, or real-time disaster feeds are temporarily unavailable.

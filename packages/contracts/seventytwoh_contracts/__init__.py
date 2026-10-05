@@ -1,6 +1,7 @@
 """Canonical domain contracts shared by the 72H application."""
 
 from .models import (
+    AreaDefinition,
     AgentName,
     CandidateActionSelection,
     CandidatePlanSelection,
@@ -8,6 +9,10 @@ from .models import (
     ClaimStateStatus,
     ClaimType,
     DisasterEvent,
+    DisasterAssessment,
+    DisasterEventStatus,
+    DisasterEventType,
+    DisasterSeverityLevel,
     Evidence,
     EvidenceProjection,
     FreshnessStatus,
@@ -18,9 +23,11 @@ from .models import (
     Plan,
     PlanAction,
     PlanEvaluation,
+    ProfileSeed,
     ReplayEvent,
     ReplaySession,
     ReplaySnapshot,
+    ReplayScenarioOption,
     ReplayTimelineEvent,
     SafeIntentId,
     Situation,
@@ -30,6 +37,7 @@ from .models import (
 )
 
 __all__ = [
+    "AreaDefinition",
     "AgentName",
     "CandidateActionSelection",
     "CandidatePlanSelection",
@@ -37,6 +45,10 @@ __all__ = [
     "ClaimStateStatus",
     "ClaimType",
     "DisasterEvent",
+    "DisasterAssessment",
+    "DisasterEventStatus",
+    "DisasterEventType",
+    "DisasterSeverityLevel",
     "Evidence",
     "EvidenceProjection",
     "FreshnessStatus",
@@ -47,9 +59,11 @@ __all__ = [
     "Plan",
     "PlanAction",
     "PlanEvaluation",
+    "ProfileSeed",
     "ReplayEvent",
     "ReplaySession",
     "ReplaySnapshot",
+    "ReplayScenarioOption",
     "ReplayTimelineEvent",
     "SafeIntentId",
     "Situation",

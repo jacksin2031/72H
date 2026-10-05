@@ -20,6 +20,7 @@ test-results/
 playwright-report/
 apps/web/public/precache-manifest.json
 apps/web/public/sw.js
+apps/web/public/maplibre/
 output/playwright/
 output/cloud-shell/
 .playwright-cli/

@@ -23,6 +23,7 @@ def test_health_version_and_start_without_body():
     snapshot = response.json()
     assert set(snapshot) == {
         "profile",
+        "area_catalog",
         "situation",
         "events",
         "evidence",
@@ -39,10 +40,15 @@ def test_health_version_and_start_without_body():
     assert snapshot["replay"]["mode"] == "SYNTHETIC_REPLAY"
     assert "not live official information" in snapshot["replay"]["mode_label"]
     assert snapshot["profile"]["preferred_language"] == "zh-TW"
+    assert snapshot["profile"]["current_location"]["lat"] == 35.6595
+    assert snapshot["profile"]["current_location"]["lng"] == 139.7005
+    assert snapshot["profile"]["accommodation_location"]["lat"] == 35.7148
+    assert snapshot["profile"]["accommodation_location"]["lng"] == 139.7967
+    assert snapshot["replay"]["scenario_key"] == "tokyo-earthquake-v1"
     assert snapshot["plans"] == []
     assert snapshot["plan_actions"] == []
     assert snapshot["plan_evaluations"] == []
-    assert [claim["status"] for claim in snapshot["situation"]["claim_states"]] == ["UNKNOWN", "UNKNOWN"]
+    assert snapshot["situation"]["claim_states"] == []
     assert snapshot["scenario_events"][0].keys() >= {
         "id",
         "event_type",
@@ -62,6 +68,68 @@ def test_start_accepts_supported_language_and_rejects_extra_fields():
     assert bad.status_code == 422
     extra = client.post("/api/replay/start", json={"language": "ja", "trust_status": "VERIFIED_OFFICIAL"})
     assert extra.status_code == 422
+
+
+def test_registered_scenario_api_selects_osaka_and_rejects_unknown_keys():
+    client = _client()
+    options = client.get("/api/replay/scenarios")
+    assert options.status_code == 200
+    assert {item["key"] for item in options.json()} == {
+        "tokyo-earthquake-v1",
+        "osaka-earthquake-v1",
+    }
+    assert all(set(item) == {"key", "name"} for item in options.json())
+
+    started = client.post(
+        "/api/replay/start", json={"scenario_key": "osaka-earthquake-v1"}
+    )
+    assert started.status_code == 201
+    snapshot = started.json()
+    assert snapshot["replay"]["scenario_key"] == "osaka-earthquake-v1"
+    assert snapshot["profile"]["current_location"]["area_ids"][0] == "JP-27-KITA"
+    assert snapshot["profile"]["current_location"]["lat"] == 34.7
+    assert snapshot["profile"]["current_location"]["lng"] == 135.5
+    session_id = snapshot["replay"]["id"]
+    client.post(f"/api/replay/{session_id}/next")
+    state = client.post(f"/api/replay/{session_id}/next").json()
+    assert state["evidence"][0]["raw_reference"].startswith(
+        "replay://osaka-earthquake-v1/"
+    )
+    status_claim = next(
+        claim
+        for claim in state["situation"]["claim_states"]
+        if claim["key"] == "disaster.EARTHQUAKE.JP-27.status"
+    )
+    assert status_claim["status"] == "VERIFIED"
+    assert status_claim["value"] == "ACTIVE"
+
+    unknown = client.post(
+        "/api/replay/start", json={"scenario_key": "C:/arbitrary/scenario.json"}
+    )
+    assert unknown.status_code == 422
+
+    invalid_profile = client.post(
+        "/api/replay/start",
+        json={
+            "scenario_key": "tokyo-earthquake-v1",
+            "profile": {
+                "current_location": {"label": "Shibuya", "area_ids": ["JP-99"]},
+                "accommodation_location": {"label": "Asakusa"},
+            },
+        },
+    )
+    assert invalid_profile.status_code == 422
+
+
+def test_tokyo_replay_keeps_the_registered_eleven_event_four_plan_baseline():
+    client = _client()
+    state = client.post("/api/replay/start").json()
+    session_id = state["replay"]["id"]
+    assert len(state["scenario_events"]) == 11
+    for _ in range(len(state["scenario_events"])):
+        state = client.post(f"/api/replay/{session_id}/next").json()
+    assert state["replay"]["status"] == "COMPLETED"
+    assert len(state["plans"]) == 4
 
 
 def test_controls_and_reset_preserve_session_identity_and_fixture_ids():

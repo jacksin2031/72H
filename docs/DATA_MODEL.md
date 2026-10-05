@@ -1,5 +1,26 @@
 # 72H Data Model v0.1
 
+## Authorized generic location / area extension
+
+`Location` now carries paired optional `lat / lng`, nullable `observed_at`, and
+`area_ids` in complete specific-to-root catalog order. `AreaDefinition` is the
+server-owned `{id, label, parent_id}` hierarchy. Labels and GPS do not resolve
+authority or area membership. Empty paths preserve readable legacy snapshots
+but cannot establish scoped evidence eligibility.
+
+`Evidence` carries explicit `affected_area_ids` and typed
+`disaster_assessments {area_id, event_type, level, status}`. Current event type is
+`EARTHQUAKE`, level is `L0..L4 | null`, and status is `ACTIVE | RESOLVED | UNKNOWN`.
+The snapshot includes `area_catalog`; source registrations separately control
+which canonical areas and claim types may be asserted. Source normalization
+rejects conflicting typed/legacy claims before state mutation.
+
+`StartReplayRequest` can select a registered `scenario_key` and validated
+`profile` seed. Reset retains that session's configured seed. Browser Last Known
+Location is a separate consented local one-point record, never a server profile
+or official observation. Detailed compatibility, safety and storage behavior:
+[VNEXT_AREA_LOCATION.md](VNEXT_AREA_LOCATION.md).
+
 ## Purpose
 
 This document defines the persistent and local data model for 72H. It is designed to support:
