@@ -143,6 +143,19 @@ It returned exactly **`Browser is not available: iab`**. Follow-up inventory was
 0 screenshots**. There was no CLI/Playwright or alternate-model substitution.
 The user's instruction to finish other verification first did not waive GUI.
 
+The user subsequently authorized Google Chrome. Direct CUA creation returned
+`Browser is not available: chrome`, again with an empty app/browser inventory.
+The same mandated Luna Lightweight owner then used the installed Computer Use
+skill's `node_repl + @oai/sky` native Windows entry point. Sky initialization and
+launch of the existing Chrome succeeded; inventory returned one Chrome window.
+Before any application navigation, `sky.get_window_state` stopped Computer Use
+for the turn because the runtime could not determine the current browser URL
+with enough confidence to enforce policy. The owner stopped all further input
+as required; no bypass or alternative input was attempted. Chrome launch is not
+application acceptance: the dashboard still has **0 GUI acceptance actions**.
+The native route is available, but a new turn with a policy-identifiable Chrome
+page is required to continue.
+
 When the provider is restored, resume with the same GUI owner and verify:
 
 1. Desktop preparedness/status/history/sources/handoff and Judge separation.
