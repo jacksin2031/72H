@@ -15,6 +15,8 @@ import { PowerControls } from './power-controls';
 import { useDeviceLocation } from '@/lib/use-device-location';
 import { DeviceLocationControls } from './device-location';
 import { ScenarioPicker } from './scenario-picker';
+import { useTheme } from '@/lib/use-theme';
+import { adaptiveMessages } from '@/lib/adaptive-i18n';
 
 const routes = ['dashboard', 'plan', 'more'] as const;
 function time(value: string | null, language: Language) {
@@ -25,6 +27,7 @@ export function Dashboard({ view }: { view: string }) {
   const [language, setLanguage] = useState<Language>('ja');
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [busy, setBusy] = useState(false);
+  const [initialMapOpen, setInitialMapOpen] = useState(false);
   const [error, setError] = useState('');
   const [connection, setConnection] = useState<'online' | 'offline' | 'reconnecting'>('online');
   const [wallNow, setWallNow] = useState(0);
@@ -38,6 +41,8 @@ export function Dashboard({ view }: { view: string }) {
   const t = messages[language];
   const vt = vnextMessages[language];
   const battery = usePower();
+  const { theme, chooseTheme } = useTheme();
+  const at = adaptiveMessages[language];
   const deviceLocation = useDeviceLocation(connection === 'online');
   const powerRef = useRef(battery.power);
   powerRef.current = battery.power;
@@ -124,7 +129,7 @@ export function Dashboard({ view }: { view: string }) {
   const displayEvidence = projection?.evidence || [];
   const evaluation = current && snapshot?.plan_evaluations.findLast(e => e.plan_id === current.id);
   const actions = snapshot?.plan_actions.filter(a => a.plan_id === current?.id) || [];
-  const navLabels = { dashboard: vt.home, plan: t.plan, more: vt.more, sources: t.sources, trace: t.trace, demo: vt.demoMode };
+  const navLabels = { dashboard: vt.home, plan: t.plan, more: vt.more, notifications: at.notifications, sources: t.sources, trace: t.trace, demo: vt.demoMode };
   useEffect(() => {
     if (!snapshot || (connection === 'online' && !snapshot.situation.network_state.startsWith('OFFLINE'))) return;
     const deadline = nextSafetyDeadline(snapshot, continuityTime);
@@ -133,7 +138,7 @@ export function Dashboard({ view }: { view: string }) {
     return () => clearTimeout(timer);
   }, [snapshot, connection, continuityTime]);
 
-  return <div className={`shell power-${battery.power.mode.toLowerCase()}`}>
+  return <div className={`shell theme-${theme} power-${battery.power.mode.toLowerCase()}`}>
     <aside className="sidebar">
       <Link className="brand" href="/">72<span>H</span><small>{t.tagline}</small></Link>
       <nav aria-label="Main">{routes.map((route, index) => <a key={route} className={view === route ? 'selected' : ''} href={`/${route}`} aria-current={view === route ? 'page' : undefined}><span className="nav-number">0{index + 1}</span>{navLabels[route]}</a>)}</nav>
@@ -145,12 +150,19 @@ export function Dashboard({ view }: { view: string }) {
       {error && <p className="error" role="alert">{error}</p>}
       {sessionMissing && <section className="offline-banner"><p>{t.sessionMissing}</p><button disabled={busy || !battery.power.allowNonCriticalNetwork} onClick={() => void update('start', { language })}>{t.newDemo}</button></section>}
       {storageError && <p className="error" role="alert">{t.storageError}</p>}
-      {!snapshot && <PowerControls language={language} power={battery.power} level={battery.level} override={battery.override} choose={battery.choose} />}
-      {snapshot && (connection !== 'online' || snapshot.situation.network_state.startsWith('OFFLINE') || snapshot.situation.network_state === 'RECONNECTING') && <section className="offline-banner" role="status"><strong>{projection?.networkState === 'RECONNECTING' ? t.reconnecting : t.offline}</strong><p>{t.offlineDetail}</p><small>{t.lastVerified}: {time(snapshot.situation.latest_evidence_at, language)} · {t.actualNetwork}: {connection === 'online' ? t.online : connection}</small>{connection !== 'online' && <div><button disabled={busy} onClick={() => { network('reconnecting'); void update(snapshot.replay.id, undefined, 'GET'); }}>{t.retry}</button></div>}</section>}
-      {view === 'more' && <section className="more-menu"><h1>{vt.more}</h1><Link href="/sources">{t.sources} →</Link><details><summary>{vt.demoMode}</summary><Link href="/demo">{t.demo} →</Link><Link href="/trace">{t.trace} →</Link></details></section>}
-      {!snapshot ? <>{view === 'dashboard' && <><DeviceLocationControls location={deviceLocation} language={language} />{battery.power.allowMap && <EmergencyMap language={language} conserve={battery.power.mode !== 'NORMAL'} location={deviceLocation} />}</>}<section className="intro"><p className="eyebrow">FROM ALERT TO ACTION</p><h1>{['dashboard', 'demo'].includes(view) ? t.intro : navLabels[view as keyof typeof navLabels]}</h1><p>{['dashboard', 'demo'].includes(view) ? t.introDetail : t.empty}</p><ScenarioPicker language={language} enabled={battery.power.allowNonCriticalNetwork && connection !== 'offline'} busy={busy} button={t.start} start={key => void update('start', { language, scenario_key: key })} /></section></> : <>
-        {battery.power.mode !== 'SURVIVAL' && <section className="heading"><div><p className="eyebrow">{snapshot.situation.active_event_ids.length ? 'EARTHQUAKE / REPLAY' : 'READY / REPLAY'}</p><h1>{view === 'dashboard' ? (snapshot.situation.active_event_ids.length ? t.earthquake : t.noEmergency) : navLabels[view as keyof typeof navLabels]}</h1></div><div className="status-pill"><span className="dot" />{projection?.networkState}</div></section>}
-        <VNextExperience snapshot={snapshot} language={language} now={continuityTime} connection={connection} verificationAnchor={verificationAnchor.current} power={battery.power} level={battery.level} override={battery.override} choose={battery.choose} compact={view !== 'dashboard'} showLocalTrace={view === 'trace'} deviceLocation={deviceLocation} />
+      {!snapshot && view === 'more' && <PowerControls language={language} power={battery.power} level={battery.level} override={battery.override} choose={battery.choose} />}
+      {snapshot && view !== 'dashboard' && (connection !== 'online' || snapshot.situation.network_state.startsWith('OFFLINE') || snapshot.situation.network_state === 'RECONNECTING') && <section className="offline-banner" role="status"><strong>{projection?.networkState === 'RECONNECTING' ? t.reconnecting : t.offline}</strong><p>{t.offlineDetail}</p><small>{t.lastVerified}: {time(snapshot.situation.latest_evidence_at, language)} · {t.actualNetwork}: {connection === 'online' ? t.online : connection}</small>{connection !== 'online' && <div><button disabled={busy} onClick={() => { network('reconnecting'); void update(snapshot.replay.id, undefined, 'GET'); }}>{t.retry}</button></div>}</section>}
+      {view === 'more' && <section className="more-menu"><h1>{vt.more}</h1><Link href="/sources">{t.sources} →</Link><Link href="/notifications">{at.notifications} →</Link><label className="theme-setting">{at.appearance}<select value={theme} onChange={e => chooseTheme(e.target.value)}><option value="dark">{at.dark}</option><option value="system">{at.system}</option><option value="contrast">{at.contrast}</option></select></label><details><summary>{vt.demoMode}</summary><Link href="/demo">{t.demo} →</Link><Link href="/trace">{t.trace} →</Link></details></section>}
+      {!snapshot ? <>
+        {(view === 'dashboard' || (battery.power.mode === 'SURVIVAL' && view !== 'more')) ? <section className="adaptive-home" data-presentation-mode={battery.power.mode === 'SURVIVAL' ? 'SURVIVAL' : 'TEXT_ONLY'}>
+          <header className="situation-header"><div><h1>{battery.power.mode === 'SURVIVAL' ? at.survival : at.monitoring}</h1><p>{connection === 'offline' ? at.cached : at.summary}</p></div>{battery.power.mode !== 'SURVIVAL' && <Link className="notification-badge" href="/notifications" aria-label={at.notifications}>🔔</Link>}</header>
+          <section className="now-card"><small>NOW</small><h2>{at.pending}</h2></section>
+          {['NORMAL', 'CONSERVE'].includes(battery.power.mode) ? <details className="plan-sheet"><summary>{at.details}</summary><p>{t.introDetail}</p><Link href="/more">{at.settings}</Link><Link href="/demo">{vt.demoMode}</Link></details> : <><p className="power-warning">⚠ {battery.power.mode === 'SURVIVAL' ? at.survival : at.emergencyPower}</p><Link href="/more">{at.settings}</Link><section className="emergency-contact"><h2>{at.emergency}</h2><p>{at.emergencyDetail}</p><a href="tel:119">119</a> · <a href="tel:110">110</a></section><p>{at.position}: {deviceLocation.position ? `${deviceLocation.position.latitude.toFixed(4)}, ${deviceLocation.position.longitude.toFixed(4)} · ${new Date(deviceLocation.position.captured_at).toLocaleString(language, { timeZone: 'Asia/Tokyo' })}` : at.noPosition}</p></>}
+
+        </section> : view === 'demo' ? <section className="intro"><h1>{vt.demoMode}</h1><p>{t.introDetail}</p><ScenarioPicker language={language} enabled={battery.power.allowNonCriticalNetwork && connection !== 'offline'} busy={busy} button={t.start} start={key => void update('start', { language, scenario_key: key })} /></section> : view === 'more' ? <><DeviceLocationControls location={deviceLocation} language={language} /><button disabled={!battery.power.allowMap} onClick={() => setInitialMapOpen(value => !value)}>{initialMapOpen ? at.closeMap : at.map}</button>{initialMapOpen && battery.power.allowMap && <EmergencyMap language={language} conserve={battery.power.mode !== 'NORMAL'} location={deviceLocation} />}</> : <p>{view === 'notifications' ? vt.emptyNotifications : t.empty}</p>}
+      </> : <>
+        {view !== 'dashboard' && battery.power.mode !== 'SURVIVAL' && <section className="heading"><div><p className="eyebrow">{snapshot.situation.active_event_ids.length ? 'EARTHQUAKE / REPLAY' : 'READY / REPLAY'}</p><h1>{view === 'dashboard' ? (snapshot.situation.active_event_ids.length ? t.earthquake : t.noEmergency) : navLabels[view as keyof typeof navLabels]}</h1></div><div className="status-pill"><span className="dot" />{projection?.networkState}</div></section>}
+        <VNextExperience snapshot={snapshot} language={language} now={continuityTime} connection={connection} verificationAnchor={verificationAnchor.current} power={battery.power} level={battery.level} override={battery.override} choose={battery.choose} view={view} showLocalTrace={view === 'trace'} deviceLocation={deviceLocation} />
         {view === 'demo' && battery.power.mode !== 'SURVIVAL' && <><ScenarioPicker language={language} currentKey={snapshot.replay.scenario_key} enabled={battery.power.allowNonCriticalNetwork && connection !== 'offline'} busy={busy} button={t.newDemo} start={key => void update('start', { language, scenario_key: key })} /><div className="context-grid"><div><small>{t.location}</small><strong>{snapshot.profile.current_location.label}</strong></div><div><small>{t.destination}</small><strong>{snapshot.profile.accommodation_location.label}</strong></div><div><small>{t.simulatedTime} / JST</small><strong>{time(snapshot.replay.current_time, language)}</strong></div><div><small>{t.lastVerified}</small><strong>{time(snapshot.situation.latest_evidence_at, language)}</strong></div></div>
         <div className="controls"><button disabled={busy || !battery.power.allowNonCriticalNetwork || snapshot.replay.status === 'COMPLETED'} onClick={() => void update(`${snapshot.replay.id}/${snapshot.replay.status === 'RUNNING' ? 'pause' : 'resume'}`)}>{snapshot.replay.status === 'RUNNING' ? t.pause : t.resume}</button><button disabled={busy || !battery.power.allowNonCriticalNetwork || !['RUNNING', 'PAUSED'].includes(snapshot.replay.status)} onClick={() => void update(`${snapshot.replay.id}/next`)}>{t.next} →</button><button disabled={busy || !battery.power.allowNonCriticalNetwork} onClick={() => void update(`${snapshot.replay.id}/reset`)}>{t.reset}</button><select aria-label="Replay speed" value={snapshot.replay.speed} disabled={busy || !battery.power.allowNonCriticalNetwork || snapshot.replay.status === 'COMPLETED'} onChange={e => void update(`${snapshot.replay.id}/speed`, { speed: Number(e.target.value) })}><option value={1}>1×</option><option value={2}>2×</option><option value={4}>4×</option></select><small>{snapshot.replay.current_event_index} / {snapshot.scenario_events.length}</small></div></>}
         {view === 'demo' && battery.power.mode !== 'SURVIVAL' && <>
@@ -167,8 +179,8 @@ export function Dashboard({ view }: { view: string }) {
         {view === 'sources' && battery.power.mode !== 'SURVIVAL' && <section className="record-list">{displayEvidence.map(e => <article key={e.id}><div className="section-head"><h2>{e.source_name}</h2><span className={`badge ${e.conflict || e.trust_status === 'CONFLICTING' || e.trust_status === 'UNVERIFIED' || e.freshness_status !== 'CURRENT' ? 'warn' : ''}`}>{e.conflict || e.trust_status === 'CONFLICTING' ? 'CONFLICTING' : e.freshness_status === 'CURRENT' ? e.trust_status : e.freshness_status}</span></div><p>{e.summary}</p><span className="badge">{sourceAuthority(e)}</span><p className="muted">{e.freshness_status} · {time(e.published_at, language)} · {t.expires}: {time(e.expires_at, language)} · {t.sourceAge}: {Math.max(0, Math.floor((continuityTime - Date.parse(e.published_at)) / 60_000))} min</p><p>{e.conflict || e.trust_status === 'CONFLICTING' ? t.conflicting : e.trust_status === 'UNVERIFIED' ? t.unverified : t.verified}</p><code>{e.id} · {e.raw_reference}</code></article>)}{!snapshot.evidence.length && <p>{t.empty}</p>}</section>}
         {view === 'trace' && battery.power.mode !== 'SURVIVAL' && <section className="record-list">{[...snapshot.trace].reverse().map(e => <article key={e.id}><div className="section-head"><h3>{e.event_type}</h3><small>{time(e.timestamp, language)}</small></div><p>{e.public_summary}</p><small>{e.agent} · {e.status}</small><p className="muted">{e.input_refs.join(', ')} → {e.output_refs.join(', ')}</p></article>)}{!snapshot.trace.length && <p>{t.empty}</p>}</section>}
       </>}
-      <section className="record-list emergency-pack"><h2>{emergencyPack[language].title}</h2><p className="muted">{emergencyPack[language].label} · v{emergencyPack.version} · {emergencyPack.reviewed_at}</p><p>{emergencyPack[language].shaking}</p><p>{emergencyPack[language].phone}</p><p>{emergencyPack[language].phrase}</p>{emergencyPack.sources.map(s => <a key={s.url} href={s.url} target="_blank" rel="noreferrer">{s.name} ↗ </a>)}</section>
-      <footer>72H · From Alert to Action. <span>{t.noMovement}</span></footer>
+      {view !== 'dashboard' && battery.power.mode !== 'SURVIVAL' && <section className="record-list emergency-pack"><h2>{emergencyPack[language].title}</h2><p className="muted">{emergencyPack[language].label} · v{emergencyPack.version} · {emergencyPack.reviewed_at}</p><p>{emergencyPack[language].shaking}</p><p>{emergencyPack[language].phone}</p><p>{emergencyPack[language].phrase}</p>{emergencyPack.sources.map(s => <a key={s.url} href={s.url} target="_blank" rel="noreferrer">{s.name} ↗ </a>)}</section>}
+      {view !== 'dashboard' && <footer>72H · From Alert to Action. <span>{t.noMovement}</span></footer>}
     </main>
   </div>;
 }

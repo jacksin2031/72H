@@ -54,8 +54,8 @@ export function EmergencyMap({ language, conserve, profile, location }: { langua
           maxBounds: [[approved.bounds[0], approved.bounds[1]], [approved.bounds[2], approved.bounds[3]]],
           attributionControl: false, fadeDuration: 0, renderWorldCopies: false,
           style: { version: 8, sources: { roads: { type: 'geojson', data } }, layers: [
-            { id: 'paper', type: 'background', paint: { 'background-color': '#eaf0e7' } },
-            { id: 'roads', type: 'line', source: 'roads', paint: { 'line-color': '#9aaea1', 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.7, 15, 3] } },
+            { id: 'paper', type: 'background', paint: { 'background-color': '#101a18' } },
+            { id: 'roads', type: 'line', source: 'roads', paint: { 'line-color': '#7a9c91', 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.7, 15, 3] } },
           ] },
         });
         instance.current = map;

@@ -191,6 +191,16 @@ the event's eligibility and existing-project policy with that distinction.
 
 ## Documentation
 
+- [Adaptive UI specification and implementation boundary](docs/VNEXT_ADAPTIVE_UI_UPDATE_SPEC.md)
+- [Adaptive UI local validation](docs/VNEXT_ADAPTIVE_UI_VALIDATION.md)
+
+The local `codex/adaptive-ui` refinement makes Consumer Home dark-first and
+text-first, with one usable NOW and collapsed details. Maps mount on demand;
+notifications and power/location/safety preferences are separate surfaces.
+Automatic movement display requires a future explicit Safety Core contract,
+which current replay snapshots cannot authorize. The accepted production UI
+and deployment below remain unchanged until a separate release.
+
 - [vNext product plan](docs/VNEXT_PRODUCT_PLAN.md)
 - [Authorized P0 module contracts](docs/VNEXT_P0_CONTRACTS.md)
 - [vNext local validation](docs/VNEXT_VALIDATION.md)

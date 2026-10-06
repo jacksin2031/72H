@@ -1,5 +1,20 @@
 # 72H — Current Development Phase
 
+## Current authorized work — Adaptive UI (2026-10-05 JST)
+
+The user requested completion of `VNEXT_ADAPTIVE_UI_UPDATE_SPEC.md`. Work is
+isolated on `codex/adaptive-ui` from `80b919d`; the accepted production baseline
+remains unchanged. Deterministic presentation policy, action-first dark Home,
+on-demand map, separate inbox and More settings are locally COMPLETE: 104
+frontend tests, 69 backend tests, TypeScript/build, secret/diff checks and
+desktop/mobile/keyboard/offline browser acceptance passed. Final web build:
+`0MqvaK7BS87lz1Fk6F62t`. Validation and remaining boundaries are tracked in
+`docs/VNEXT_ADAPTIVE_UI_VALIDATION.md`. This task does
+not introduce live feeds, rescue dispatch, native background guarantees or new
+movement-safety authority. The public snapshot still has no approved evacuation
+intent/destination contract; automatic MAP_ASSISTED activation fails closed.
+
+
 ## Current authorized release — vNext (2026-10-05 JST)
 
 The user explicitly authorized final RC review, blocker-only fixes, merge to
