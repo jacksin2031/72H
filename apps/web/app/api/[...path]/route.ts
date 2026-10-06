@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { sameOrigin } from '@/lib/request-origin';
 
 export const dynamic = 'force-dynamic';
-const allowed = /^(health|version|replay\/(start|[a-zA-Z0-9_-]{1,80}(\/(pause|resume|next|reset|speed))?))$/;
+const allowed = /^(health|version|replay\/(start|[a-zA-Z0-9_-]{1,80}(\/(pause|resume|next|reset|speed))?)|live\/(start|[a-zA-Z0-9_-]{1,80}(\/(refresh|routes\/search))?))$/;
 async function forward(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params;
   const suffix = path.join('/');

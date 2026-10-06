@@ -1,5 +1,23 @@
 # 72H Product Specification v0.1
 
+## Authorized vNext P1 extension
+
+The user's 2026-10-06 JST `/goal complete` request authorizes the live-source,
+route-presentation and device-role work in
+[VNEXT_P1_LIVE_ROUTE_DEVICE_ROLES.md](VNEXT_P1_LIVE_ROUTE_DEVICE_ROLES.md).
+Its approved mobile direction is a scene-based web/PWA app: one current safe
+instruction, details in secondary scenes/sheets, and a map mounted only when
+deterministic movement gates permit it. Desktop supports preparedness, status,
+review and a bounded handoff to mobile. Both use one Safety Core and plan state.
+
+Live information, synthetic replay and cached state remain separate and visibly
+labeled. A source or route provider cannot issue movement permission. A map must
+not imply an eligible destination, an open shelter or a guaranteed safe route.
+Unimplemented live sources and cross-device synchronization remain explicitly
+unsupported. Acceptance evidence is tracked in
+[VNEXT_P1_VALIDATION.md](VNEXT_P1_VALIDATION.md); this authorization is not a
+claim that implementation or production acceptance has finished.
+
 ## Authorized vNext P0 extension
 
 On 2026-10-05 JST the user approved the P0 extension in

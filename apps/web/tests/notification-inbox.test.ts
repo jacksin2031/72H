@@ -15,3 +15,12 @@ it('restores a bounded inbox and rejects unsafe navigation or unbounded content'
   expect(notificationLedgerSchema.safeParse({ ...base, seen: Array(513).fill('n') }).success).toBe(false);
   expect(notificationLedgerSchema.safeParse({ ...base, items: [{ ...base.items[0], href: 'javascript:alert(1)' }] }).success).toBe(false);
 });
+
+it('caps aggregated notifications at twelve and keeps the newest distinct incidents first', () => {
+  const incoming: Notification[] = Array.from({ length: 15 }, (_, index) => ({
+    id: `incident-${index + 1}`, event: 'CRITICAL_WARNING', kind: 'CRITICAL', evidenceIds: [], href: '/dashboard',
+  }));
+  const result = aggregateNotifications([], incoming);
+  expect(result).toHaveLength(12);
+  expect(result.map(item => item.id)).toEqual(incoming.slice(0, 12).map(item => item.id));
+});

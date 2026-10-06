@@ -1,5 +1,28 @@
 # 72H Offline Continuity Specification v0.1
 
+## Authorized P1 spatial extension
+
+LIVE and synthetic Replay snapshots use separate validated cache stores.
+Local expiry or loss of spatial support must suppress the corresponding HIGH
+evacuation action in every device view, including text-only plan review; removing
+the map alone is insufficient. Immutable server plan history is retained.
+
+For the authorized P1 spatial contract, directive proof must cover the origin,
+destination proof its designated target area, and road proof both origin and
+destination. A destination can be in another catalog area: its typed proof is
+not required to assert conditions at the user's current location. This exception
+does not let accommodation coordinates, facility designation or generic evidence
+establish movement permission. Current trust, exact claims and complete scoped
+proofs remain necessary.
+
+Spatial reconnect remains conservative: all required official proofs must be
+current and published/received within the reconnect window, with newly checked
+destination/route projections and current source retrieval. A new JMA retrieval
+alone does not revalidate every movement dependency. Source-specific revalidation
+attestations for unchanged publications are not implemented; cached HIGH actions
+remain unavailable until sufficient new proof is supplied. Publication TTL never
+renews on retrieval. Production movement-source allowlists remain empty.
+
 ## Authorized area / location extension
 
 Offline snapshots now retain a validated canonical area catalog and explicit

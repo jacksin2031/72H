@@ -89,6 +89,65 @@ def reduce_event(
     return evaluate_and_replan(state, reduced, event, policy)
 
 
+def apply_live_evidence_batch(
+    state: CoreState,
+    records: tuple[tuple[DisasterEvent, Evidence], ...],
+    current_time,
+    policy: SafetyPolicy = DEFAULT_POLICY,
+) -> CoreState:
+    """Append server-normalized live evidence, then run the same Safety Core evaluator."""
+    if current_time.tzinfo is None or current_time.utcoffset() is None:
+        raise ValueError("live current_time must be timezone aware")
+    if current_time < state.current_time:
+        raise ValueError("live state time cannot move backwards")
+    before = state
+    reduced = replace(state, current_time=current_time)
+    for event, evidence in records:
+        if event.is_synthetic or evidence.is_synthetic:
+            raise ValueError("synthetic replay records cannot enter a live session")
+        if event.source_class != SourceClass.OFFICIAL or evidence.trust_status != TrustStatus.VERIFIED_OFFICIAL:
+            raise ValueError("live JMA records must use server-assigned official trust")
+        if event.situation_id != reduced.situation.id or evidence.situation_id != reduced.situation.id:
+            raise ValueError("live records must belong to the current situation")
+        if any(item.id == event.id for item in reduced.events):
+            continue
+        situation = reduced.situation.model_copy(
+            update={
+                "incident_status": IncidentStatus.EVENT_DETECTED,
+                "active_event_ids": (*reduced.situation.active_event_ids, event.id),
+                "updated_at": current_time,
+            }
+        )
+        event_trace = TraceEvent(
+            id=f"trace_live_event_{len(reduced.trace) + 1:03d}",
+            situation_id=situation.id,
+            timestamp=current_time,
+            agent=AgentName.SOURCE_AGENT,
+            event_type="LIVE_OFFICIAL_EVENT_RECEIVED",
+            input_refs=(event.id,),
+            output_refs=(event.id,),
+            status=TraceStatus.SUCCESS,
+            public_summary="An official JMA earthquake report entered the live evidence pipeline.",
+        )
+        reduced = replace(
+            reduced,
+            situation=situation,
+            events=(*reduced.events, event),
+            trace=(*reduced.trace, event_trace),
+        )
+        reduced = _append_evidence(
+            reduced,
+            event.id,
+            evidence,
+            "OFFICIAL_LIVE_EVIDENCE_ADDED",
+            (event.id,),
+        )
+    from .planning import evaluate_and_replan
+
+    clock_event = type("LiveRefreshEvent", (), {"id": f"live-refresh-{int(reduced.current_time.timestamp())}"})()
+    return evaluate_and_replan(before, reduced, clock_event, policy)
+
+
 async def reduce_event_with_planner(
     state: CoreState,
     event: ReplayEvent,
@@ -124,6 +183,106 @@ async def reduce_event_with_planner(
         state,
         reduced,
         event,
+        policy,
+        candidate_selection=outcome.selection,
+        candidate_context=context,
+        planner_trace=PlannerTrace(mode=outcome.mode, reason_code=outcome.reason_code),
+    )
+    return published, outcome.mode
+
+
+async def apply_live_evidence_batch_with_planner(
+    state: CoreState,
+    records: tuple[tuple[DisasterEvent, Evidence], ...],
+    current_time,
+    planner,
+    live_session_id: str,
+    policy: SafetyPolicy = DEFAULT_POLICY,
+):
+    """Publish live evidence through the existing bounded candidate-planner boundary."""
+    if current_time.tzinfo is None or current_time.utcoffset() is None:
+        raise ValueError("live current_time must be timezone aware")
+    if current_time < state.current_time:
+        raise ValueError("live state time cannot move backwards")
+    before = state
+    reduced = replace(state, current_time=current_time)
+    for event, evidence in records:
+        if event.is_synthetic or evidence.is_synthetic:
+            raise ValueError("synthetic replay records cannot enter a live session")
+        if event.source_class != SourceClass.OFFICIAL or evidence.trust_status != TrustStatus.VERIFIED_OFFICIAL:
+            raise ValueError("live JMA records must use server-assigned official trust")
+        if event.situation_id != reduced.situation.id or evidence.situation_id != reduced.situation.id:
+            raise ValueError("live records must belong to the current situation")
+        if any(item.id == event.id for item in reduced.events):
+            continue
+        situation = reduced.situation.model_copy(
+            update={
+                "incident_status": IncidentStatus.EVENT_DETECTED,
+                "active_event_ids": (*reduced.situation.active_event_ids, event.id),
+                "updated_at": current_time,
+            }
+        )
+        event_trace = TraceEvent(
+            id=f"trace_live_event_{len(reduced.trace) + 1:03d}",
+            situation_id=situation.id,
+            timestamp=current_time,
+            agent=AgentName.SOURCE_AGENT,
+            event_type="LIVE_OFFICIAL_EVENT_RECEIVED",
+            input_refs=(event.id,),
+            output_refs=(event.id,),
+            status=TraceStatus.SUCCESS,
+            public_summary="An official JMA earthquake report entered the live evidence pipeline.",
+        )
+        reduced = replace(
+            reduced,
+            situation=situation,
+            events=(*reduced.events, event),
+            trace=(*reduced.trace, event_trace),
+        )
+        reduced = _append_evidence(
+            reduced,
+            event.id,
+            evidence,
+            "OFFICIAL_LIVE_EVIDENCE_ADDED",
+            (event.id,),
+        )
+    return await replan_live_transition_with_planner(
+        before, reduced, planner, live_session_id, policy,
+    )
+
+
+async def replan_live_transition_with_planner(
+    before: CoreState,
+    reduced: CoreState,
+    planner,
+    live_session_id: str,
+    policy: SafetyPolicy = DEFAULT_POLICY,
+):
+    """Evaluate a prepared live transition and optionally apply one bounded candidate."""
+    from .planning import (
+        PlannerTrace,
+        candidate_context_for_preview,
+        evaluate_and_replan,
+    )
+
+    if reduced.current_time < before.current_time:
+        raise ValueError("live state time cannot move backwards")
+    clock_event = type("LiveRefreshEvent", (), {"id": f"live-refresh-{int(reduced.current_time.timestamp())}"})()
+    preview = evaluate_and_replan(before, reduced, clock_event, policy)
+    context = candidate_context_for_preview(before, preview, policy)
+    if context is None:
+        return preview, None
+    outcome = await planner.select(live_session_id, context)
+    if outcome.mode == "DETERMINISTIC_REPLAY_ONLY":
+        return preview, outcome.mode
+    if outcome.mode == "GEMINI_ADK" and outcome.selection is None:
+        outcome = type(outcome)(mode="GEMINI_ADK_FALLBACK", reason_code="INVALID_OUTPUT")
+    if outcome.mode != "GEMINI_ADK" and outcome.selection is not None:
+        outcome = type(outcome)(mode="GEMINI_ADK_FALLBACK", reason_code="INVALID_OUTPUT")
+    published = evaluate_and_replan(
+        before,
+        reduced,
+        clock_event,
         policy,
         candidate_selection=outcome.selection,
         candidate_context=context,
@@ -449,7 +608,11 @@ def _append_evidence(
     summary = (
         "An unverified synthetic report was retained for display and excluded from action evidence."
         if evidence.trust_status == TrustStatus.UNVERIFIED
-        else "Synthetic replay evidence was normalized and stored with server-assigned source trust."
+        else (
+            "Synthetic replay evidence was normalized and stored with server-assigned source trust."
+            if evidence.is_synthetic
+            else "Official live evidence was normalized with server-assigned source trust and scope."
+        )
     )
     trace = _trace(
         state,
@@ -460,6 +623,7 @@ def _append_evidence(
         summary,
         TraceStatus.REJECTED if evidence.trust_status == TrustStatus.UNVERIFIED else TraceStatus.SUCCESS,
         (evidence.id, *extra_refs),
+        agent=AgentName.REPLAY_ENGINE if evidence.is_synthetic else AgentName.SOURCE_AGENT,
     )
     return _bounded(replace(state, situation=situation, evidence=(*state.evidence, evidence), trace=(*state.trace, trace)))
 
@@ -538,6 +702,7 @@ def _evidence(
     return Evidence(
         id=f"ev_{event_id}",
         situation_id=state.situation.id,
+        source_key=source_key,
         source_name=source.source_name,
         source_class=source.source_class,
         trust_status=source.trust_status,
@@ -658,12 +823,14 @@ def _trace(
     summary: str,
     status: TraceStatus,
     output_refs: tuple[str, ...] = (),
+    *,
+    agent: AgentName = AgentName.REPLAY_ENGINE,
 ) -> TraceEvent:
     return TraceEvent(
         id=f"trace_{event_id}",
         situation_id=state.situation.id,
         timestamp=timestamp,
-        agent=AgentName.REPLAY_ENGINE,
+        agent=agent,
         event_type=event_type,
         input_refs=input_refs,
         output_refs=output_refs,

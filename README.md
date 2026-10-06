@@ -13,6 +13,11 @@ The project focuses on one question:
 
 ## Public demo
 
+This public deployment remains the accepted vNext P0 rollback baseline. The
+authorized P1 implementation is being validated on `codex/vnext-p1`; it has not
+been promoted to production. See the [P1 acceptance ledger](docs/VNEXT_P1_VALIDATION.md)
+for verified results and remaining gates.
+
 **https://h72-602701455122.asia-northeast1.run.app**
 
 The public judging deployment runs on Google Cloud Run in `asia-northeast1`. Vertex AI / Gemini + Google ADK is enabled through the dedicated runtime service account. The Ekispert MCP credential is supplied from Secret Manager and was verified from Google Cloud with a names-only smoke job; route data is still treated as provider data rather than disaster-safety evidence.
@@ -85,10 +90,12 @@ Primary v0.1 scenario:
 - Public structured trace (Cloud Logging export is future work)
 - PWA / Service Worker / IndexedDB for offline continuity
 
-The MVP uses plain CSS to keep the frontend small. Source adapters are represented
-by a validated synthetic registry. An Ekispert MCP mobility adapter is implemented
-with bounded discovery/calls; live result normalization into eligible evidence
-and JMA/Safety Tips feeds are not integrated. Replay input enters the real evidence/state/Safety Core pipeline,
+The MVP uses plain CSS to keep the frontend small. The accepted P0 deployment
+uses a validated synthetic registry and bounded Ekispert MCP discovery/calls.
+The P1 branch adds separate live JMA intake and station-sequence candidate
+normalization; these changes still require the P1 acceptance gates before
+production. Safety Tips and persistent Firestore sessions remain unsupported.
+Replay input enters the real evidence/state/Safety Core pipeline,
 and plan versions are generated from state rather than event-index UI branches.
 The server retains immutable evidence and plan publication objects, with separate
 freshness/conflict projections and append-only plan evaluations.
@@ -121,7 +128,11 @@ uv run --project services/agent-api python -m agent_api
 npm run dev --prefix apps/web
 ```
 
-Open `http://127.0.0.1:3000`. Japanese is the default language. Start the demo,
+Open `http://127.0.0.1:3000/dashboard` for P1 Live profile setup, source checks,
+and device-role presentation. Live and cached data are explicitly labelled;
+neither catalog locations nor provider routes authorize evacuation. Open
+`http://127.0.0.1:3000/demo` for Judge / synthetic Replay. Japanese is the default
+language. Start the demo,
 pause and use **Next update** to inspect the eleven-event loop. English and
 Traditional Chinese are available. The simulation banner and synthetic source
 references remain visible; no live disaster or movement-safety claim is made.
@@ -236,6 +247,10 @@ acceptance is recorded separately in `docs/VNEXT_PRODUCTION_RELEASE.md`.
 ## Status
 
 **DEPLOYED vNext P0 — production acceptance PASS; external submission pending.**
+
+The results below belong to the accepted P0 deployment. P1's local/provider
+results, pending GUI gate and production boundary are recorded separately in
+[VNEXT_P1_VALIDATION.md](docs/VNEXT_P1_VALIDATION.md).
 
 Local 69 backend / 77 frontend tests, deterministic safety, PWA continuity, CI,
 Cloud Build and public Cloud Run have passed. Both preview and canonical-origin

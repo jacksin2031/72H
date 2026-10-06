@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { snapshotSchema, type Action, type Evidence, type Snapshot } from './contracts';
+import { liveSnapshotSchema, snapshotSchema, type Action, type Evidence, type LiveSnapshot, type Snapshot } from './contracts';
 import { evidenceMatchesProfile } from './area-scoping';
 
 export const cacheEnvelopeSchema = z.object({
@@ -7,6 +7,10 @@ export const cacheEnvelopeSchema = z.object({
   connection: z.enum(['online', 'offline', 'reconnecting']).default('online'),
 });
 export type CacheEnvelope = z.infer<typeof cacheEnvelopeSchema>;
+export const liveCacheEnvelopeSchema = z.object({
+  schema_version: z.literal(1), saved_at: z.number().finite().nonnegative(), snapshot: liveSnapshotSchema,
+});
+export type LiveCacheEnvelope = z.infer<typeof liveCacheEnvelopeSchema>;
 const ttl: Record<string, number> = { TRANSPORT_STATUS: 300_000, DISASTER_STATUS: 900_000, USER_REPORT: 600_000, GENERAL_UPDATE: 900_000 };
 
 export function evidenceAt(evidence: Evidence, now: number): Evidence {
@@ -91,8 +95,11 @@ export function canReconcile(previous: Snapshot, received: Snapshot, now: number
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('72h-continuity-v1', 1);
-    request.onupgradeneeded = () => request.result.createObjectStore('snapshots');
+    const request = indexedDB.open('72h-continuity-v1', 2);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains('snapshots')) request.result.createObjectStore('snapshots');
+      if (!request.result.objectStoreNames.contains('live-snapshots')) request.result.createObjectStore('live-snapshots');
+    };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(new Error('Offline storage unavailable'));
   });
@@ -120,6 +127,35 @@ export async function loadSnapshot(): Promise<CacheEnvelope | null> {
       request.onerror = () => reject(new Error('Offline snapshot unavailable'));
     });
     const parsed = cacheEnvelopeSchema.safeParse(raw);
+    return parsed.success ? parsed.data : null;
+  } finally { database.close(); }
+}
+
+/** Live data is cached separately from deterministic synthetic replay sessions. */
+export async function saveLiveSnapshot(snapshot: LiveSnapshot, savedAt = Date.now()) {
+  const approved = liveCacheEnvelopeSchema.parse({ schema_version: 1, saved_at: savedAt, snapshot });
+  const database = await openDatabase();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction('live-snapshots', 'readwrite');
+      transaction.objectStore('live-snapshots').put(approved, 'last-live');
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(new Error('Live snapshot not saved'));
+      transaction.onabort = () => reject(new Error('Live snapshot not saved'));
+    });
+  } finally { database.close(); }
+}
+
+export async function loadLiveSnapshot(): Promise<LiveCacheEnvelope | null> {
+  const database = await openDatabase();
+  try {
+    const raw = await new Promise<unknown>((resolve, reject) => {
+      const transaction = database.transaction('live-snapshots', 'readonly');
+      const request = transaction.objectStore('live-snapshots').get('last-live');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(new Error('Live snapshot unavailable'));
+    });
+    const parsed = liveCacheEnvelopeSchema.safeParse(raw);
     return parsed.success ? parsed.data : null;
   } finally { database.close(); }
 }

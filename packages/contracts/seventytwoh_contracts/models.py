@@ -78,6 +78,9 @@ class FreshnessStatus(StrEnum):
 class ClaimType(StrEnum):
     DISASTER_STATUS = "DISASTER_STATUS"
     TRANSPORT_STATUS = "TRANSPORT_STATUS"
+    DESTINATION_STATUS = "DESTINATION_STATUS"
+    ROUTE_STATUS = "ROUTE_STATUS"
+    MOVEMENT_DIRECTIVE = "MOVEMENT_DIRECTIVE"
     USER_REPORT = "USER_REPORT"
     GENERAL_UPDATE = "GENERAL_UPDATE"
 
@@ -86,6 +89,44 @@ class MobilityStatus(StrEnum):
     AVAILABLE = "AVAILABLE"
     DISRUPTED = "DISRUPTED"
     UNKNOWN = "UNKNOWN"
+
+
+class LiveSourceStatus(StrEnum):
+    FRESH = "FRESH"
+    STALE = "STALE"
+    UNAVAILABLE = "UNAVAILABLE"
+    BACKOFF = "BACKOFF"
+    CIRCUIT_OPEN = "CIRCUIT_OPEN"
+    INVALID_RESPONSE = "INVALID_RESPONSE"
+    UNSUPPORTED = "UNSUPPORTED"
+
+
+class SpatialActionKind(StrEnum):
+    MONITOR = "MONITOR"
+    SHELTER_IN_PLACE = "SHELTER_IN_PLACE"
+    EVACUATE = "EVACUATE"
+    UNKNOWN = "UNKNOWN"
+
+
+class DestinationEligibility(StrEnum):
+    ELIGIBLE = "ELIGIBLE"
+    INELIGIBLE = "INELIGIBLE"
+    UNKNOWN = "UNKNOWN"
+
+
+class DestinationOpenStatus(StrEnum):
+    OPEN = "OPEN"
+    CLOSED = "CLOSED"
+    UNKNOWN = "UNKNOWN"
+
+
+class RoutePresentationStatus(StrEnum):
+    UNVERIFIED = "UNVERIFIED"
+    CANDIDATE = "CANDIDATE"
+    AFFECTED = "AFFECTED"
+    BLOCKED = "BLOCKED"
+    VERIFIED_USABLE = "VERIFIED_USABLE"
+    EXPIRED = "EXPIRED"
 
 
 class NetworkState(StrEnum):
@@ -152,6 +193,7 @@ class SafeIntentId(StrEnum):
     RECHECK_TRANSPORT_STATUS = "recheck_transport_status"
     AVOID_DISRUPTED_ROUTE = "avoid_disrupted_route"
     DO_NOT_ASSUME_ROUTE_SAFETY = "do_not_assume_route_safety"
+    EVACUATE_TO_DESIGNATED_SHELTER = "evacuate_to_designated_shelter"
 
 
 class RiskLevel(StrEnum):
@@ -297,6 +339,7 @@ class DisasterEvent(ContractModel):
 class Evidence(ContractModel):
     id: Identifier
     situation_id: Identifier
+    source_key: Identifier = "UNREGISTERED"
     source_name: ShortText
     source_class: SourceClass
     trust_status: TrustStatus
@@ -479,6 +522,223 @@ class MobilitySnapshot(ContractModel):
         if self.expires_at is not None and self.expires_at <= self.checked_at:
             raise ValueError("expires_at must be later than checked_at")
         return self
+
+
+class Coordinate(ContractModel):
+    """A WGS84 longitude/latitude pair; GeoJSON serialization uses [lng, lat]."""
+
+    lng: Annotated[StrictFloat, Field(ge=-180, le=180)]
+    lat: Annotated[StrictFloat, Field(ge=-90, le=90)]
+
+
+class GeoJsonLineString(ContractModel):
+    type: Literal["LineString"] = "LineString"
+    coordinates: Annotated[
+        tuple[Annotated[tuple[StrictFloat, StrictFloat], Field(min_length=2, max_length=2)], ...],
+        Field(min_length=2, max_length=512),
+    ]
+
+    @model_validator(mode="after")
+    def coordinates_are_valid_wgs84(self) -> "GeoJsonLineString":
+        if any(not -180 <= lng <= 180 or not -90 <= lat <= 90 for lng, lat in self.coordinates):
+            raise ValueError("GeoJSON route coordinates must be WGS84 [longitude, latitude]")
+        return self
+
+
+class DestinationRecord(ContractModel):
+    """Server-normalized official designation; it does not assert current opening."""
+
+    id: Identifier
+    name: ShortText
+    address: ShortText | None = None
+    area_id: Identifier
+    coordinates: Coordinate
+    source_key: Identifier
+    source_name: ShortText
+    source_url: Annotated[StrictStr, Field(min_length=1, max_length=500)]
+    source_published_at: AwareDatetime
+    designation_types: Annotated[tuple[ShortText, ...], Field(max_length=16)]
+    supported_hazards: Annotated[tuple[DisasterEventType, ...], Field(max_length=8)] = ()
+    open_status: DestinationOpenStatus = DestinationOpenStatus.UNKNOWN
+    is_synthetic: StrictBool = False
+
+
+class DestinationProjection(ContractModel):
+    destination_id: Identifier
+    eligibility: DestinationEligibility
+    hazard_type: DisasterEventType | None = None
+    hazard_suitability: DestinationEligibility = DestinationEligibility.UNKNOWN
+    freshness_status: FreshnessStatus
+    conflict: StrictBool
+    evidence_ids: StringList = ()
+    current_open_status: DestinationOpenStatus = DestinationOpenStatus.UNKNOWN
+    checked_at: AwareDatetime
+    expires_at: AwareDatetime
+
+    @model_validator(mode="after")
+    def eligible_destination_requires_current_official_gates(self) -> "DestinationProjection":
+        if self.expires_at <= self.checked_at:
+            raise ValueError("destination projection expiry must be later than checked_at")
+        if self.eligibility == DestinationEligibility.ELIGIBLE and (
+            self.hazard_type is None
+            or self.hazard_suitability != DestinationEligibility.ELIGIBLE
+            or self.current_open_status != DestinationOpenStatus.OPEN
+            or self.freshness_status != FreshnessStatus.CURRENT
+            or self.conflict
+        ):
+            raise ValueError("eligible destinations require fresh, open, hazard-suitable, non-conflicting evidence")
+        return self
+
+
+class RoutePresentation(ContractModel):
+    """Normalized route candidate; provider output alone cannot make it usable."""
+
+    id: Identifier
+    status: RoutePresentationStatus
+    geometry: GeoJsonLineString | None = None
+    crs: Literal["EPSG:4326"] = "EPSG:4326"
+    geometry_kind: Literal["NONE", "TRANSIT_STATION_SEQUENCE", "PROVIDER_GEOMETRY"] = "NONE"
+    presentation_label: ShortText = "Route candidate; not a safety determination."
+    waypoints: Annotated[tuple[ShortText, ...], Field(max_length=64)] = ()
+    origin_area_id: Identifier | None = None
+    destination_id: Identifier | None = None
+    provider: ShortText
+    provider_reference: Identifier
+    checked_at: AwareDatetime
+    expires_at: AwareDatetime
+    evidence_ids: StringList = ()
+    freshness_status: FreshnessStatus = FreshnessStatus.CURRENT
+    conflict: StrictBool = False
+
+    @model_validator(mode="after")
+    def expiry_follows_check(self) -> "RoutePresentation":
+        if self.expires_at <= self.checked_at:
+            raise ValueError("route expiry must be later than checked_at")
+        return self
+
+
+class LiveSourceProjection(ContractModel):
+    source_key: Identifier
+    source_name: ShortText
+    source_url: Annotated[StrictStr, Field(min_length=1, max_length=500)]
+    status: LiveSourceStatus
+    retrieved_at: AwareDatetime | None = None
+    last_published_at: AwareDatetime | None = None
+    next_retry_at: AwareDatetime | None = None
+    record_count: Annotated[StrictInt, Field(ge=0, le=4096)] = 0
+    detail: ShortText
+
+
+class SpatialGuidanceProjection(ContractModel):
+    """Server-computed presentation gate; no request model accepts these values."""
+
+    current_action_kind: SpatialActionKind
+    movement_authorized: StrictBool
+    destination: DestinationProjection | None = None
+    route: RoutePresentation | None = None
+    plan_id: Identifier | None = None
+    action_id: Identifier | None = None
+    evaluated_at: AwareDatetime
+    gate_reasons: Annotated[tuple[ShortText, ...], Field(max_length=16)] = ()
+
+    @model_validator(mode="after")
+    def movement_gate_is_consistent(self) -> "SpatialGuidanceProjection":
+        if self.movement_authorized and self.current_action_kind != SpatialActionKind.EVACUATE:
+            raise ValueError("movement authorization is only valid for an EVACUATE action")
+        if (
+            self.destination is not None
+            and self.route is not None
+            and self.route.destination_id != self.destination.destination_id
+        ):
+            raise ValueError("route and destination projections must reference the same destination")
+        return self
+
+    @computed_field
+    @property
+    def map_mount_eligible(self) -> bool:
+        destination_ok = (
+            self.destination is not None
+            and self.destination.eligibility == DestinationEligibility.ELIGIBLE
+            and self.destination.freshness_status == FreshnessStatus.CURRENT
+            and not self.destination.conflict
+            and self.destination.checked_at <= self.evaluated_at < self.destination.expires_at
+        )
+        route_ok = (
+            self.destination is not None
+            and self.route is not None
+            and self.route.status == RoutePresentationStatus.VERIFIED_USABLE
+            and self.route.geometry is not None
+            and self.route.geometry_kind == "PROVIDER_GEOMETRY"
+            and self.route.freshness_status == FreshnessStatus.CURRENT
+            and not self.route.conflict
+            and self.route.destination_id == self.destination.destination_id
+            and self.route.checked_at <= self.evaluated_at < self.route.expires_at
+        )
+        return (
+            self.current_action_kind == SpatialActionKind.EVACUATE
+            and self.movement_authorized
+            and destination_ok
+            and route_ok
+        )
+
+
+class LiveSnapshot(ContractModel):
+    session_id: UUID
+    mode: Literal["LIVE"]
+    source: LiveSourceProjection
+    destination_source: LiveSourceProjection
+    route_source: LiveSourceProjection
+    profile: UserProfile
+    area_catalog: Annotated[tuple[AreaDefinition, ...], Field(max_length=512)] = ()
+    situation: Situation
+    events: Annotated[tuple[DisasterEvent, ...], Field(max_length=64)]
+    evidence: Annotated[tuple[Evidence, ...], Field(max_length=128)]
+    evidence_projections: Annotated[tuple[EvidenceProjection, ...], Field(max_length=128)]
+    plans: Annotated[tuple[Plan, ...], Field(max_length=128)]
+    plan_actions: Annotated[tuple[PlanAction, ...], Field(max_length=512)]
+    trace: Annotated[tuple[TraceEvent, ...], Field(max_length=512)]
+    plan_evaluations: Annotated[tuple[PlanEvaluation, ...], Field(max_length=512)]
+    destinations: Annotated[tuple[DestinationRecord, ...], Field(max_length=512)] = ()
+    routes: Annotated[tuple[RoutePresentation, ...], Field(max_length=128)] = ()
+    spatial_guidance: SpatialGuidanceProjection
+
+    @model_validator(mode="after")
+    def movement_projection_matches_active_safety_core_action(self) -> "LiveSnapshot":
+        spatial = self.spatial_guidance
+        if not spatial.movement_authorized:
+            return self
+        plan = next(
+            (item for item in self.plans if item.id == spatial.plan_id),
+            None,
+        )
+        action = next(
+            (item for item in self.plan_actions if item.id == spatial.action_id),
+            None,
+        )
+        if (
+            spatial.current_action_kind != SpatialActionKind.EVACUATE
+            or plan is None
+            or plan.id != self.situation.current_plan_id
+            or plan.status != PlanStatus.ACTIVE
+            or action is None
+            or action.plan_id != plan.id
+            or action.status != PlanActionStatus.ACTIVE
+            or action.risk_level != RiskLevel.HIGH
+            or action.safety_decision != SafetyDecision.ALLOW
+            or action.intent_id != SafeIntentId.EVACUATE_TO_DESIGNATED_SHELTER
+        ):
+            raise ValueError("movement projection must reference the current active Safety Core evacuation action")
+        return self
+
+
+class StartLiveRequest(ContractModel):
+    language: Language = Language.TRADITIONAL_CHINESE
+    profile: ProfileSeed
+
+
+class LiveRouteSearchRequest(ContractModel):
+    origin: Location
+    destination_id: Identifier
 
 
 class TraceEvent(ContractModel):

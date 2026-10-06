@@ -67,18 +67,39 @@ def claims_from_disaster_assessments(
 class SafetyPolicy:
     official_disaster_ttl_seconds: int = 15 * 60
     transport_ttl_seconds: int = 5 * 60
+    destination_ttl_seconds: int = 5 * 60
+    route_ttl_seconds: int = 5 * 60
+    movement_directive_ttl_seconds: int = 5 * 60
     user_report_ttl_seconds: int = 10 * 60
     general_update_ttl_seconds: int = 15 * 60
+    movement_directive_source_keys: tuple[str, ...] = ()
+    destination_status_source_keys: tuple[str, ...] = ()
+    route_status_source_keys: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         for name, value in (
             ("official_disaster_ttl_seconds", self.official_disaster_ttl_seconds),
             ("transport_ttl_seconds", self.transport_ttl_seconds),
+            ("destination_ttl_seconds", self.destination_ttl_seconds),
+            ("route_ttl_seconds", self.route_ttl_seconds),
+            ("movement_directive_ttl_seconds", self.movement_directive_ttl_seconds),
             ("user_report_ttl_seconds", self.user_report_ttl_seconds),
             ("general_update_ttl_seconds", self.general_update_ttl_seconds),
         ):
             if type(value) is not int or not 1 <= value <= 86400:
                 raise ValueError(f"{name} must be between 1 and 86400 seconds")
+        for name, values in (
+            ("movement_directive_source_keys", self.movement_directive_source_keys),
+            ("destination_status_source_keys", self.destination_status_source_keys),
+            ("route_status_source_keys", self.route_status_source_keys),
+        ):
+            if (
+                not isinstance(values, tuple)
+                or len(values) > 32
+                or len(values) != len(set(values))
+                or any(not isinstance(key, str) or not key or len(key) > 96 for key in values)
+            ):
+                raise ValueError(f"{name} must be a tuple of up to 32 unique source keys")
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> "SafetyPolicy":
@@ -98,6 +119,11 @@ class SafetyPolicy:
                 "72H_EVIDENCE_TTL_OFFICIAL_SECONDS", 15 * 60
             ),
             transport_ttl_seconds=setting("72H_EVIDENCE_TTL_TRANSPORT_SECONDS", 5 * 60),
+            destination_ttl_seconds=setting("72H_EVIDENCE_TTL_DESTINATION_SECONDS", 5 * 60),
+            route_ttl_seconds=setting("72H_EVIDENCE_TTL_ROUTE_SECONDS", 5 * 60),
+            movement_directive_ttl_seconds=setting(
+                "72H_EVIDENCE_TTL_MOVEMENT_DIRECTIVE_SECONDS", 5 * 60
+            ),
             user_report_ttl_seconds=setting("72H_EVIDENCE_TTL_USER_REPORT_SECONDS", 10 * 60),
             general_update_ttl_seconds=setting("72H_EVIDENCE_TTL_GENERAL_SECONDS", 15 * 60),
         )
@@ -110,6 +136,12 @@ class SafetyPolicy:
             return self.official_disaster_ttl_seconds
         if claim_type == "TRANSPORT_STATUS":
             return self.transport_ttl_seconds
+        if claim_type == "DESTINATION_STATUS":
+            return self.destination_ttl_seconds
+        if claim_type == "ROUTE_STATUS":
+            return self.route_ttl_seconds
+        if claim_type == "MOVEMENT_DIRECTIVE":
+            return self.movement_directive_ttl_seconds
         if claim_type == "USER_REPORT":
             return self.user_report_ttl_seconds
         return self.general_update_ttl_seconds
