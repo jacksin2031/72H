@@ -5,7 +5,10 @@
 The user requested neutral pre-session status, mobile onboarding scenes and a
 single desktop Judge / Demo footer label. These bounded changes pass 160 frontend
 and 103 backend tests, TypeScript/build, source hygiene and Main's In-app Browser
-checks. Preview/canonical release acceptance is pending. See
+checks. Zero-traffic preview, actual Gemini replay, Live, offline reload and
+canonical acceptance passed. `h72-ui-910c1d2` receives 100% production traffic;
+previous P1/P0 revisions are retained. Status is COMPLETE for this follow-up;
+remote Git synchronization remains separately BLOCKED by repository access. See
 `docs/VNEXT_FIRST_USE_POLISH.md`; previous production evidence below is historical.
 
 ## Current authorized work — vNext P1 (2026-10-07 JST)
