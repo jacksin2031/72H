@@ -23,11 +23,14 @@ function time(value: string | null, language: Language) {
   return value ? new Date(value).toLocaleTimeString(language, { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' }) : '—';
 }
 
-export function Dashboard({ view }: { view: string }) {
+export function Dashboard({ view: initialView }: { view: string }) {
+  const [reviewView, setReviewView] = useState<string | null>(null);
+  const view = reviewView ?? initialView;
   const [language, setLanguage] = useState<Language>('ja');
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [busy, setBusy] = useState(false);
   const [initialMapOpen, setInitialMapOpen] = useState(false);
+  const [previewScene, setPreviewScene] = useState(false);
   const [error, setError] = useState('');
   const [connection, setConnection] = useState<'online' | 'offline' | 'reconnecting'>('online');
   const [wallNow, setWallNow] = useState(0);
@@ -138,6 +141,14 @@ export function Dashboard({ view }: { view: string }) {
     return () => clearTimeout(timer);
   }, [snapshot, connection, continuityTime]);
 
+  if (view === 'demo' && snapshot && previewScene) return <div className={`shell theme-${theme} power-${battery.power.mode.toLowerCase()}`}>
+    <main>
+      <div className="simulation"><strong>SYNTHETIC_REPLAY · {t.demoNotice}</strong><button type="button" onClick={() => setPreviewScene(false)}>{at.backJudge}</button></div>
+      <VNextExperience snapshot={snapshot} language={language} now={continuityTime} connection={connection} verificationAnchor={verificationAnchor.current}
+        power={battery.power} level={battery.level} override={battery.override} choose={battery.choose} view="dashboard" deviceLocation={deviceLocation} />
+    </main>
+  </div>;
+
   return <div className={`shell theme-${theme} power-${battery.power.mode.toLowerCase()}`}>
     <aside className="sidebar">
       <Link className="brand" href="/">72<span>H</span><small>{t.tagline}</small></Link>
@@ -147,6 +158,9 @@ export function Dashboard({ view }: { view: string }) {
     <main>
       <header className="topbar"><span className="eyebrow">72H{snapshot ? ' / ' + snapshot.profile.current_location.label : ''}</span><select aria-label="Language" value={language} onChange={event => { const value = event.target.value as Language; setLanguage(value); localStorage.setItem('72h-language', value); }}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option></select></header>
       <div className="simulation"><strong>{t.demoNotice}</strong><span>{t.demoDetail}</span></div>
+      {initialView === 'demo' && snapshot && <nav className="controls" aria-label={vt.demoMode}>
+        {(['demo', 'plan', 'sources', 'trace'] as const).map(item => <button key={item} type="button" aria-current={view === item ? 'page' : undefined} onClick={() => setReviewView(item)}>{navLabels[item]}</button>)}
+      </nav>}
       {error && <p className="error" role="alert">{error}</p>}
       {sessionMissing && <section className="offline-banner"><p>{t.sessionMissing}</p><button disabled={busy || !battery.power.allowNonCriticalNetwork} onClick={() => void update('start', { language })}>{t.newDemo}</button></section>}
       {storageError && <p className="error" role="alert">{t.storageError}</p>}
@@ -162,6 +176,7 @@ export function Dashboard({ view }: { view: string }) {
         </section> : view === 'demo' ? <section className="intro"><h1>{vt.demoMode}</h1><p>{t.introDetail}</p><ScenarioPicker language={language} enabled={battery.power.allowNonCriticalNetwork && connection !== 'offline'} busy={busy} button={t.start} start={key => void update('start', { language, scenario_key: key })} /></section> : view === 'more' ? <><DeviceLocationControls location={deviceLocation} language={language} /><button disabled={!battery.power.allowMap} onClick={() => setInitialMapOpen(value => !value)}>{initialMapOpen ? at.closeMap : at.map}</button>{initialMapOpen && battery.power.allowMap && <EmergencyMap language={language} conserve={battery.power.mode !== 'NORMAL'} location={deviceLocation} />}</> : <p>{view === 'notifications' ? vt.emptyNotifications : t.empty}</p>}
       </> : <>
         {view !== 'dashboard' && battery.power.mode !== 'SURVIVAL' && <section className="heading"><div><p className="eyebrow">{snapshot.situation.active_event_ids.length ? 'EARTHQUAKE / REPLAY' : 'READY / REPLAY'}</p><h1>{view === 'dashboard' ? (snapshot.situation.active_event_ids.length ? t.earthquake : t.noEmergency) : navLabels[view as keyof typeof navLabels]}</h1></div><div className="status-pill"><span className="dot" />{projection?.networkState}</div></section>}
+        {view === 'demo' && <div className="controls"><button type="button" onClick={() => setPreviewScene(true)}>{at.previewScene}</button><Link href="/trace">{t.trace} →</Link></div>}
         <VNextExperience snapshot={snapshot} language={language} now={continuityTime} connection={connection} verificationAnchor={verificationAnchor.current} power={battery.power} level={battery.level} override={battery.override} choose={battery.choose} view={view} showLocalTrace={view === 'trace'} deviceLocation={deviceLocation} />
         {view === 'demo' && battery.power.mode !== 'SURVIVAL' && <><ScenarioPicker language={language} currentKey={snapshot.replay.scenario_key} enabled={battery.power.allowNonCriticalNetwork && connection !== 'offline'} busy={busy} button={t.newDemo} start={key => void update('start', { language, scenario_key: key })} /><div className="context-grid"><div><small>{t.location}</small><strong>{snapshot.profile.current_location.label}</strong></div><div><small>{t.destination}</small><strong>{snapshot.profile.accommodation_location.label}</strong></div><div><small>{t.simulatedTime} / JST</small><strong>{time(snapshot.replay.current_time, language)}</strong></div><div><small>{t.lastVerified}</small><strong>{time(snapshot.situation.latest_evidence_at, language)}</strong></div></div>
         <div className="controls"><button disabled={busy || !battery.power.allowNonCriticalNetwork || snapshot.replay.status === 'COMPLETED'} onClick={() => void update(`${snapshot.replay.id}/${snapshot.replay.status === 'RUNNING' ? 'pause' : 'resume'}`)}>{snapshot.replay.status === 'RUNNING' ? t.pause : t.resume}</button><button disabled={busy || !battery.power.allowNonCriticalNetwork || !['RUNNING', 'PAUSED'].includes(snapshot.replay.status)} onClick={() => void update(`${snapshot.replay.id}/next`)}>{t.next} →</button><button disabled={busy || !battery.power.allowNonCriticalNetwork} onClick={() => void update(`${snapshot.replay.id}/reset`)}>{t.reset}</button><select aria-label="Replay speed" value={snapshot.replay.speed} disabled={busy || !battery.power.allowNonCriticalNetwork || snapshot.replay.status === 'COMPLETED'} onChange={e => void update(`${snapshot.replay.id}/speed`, { speed: Number(e.target.value) })}><option value={1}>1×</option><option value={2}>2×</option><option value={4}>4×</option></select><small>{snapshot.replay.current_event_index} / {snapshot.scenario_events.length}</small></div></>}

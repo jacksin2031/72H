@@ -1,6 +1,6 @@
 # 72H — Current Development Phase
 
-## Current authorized work — vNext P1 (2026-10-06 JST)
+## Current authorized work — vNext P1 (2026-10-07 JST)
 
 The user's `/goal complete` request authorizes implementation and necessary
 validation of `docs/VNEXT_P1_LIVE_ROUTE_DEVICE_ROLES.md`, including its approved
@@ -11,9 +11,9 @@ native background service or additional paid API dependency is included.
 Safety Core, immutable plans and offline/reconnection gates remain authoritative.
 Implementation and non-GUI verification are complete, with 103 backend and
 148 frontend tests, typecheck/build, actual provider/API probes and focused
-review passing. Status is IMPLEMENTED / NOT FULLY VALIDATED: required GUI,
-browser offline/reconnect and production acceptance remain pending because the
-In-app Browser provider is unavailable. Current evidence is recorded in
+review passing. The restored In-app Browser has passed local mobile/PC GUI,
+candidate rendering, keyboard/contrast and actual browser offline/reconnect
+checks. Status is LOCAL VALIDATED / PRODUCTION PENDING. Current evidence is recorded in
 `docs/VNEXT_P1_VALIDATION.md`. Existing production remains the accepted P0
 baseline until all applicable P1 release gates pass.
 

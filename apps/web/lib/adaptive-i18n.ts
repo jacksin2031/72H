@@ -1,9 +1,10 @@
 export const adaptiveMessages = {
   ja: {
+    previewScene: '合成 replay のモバイル場面を確認', backJudge: 'Judge に戻る',
     movement: '確認済みの移動指示', movementDetail: '目的地と経路の状態を確認してください。', destination: '目的地', routeUsable: '確認済みの利用候補・安全な経路を保証するものではありません',
     monitoring: '見守り中', prepare: '必要な準備を確認', protect: '今すぐ身を守ってください',
     summary: '移動を勧める検証済みの指示はありません。', pending: '公式の更新を確認してください。確認できる行動計画を待っています。',
-    details: '詳しく見る', map: '地図・現在地を見る', closeMap: '地図を閉じる', mapEnded: '地図表示を終了しました。移動の安全性を示すものではありません。',
+    details: '詳しく見る', closeDetails: '詳細を閉じる', currentPlace: '現在地（自己申告）', map: '地図・現在地を見る', closeMap: '地図を閉じる', mapEnded: '地図表示を終了しました。移動の安全性を示すものではありません。',
     lastVerified: '最終確認', cached: '保存済み情報・最新ではありません', stale: '情報の有効期限が切れています', reconnecting: '再接続中・再検証は未完了です',
     notifications: '通知', settings: '設定', power: 'バッテリーと電力', appearance: '表示テーマ',
     dark: 'ダーク', system: 'システム', contrast: '高コントラスト', safety: '安否確認の設定',
@@ -13,10 +14,11 @@ export const adaptiveMessages = {
     position: '最後の端末位置', noPosition: '保存済みの端末位置はありません', locationSettings: '位置の設定',
   },
   en: {
+    previewScene: 'Preview synthetic replay mobile scene', backJudge: 'Back to Judge',
     movement: 'Verified movement instruction', movementDetail: 'Review the destination and route state.', destination: 'Destination', routeUsable: 'Verified usable candidate · not a guarantee of route safety',
     monitoring: 'Monitoring', prepare: 'Review preparations', protect: 'Protect yourself now',
     summary: 'There is no verified instruction recommending movement.', pending: 'Check official updates while waiting for a verified usable plan.',
-    details: 'View details', map: 'View map and location', closeMap: 'Close map', mapEnded: 'Map closed. Its display does not establish movement safety.',
+    details: 'View details', closeDetails: 'Close details', currentPlace: 'Current place (self-reported)', map: 'View map and location', closeMap: 'Close map', mapEnded: 'Map closed. Its display does not establish movement safety.',
     lastVerified: 'Last verified', cached: 'Cached information · not live', stale: 'Information has expired', reconnecting: 'Reconnecting · verification pending',
     notifications: 'Notifications', settings: 'Settings', power: 'Battery & Power', appearance: 'Appearance',
     dark: 'Dark', system: 'System', contrast: 'High Contrast', safety: 'Safety check settings',
@@ -26,10 +28,11 @@ export const adaptiveMessages = {
     position: 'Last device position', noPosition: 'No saved device position', locationSettings: 'Location settings',
   },
   'zh-TW': {
+    previewScene: '預覽合成 replay 手機場景', backJudge: '返回 Judge',
     movement: '已驗證的移動指示', movementDetail: '請確認目的地與路線狀態。', destination: '目的地', routeUsable: '已驗證可用候補・不保證路線安全',
     monitoring: '持續關注中', prepare: '確認必要準備', protect: '請立即保護自己',
     summary: '目前沒有已驗證的移動指示。', pending: '請查看官方更新，等待已驗證且可用的行動計畫。',
-    details: '查看詳情', map: '查看地圖與位置', closeMap: '關閉地圖', mapEnded: '已結束地圖顯示；地圖不代表移動安全。',
+    details: '查看詳情', closeDetails: '關閉詳情', currentPlace: '目前地點（自行填報）', map: '查看地圖與位置', closeMap: '關閉地圖', mapEnded: '已結束地圖顯示；地圖不代表移動安全。',
     lastVerified: '最後驗證', cached: '已保存資訊・非即時', stale: '資訊已過期', reconnecting: '正在重新連線・驗證尚未完成',
     notifications: '通知', settings: '設定', power: '電池與電力', appearance: '顯示主題',
     dark: '深色', system: '跟隨系統', contrast: '高對比', safety: '安全確認設定',

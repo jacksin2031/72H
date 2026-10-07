@@ -7,5 +7,5 @@ export function generateStaticParams() {
 export default async function Page({ params }: { params: Promise<{ view: string }> }) {
   const { view } = await params;
   if (!['dashboard', 'plan', 'more', 'sources', 'trace', 'demo', 'notifications'].includes(view)) notFound();
-  return ['demo', 'trace'].includes(view) ? <Dashboard view={view} /> : <LiveDashboard view={view} />;
+  return ['demo', 'trace'].includes(view) ? <Dashboard key={view} view={view} /> : <LiveDashboard view={view} />;
 }

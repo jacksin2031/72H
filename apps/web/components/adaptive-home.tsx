@@ -66,6 +66,7 @@ export function AdaptiveHome({ presentation, snapshot, language, networkState, p
     return <Link key={id} href="/sources">{e?.source_name ?? vt.unknown}</Link>;
   });
   return <section className={`adaptive-home presentation-${mode.toLowerCase()}`} data-presentation-mode={mode}>
+    {!urgentMode && <p className="muted">{t.currentPlace}: {snapshot.profile.current_location.label}</p>}
     <header className="situation-header">
       <div><h1>{mode === 'EMERGENCY_PROTECT' ? t.protect : mode === 'SAFETY_CHECK' ? vt.check : survival ? t.survival : mode === 'MAP_ASSISTED' ? t.movement : mode === 'TEXT_WITH_DETAILS' ? t.prepare : t.monitoring}</h1>
         <p>{networkState === 'RECONNECTING' ? t.reconnecting : stale ? t.stale : offline ? t.cached : mode === 'MAP_ASSISTED' ? t.movementDetail : t.summary}</p></div>
@@ -87,7 +88,7 @@ export function AdaptiveHome({ presentation, snapshot, language, networkState, p
     {!urgentMode && <button ref={detailsTrigger} type="button" className="plan-sheet-trigger" onClick={() => setDetailsOpen(true)}>{t.details}</button>}
     {!urgentMode && detailsOpen && <div className="plan-sheet-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setDetailsOpen(false); }}>
       <section className="plan-sheet" role="dialog" aria-modal="true" aria-labelledby="plan-sheet-title" tabIndex={-1}>
-        <header><h2 id="plan-sheet-title">{t.details}</h2><button ref={closeButton} type="button" onClick={() => setDetailsOpen(false)} aria-label={t.closeMap}>×</button></header>
+        <header><h2 id="plan-sheet-title">{t.details}</h2><button ref={closeButton} type="button" onClick={() => setDetailsOpen(false)} aria-label={t.closeDetails}>×</button></header>
         {action && <><p>{action.reason}</p>{evidenceLinks(action.evidence_ids)}</>}
         {(['NEXT', 'AVOID'] as const).map(category => <section key={category}><h2>{category}</h2>{actions.filter(item => item.category === category).map(item => <article key={item.id}><h3>{item.text}</h3><p>{item.reason}</p>{evidenceLinks(item.evidence_ids)}</article>)}</section>)}
         <p>{t.lastVerified}: {verifiedTime}</p>

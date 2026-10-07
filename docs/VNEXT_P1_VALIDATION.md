@@ -1,9 +1,9 @@
 # vNext P1 implementation and acceptance
 
-Status: **IMPLEMENTED / NOT FULLY VALIDATED** (2026-10-06 JST).
+Status: **LOCAL VALIDATED / PRODUCTION PENDING** (2026-10-07 JST).
 The user's `/goal complete` request authorizes the [P1 specification](VNEXT_P1_LIVE_ROUTE_DEVICE_ROLES.md), including the approved mobile scene system.
-Local implementation and non-GUI verification are recorded below. Required GUI,
-browser offline/reconnect and production acceptance remain pending. No Push,
+Local implementation, GUI and browser offline/reconnect verification are recorded below.
+Production acceptance remains pending. No Push,
 Rescue Beacon, native background execution or new paid API dependency is included.
 
 Implementation branch: `codex/vnext-p1`; baseline: `80b919d`.
@@ -15,20 +15,20 @@ The original `F:\資料夾\下載\72H` checkout remains unchanged.
 |---|---|---|
 | Official live data | Actual JMA response → typed evidence → situation → Safety Core; separate actual Live Gemini/ADK invocation | Local PASS |
 | Live source failures | Timeout, malformed XML/schema, future/stale publication, bounded retries/cache, exact TTL and asynchronous publication deadline | Backend regression PASS |
-| Mode separation | Live contracts reject synthetic/foreign-situation payloads; Live session in Replay store returns 404; distinct cache stores | Unit + HTTP PASS; GUI pending |
-| Destination and route | 512 static Tokyo designations, actual station-sequence CANDIDATE, scoped destination/directive/road evidence gates | Unit + HTTP PASS; rendering GUI pending |
+| Mode separation | Live contracts reject synthetic/foreign-situation payloads; Live session in Replay store returns 404; distinct cache stores and visibly labelled Judge preview | Unit + HTTP + GUI PASS |
+| Destination and route | 512 static Tokyo designations, actual station-sequence CANDIDATE, scoped destination/directive/road evidence gates | Unit + HTTP + candidate map GUI PASS |
 | Movement authorization | Positive configured-test-source gates and missing/conflicting/stale/offline/partner-trust negatives | Deterministic tests PASS; real candidate remains unauthorized |
-| Invalidation/history | Route replacement and destination expiry invalidate dependencies; append-only four-version Replay history | Unit + HTTP PASS; GUI pending |
-| Notifications | Deterministic plan transitions, bounded inbox and repeated-update aggregation | Unit PASS; route interaction GUI pending |
-| Mobile/desktop | Compact scenes, critical takeover, separate preparedness role, conditional map mount | Policy/renderer tests PASS; GUI BLOCKED |
-| Handoff | Public HTTPS app link with language only; rejects private origin/credentials/port/unsupported language | Unit PASS; GUI pending |
-| Offline/reconnect | Cached age/TTL, degraded high-risk actions, distinct reconnect verification gates, delivered SW/assets/map pack | Unit + asset HTTP PASS; browser offline execution NOT RUN |
-| Accessibility | Keyboard/focus, mobile overflow, contrast and real map interaction | GUI BLOCKED |
+| Invalidation/history | Route replacement and destination expiry invalidate dependencies; append-only four-version Replay history | Unit + HTTP + GUI PASS |
+| Notifications | Deterministic plan transitions, bounded inbox and repeated-update aggregation | Unit + route interaction GUI PASS |
+| Mobile/desktop | Compact MONITOR, PREPARE and Safety Check; separate preparedness role, conditional map mount; critical scene renderer gates | Policy/renderer + applicable GUI PASS; real critical Live event unavailable |
+| Handoff | Public HTTPS language-only link; private local origin rejected visibly | Unit + local negative GUI PASS; public preview pending |
+| Offline/reconnect | Actual browser network loss and cached interactive reload, age/TTL, degraded high-risk actions, staged reconciliation | Unit + HTTP + browser PASS |
+| Accessibility | Keyboard/focus, overflow, visible text contrast and map interaction at mobile/desktop sizes | Checked GUI surfaces PASS; not an exhaustive accessibility certification |
 | Existing suites | Frozen backend 103 tests; frontend fresh Replay + Live API fixtures | PASS — 103 backend / 148 frontend, zero frontend skips |
 | Typecheck/build | TypeScript; optimized Next production build and offline asset preparation | PASS |
 | Source hygiene | Secret-pattern and credential-file scan; final staged whitespace check | PASS |
 | Independent review | Bounded critical LIVE contract/presentation review and focused fix re-review | PASS — two confirmed findings fixed; no same-class remaining finding in the reviewed diff |
-| Production | Immutable source/image, zero-traffic preview, actual cloud/model/GUI/offline acceptance | NOT RUN; local GUI release gate blocks deployment |
+| Production | Immutable source/image, zero-traffic preview, actual cloud/model/GUI/offline acceptance | PENDING; local release gates passed |
 
 Unit fixtures do not establish real disaster conditions, open shelters, physically
 safe routes, GPS accuracy, battery endurance or successful production execution.
@@ -36,7 +36,51 @@ Current destination opening, hazard suitability, movement directives and road
 safety have no enabled production source: their allowlists remain empty. See
 [source provenance and capability boundaries](VNEXT_P1_SOURCES.md).
 
-## Final local verification
+## Current local GUI acceptance — 2026-10-07 JST
+
+The user selected the restored In-app Browser. Main performed browser interaction
+directly, including 390×844 mobile and 1280×900 desktop viewports. The final local
+production build is `H2cHFeqheMRg4s0-D_IgR`, after 148/148 frontend tests and
+integrated TypeScript/build passed at 22:46 JST. Backend 103/103 passed again at
+22:28 JST. Frontend fixtures retain their actual 2026-10-06 capture provenance.
+
+- Live JMA publication `2026-10-07T16:05:00+09:00` is STALE. Its timestamp is
+  visible; no current Tokyo plan or movement authorization is invented.
+- MONITOR has one NOW, no canvas, fixed bottom navigation and a details dialog.
+  Keyboard focus wraps within the dialog; Escape returns to the triggering button.
+  Japanese and Traditional Chinese interactions were checked.
+- Actual Ekispert candidate at 22:47 JST renders the downloaded road base map,
+  three numbered station points and catalog destination. It explicitly says
+  station sequence, not walking roads, route safety or an evacuation instruction.
+  Closing preview, emergency power and candidate expiry remove the map canvas.
+- Shared synthetic scene preview uses the real Replay snapshot and existing
+  consumer renderer. PREPARE and Safety Check were exercised; response buttons
+  are 48 px high. Consent, cannot-move and safe-confirmed persist locally without
+  rescue dispatch. Inactive Judge response buttons are now hidden.
+- Desktop exposes preparedness, sources, plan history, trace and handoff status.
+  All 11 Replay events and four immutable plan versions were inspected.
+- Genuine browser offline emulation plus reload retains an interactive cached
+  Live mobile/PC shell and emergency guide. A separate synthetic Replay reload
+  retains Plan v2, last verified time and OFFLINE_RECENT. After restoration,
+  events 4–9 remain RECONNECTING; event 10's verified official/transport proof
+  restores ONLINE_VERIFIED. An unchanged stale Live publication does not.
+- SURVIVAL renders a black minimal Home with one NOW, essential settings and no
+  map. CONSERVE and EMERGENCY_POWER were also checked. No physical GPS or battery
+  endurance claim is made.
+- Visible text contrast checks found no below-threshold items among 12 mobile
+  and 36 desktop nodes. Body widths are 390/390 and 1265/1280 respectively.
+- Independent review found a Judge route-state reuse defect. Keying Dashboard
+  by route fixes it; Main reproduced Demo button → Trace link and verified the
+  `/trace` heading and actual trace, followed by focused reviewer PASS.
+
+Evidence is in ignored `.work/p1/gui-20261007/`, including browser screenshots,
+`judge-routing-regression.json`, `synthetic-physical-reconnect.json` and contrast
+summaries. Real current Live critical alerts and authorized evacuation are not
+available during this run; critical presentation/eligibility positives remain
+deterministic policy/renderer tests. No official fixture is injected into Live.
+Public handoff and cloud/model/provider acceptance will be checked on preview.
+
+## Historical local verification — 2026-10-06 JST
 
 Main independently ran the frozen backend suite: **103 passed**, with one existing
 Starlette/httpx deprecation warning. `uv lock --check` and Python compilation also
@@ -128,7 +172,7 @@ Summaries are `.work/p1/actual-model-probe.json` and
 `.work/p1/actual-live-model-probe.json`; no fallback occurred.
 These are local model/provider observations, not production acceptance.
 
-## GUI blocker and pending acceptance
+## Historical GUI blocker — superseded by 2026-10-07 acceptance
 
 The mandated Luna Lightweight agent's resumed documentation probe briefly bound
 In-app Browser `id=2`, then lost it. The final direct application-open attempt,
@@ -156,7 +200,7 @@ application acceptance: the dashboard still has **0 GUI acceptance actions**.
 The native route is available, but a new turn with a policy-identifiable Chrome
 page is required to continue.
 
-When the provider is restored, resume with the same GUI owner and verify:
+The former pending checklist was:
 
 1. Desktop preparedness/status/history/sources/handoff and Judge separation.
 2. Mobile MONITOR/SHELTER text-first layout, fixed navigation, details sheet,

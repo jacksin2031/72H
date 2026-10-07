@@ -97,7 +97,7 @@ export function VNextExperience({ snapshot, language, now, connection, verificat
   const checkControls = <section className={`check-card ${check.status === 'AWAITING_RESPONSE' ? 'check-required' : ''}`}>
     <label><input type="checkbox" checked={check.consent} onChange={e => setCheck(state => reduceSafetyCheck(state, { type: 'CONSENT', enabled: e.target.checked }))} /> {t.consent}</label>
     {currentCheckVisible && <><h2>{t.check}</h2><p role="status">{check.status === 'UNRESPONSIVE_UNKNOWN' ? t.silence : check.status} · {check.attempts}/3</p>
-      <div className="check-buttons">{(['SAFE_CONFIRMED', 'NEEDS_ASSISTANCE', 'CANNOT_MOVE'] as const).map((response, index) => <button key={response} onClick={() => setCheck(state => reduceSafetyCheck(state, { type: 'RESPOND', response, now: Date.now() }))}>{[t.safe, t.help, t.cannotMove][index]}</button>)}</div></>}
+      {['AWAITING_RESPONSE', 'UNRESPONSIVE_UNKNOWN'].includes(check.status) && <div className="check-buttons">{(['SAFE_CONFIRMED', 'NEEDS_ASSISTANCE', 'CANNOT_MOVE'] as const).map((response, index) => <button key={response} onClick={() => setCheck(state => reduceSafetyCheck(state, { type: 'RESPOND', response, now: Date.now() }))}>{[t.safe, t.help, t.cannotMove][index]}</button>)}</div>}</>}
     <p className="muted">{t.checkLimit}</p>
   </section>;
   const activeCheckControls = <section className="check-card check-required" aria-label={t.check}><h2>{t.check}</h2>
