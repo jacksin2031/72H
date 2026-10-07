@@ -26,6 +26,18 @@ import { DeviceLocationControls } from './device-location';
 type Connection = 'online' | 'offline' | 'reconnecting';
 type AreaChoice = '' | 'JP-13' | 'JP-27';
 
+export function LiveHeaderStatus({ hasSession, busy, networkLabel, messages }: {
+  hasSession: boolean; busy: boolean; networkLabel: string; messages: Record<string, string>;
+}) {
+  return <div className="live-topbar-state"><strong>{hasSession ? messages.monitor : busy ? messages.refreshing : messages.setupRequired}</strong>
+    {hasSession && <span>{networkLabel}</span>}
+  </div>;
+}
+
+export function JudgeFooter({ messages }: { messages: Record<string, string> }) {
+  return <footer className="desktop-footer"><Link href="/demo">{messages.judge} →</Link></footer>;
+}
+
 function reducerSnapshot(snapshot: LiveSnapshot): Snapshot {
   // The existing deterministic reducers need a replay cursor only for event identity.
   // This adapter stays in memory and preserves mode: LIVE; it is never cached or rendered.
@@ -158,10 +170,14 @@ function sessionRef(): string | null {
   } catch { return null; }
 }
 
-function ProfileForm({ language, busy, submit, initial, startLabel, title, copy, messages }: {
+export function ProfileForm({ language, busy, submit, initial, startLabel, title, copy, messages, onboarding = false }: {
   language: Language; busy: boolean; submit: (profile: LiveProfileSeed) => void; initial?: LiveSnapshot['profile'];
   startLabel: string; title: string; copy: string; messages: Record<string, string>;
+  onboarding?: boolean;
 }) {
+  const [step, setStep] = useState(0);
+  const sceneTitle = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { if (onboarding) sceneTitle.current?.focus(); }, [onboarding, step]);
   const [current, setCurrent] = useState(initial?.current_location.label ?? '');
   const [accommodation, setAccommodation] = useState(initial?.accommodation_location.label ?? '');
   const [currentArea, setCurrentArea] = useState<AreaChoice>((initial?.current_location.area_ids.find(id => id === 'JP-13' || id === 'JP-27') as AreaChoice) ?? '');
@@ -171,6 +187,10 @@ function ProfileForm({ language, busy, submit, initial, startLabel, title, copy,
   const [validationError, setValidationError] = useState(false);
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (onboarding && step < 2) {
+      if (!(step === 0 ? current : accommodation).trim()) { setValidationError(true); return; }
+      setValidationError(false); setStep(value => value + 1); return;
+    }
     const parsed = liveProfileSeedSchema.safeParse({
       current_location: location(current, currentArea), accommodation_location: location(accommodation, accommodationArea),
       current_destination: null, party_size: partySize, self_reported_safety_status: safety,
@@ -180,23 +200,38 @@ function ProfileForm({ language, busy, submit, initial, startLabel, title, copy,
     setValidationError(false);
     submit(parsed.data);
   };
-  return <section className="live-profile-card">
-    <h2>{title}</h2><p>{copy}</p>
-    <form className="live-profile-form" onSubmit={onSubmit}>
-      <label>{messages.currentLocation}<input required maxLength={160} value={current} onChange={event => setCurrent(event.target.value)} placeholder={messages.locationPlaceholder} /></label>
+  const currentFields = <>
+      <label>{messages.currentLocation}<input required pattern=".*\S.*" maxLength={160} value={current} onChange={event => setCurrent(event.target.value)} placeholder={messages.locationPlaceholder} /></label>
       <label>{messages.area}<select value={currentArea} onChange={event => setCurrentArea(event.target.value as AreaChoice)}><option value="">{messages.noArea}</option><option value="JP-13">{messages.tokyo}</option><option value="JP-27">{messages.osaka}</option></select></label>
-      <label>{messages.accommodation}<input required maxLength={160} value={accommodation} onChange={event => setAccommodation(event.target.value)} placeholder={messages.locationPlaceholder} /></label>
+    </>;
+  const accommodationFields = <>
+      <label>{messages.accommodation}<input required pattern=".*\S.*" maxLength={160} value={accommodation} onChange={event => setAccommodation(event.target.value)} placeholder={messages.locationPlaceholder} /></label>
       <label>{messages.area}<select value={accommodationArea} onChange={event => setAccommodationArea(event.target.value as AreaChoice)}><option value="">{messages.noArea}</option><option value="JP-13">{messages.tokyo}</option><option value="JP-27">{messages.osaka}</option></select></label>
-      <label>{messages.profile}<select value={partySize} onChange={event => setPartySize(Number(event.target.value))}>{Array.from({ length: 8 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label>
-      <label>{language === 'ja' ? '現在の状態（自己申告）' : language === 'zh-TW' ? '目前狀態（自行回報）' : 'Current status (self-reported)'}
+    </>;
+  const partyField = <label>{messages.partySize}<select value={partySize} onChange={event => setPartySize(Number(event.target.value))}>{Array.from({ length: 8 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label>;
+  const safetyField = <label>{language === 'ja' ? '現在の状態（自己申告）' : language === 'zh-TW' ? '目前狀態（自行回報）' : 'Current status (self-reported)'}
         <select value={safety} onChange={event => setSafety(event.target.value as LiveProfileSeed['self_reported_safety_status'])}>
           <option value="UNKNOWN">{language === 'ja' ? '未回答' : language === 'zh-TW' ? '尚未回答' : 'Not reported'}</option>
           <option value="SAFE">{language === 'ja' ? '安全' : language === 'zh-TW' ? '安全' : 'Safe'}</option>
           <option value="UNCERTAIN">{language === 'ja' ? '不明' : language === 'zh-TW' ? '不確定' : 'Unsure'}</option>
           <option value="NEEDS_ASSISTANCE">{language === 'ja' ? '支援が必要' : language === 'zh-TW' ? '需要協助' : 'Needs assistance'}</option>
         </select>
-      </label>
-      <button className="primary" disabled={busy} type="submit">{busy ? messages.refreshing : startLabel}</button>
+      </label>;
+  return <section className={`live-profile-card${onboarding ? ' live-onboarding' : ''}`}>
+    {onboarding ? <><p className="onboarding-progress">{messages.setup} · {step + 1} / 3</p>
+      <h1 ref={sceneTitle} tabIndex={-1}>{[messages.whereNow, messages.whereStay, messages.whoWith][step]}</h1></> : <h2>{title}</h2>}
+    <p>{onboarding && step === 2 ? messages.partyIncludesYou : copy}</p>
+    <form className="live-profile-form" onSubmit={onSubmit}>
+      <fieldset className="onboarding-fields" disabled={busy}>
+        {(!onboarding || step === 0) && currentFields}
+        {(!onboarding || step === 1) && accommodationFields}
+        {(!onboarding || step === 2) && <>{partyField}{onboarding
+          ? <details><summary>{messages.optionalSafety}</summary>{safetyField}</details> : safetyField}</>}
+      </fieldset>
+      <div className="onboarding-actions">
+        {onboarding && step > 0 && <button type="button" disabled={busy} onClick={() => { setValidationError(false); setStep(value => value - 1); }}>{messages.back}</button>}
+        <button className="primary" disabled={busy} type="submit">{busy ? messages.refreshing : onboarding && step < 2 ? messages.next : onboarding ? messages.finishSetup : startLabel}</button>
+      </div>
       {validationError && <p className="error" role="alert">{language === 'ja' ? '場所を入力してください。' : language === 'zh-TW' ? '請填寫地點。' : 'Enter both locations.'}</p>}
     </form>
   </section>;
@@ -363,7 +398,7 @@ function MobileScene({ view, snapshot, language, messages, projection, deviceLoc
   onRouteSearch: (origin: Location, destinationId: string) => Promise<boolean>; link: string | null; now: number; connection: Connection;
   check: SafetyCheckState; setCheck: Dispatch<SetStateAction<SafetyCheckState>>; notifications: Notification[]; dismissNotification: (id: string) => void; sessionLost: boolean;
 }) {
-  if (!snapshot || !projection) return <ProfileForm language={language} busy={busy} submit={onProfile} startLabel={messages.begin} title={messages.startTitle} copy={messages.startText} messages={messages} />;
+  if (!snapshot || !projection) return <ProfileForm onboarding language={language} busy={busy} submit={onProfile} startLabel={messages.begin} title={messages.startTitle} copy={messages.startText} messages={messages} />;
   const urgent = ['SAFETY_CHECK', 'EMERGENCY_PROTECT', 'SURVIVAL', 'MAP_ASSISTED'].includes(projection.presentation.mode)
     || ['SHELTER_IN_PLACE', 'EVACUATE'].includes(snapshot.spatial_guidance.current_action_kind);
   const currentPlan = projection.plan;
@@ -472,7 +507,7 @@ function DesktopPreparedness({ view, snapshot, language, messages, projection, l
         <section className="emergency-contact"><h2>{messages.emergencyGuide}</h2><p>{messages.builtInGuide}</p><a href="tel:119">119</a> · <a href="tel:110">110</a></section>
       </div>}
     </>}
-    <footer className="desktop-footer"><Link href="/demo">{messages.judge} / Demo →</Link></footer>
+    <JudgeFooter messages={messages} />
   </div>;
 }
 
@@ -746,7 +781,7 @@ export function LiveDashboard({ view }: { view: string }) {
 
   return <div className={`live-shell theme-${theme} power-${power.power.mode.toLowerCase()} role-${role}`}>
     {!criticalMobileTakeover && <header className="live-topbar"><Link className="live-brand" href="/dashboard">72<span>H</span></Link>
-      <div className="live-topbar-state"><strong>{messages.monitor}</strong><span>{networkLabel}</span></div>
+      <LiveHeaderStatus hasSession={!!snapshot} busy={busy} networkLabel={networkLabel} messages={messages} />
       {role === 'desktop' && <nav className="desktop-primary-nav" aria-label={messages.preparedness}>{desktopNav.map(item => <Link key={item.key} href={`/${item.key}`} aria-current={view === item.key ? 'page' : undefined}>{item.label}</Link>)}</nav>}
       <label className="live-language">{messages.language}<select aria-label={messages.language} value={language} onChange={event => {
         const next = event.target.value as Language; setLanguage(next); try { localStorage.setItem('72h-language', next); } catch { /* In-memory fallback. */ }

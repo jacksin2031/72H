@@ -1,5 +1,13 @@
 # 72H — Current Development Phase
 
+## Current follow-up — first-use UI polish (2026-10-08 JST)
+
+The user requested neutral pre-session status, mobile onboarding scenes and a
+single desktop Judge / Demo footer label. These bounded changes pass 160 frontend
+and 103 backend tests, TypeScript/build, source hygiene and Main's In-app Browser
+checks. Preview/canonical release acceptance is pending. See
+`docs/VNEXT_FIRST_USE_POLISH.md`; previous production evidence below is historical.
+
 ## Current authorized work — vNext P1 (2026-10-07 JST)
 
 The user's `/goal complete` request authorizes implementation and necessary
