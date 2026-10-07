@@ -1,9 +1,10 @@
 # vNext P1 implementation and acceptance
 
-Status: **LOCAL VALIDATED / PRODUCTION PENDING** (2026-10-07 JST).
+Status: **COMPLETE — bounded P1 implementation and release acceptance** (2026-10-07 JST).
 The user's `/goal complete` request authorizes the [P1 specification](VNEXT_P1_LIVE_ROUTE_DEVICE_ROLES.md), including the approved mobile scene system.
 Local implementation, GUI and browser offline/reconnect verification are recorded below.
-Production acceptance remains pending. No Push,
+Production acceptance passed; see [runtime identity and cloud evidence](VNEXT_P1_PRODUCTION_RELEASE.md).
+Remote Git synchronization is separately blocked by repository access. No Push,
 Rescue Beacon, native background execution or new paid API dependency is included.
 
 Implementation branch: `codex/vnext-p1`; baseline: `80b919d`.
@@ -21,14 +22,14 @@ The original `F:\資料夾\下載\72H` checkout remains unchanged.
 | Invalidation/history | Route replacement and destination expiry invalidate dependencies; append-only four-version Replay history | Unit + HTTP + GUI PASS |
 | Notifications | Deterministic plan transitions, bounded inbox and repeated-update aggregation | Unit + route interaction GUI PASS |
 | Mobile/desktop | Compact MONITOR, PREPARE and Safety Check; separate preparedness role, conditional map mount; critical scene renderer gates | Policy/renderer + applicable GUI PASS; real critical Live event unavailable |
-| Handoff | Public HTTPS language-only link; private local origin rejected visibly | Unit + local negative GUI PASS; public preview pending |
+| Handoff | Public HTTPS language-only link; private local origin rejected visibly | Unit + local / preview / canonical GUI PASS |
 | Offline/reconnect | Actual browser network loss and cached interactive reload, age/TTL, degraded high-risk actions, staged reconciliation | Unit + HTTP + browser PASS |
 | Accessibility | Keyboard/focus, overflow, visible text contrast and map interaction at mobile/desktop sizes | Checked GUI surfaces PASS; not an exhaustive accessibility certification |
 | Existing suites | Frozen backend 103 tests; frontend fresh Replay + Live API fixtures | PASS — 103 backend / 148 frontend, zero frontend skips |
 | Typecheck/build | TypeScript; optimized Next production build and offline asset preparation | PASS |
 | Source hygiene | Secret-pattern and credential-file scan; final staged whitespace check | PASS |
 | Independent review | Bounded critical LIVE contract/presentation review and focused fix re-review | PASS — two confirmed findings fixed; no same-class remaining finding in the reviewed diff |
-| Production | Immutable source/image, zero-traffic preview, actual cloud/model/GUI/offline acceptance | PENDING; local release gates passed |
+| Production | Immutable source/image, zero-traffic preview, actual cloud/model/GUI/offline acceptance | PASS; canonical P1 traffic 100% |
 
 Unit fixtures do not establish real disaster conditions, open shelters, physically
 safe routes, GPS accuracy, battery endurance or successful production execution.
@@ -78,7 +79,8 @@ Evidence is in ignored `.work/p1/gui-20261007/`, including browser screenshots,
 summaries. Real current Live critical alerts and authorized evacuation are not
 available during this run; critical presentation/eligibility positives remain
 deterministic policy/renderer tests. No official fixture is injected into Live.
-Public handoff and cloud/model/provider acceptance will be checked on preview.
+Public handoff and cloud/model/provider acceptance subsequently passed on preview
+and canonical production; see the production release record.
 
 ## Historical local verification — 2026-10-06 JST
 
@@ -220,4 +222,6 @@ Read-only inspection at `2026-10-06T10:23:05Z` confirmed
 runtime identity and maximum one instance. Its image digest is
 `sha256:9d7e22b877aff64502903cfe90b233c8365a8df065e8e3b75fee5bcda6eb3005`.
 This is the existing P0 rollback baseline, not P1 acceptance.
-No P1 cloud build, merge, push, deployment or traffic promotion has occurred.
+This paragraph describes the former baseline inspection. P1 was subsequently
+built, deployed with zero traffic, accepted and promoted on 2026-10-07 JST.
+The P0 revision remains available for rollback. No Git merge/push occurred.

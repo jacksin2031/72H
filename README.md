@@ -13,12 +13,12 @@ The project focuses on one question:
 
 ## Public demo
 
-This public deployment remains the accepted vNext P0 rollback baseline. The
-authorized P1 implementation is being validated on `codex/vnext-p1`; it has not
-been promoted to production. See the [P1 acceptance ledger](docs/VNEXT_P1_VALIDATION.md)
-for verified results and remaining gates.
+This public deployment runs accepted vNext P1 (`h72-p1-b6950fb`, 100% traffic).
+See the [P1 acceptance ledger](docs/VNEXT_P1_VALIDATION.md) and
+[production record](docs/VNEXT_P1_PRODUCTION_RELEASE.md) for runtime identity,
+rollback and capability limits. Remote Git synchronization is separately blocked.
 
-**https://h72-602701455122.asia-northeast1.run.app**
+**https://h72-vux6j7xjka-an.a.run.app/dashboard**
 
 The public judging deployment runs on Google Cloud Run in `asia-northeast1`. Vertex AI / Gemini + Google ADK is enabled through the dedicated runtime service account. The Ekispert MCP credential is supplied from Secret Manager and was verified from Google Cloud with a names-only smoke job; route data is still treated as provider data rather than disaster-safety evidence.
 
@@ -92,9 +92,10 @@ Primary v0.1 scenario:
 
 The MVP uses plain CSS to keep the frontend small. The accepted P0 deployment
 uses a validated synthetic registry and bounded Ekispert MCP discovery/calls.
-The P1 branch adds separate live JMA intake and station-sequence candidate
-normalization; these changes still require the P1 acceptance gates before
-production. Safety Tips and persistent Firestore sessions remain unsupported.
+Accepted P1 adds separate live JMA intake and station-sequence candidate
+normalization, validated locally and on production. Safety Tips and persistent
+Firestore sessions remain unsupported. Catalog designation is not current
+shelter opening or movement authorization.
 Replay input enters the real evidence/state/Safety Core pipeline,
 and plan versions are generated from state rather than event-index UI branches.
 The server retains immutable evidence and plan publication objects, with separate
@@ -108,6 +109,11 @@ older migration source; neither should be developed as a second application. Thi
 repository uses `apps/web` and `services/agent-api`; no parallel `services/api` /
 pnpm backend has been imported. Hackathon skills are retained under `.codex/skills`,
 sourced from [Zenn's participant skills](https://github.com/zenn-dev/hackathon-agent-skills).
+
+Temporary P1 release exception: the immutable runtime source is local
+`codex/vnext-p1` commit `b6950fb`. The configured GitHub remote returns repository
+not found, so `main` and remote integration remain pending; do not mistake the
+older main checkout for the deployed P1 source.
 
 ## Run locally
 
@@ -246,11 +252,13 @@ acceptance is recorded separately in `docs/VNEXT_PRODUCTION_RELEASE.md`.
 
 ## Status
 
-**DEPLOYED vNext P0 — production acceptance PASS; external submission pending.**
+**DEPLOYED vNext P1 — production acceptance PASS; remote Git sync and external submission pending.**
 
-The results below belong to the accepted P0 deployment. P1's local/provider
-results, pending GUI gate and production boundary are recorded separately in
-[VNEXT_P1_VALIDATION.md](docs/VNEXT_P1_VALIDATION.md).
+P1 passes 103 backend / 148 frontend tests, local and deployed browser acceptance,
+actual JMA/Ekispert and Gemini/ADK, plus browser offline/reconnect verification.
+Evidence and limits are recorded in [VNEXT_P1_VALIDATION.md](docs/VNEXT_P1_VALIDATION.md).
+
+The results below are historical evidence for the accepted P0 rollback baseline.
 
 Local 69 backend / 77 frontend tests, deterministic safety, PWA continuity, CI,
 Cloud Build and public Cloud Run have passed. Both preview and canonical-origin
@@ -263,8 +271,9 @@ project-scoped ¥5,000 monthly billing budget sends alerts at 50% / 80% / 100%.
 
 Remaining submission work is primarily external assets/process: final architecture
 upload, approximately three-minute YouTube demo, Hackathon form/GitHub integration,
-and final submission verification. Live JMA/Safety Tips ingestion and Firestore
-persistence are intentionally outside the current MVP and are not claimed as done.
-Hazard/shelter/route layers, Web Push/FCM, Rescue Beacon, native background service
+and final submission verification. Safety Tips ingestion and Firestore persistence
+remain unsupported. Live JMA intake, static designation and schematic candidate
+points are supported in P1; current shelter/hazard/road safety is not established.
+Web Push/FCM, Rescue Beacon, native background service
 and real-device GPS/battery endurance also remain future work. Submission freeze
 is deferred until the external assets and final dashboard submission are ready.

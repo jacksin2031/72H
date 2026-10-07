@@ -13,9 +13,11 @@ Implementation and non-GUI verification are complete, with 103 backend and
 148 frontend tests, typecheck/build, actual provider/API probes and focused
 review passing. The restored In-app Browser has passed local mobile/PC GUI,
 candidate rendering, keyboard/contrast and actual browser offline/reconnect
-checks. Status is LOCAL VALIDATED / PRODUCTION PENDING. Current evidence is recorded in
-`docs/VNEXT_P1_VALIDATION.md`. Existing production remains the accepted P0
-baseline until all applicable P1 release gates pass.
+checks. P1 production acceptance passed and `h72-p1-b6950fb` receives 100% traffic;
+the accepted P0 revision remains the rollback. Status is COMPLETE for bounded P1
+implementation/release. Remote Git synchronization is separately blocked by
+repository access; no original checkout or main mutation occurred. Current evidence is recorded in
+`docs/VNEXT_P1_VALIDATION.md` and `docs/VNEXT_P1_PRODUCTION_RELEASE.md`.
 
 ## Current authorized release — vNext (2026-10-05 JST)
 

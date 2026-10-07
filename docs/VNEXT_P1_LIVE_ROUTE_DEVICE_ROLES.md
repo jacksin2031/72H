@@ -1,6 +1,6 @@
 # 72H vNext P1 — Live Data, Route Experience and Device-Role UI
 
-> Status: IN PROGRESS — implementation and validation authorized by the user's `/goal complete` request on 2026-10-06 JST. The original specification-only status is historical. Release acceptance must still pass before production promotion.
+> Status: COMPLETE — bounded P1 implementation, local and production acceptance passed on 2026-10-07 JST. See `VNEXT_P1_VALIDATION.md` and `VNEXT_P1_PRODUCTION_RELEASE.md` for exact evidence, unsupported capabilities and the separately blocked remote Git synchronization. The original specification-only status is historical.
 > Product principle: **Prepare on PC, act on mobile.**
 > Safety principle: **Live data informs the Safety Core; neither API output nor Gemini may directly authorize high-risk movement.**
 
