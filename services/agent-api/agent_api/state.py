@@ -7,12 +7,14 @@ from datetime import datetime
 
 from seventytwoh_contracts.models import (
     AreaDefinition,
+    DestinationRecord,
     DisasterEvent,
     Evidence,
     MobilitySnapshot,
     Plan,
     PlanAction,
     PlanEvaluation,
+    RoutePresentation,
     Situation,
     TraceEvent,
     UserProfile,
@@ -34,3 +36,5 @@ class CoreState:
     trace: tuple[TraceEvent, ...] = ()
     mobility: tuple[MobilitySnapshot, ...] = ()
     plan_evaluations: tuple[PlanEvaluation, ...] = ()
+    destinations: tuple[DestinationRecord, ...] = ()
+    routes: tuple[RoutePresentation, ...] = ()

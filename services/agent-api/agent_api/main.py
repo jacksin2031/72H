@@ -7,10 +7,13 @@ from uuid import UUID
 from fastapi import Body, FastAPI, HTTPException, status
 from seventytwoh_contracts.models import (
     ApiVersion,
+    LiveSnapshot,
     ReplaySnapshot,
     ReplayScenarioOption,
     SpeedRequest,
     StartReplayRequest,
+    StartLiveRequest,
+    LiveRouteSearchRequest,
 )
 
 from . import __version__
@@ -22,16 +25,33 @@ from .storage import (
     SessionCapacityReached,
     SessionNotFound,
 )
+from .live import (
+    InvalidLiveProfile,
+    LiveSessionCapacityReached,
+    LiveSessionNotFound,
+    LiveStore,
+    InvalidLiveRouteRequest,
+)
+from .planner import CandidatePlanner
 
 
-def create_app(store: ReplayStore | None = None) -> FastAPI:
-    replay_store = store or ReplayStore()
+def create_app(store: ReplayStore | None = None, live_store: LiveStore | None = None) -> FastAPI:
+    if store is None and live_store is None:
+        # Preserve one process-wide Gemini/ADK call budget across replay and live.
+        planner = CandidatePlanner()
+        replay_store = ReplayStore(planner=planner)
+        live_session_store = LiveStore(planner=planner)
+    else:
+        # Tests and callers that inject a store retain ownership of its planner/config.
+        replay_store = store if store is not None else ReplayStore()
+        live_session_store = live_store if live_store is not None else LiveStore()
     application = FastAPI(
         title="72H Agent API",
         version=__version__,
         description="Phase 3 Safety Core, synthetic replay, and bounded optional Gemini/ADK intent selection. Replay data is not live official information.",
     )
     application.state.replay_store = replay_store
+    application.state.live_store = live_session_store
 
     @application.get("/health")
     def health() -> dict[str, str]:
@@ -82,7 +102,47 @@ def create_app(store: ReplayStore | None = None) -> FastAPI:
     def set_replay_speed(session_id: UUID, request: SpeedRequest) -> ReplaySnapshot:
         return _run(lambda: replay_store.set_speed(session_id, request.speed))
 
+    @application.post("/api/live/start", response_model=LiveSnapshot, status_code=status.HTTP_201_CREATED)
+    async def start_live(request: StartLiveRequest) -> LiveSnapshot:
+        try:
+            return await live_session_store.start_async(request)
+        except InvalidLiveProfile as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except LiveSessionCapacityReached as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    @application.get("/api/live/{session_id}", response_model=LiveSnapshot)
+    def get_live(session_id: UUID) -> LiveSnapshot:
+        return _run_live(lambda: live_session_store.get(session_id))
+
+    @application.post("/api/live/{session_id}/refresh", response_model=LiveSnapshot)
+    async def refresh_live(session_id: UUID) -> LiveSnapshot:
+        return await _run_live_async(lambda: live_session_store.refresh_async(session_id))
+
+    @application.post("/api/live/{session_id}/routes/search", response_model=LiveSnapshot)
+    async def search_live_route(session_id: UUID, request: LiveRouteSearchRequest) -> LiveSnapshot:
+        try:
+            return await live_session_store.search_route(session_id, request)
+        except LiveSessionNotFound as exc:
+            raise HTTPException(status_code=404, detail="live session not found") from exc
+        except InvalidLiveRouteRequest as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
     return application
+
+
+def _run_live(operation):
+    try:
+        return operation()
+    except LiveSessionNotFound as exc:
+        raise HTTPException(status_code=404, detail="live session not found") from exc
+
+
+async def _run_live_async(operation):
+    try:
+        return await operation()
+    except LiveSessionNotFound as exc:
+        raise HTTPException(status_code=404, detail="live session not found") from exc
 
 
 def _run(operation):

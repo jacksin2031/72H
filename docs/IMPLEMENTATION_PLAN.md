@@ -1,5 +1,16 @@
 # 72H Implementation Plan v0.1
 
+## Authorized vNext P1 execution
+
+The user's 2026-10-06 `/goal complete` request authorizes P1-A through P1-K in
+[VNEXT_P1_LIVE_ROUTE_DEVICE_ROLES.md](VNEXT_P1_LIVE_ROUTE_DEVICE_ROLES.md),
+including mobile scenes and a separate desktop preparedness role. Reuse the
+accepted P0 Safety Core, versioned plans, bounded Gemini/ADK planner and offline
+contracts. Source adapters, route normalization and presentation changes must
+pass the [P1 acceptance ledger](VNEXT_P1_VALIDATION.md) before release. Preserve
+the accepted production rollback revision; Push/Rescue/native background work
+remain outside this release.
+
 ## Objective
 
 Build a stable, judge-ready MVP of 72H for the Google Cloud Agentic AI Hackathon.

@@ -1,5 +1,37 @@
 # 72H Architecture v0.2
 
+## Authorized P1 architecture
+
+P1 extends the existing pipeline with separate live-source intake and device
+presentation; it must not create a second safety engine per device. The source
+adapter validates external payloads before typed evidence enters situation and
+plan evaluation. Candidate geometry is mobility data; eligibility requires
+separate source, scope, conflict, freshness and destination checks.
+
+```mermaid
+flowchart TD
+  JMA[Official live source] --> Adapter[Bounded source adapter]
+  Replay[Synthetic replay input] --> Evidence[Typed evidence]
+  Adapter --> Evidence
+  Evidence --> Gates[Authority / area / freshness / conflict]
+  Gates --> Situation[Situation and dependencies]
+  Situation --> Candidate[Bounded Gemini / ADK candidates]
+  Candidate --> Core[Deterministic Safety Core]
+  Mobility[Route and destination data] --> Core
+  Core --> Plans[Versioned plan / action / spatial state]
+  Plans --> Policy[Device presentation policy]
+  Policy --> Mobile[Mobile action scenes]
+  Policy --> Desktop[Desktop preparedness / review / handoff]
+  Plans --> Cache[Local snapshot / TTL degradation]
+  Cache --> Reconcile[Reconnect and reverify]
+  Reconcile --> Gates
+```
+
+Live and replay state must remain distinguishable throughout the API, local
+cache and UI. No adapter failure, cached route or physical network restoration
+may grant movement eligibility. Current implementation and acceptance status:
+[VNEXT_P1_VALIDATION.md](VNEXT_P1_VALIDATION.md).
+
 ## vNext P0 read-projection extension
 
 The authorized P0 extension retains the backend evidence, Gemini/ADK and Safety

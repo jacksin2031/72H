@@ -21,6 +21,28 @@ Location is a separate consented local one-point record, never a server profile
 or official observation. Detailed compatibility, safety and storage behavior:
 [VNEXT_AREA_LOCATION.md](VNEXT_AREA_LOCATION.md).
 
+## Authorized P1 Live / spatial contract
+
+`LiveSnapshot` is a separate `mode: LIVE` payload with a bounded live session
+reference, explicit user profile, source status and typed evidence. It does not
+carry a replay clock or synthetic timeline. Browser cached Live data uses a
+separate storage key and must reconcile after restoration before claiming live
+verification.
+
+`DestinationRecord` describes an official designation catalog. Its coordinates,
+source and basis date do not establish current opening, capacity or hazard
+eligibility. `DestinationProjection` expresses those evaluated dependencies.
+`RoutePresentation` holds provider candidates, provenance, bounded coordinates,
+verification state and expiration; schematic station topology is distinguished
+from road geometry. No provider response directly grants movement permission.
+
+`SpatialGuidanceProjection` is derived by the server Safety Core and ties the
+movement gate to the current plan/action, scoped official evidence, destination
+and route dependencies. Clients apply additional local time, connectivity and
+device presentation constraints; they cannot elevate a rejected server action.
+See [P1 source capabilities](VNEXT_P1_SOURCES.md) and the separate
+[acceptance ledger](VNEXT_P1_VALIDATION.md).
+
 ## Purpose
 
 This document defines the persistent and local data model for 72H. It is designed to support:

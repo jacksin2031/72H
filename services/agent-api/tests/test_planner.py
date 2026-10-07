@@ -409,3 +409,14 @@ def test_async_api_uses_fake_adk_candidate_and_returns_truthful_planning_mode():
     assert second["replay"]["planning_mode"] == "GEMINI_ADK"
     assert any(item["event_type"] == "GEMINI_CANDIDATE_APPLIED" for item in second["trace"])
     assert next(item for item in second["plan_actions"] if item["category"] == "NOW")["intent_id"] == "review_official_guidance"
+
+
+def test_default_app_shares_one_candidate_budget_but_keeps_injected_store():
+    application = create_app()
+    assert application.state.live_store._planner is application.state.replay_store._planner
+
+    custom_planner = CandidatePlanner(_gemini_config(), runner=ChoosingRunner())
+    custom_store = ReplayStore(planner=custom_planner)
+    injected = create_app(custom_store)
+    assert injected.state.replay_store is custom_store
+    assert injected.state.replay_store._planner is custom_planner

@@ -1,5 +1,24 @@
 # 72H — Current Development Phase
 
+## Current authorized work — vNext P1 (2026-10-07 JST)
+
+The user's `/goal complete` request authorizes implementation and necessary
+validation of `docs/VNEXT_P1_LIVE_ROUTE_DEVICE_ROLES.md`, including its approved
+mobile scene system. Work is isolated on `codex/vnext-p1`, baseline `80b919d`.
+The previous release's exclusions of live official data apply to that release;
+they do not block this separately authorized P1 scope. No Push, Rescue Beacon,
+native background service or additional paid API dependency is included.
+Safety Core, immutable plans and offline/reconnection gates remain authoritative.
+Implementation and non-GUI verification are complete, with 103 backend and
+148 frontend tests, typecheck/build, actual provider/API probes and focused
+review passing. The restored In-app Browser has passed local mobile/PC GUI,
+candidate rendering, keyboard/contrast and actual browser offline/reconnect
+checks. P1 production acceptance passed and `h72-p1-b6950fb` receives 100% traffic;
+the accepted P0 revision remains the rollback. Status is COMPLETE for bounded P1
+implementation/release. Remote Git synchronization is separately blocked by
+repository access; no original checkout or main mutation occurred. Current evidence is recorded in
+`docs/VNEXT_P1_VALIDATION.md` and `docs/VNEXT_P1_PRODUCTION_RELEASE.md`.
+
 ## Current authorized release — vNext (2026-10-05 JST)
 
 The user explicitly authorized final RC review, blocker-only fixes, merge to

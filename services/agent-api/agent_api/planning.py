@@ -45,6 +45,7 @@ from .safety import (
     route_claim_key,
 )
 from .state import CoreState
+from .spatial import MovementSupport, resolve_movement_support
 
 TRUSTED_STATUSES = {TrustStatus.VERIFIED_OFFICIAL, TrustStatus.VERIFIED_PARTNER}
 
@@ -144,6 +145,8 @@ def candidate_context_for_preview(
     actions = _actions_for_plan(preview, generated_plan.id)
     changed_ids = set(generated_plan.changed_action_ids)
     target_actions = [action for action in actions if action.id in changed_ids]
+    if any(action.intent_id == SafeIntentId.EVACUATE_TO_DESIGNATED_SHELTER for action in target_actions):
+        return None
     projections = {
         item.evidence_id: item
         for item in evidence_projections(
@@ -335,6 +338,8 @@ def evaluate_and_replan(
     expired_current = bool(
         current_plan and after.current_time >= current_plan.expires_at
     )
+    movement_support = resolve_movement_support(after, after.current_time, policy)
+    spatial_dependency_changed = _spatial_dependency_changed(after, current_actions, policy)
     verified_disaster = next(
         (
             claim_by_key[key]
@@ -354,6 +359,7 @@ def evaluate_and_replan(
         changed_dependencies
         or new_relevant_keys
         or expired_current
+        or spatial_dependency_changed
         or can_start_initial_plan
     )
 
@@ -370,6 +376,8 @@ def evaluate_and_replan(
             projection_by_id,
             after.current_time,
             changed_dependencies,
+            after,
+            policy,
         )
         after = _append_evaluation(after, evaluation, event)
         if evaluation.status in {
@@ -409,7 +417,7 @@ def evaluate_and_replan(
                 evaluation.reason,
                 agent=AgentName.SAFETY_CORE,
             )
-    elif can_start_initial_plan:
+    elif can_start_initial_plan or (current_plan is None and movement_support is not None):
         after = _generate_plan(
             after,
             None,
@@ -457,6 +465,8 @@ def assess_action(
     action: PlanAction,
     evidence_by_id: dict[str, Evidence],
     projection_by_id: dict[str, EvidenceProjection],
+    *,
+    authorized_movement_evidence_ids: tuple[str, ...] = (),
 ) -> PlanAction:
     """Apply deterministic structural checks; generated wording is server-owned."""
     if any(reference not in evidence_by_id for reference in action.evidence_ids):
@@ -480,7 +490,24 @@ def assess_action(
                     "confidence_class": "UNKNOWN",
                 }
             )
-        # Phase 2 has no deterministic allowlist for movement or safety judgments.
+        if (
+            action.intent_id == SafeIntentId.EVACUATE_TO_DESIGNATED_SHELTER
+            and authorized_movement_evidence_ids
+            and set(authorized_movement_evidence_ids).issubset(action.evidence_ids)
+            and all(
+                reference in eligible
+                and projection_by_id[reference].eligible_for_high_risk
+                for reference in authorized_movement_evidence_ids
+            )
+        ):
+            return action.model_copy(
+                update={
+                    "status": PlanActionStatus.ACTIVE,
+                    "safety_decision": SafetyDecision.ALLOW,
+                    "confidence_class": "HIGH",
+                }
+            )
+        # No other high-risk action has a deterministic allowlist.
         return action.model_copy(
             update={
                 "status": PlanActionStatus.BLOCKED,
@@ -586,6 +613,8 @@ def _evaluate_plan(
     projections: dict[str, EvidenceProjection],
     current_time,
     changed_dependencies: set[str],
+    state: CoreState,
+    policy: SafetyPolicy,
 ) -> PlanEvaluation:
     if current_time >= plan.expires_at:
         return PlanEvaluation(
@@ -613,6 +642,9 @@ def _evaluate_plan(
             if projection is None or not projection.eligible_for_claims:
                 action_invalid = True
                 reasons.append(f"evidence {reference} is no longer current and eligible")
+        if _spatial_action_dependencies_invalid(action, state, policy):
+            action_invalid = True
+            reasons.append("the spatial route, destination, or directive dependency changed or expired")
         if action_invalid:
             invalid.append(action.id)
 
@@ -636,6 +668,41 @@ def _evaluate_plan(
         reason=reason[:240],
         invalid_action_ids=tuple(sorted(set(invalid))),
     )
+
+
+def _spatial_dependency_changed(
+    state: CoreState,
+    actions: tuple[PlanAction, ...],
+    policy: SafetyPolicy,
+) -> bool:
+    support = resolve_movement_support(state, state.current_time, policy)
+    if support is not None and not any(
+        action.category == PlanActionCategory.NOW
+        and action.intent_id == SafeIntentId.EVACUATE_TO_DESIGNATED_SHELTER
+        for action in actions
+    ):
+        return True
+    return any(_spatial_action_dependencies_invalid(action, state, policy) for action in actions)
+
+
+def _spatial_action_dependencies_invalid(
+    action: PlanAction,
+    state: CoreState,
+    policy: SafetyPolicy,
+) -> bool:
+    support = resolve_movement_support(state, state.current_time, policy)
+    if action.intent_id != SafeIntentId.EVACUATE_TO_DESIGNATED_SHELTER:
+        return action.category == PlanActionCategory.NOW and support is not None
+    if support is None:
+        return True
+    latest_route = state.routes[-1] if state.routes else None
+    if latest_route is None or latest_route.id != support.route.id:
+        return True
+    if not set(support.evidence_ids).issubset(action.evidence_ids):
+        return True
+    if not set(support.claim_keys).issubset(action.dependency_keys):
+        return True
+    return not any(item.id == support.destination_id for item in state.destinations)
 
 
 def _generate_plan(
@@ -662,6 +729,7 @@ def _generate_plan(
     )
     evidence_by_id = {item.id: item for item in state.evidence}
     current_claims = {item.key: item for item in state.situation.claim_states}
+    movement_support = resolve_movement_support(state, state.current_time, policy)
 
     actions: list[PlanAction] = []
     changed_action_ids: list[str] = []
@@ -678,20 +746,40 @@ def _generate_plan(
                     "plan_id": plan_id,
                 }
             )
-            assessed = assess_action(preserved, evidence_by_id, projections)
+            assessed = assess_action(
+                preserved,
+                evidence_by_id,
+                projections,
+                authorized_movement_evidence_ids=(
+                    movement_support.evidence_ids
+                    if movement_support is not None
+                    and preserved.intent_id == SafeIntentId.EVACUATE_TO_DESIGNATED_SHELTER
+                    else ()
+                ),
+            )
             if assessed.status == PlanActionStatus.ACTIVE:
                 actions.append(assessed)
                 continue
-        action = _new_action(
-            state,
-            plan_id,
-            category,
-            current_claims,
-            projections,
-            evidence_by_id,
-            candidate_by_category.get(category),
-        )
-        actions.append(assess_action(action, evidence_by_id, projections))
+        if category == PlanActionCategory.NOW and movement_support is not None:
+            action = _new_movement_action(state, plan_id, current_claims, movement_support)
+            assessed = assess_action(
+                action,
+                evidence_by_id,
+                projections,
+                authorized_movement_evidence_ids=movement_support.evidence_ids,
+            )
+        else:
+            action = _new_action(
+                state,
+                plan_id,
+                category,
+                current_claims,
+                projections,
+                evidence_by_id,
+                candidate_by_category.get(category),
+            )
+            assessed = assess_action(action, evidence_by_id, projections)
+        actions.append(assessed)
         changed_action_ids.append(action.id)
 
     referenced_evidence = tuple(
@@ -709,6 +797,8 @@ def _generate_plan(
         if reference in projections
         and projections[reference].freshness_status == FreshnessStatus.CURRENT
     ]
+    if movement_support is not None:
+        future_expiries.append(movement_support.expires_at)
     if future_expiries:
         expires_at = min(
             min(future_expiries),
@@ -763,6 +853,45 @@ def _generate_plan(
             agent=AgentName.SAFETY_CORE,
         )
     return state
+
+
+def _new_movement_action(
+    state: CoreState,
+    plan_id: str,
+    claims: dict[str, SituationClaim],
+    support: MovementSupport,
+) -> PlanAction:
+    language = state.profile.preferred_language.value
+    destination = next(item for item in state.destinations if item.id == support.destination_id)
+    instruction = {
+        "ja": f"確認済みの避難指示に従い、開設と適合性を確認した指定避難先「{destination.name}」へ、確認済みの経路で移動してください。",
+        "en": f"Follow the verified evacuation directive to designated shelter “{destination.name}” using the currently verified route.",
+        "zh-TW": f"依照已驗證的避難指示，沿目前已驗證的路線前往已確認開放且適合的指定避難處「{destination.name}」。",
+    }[language]
+    reason = {
+        "ja": "現在有來源受控的避難指示、開設中で災害に適合する目的地，以及新鮮で競合のない経路証拠。",
+        "en": "A source-controlled evacuation directive, a currently open hazard-suitable destination, and fresh non-conflicting route evidence are all present.",
+        "zh-TW": "目前具備來源受控的避難指示、已確認開放且適合此災害的目的地，以及新鮮且無衝突的路線證據。",
+    }[language]
+    expectations = tuple(
+        DependencyExpectation(key=key, expected_value=current_claim_value(claims.get(key)))
+        for key in support.claim_keys
+    )
+    return PlanAction(
+        id=f"act_{plan_id}_now",
+        plan_id=plan_id,
+        category=PlanActionCategory.NOW,
+        intent_id=SafeIntentId.EVACUATE_TO_DESIGNATED_SHELTER,
+        text=instruction,
+        reason=reason,
+        risk_level=RiskLevel.HIGH,
+        confidence_class="HIGH",
+        evidence_ids=support.evidence_ids,
+        dependency_keys=support.claim_keys,
+        dependency_expectations=expectations,
+        status=PlanActionStatus.ACTIVE,
+        safety_decision=SafetyDecision.ALLOW,
+    )
 
 
 def _new_action(

@@ -8,6 +8,7 @@ dependencies = [
   "uvicorn==0.34.2",
   "google-adk==1.39.1",
   "mcp==1.30.0",
+  "httpx==0.28.1",
   "72h-contracts",
 ]
 
@@ -23,7 +24,6 @@ packages = ["agent_api"]
 
 [dependency-groups]
 dev = [
-  "httpx==0.28.1",
   "pytest==8.3.5",
 ]
 

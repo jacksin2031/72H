@@ -1,7 +1,9 @@
-import type { Evidence, Snapshot } from './contracts';
+import type { Evidence, LiveSnapshot, Snapshot } from './contracts';
+
+type AreaScopedView = Pick<Snapshot | LiveSnapshot, 'profile' | 'area_catalog'>;
 
 /** Validate the explicit catalog path; labels and device coordinates never infer an area. */
-export function profileAreaIds(snapshot: Snapshot): string[] {
+export function profileAreaIds(snapshot: AreaScopedView): string[] {
   const declared = snapshot.profile.current_location.area_ids;
   const catalog = new Map(snapshot.area_catalog.map(area => [area.id, area]));
   if (!declared.length || catalog.size !== snapshot.area_catalog.length) return [];
@@ -15,7 +17,7 @@ export function profileAreaIds(snapshot: Snapshot): string[] {
   return actual.length === declared.length && actual.every((id, index) => id === declared[index]) ? actual : [];
 }
 
-export function evidenceMatchesProfile(evidence: Evidence, snapshot: Snapshot) {
+export function evidenceMatchesProfile(evidence: Evidence, snapshot: AreaScopedView) {
   const areas = profileAreaIds(snapshot);
   const known = new Set(snapshot.area_catalog.map(area => area.id));
   return evidence.affected_area_ids.length > 0

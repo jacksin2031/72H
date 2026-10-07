@@ -159,6 +159,7 @@ export type NotificationEvent =
   | 'NETWORK_RESTORED'
   | 'VERIFICATION_RESTORED'
   | 'CRITICAL_WARNING'
+  | 'ROUTE_DEPENDENCY_CHANGED'
   | 'SAFETY_CHECK_REQUIRED';
 export type DerivedNotification = {
   id: string;
