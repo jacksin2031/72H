@@ -1,0 +1,13 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const assets = join(root, 'public/areas');
+const manifest = readFileSync(join(assets, 'manifest.json'));
+const hash = createHash('sha256').update(manifest).digest('hex');
+const meta = JSON.parse(manifest);
+writeFileSync(join(root, 'lib/area-asset-identity.ts'), `// Generated from the pinned N03 asset manifest.\nexport const areaAssetIdentity = ${JSON.stringify({ manifest_sha256: hash, catalog_sha256: meta.catalog_sha256, catalog_bytes: meta.catalog_bytes })} as const;\n`);
+writeFileSync(join(assets, 'worker.mjs'), readFileSync(join(root, 'scripts/area-worker.mjs'), 'utf8').replace('__AREA_MANIFEST_SHA__', hash));
+writeFileSync(join(assets, 'area-geometry.mjs'), ts.transpileModule(readFileSync(join(root, 'lib/area-geometry.ts'), 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 } }).outputText);

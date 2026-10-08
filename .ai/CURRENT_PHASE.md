@@ -1,5 +1,18 @@
 # 72H — Current Development Phase
 
+## Current authorized work — accessible GPS P1.1 (2026-10-08 JST)
+
+Scope: local implementation and acceptance of
+`docs/VNEXT_P1_1_ACCESSIBLE_GPS_UI.md`, baseline
+`6eeba78b180d52ce1bb845728442251b9d38a50b`, isolated branch
+`codex/vnext-p1-1-accessible-gps`. The original checkout and its untracked spec
+are preserved. Status: IN PROGRESS; evidence will be recorded in
+`docs/VNEXT_P1_1_VALIDATION.md`. GPS-first onboarding, national N03 resolution,
+same-session location updates and accessible consumer UI do not grant new
+safety authority. Real-device GPS, preview deployment and production traffic
+switching are outside this delivery. Production references below are historical
+and are not evidence for this new branch.
+
 ## Current follow-up — first-use UI polish (2026-10-08 JST)
 
 The user requested neutral pre-session status, mobile onboarding scenes and a

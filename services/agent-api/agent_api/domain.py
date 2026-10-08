@@ -257,6 +257,9 @@ async def replan_live_transition_with_planner(
     planner,
     live_session_id: str,
     policy: SafetyPolicy = DEFAULT_POLICY,
+    *,
+    event_id: str | None = None,
+    allow_network_reconciliation: bool = True,
 ):
     """Evaluate a prepared live transition and optionally apply one bounded candidate."""
     from .planning import (
@@ -267,8 +270,16 @@ async def replan_live_transition_with_planner(
 
     if reduced.current_time < before.current_time:
         raise ValueError("live state time cannot move backwards")
-    clock_event = type("LiveRefreshEvent", (), {"id": f"live-refresh-{int(reduced.current_time.timestamp())}"})()
-    preview = evaluate_and_replan(before, reduced, clock_event, policy)
+    clock_event = type("LiveRefreshEvent", (), {
+        "id": event_id or f"live-refresh-{int(reduced.current_time.timestamp())}"
+    })()
+    preview = evaluate_and_replan(
+        before,
+        reduced,
+        clock_event,
+        policy,
+        allow_network_reconciliation=allow_network_reconciliation,
+    )
     context = candidate_context_for_preview(before, preview, policy)
     if context is None:
         return preview, None
@@ -287,6 +298,7 @@ async def replan_live_transition_with_planner(
         candidate_selection=outcome.selection,
         candidate_context=context,
         planner_trace=PlannerTrace(mode=outcome.mode, reason_code=outcome.reason_code),
+        allow_network_reconciliation=allow_network_reconciliation,
     )
     return published, outcome.mode
 
@@ -804,12 +816,18 @@ def _network_transition(
         if target == NetworkState.RECONNECTING
         else state.reconnect_evidence_count
     )
+    last_reconnect_at = (
+        timestamp
+        if target == NetworkState.RECONNECTING
+        else state.last_reconnect_at
+    )
     return _bounded(
         replace(
             state,
             situation=situation,
             trace=(*state.trace, trace),
             reconnect_evidence_count=reconnect_evidence_count,
+            last_reconnect_at=last_reconnect_at,
         )
     )
 

@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "node scripts/prepare-map-worker.mjs",
+    "postinstall": "node scripts/prepare-workers.mjs",
+    "predev": "node scripts/prepare-workers.mjs",
     "dev": "next dev --hostname 127.0.0.1",
     "build": "node scripts/build.mjs",
     "start": "node scripts/start.mjs",
@@ -21,6 +22,7 @@
     "@types/node": "^24.0.0",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "jsdom": "27.0.1",
     "typescript": "5.9.3",
     "vitest": "5.0.3"
   }

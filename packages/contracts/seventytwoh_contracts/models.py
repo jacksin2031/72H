@@ -262,12 +262,18 @@ class AreaDefinition(ContractModel):
     parent_id: Identifier | None = None
 
 
+class LocationSource(StrEnum):
+    GPS = "GPS"
+    USER_SELECTED = "USER_SELECTED"
+
+
 class Location(ContractModel):
     label: ShortText
     lat: Annotated[StrictFloat, Field(ge=-90, le=90)] | None = None
     lng: Annotated[StrictFloat, Field(ge=-180, le=180)] | None = None
     area_ids: StringList = ()
     observed_at: AwareDatetime | None = None
+    source: LocationSource | None = None
 
     @model_validator(mode="after")
     def coordinates_are_paired_and_area_path_is_unique(self) -> "Location":
@@ -739,6 +745,40 @@ class StartLiveRequest(ContractModel):
 class LiveRouteSearchRequest(ContractModel):
     origin: Location
     destination_id: Identifier
+
+
+class LiveLocationUpdateRequest(ContractModel):
+    area_ids: Annotated[tuple[Identifier, ...], Field(min_length=1, max_length=20)]
+    source: LocationSource
+    observed_at: AwareDatetime
+
+    @model_validator(mode="after")
+    def area_path_is_unique(self) -> "LiveLocationUpdateRequest":
+        if len(self.area_ids) != len(set(self.area_ids)):
+            raise ValueError("area_ids must be unique and ordered from specific area to ancestors")
+        return self
+
+
+class LiveProfileUpdateRequest(ContractModel):
+    """User-editable profile metadata; current location and coordinates are excluded."""
+
+    accommodation_location: Location
+    party_size: Annotated[StrictInt, Field(ge=1, le=20)]
+    self_reported_safety_status: SelfReportedSafetyStatus
+    accessibility_constraints: Annotated[tuple[ShortText, ...], Field(max_length=32)] = ()
+
+    @model_validator(mode="after")
+    def accommodation_is_metadata_only(self) -> "LiveProfileUpdateRequest":
+        location = self.accommodation_location
+        if location.lat is not None or location.lng is not None:
+            raise ValueError("accommodation location coordinates are not accepted")
+        if location.source == LocationSource.GPS:
+            raise ValueError("accommodation location cannot carry GPS provenance")
+        if location.source is None and location.observed_at is not None:
+            raise ValueError("accommodation observed_at requires USER_SELECTED provenance")
+        if len(location.area_ids) > 20:
+            raise ValueError("accommodation area path is too long")
+        return self
 
 
 class TraceEvent(ContractModel):

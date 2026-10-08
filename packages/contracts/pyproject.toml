@@ -13,3 +13,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["seventytwoh_contracts"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"seventytwoh_contracts/data/japan-areas.json" = "seventytwoh_contracts/data/japan-areas.json"

@@ -1,5 +1,16 @@
 # 72H Implementation Plan v0.1
 
+## Authorized P1.1 local execution
+
+The 2026-10-08 approved plan adds accessible GPS-first onboarding, nationwide
+N03 device-local resolution, a canonical national registry, same-session location
+updates and battery-aware map tracking. Precise coordinates remain device-local.
+Required gates include deterministic location/geometry/API regression tests,
+complete national artifact integrity checks, mobile/desktop browser acceptance,
+offline/reconnect and an independent Luna Max safety review. Evidence belongs in
+[VNEXT_P1_1_VALIDATION.md](VNEXT_P1_1_VALIDATION.md), tied to the actual local
+commit/build. Real-device GPS and production acceptance remain separate gates.
+
 ## Authorized vNext P1 execution
 
 The user's 2026-10-06 `/goal complete` request authorizes P1-A through P1-K in

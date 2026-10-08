@@ -27,14 +27,19 @@ from seventytwoh_contracts.models import (
     FreshnessStatus,
     IncidentStatus,
     Language,
+    LiveLocationUpdateRequest,
+    LiveProfileUpdateRequest,
     LiveSnapshot,
     LiveSourceProjection,
     LiveSourceStatus,
     NetworkState,
+    Location,
+    LocationSource,
     PlanActionStatus,
     PlanStatus,
     ProfileSeed,
     RoutePresentation,
+    RoutePresentationStatus,
     Situation,
     SpatialActionKind,
     SpatialGuidanceProjection,
@@ -48,10 +53,10 @@ from seventytwoh_contracts.models import (
 )
 
 from .domain import apply_live_evidence_batch, apply_live_evidence_batch_with_planner, replan_live_transition_with_planner
+from .area_registry import base_japan_area_catalog, catalog_for_state, load_japan_area_registry
 from .live_sources import (
     JMA_EVIDENCE_TTL_SECONDS,
     JMA_FEED_URL,
-    JMA_PREFECTURES,
     JMA_SOURCE_KEY,
     JMA_SOURCE_NAME,
     TOKYO_SHELTER_PUBLISHED_AT,
@@ -64,6 +69,7 @@ from .live_sources import (
     TokyoShelterSource,
 )
 from .planning import evidence_projections
+from .location_freshness import gps_observation_is_fresh
 from .safety import DEFAULT_POLICY, SafetyPolicy, claims_from_disaster_assessments, derive_claim_states
 from .state import CoreState
 from .live_routes import EKISPERT_MCP_ENDPOINT, EKISPERT_ROUTE_SOURCE_KEY, EKISPERT_ROUTE_SOURCE_NAME, EkispertRouteSource
@@ -73,6 +79,7 @@ from .spatial import evaluated_spatial_guidance
 SESSION_TTL_SECONDS = 6 * 60 * 60
 MAX_LIVE_SESSIONS = 64
 MAX_LIVE_EVENTS = 64
+MAX_LIVE_TRACE_EVENTS = 512
 
 
 class LiveSessionNotFound(KeyError):
@@ -91,6 +98,14 @@ class InvalidLiveRouteRequest(ValueError):
     pass
 
 
+class InvalidLiveLocationRequest(ValueError):
+    pass
+
+
+class InvalidLiveProfileUpdate(ValueError):
+    pass
+
+
 @dataclass(slots=True)
 class LiveAggregate:
     session_id: UUID
@@ -104,10 +119,7 @@ class LiveAggregate:
 
 
 def build_live_area_catalog() -> tuple[AreaDefinition, ...]:
-    return (
-        AreaDefinition(id="JP", label="Japan"),
-        *(AreaDefinition(id=f"JP-{code}", label=name, parent_id="JP") for code, name in JMA_PREFECTURES.items()),
-    )
+    return base_japan_area_catalog()
 
 
 class LiveStore:
@@ -135,7 +147,9 @@ class LiveStore:
         self._now = now or (lambda: datetime.now(timezone.utc))
         self._sessions: dict[UUID, LiveAggregate] = {}
         self._lock = RLock()
-        self._area_catalog = build_live_area_catalog()
+        self._area_registry = load_japan_area_registry()
+        self._area_by_id = {area.id: area for area in self._area_registry}
+        self._area_catalog = base_japan_area_catalog(self._area_registry)
 
     def start(self, request: StartLiveRequest) -> LiveSnapshot:
         aggregate = self._create_session(request)
@@ -148,25 +162,29 @@ class LiveStore:
     def _create_session(self, request: StartLiveRequest) -> LiveAggregate:
         if not isinstance(request, StartLiveRequest):
             request = StartLiveRequest.model_validate(request)
+        now = self._now()
         try:
-            area_by_id = {area.id: area for area in self._area_catalog}
             for location in (
                 request.profile.current_location,
                 request.profile.accommodation_location,
                 request.profile.current_destination,
             ):
                 if location is not None:
-                    validate_location_area_path(location, area_by_id)
+                    validate_location_area_path(location, self._area_by_id)
+                    if location.source == LocationSource.GPS and not gps_observation_is_fresh(
+                        location.observed_at, now
+                    ):
+                        raise ValueError("GPS location must be observed within the last two minutes")
         except ValueError as exc:
             raise InvalidLiveProfile(f"profile location is outside the live area catalog: {exc}") from exc
+        profile_seed = self._canonicalize_profile_locations(request.profile)
 
-        now = self._now()
         session_id = uuid4()
         user_id = f"user_live_{session_id.hex}"
         profile = UserProfile(
             id=user_id,
             preferred_language=request.language,
-            **request.profile.model_dump(),
+            **profile_seed.model_dump(),
             created_at=now,
             updated_at=now,
         )
@@ -187,6 +205,7 @@ class LiveStore:
             scenario_key="live-jma-eqvol",
             area_catalog=self._area_catalog,
         )
+        state = replace(state, area_catalog=catalog_for_state(state, self._area_registry))
         source = self._empty_jma_projection()
         destination_source = self._empty_destination_projection()
         route_source = self._empty_route_projection()
@@ -212,12 +231,349 @@ class LiveStore:
             self._touch(aggregate)
             return self._snapshot(aggregate)
 
+    async def update_location(
+        self,
+        session_id: UUID,
+        request: LiveLocationUpdateRequest,
+    ) -> LiveSnapshot:
+        """Update a live profile's canonical area scope and re-evaluate its plan."""
+        aggregate = self._get_aggregate(session_id)
+        if not isinstance(request, LiveLocationUpdateRequest):
+            try:
+                request = LiveLocationUpdateRequest.model_validate(request)
+            except ValueError as exc:
+                raise InvalidLiveLocationRequest(str(exc)) from exc
+
+        async with aggregate.operation_lock:
+            with aggregate.lock:
+                now = self._now()
+                self._validate_location_timestamp(request, now)
+                try:
+                    validate_location_area_path(
+                        Location(
+                            label=self._area_by_id[request.area_ids[0]].label,
+                            area_ids=request.area_ids,
+                            observed_at=request.observed_at,
+                            source=request.source,
+                        ),
+                        self._area_by_id,
+                    )
+                except (KeyError, ValueError) as exc:
+                    raise InvalidLiveLocationRequest(
+                        "area_ids must be a registered, contiguous specific-to-ancestor path"
+                    ) from exc
+
+                before = aggregate.state
+                location = Location(
+                    label=self._area_by_id[request.area_ids[0]].label,
+                    area_ids=request.area_ids,
+                    observed_at=request.observed_at,
+                    source=request.source,
+                )
+                if location.area_ids == before.profile.current_location.area_ids:
+                    if location == before.profile.current_location:
+                        self._touch(aggregate)
+                        return self._snapshot(aggregate)
+                    # A same-area fix refreshes only location metadata. Retain route
+                    # and source evidence; the normal evaluator still enforces their
+                    # own TTLs at the new current time.
+                    if len(before.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
+                        raise InvalidLiveLocationRequest("live trace capacity reached")
+                    transition_time = max(now, before.current_time)
+                    event_id = f"live-location-refresh-{len(before.trace) + 1}-{int(transition_time.timestamp())}"
+                    trace = TraceEvent(
+                        id=f"trace_{len(before.trace) + 1:03d}",
+                        situation_id=before.situation.id,
+                        timestamp=transition_time,
+                        agent=AgentName.SITUATION_AGENT,
+                        event_type="PROFILE_LOCATION_REFRESHED",
+                        input_refs=(event_id,),
+                        output_refs=request.area_ids,
+                        status=TraceStatus.SUCCESS,
+                        public_summary=(
+                            f"Current area location timestamp refreshed from {request.source.value}: "
+                            f"{location.label}. Area scope and source evidence were not changed."
+                        ),
+                    )
+                    profile = before.profile.model_copy(
+                        update={"current_location": location, "updated_at": transition_time}
+                    )
+                    after = replace(
+                        before,
+                        profile=profile,
+                        current_time=transition_time,
+                        trace=(*before.trace, trace),
+                    )
+                    event = SimpleNamespace(id=event_id)
+                    from .planning import evaluate_and_replan
+
+                    aggregate.state = evaluate_and_replan(
+                        before,
+                        after,
+                        event,
+                        self._policy,
+                    )
+                    self._touch(aggregate)
+                    return self._snapshot(aggregate)
+
+                if location == before.profile.current_location:
+                    self._touch(aggregate)
+                    return self._snapshot(aggregate)
+                if len(before.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
+                    raise InvalidLiveLocationRequest("live trace capacity reached")
+
+                transition_time = max(now, before.current_time)
+                event_id = f"live-location-{len(before.trace) + 1}-{int(transition_time.timestamp())}"
+                trace = TraceEvent(
+                    id=f"trace_{len(before.trace) + 1:03d}",
+                    situation_id=before.situation.id,
+                    timestamp=transition_time,
+                    agent=AgentName.SITUATION_AGENT,
+                    event_type="PROFILE_LOCATION_UPDATED",
+                    input_refs=(event_id,),
+                    output_refs=request.area_ids,
+                    status=TraceStatus.SUCCESS,
+                    public_summary=(
+                        f"Current area updated from {request.source.value}: {location.label}. "
+                        "This does not verify disaster information or movement safety."
+                    ),
+                )
+                after = self._location_transition(before, location, transition_time, trace)
+                try:
+                    after = replace(
+                        after,
+                        area_catalog=catalog_for_state(after, self._area_registry),
+                    )
+                except ValueError as exc:
+                    raise InvalidLiveLocationRequest(str(exc)) from exc
+
+            from .domain import replan_live_transition_with_planner
+            from .planning import evaluate_and_replan
+
+            event = SimpleNamespace(id=event_id)
+            planned, _planning_mode = await replan_live_transition_with_planner(
+                before,
+                after,
+                self._planner,
+                f"live-{aggregate.session_id}",
+                self._policy,
+                event_id=event_id,
+            )
+            with aggregate.lock:
+                if aggregate.state is before:
+                    aggregate.state = planned
+                else:
+                    latest = aggregate.state
+                    latest_time = max(transition_time, latest.current_time)
+                    latest_after = self._location_transition(
+                        latest,
+                        location,
+                        latest_time,
+                        trace.model_copy(
+                            update={
+                                "id": f"trace_{len(latest.trace) + 1:03d}",
+                                "timestamp": latest_time,
+                            }
+                        ),
+                    )
+                    latest_after = replace(
+                        latest_after,
+                        area_catalog=catalog_for_state(latest_after, self._area_registry),
+                    )
+                    aggregate.state = evaluate_and_replan(
+                        latest,
+                        latest_after,
+                        event,
+                        self._policy,
+                    )
+                self._touch(aggregate)
+                return self._snapshot(aggregate)
+
+    async def update_profile(
+        self,
+        session_id: UUID,
+        request: LiveProfileUpdateRequest,
+    ) -> LiveSnapshot:
+        """Update non-location profile metadata without changing current GPS state."""
+        aggregate = self._get_aggregate(session_id)
+        if not isinstance(request, LiveProfileUpdateRequest):
+            try:
+                request = LiveProfileUpdateRequest.model_validate(request)
+            except ValueError as exc:
+                raise InvalidLiveProfileUpdate(str(exc)) from exc
+
+        async with aggregate.operation_lock:
+            with aggregate.lock:
+                now = self._now()
+                accommodation = request.accommodation_location
+                try:
+                    validate_location_area_path(accommodation, self._area_by_id)
+                except ValueError as exc:
+                    raise InvalidLiveProfileUpdate(
+                        "accommodation location must use a registered, contiguous specific-to-ancestor path"
+                    ) from exc
+                if accommodation.area_ids:
+                    accommodation = accommodation.model_copy(
+                        update={"label": self._area_by_id[accommodation.area_ids[0]].label}
+                    )
+
+                before = aggregate.state
+                profile = before.profile
+                profile_values = {
+                    "accommodation_location": accommodation,
+                    "party_size": request.party_size,
+                    "self_reported_safety_status": request.self_reported_safety_status,
+                    "accessibility_constraints": request.accessibility_constraints,
+                }
+                if all(getattr(profile, key) == value for key, value in profile_values.items()):
+                    self._advance_time_locked(
+                        aggregate,
+                        now,
+                        allow_network_reconciliation=False,
+                    )
+                    self._touch(aggregate)
+                    return self._snapshot(aggregate)
+                if len(before.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
+                    raise InvalidLiveProfileUpdate("live trace capacity reached")
+
+                transition_time = max(now, before.current_time)
+                event_id = f"live-profile-{len(before.trace) + 1}-{int(transition_time.timestamp())}"
+                trace = TraceEvent(
+                    id=f"trace_{len(before.trace) + 1:03d}",
+                    situation_id=before.situation.id,
+                    timestamp=transition_time,
+                    agent=AgentName.SITUATION_AGENT,
+                    event_type="PROFILE_METADATA_UPDATED",
+                    input_refs=(event_id,),
+                    output_refs=accommodation.area_ids,
+                    status=TraceStatus.SUCCESS,
+                    public_summary=(
+                        "User profile settings were updated. Current location, network state, and source evidence were preserved."
+                    ),
+                )
+                updated_profile = profile.model_copy(
+                    update={**profile_values, "updated_at": transition_time}
+                )
+                updated_situation = before.situation.model_copy(
+                    update={"updated_at": transition_time}
+                )
+                after = replace(
+                    before,
+                    profile=updated_profile,
+                    situation=updated_situation,
+                    current_time=transition_time,
+                    trace=(*before.trace, trace),
+                )
+                try:
+                    after = replace(
+                        after,
+                        area_catalog=catalog_for_state(after, self._area_registry),
+                    )
+                except ValueError as exc:
+                    raise InvalidLiveProfileUpdate(str(exc)) from exc
+
+            event = SimpleNamespace(id=event_id)
+            planned, _planning_mode = await replan_live_transition_with_planner(
+                before,
+                after,
+                self._planner,
+                f"live-{aggregate.session_id}",
+                self._policy,
+                event_id=event_id,
+                allow_network_reconciliation=False,
+            )
+            from .planning import evaluate_and_replan
+
+            with aggregate.lock:
+                if aggregate.state is before:
+                    aggregate.state = planned
+                else:
+                    latest = aggregate.state
+                    latest_time = max(transition_time, latest.current_time)
+                    latest_profile = latest.profile.model_copy(
+                        update={**profile_values, "updated_at": latest_time}
+                    )
+                    latest_trace = trace.model_copy(
+                        update={
+                            "id": f"trace_{len(latest.trace) + 1:03d}",
+                            "timestamp": latest_time,
+                        }
+                    )
+                    latest_after = replace(
+                        latest,
+                        profile=latest_profile,
+                        situation=latest.situation.model_copy(update={"updated_at": latest_time}),
+                        current_time=latest_time,
+                        trace=(*latest.trace, latest_trace),
+                    )
+                    latest_after = replace(
+                        latest_after,
+                        area_catalog=catalog_for_state(latest_after, self._area_registry),
+                    )
+                    aggregate.state = evaluate_and_replan(
+                        latest,
+                        latest_after,
+                        event,
+                        self._policy,
+                        allow_network_reconciliation=False,
+                    )
+                self._touch(aggregate)
+                return self._snapshot(aggregate)
+
+    @staticmethod
+    def _validate_location_timestamp(request: LiveLocationUpdateRequest, now: datetime) -> None:
+        if request.observed_at > now:
+            raise InvalidLiveLocationRequest("observed_at cannot be in the future")
+        if request.source == LocationSource.GPS and not gps_observation_is_fresh(
+            request.observed_at, now
+        ):
+            raise InvalidLiveLocationRequest("GPS location is older than two minutes")
+
+    def _canonicalize_profile_locations(self, profile: ProfileSeed) -> ProfileSeed:
+        def canonical(location):
+            if location is None or not location.area_ids:
+                return location
+            return location.model_copy(
+                update={"label": self._area_by_id[location.area_ids[0]].label}
+            )
+
+        return profile.model_copy(
+            update={
+                "current_location": canonical(profile.current_location),
+                "accommodation_location": canonical(profile.accommodation_location),
+                "current_destination": canonical(profile.current_destination),
+            }
+        )
+
+    def _location_transition(self, state, location: Location, now: datetime, trace: TraceEvent):
+        routes = tuple(
+            route.model_copy(
+                update={
+                    "status": RoutePresentationStatus.EXPIRED,
+                    "freshness_status": FreshnessStatus.STALE,
+                }
+            )
+            for route in state.routes
+        )
+        profile = state.profile.model_copy(
+            update={"current_location": location, "updated_at": now}
+        )
+        situation = state.situation.model_copy(update={"updated_at": now})
+        return replace(
+            state,
+            profile=profile,
+            situation=situation,
+            current_time=now,
+            routes=routes,
+            trace=(*state.trace, trace),
+        )
+
     async def search_route(self, session_id: UUID, request) -> LiveSnapshot:
         aggregate = self._get_aggregate(session_id)
         if request.origin.lat is None or request.origin.lng is None:
             raise InvalidLiveRouteRequest("origin must include paired latitude and longitude")
         try:
-            validate_location_area_path(request.origin, {area.id: area for area in self._area_catalog})
+            validate_location_area_path(request.origin, self._area_by_id)
         except ValueError as exc:
             raise InvalidLiveRouteRequest("origin area is outside the live area catalog") from exc
         with aggregate.lock:
@@ -490,7 +846,14 @@ class LiveStore:
         )
         return event, evidence
 
-    def _advance_time_locked(self, aggregate: LiveAggregate, now: datetime, event_id: str | None = None) -> None:
+    def _advance_time_locked(
+        self,
+        aggregate: LiveAggregate,
+        now: datetime,
+        event_id: str | None = None,
+        *,
+        allow_network_reconciliation: bool = True,
+    ) -> None:
         if now < aggregate.state.current_time:
             now = aggregate.state.current_time
         if now == aggregate.state.current_time and event_id is None:
@@ -502,7 +865,13 @@ class LiveStore:
         situation = after.situation.model_copy(update={"updated_at": now})
         after = replace(after, situation=situation)
         clock_event = SimpleNamespace(id=event_id or f"live-clock-{int(now.timestamp())}")
-        aggregate.state = evaluate_and_replan(before, after, clock_event, self._policy)
+        aggregate.state = evaluate_and_replan(
+            before,
+            after,
+            clock_event,
+            self._policy,
+            allow_network_reconciliation=allow_network_reconciliation,
+        )
 
     def _snapshot(self, aggregate: LiveAggregate) -> LiveSnapshot:
         state = aggregate.state
@@ -528,7 +897,7 @@ class LiveStore:
             destination_source=aggregate.destination_source,
             route_source=aggregate.route_source,
             profile=state.profile,
-            area_catalog=state.area_catalog,
+            area_catalog=catalog_for_state(state, self._area_registry),
             situation=state.situation,
             events=state.events,
             evidence=state.evidence,

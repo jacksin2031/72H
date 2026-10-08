@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Language, RoutePresentation, Snapshot } from '@/lib/contracts';
+import { shouldShowDeviceMapMarker } from '@/lib/location-freshness';
 import { inMapPack, locationCoordinates, mapCatalogSchema, selectMapPack, verifyMapPack, type MapManifest } from '@/lib/offline-map';
 import type { DeviceLocation } from '@/lib/use-device-location';
 import { vnextMessages } from '@/lib/vnext-i18n';
 
-export function EmergencyMap({ language, conserve, profile, location, route, routeDestination, routeOrigin, originRef }: {
-  language: Language; conserve: boolean; profile?: Snapshot['profile']; location: DeviceLocation; route?: RoutePresentation | null;
+export function EmergencyMap({ language, conserve, profile, location, locationResolving = false, onHomeMapReady, route, routeDestination, routeOrigin, originRef }: {
+  language: Language; conserve: boolean; profile?: Snapshot['profile']; location: DeviceLocation; locationResolving?: boolean; route?: RoutePresentation | null;
+  onHomeMapReady?: (ready: boolean) => void;
   routeOrigin?: { label: string; lng: number; lat: number } | null;
   routeDestination?: { id: string; name: string; lng: number; lat: number } | null; originRef?: string;
 }) {
@@ -20,9 +22,20 @@ export function EmergencyMap({ language, conserve, profile, location, route, rou
   const t = vnextMessages[language];
   const origin = routeOrigin ? [routeOrigin.lng, routeOrigin.lat] as [number, number] : locationCoordinates(profile?.current_location);
   const device = location.position ? [location.position.longitude, location.position.latitude] as [number, number] : null;
+  const deviceFreshnessLabel = location.freshness === 'CURRENT' ? t.locationStates.live
+    : location.freshness === 'AGING' ? t.locationStates.aging
+      : location.freshness === 'STALE' ? t.locationStates.stale
+        : location.freshness === 'LAST_KNOWN' ? t.locationStates.last : t.locationStates.unavailable;
+  const deviceCapturedAt = location.position
+    ? new Date(location.position.captured_at).toLocaleString(language, { timeZone: 'Asia/Tokyo' }) : null;
   const routeDestinationMatches = !!route && !!routeDestination && route.destination_id === routeDestination.id;
   const routeCoordinates = routeDestinationMatches && ['PROVIDER_GEOMETRY', 'TRANSIT_STATION_SEQUENCE'].includes(route?.geometry_kind ?? '')
     ? route?.geometry?.coordinates : undefined;
+  // projectLiveSnapshot creates a new route presentation object on each render. Track only
+  // the route semantics that affect the map so a GPS state update cannot rebuild the map.
+  const routeMapIdentity = JSON.stringify([route?.id ?? null, route?.destination_id ?? null,
+    route?.geometry_kind ?? null, routeCoordinates ?? null, routeDestinationMatches]);
+  const routePresent = !!route;
   const routeLineCoordinates = route?.geometry_kind === 'PROVIDER_GEOMETRY' ? routeCoordinates : undefined;
   const routePack = packs && routeCoordinates?.length
     ? packs.find(pack => routeCoordinates.every(([lng, lat]) => inMapPack(lng, lat, pack.bounds))) ?? null : null;
@@ -111,28 +124,41 @@ export function EmergencyMap({ language, conserve, profile, location, route, rou
       } catch { if (!cancelled) setState('unavailable'); }
     })();
     return () => { cancelled = true; controller.abort(); gpsMarker.current = null; instance.current?.remove(); instance.current = null; };
-  }, [approved, originLng, originLat, destinationLng, destinationLat, originLabel, destinationLabel, t.profileReference, t.designatedDestination, t.coordinatePoint, route, routeDestinationMatches]);
+  }, [approved, originLng, originLat, destinationLng, destinationLat, originLabel, destinationLabel, t.profileReference, t.designatedDestination, t.coordinatePoint, routeMapIdentity]);
 
   useEffect(() => { if (instance.current) { instance.current.scrollZoom.disable(); instance.current.dragRotate.disable(); instance.current.touchZoomRotate.disableRotation(); } }, [state, conserve]);
   useEffect(() => {
     let cancelled = false;
     gpsMarker.current?.remove(); gpsMarker.current = null;
     const point = location.position;
-    if (route || state !== 'ready' || !approved || !point || location.state === 'unavailable' || !inMapPack(point.longitude, point.latitude, approved.bounds)) return;
+    if (locationResolving || routePresent || state !== 'ready' || !approved || !point || !shouldShowDeviceMapMarker(location.freshness)
+      || !inMapPack(point.longitude, point.latitude, approved.bounds)) return;
     void import('maplibre-gl').then(({ Marker }) => {
       if (cancelled || !instance.current) return;
-      gpsMarker.current = new Marker({ color: location.state === 'live' ? '#215fd1' : '#657568' }).setLngLat([point.longitude, point.latitude]).addTo(instance.current);
+      const element = document.createElement('div');
+      element.className = 'map-pin device'; element.textContent = t.deviceLocation;
+      const accessibleLabel = `${t.deviceLocation}: ${t.locationStates.live} · ${t.locationCapturedAt}: ${deviceCapturedAt ?? ''}`;
+      element.setAttribute('role', 'img'); element.setAttribute('aria-label', accessibleLabel); element.title = accessibleLabel;
+      gpsMarker.current = new Marker({ element }).setLngLat([point.longitude, point.latitude]).addTo(instance.current);
     });
     return () => { cancelled = true; gpsMarker.current?.remove(); gpsMarker.current = null; };
-  }, [location.position, location.state, state, approved, route]);
+  }, [location.position, location.freshness, locationResolving, state, approved, routePresent, t.deviceLocation, t.locationStates.live, deviceCapturedAt, t.locationCapturedAt]);
 
   const availableState = catalogFailed ? 'unavailable' : packs && !approved ? 'unsupported' : state;
+  useEffect(() => {
+    if (!onHomeMapReady) return;
+    onHomeMapReady(availableState === 'ready');
+    return () => onHomeMapReady(false);
+  }, [availableState, onHomeMapReady]);
   return <section className="map-section" aria-label={t.map}>
     <div className="map-meta"><strong>{t.map}</strong><span className="badge">{availableState === 'ready' ? t.mapReady : availableState === 'loading' ? t.mapLoading : availableState === 'unsupported' ? t.mapUnsupported : t.mapUnavailable}</span></div>
     <div className="emergency-map" ref={host} role="img" aria-label={t.mapDescription} />
     {availableState !== 'ready' && availableState !== 'loading' && <p role="status">{availableState === 'unsupported' ? t.mapUnsupported : t.mapFallback}</p>}
     {(profile || route) && <><p>{t.profileReference}: {originLabel || '—'}{originLng === undefined ? ` · ${t.coordinatesUnavailable}` : ''}</p>
       {route && <p>{t.designatedDestination}: {routeDestinationMatches ? routeDestination.name : '—'}{destinationLng === undefined ? ` · ${t.coordinatesUnavailable}` : ''}</p>}</>}
+    {location.position && <p className="device-location-map-status" data-location-freshness={location.freshness}>
+      {t.deviceLocation}: {deviceFreshnessLabel} · {t.locationCapturedAt}: {deviceCapturedAt} · ±{Math.round(location.position.accuracy_m)} m
+    </p>}
     {approved && routeDestinationMatches && destination && !inMapPack(destination[0], destination[1], approved.bounds) && <p role="status">{t.locationStates.outside}</p>}
     {approved && location.position && !inMapPack(location.position.longitude, location.position.latitude, approved.bounds) && <p role="status">{t.locationStates.outside}</p>}
     <p className="muted">{t.mapLimit}</p>

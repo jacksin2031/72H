@@ -17,11 +17,12 @@ export const disasterAssessmentSchema = z.object({
 });
 export const areaDefinitionSchema = z.object({ id: areaId, label: text, parent_id: areaId.nullable() });
 const location = z.object({
-  label: text,
+  label: z.string().min(1).max(240),
   lat: z.number().finite().min(-90).max(90).nullable().default(null),
   lng: z.number().finite().min(-180).max(180).nullable().default(null),
   area_ids: areaIds.default([]),
   observed_at: timestamp.nullable().default(null),
+  source: z.enum(['GPS', 'USER_SELECTED']).nullable().optional().default(null),
 }).superRefine((value, ctx) => {
   if ((value.lat === null) !== (value.lng === null)) {
     ctx.addIssue({ code: 'custom', message: 'lat and lng must both be present or null' });

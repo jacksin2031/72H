@@ -47,6 +47,7 @@ button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible,
 
 .power-survival .more-menu{display:block}.power-survival .settings-panel{display:block}
 .map-pin.destination{background:#6c471c;box-shadow:none}.map-pin{box-shadow:none}
+.map-pin.device{background:#215fd1;color:#fff}
 .theme-contrast .map-pin.destination{background:#ffdf99;color:#000;border-color:#fff}
 .theme-contrast .map-pin.origin{background:#000;color:#fff;border-color:#fff}
 
@@ -75,5 +76,83 @@ button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible,
   .live-onboarding details[open] label{margin-top:16px}
   .live-onboarding .onboarding-actions{margin-top:auto;padding-top:32px}
   .live-onboarding .onboarding-actions button{min-height:48px;font-size:16px}
-  .live-onboarding .onboarding-actions .primary{flex:1;padding:14px 12px}
+.live-onboarding .onboarding-actions .primary{flex:1;padding:14px 12px}
 }
+
+/* P1.1 location confirmation: large controls, visible emergency contacts and room for zoom. */
+.location-onboarding,.location-sync-gate{max-width:680px;margin:0 auto;padding:18px 0 28px;min-width:0;overflow-wrap:anywhere}
+.location-onboarding h1,.location-sync-gate h1{font-size:1.875rem;line-height:1.3;margin:12px 0}
+.location-onboarding-intro,.location-privacy-note,.location-area-picker>p,.location-sync-gate>p{font-size:1.125rem;line-height:1.6}
+.location-privacy-details{font-size:1rem;color:var(--ink);margin:12px 0}
+.location-privacy-details summary{text-decoration:underline;text-underline-offset:.2em}
+.location-privacy-note{color:var(--muted);border-left:3px solid var(--line);padding-left:14px}
+.onboarding-emergency{background:var(--panel);border:2px solid var(--warn);border-radius:12px;padding:16px;margin:20px 0}
+.onboarding-emergency h2{font-size:1.375rem;margin:0 0 8px}
+.onboarding-emergency p{font-size:1.125rem;margin:8px 0}
+.onboarding-emergency a{display:inline-flex;align-items:center;justify-content:center;min-width:72px;min-height:64px;padding:8px 14px;border:2px solid currentColor;border-radius:8px;font-size:1.5rem;font-weight:800;text-decoration:underline}
+.location-onboarding-actions{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}
+.location-onboarding button,.location-sync-gate button{min-height:56px;padding:12px 18px;font-size:1.125rem;font-weight:700;white-space:normal;overflow-wrap:anywhere}
+.location-onboarding .location-primary-action,.location-sync-gate .location-primary-action{min-height:64px;font-size:1.5rem;line-height:1.25}
+.location-onboarding .location-primary-action{flex:1 1 100%}
+.location-area-picker{display:grid;gap:10px;margin:22px 0}
+.location-area-picker label,.location-retain-choice{font-size:1.125rem;font-weight:700}
+.location-area-picker select{min-height:56px;width:100%;font-size:1.125rem}
+.location-confirmation{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:20px 0}
+.location-confirmation h2{font-size:1.5rem;margin:0 0 14px}
+.location-confirmation dl{margin:0}
+.location-confirmation dl>div{display:grid;grid-template-columns:minmax(120px,1fr) minmax(0,2fr);gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.location-confirmation dt{color:var(--muted)}.location-confirmation dd{margin:0;font-size:1.125rem;font-weight:700;overflow-wrap:anywhere}
+.location-freshness-warning{font-size:1.125rem;line-height:1.5;font-weight:700}
+.location-retain-choice{display:flex;align-items:center;gap:12px;margin:18px 0}
+.location-retain-choice input{width:24px;height:24px;flex:0 0 auto}
+.location-sync-gate{border:2px solid var(--warn);border-radius:12px;padding:18px;margin:12px auto}
+.location-sync-gate h1{font-size:1.5rem}
+.location-sync-gate .onboarding-emergency{margin-top:26px}
+.location-resolution-status{max-width:1120px;margin:12px auto;padding:12px 16px;border:1px solid var(--warn);border-radius:8px;background:var(--panel);font-size:1rem;line-height:1.5}
+@media(max-width:760px){
+  .role-mobile .live-main{font-size:1.125rem;padding:12px 16px calc(126px + env(safe-area-inset-bottom))}
+  .role-mobile .live-topbar{flex-wrap:wrap;align-items:center;gap:8px 12px}
+  .role-mobile .live-topbar-state{flex:1 1 170px;min-width:0;font-size:1.125rem;line-height:1.25}
+  .role-mobile .live-topbar-state strong{font-size:1.5rem;overflow-wrap:anywhere}
+  .role-mobile .live-topbar-state span{font-size:1.125rem;overflow-wrap:anywhere}
+  .role-mobile .live-language{margin-left:0}
+  .location-onboarding,.location-sync-gate{padding:12px 0 26px}
+  .location-onboarding h1,.location-sync-gate h1{font-size:1.75rem}
+  .location-onboarding-intro,.location-privacy-note,.location-area-picker>p,.location-sync-gate>p{font-size:1.125rem}
+  .location-onboarding-actions{display:grid;grid-template-columns:1fr;margin-top:24px}
+  .location-onboarding button,.location-sync-gate button{width:100%;min-height:56px;font-size:1.125rem}
+  .location-onboarding .location-primary-action,.location-sync-gate .location-primary-action{min-height:64px;font-size:1.5rem}
+  .location-confirmation{padding:14px}
+  .location-confirmation dl>div{grid-template-columns:1fr;gap:3px}
+  .mobile-primary-nav{min-height:72px;padding:8px 8px calc(8px + env(safe-area-inset-bottom));gap:4px}
+  .mobile-primary-nav a{flex:1;min-width:0;min-height:56px;padding:5px 4px}
+  .mobile-primary-nav small{font-size:.875rem;line-height:1.25;text-align:center;overflow-wrap:anywhere}
+  .onboarding-emergency h2{font-size:1.375rem}
+  .onboarding-emergency p{font-size:1.125rem}
+  .onboarding-emergency a{min-height:64px;font-size:1.5rem}
+  .location-resolution-status{margin:8px 12px;font-size:1rem}
+  .role-mobile .adaptive-home{font-size:1.125rem}
+  .role-mobile .adaptive-home>.muted,.role-mobile .situation-header p,.role-mobile .freshness-warning,.role-mobile .power-warning{font-size:1.125rem}
+  .role-mobile .situation-header h1{font-size:1.5rem;line-height:1.3}
+  .role-mobile .now-card h2{font-size:1.5rem}
+  .role-mobile .plan-sheet,.role-mobile .live-plan-scene,.role-mobile .live-more-scene{font-size:1.125rem}
+  .role-mobile .plan-sheet p,.role-mobile .plan-sheet article,.role-mobile .plan-sheet a,
+  .role-mobile .live-plan-scene p,.role-mobile .live-plan-scene article,.role-mobile .live-plan-scene a,
+  .role-mobile .live-more-scene p,.role-mobile .live-more-scene label,.role-mobile .live-more-scene a{font-size:1.125rem}
+  .role-mobile .plan-sheet h2,.role-mobile .live-plan-scene h2,.role-mobile .live-more-scene h2,.role-mobile .emergency-contact h2{font-size:1.5rem;line-height:1.3}
+  .role-mobile .plan-sheet-trigger{width:100%;min-height:56px;font-size:1.5rem;line-height:1.25}
+  .role-mobile .live-plan-scene button,.role-mobile .live-more-scene button,.role-mobile .plan-sheet button,
+  .role-mobile .live-more-scene select,.role-mobile .live-more-scene input:not([type=checkbox]){min-height:56px;font-size:1.125rem}
+  .role-mobile .live-plan-scene .primary,.role-mobile .live-more-scene .primary{font-size:1.5rem;line-height:1.25}
+  .role-mobile .accessibility-choices label{min-height:56px;display:flex;align-items:center;gap:12px}
+  .role-mobile .accessibility-choices input{width:24px;height:24px;flex:0 0 auto}
+  .role-mobile .emergency-contact p{font-size:1.125rem}
+  .role-mobile .emergency-contact a{min-width:72px;min-height:64px;display:inline-flex;align-items:center;justify-content:center;font-size:1.5rem}
+  .role-mobile .device-location-map-status{font-size:1.125rem;line-height:1.5;overflow-wrap:anywhere}
+  .role-mobile .settings-panel>label,.role-mobile .settings-panel .power-controls>label{display:grid;min-width:0;gap:8px}
+  .role-mobile .settings-panel select{width:100%;min-width:0;max-width:100%}
+  .role-mobile .live-profile-form,.role-mobile .route-search-form{grid-template-columns:minmax(0,1fr)}
+  .role-mobile .live-profile-form>*{min-width:0;overflow-wrap:anywhere}
+  .role-mobile .live-main .muted{font-size:1.125rem;overflow-wrap:anywhere}
+}
+@media(prefers-reduced-motion:reduce){.location-onboarding *,.location-sync-gate *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

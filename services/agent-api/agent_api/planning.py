@@ -255,6 +255,7 @@ def evaluate_and_replan(
     candidate_selection: CandidatePlanSelection | None = None,
     candidate_context: dict[str, object] | None = None,
     planner_trace: PlannerTrace | None = None,
+    allow_network_reconciliation: bool = True,
 ) -> CoreState:
     """Rebuild current projections, evaluate plan dependencies, and append new versions."""
     claim_states, conflict_keys, conflict_evidence_ids = derive_claim_states(
@@ -311,7 +312,8 @@ def evaluate_and_replan(
         )
         after = replace(after, situation=situation)
 
-    after = _reconcile_network_if_ready(after, projection_by_id, event)
+    if allow_network_reconciliation:
+        after = _reconcile_network_if_ready(after, projection_by_id, event)
 
     old_claims = {item.key: item for item in before.situation.claim_states}
     changed_keys = {
@@ -325,6 +327,16 @@ def evaluate_and_replan(
         None,
     )
     current_actions = _actions_for_plan(after, current_plan.id) if current_plan else ()
+    location_changed = before.profile.current_location != after.profile.current_location
+    profile_context_changed = any(
+        getattr(before.profile, field) != getattr(after.profile, field)
+        for field in (
+            "accommodation_location",
+            "party_size",
+            "self_reported_safety_status",
+            "accessibility_constraints",
+        )
+    )
     dependency_keys = {
         key for action in current_actions for key in action.dependency_keys
     }
@@ -360,6 +372,8 @@ def evaluate_and_replan(
         or new_relevant_keys
         or expired_current
         or spatial_dependency_changed
+        or location_changed
+        or profile_context_changed
         or can_start_initial_plan
     )
 
@@ -378,6 +392,7 @@ def evaluate_and_replan(
             changed_dependencies,
             after,
             policy,
+            location_changed,
         )
         after = _append_evaluation(after, evaluation, event)
         if evaluation.status in {
@@ -615,6 +630,7 @@ def _evaluate_plan(
     changed_dependencies: set[str],
     state: CoreState,
     policy: SafetyPolicy,
+    location_changed: bool = False,
 ) -> PlanEvaluation:
     if current_time >= plan.expires_at:
         return PlanEvaluation(
@@ -629,6 +645,9 @@ def _evaluate_plan(
     reasons: list[str] = []
     for action in actions:
         action_invalid = False
+        if location_changed and action.risk_level == RiskLevel.HIGH:
+            action_invalid = True
+            reasons.append("the current location changed; the previous high-risk action is no longer current")
         expected_values = action.dependency_values
         for key in action.dependency_keys:
             if key not in expected_values:

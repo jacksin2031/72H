@@ -1,5 +1,22 @@
 # 72H Offline Continuity Specification v0.1
 
+## Authorized P1.1 GPS / offline separation
+
+GPS_UPDATED != SAFETY_VERIFIED and NETWORK_RESTORED != VERIFICATION_RESTORED.
+A new foreground GPS fix can be CURRENT while offline; official information
+still uses cached age, TTL and reconnection gates. A restored fix always says
+last confirmed position with its original time. Freshness is CURRENT through
+two minutes, AGING through ten minutes, then STALE. These rules supersede the
+historical offline/60-second presentation below.
+
+Only cached administrative shards resolve an offline position; absent/corrupt
+shards lead to area selection, never invented municipal membership. The shell
+caches the catalog, worker and basic emergency guidance, without precaching all
+national boundaries. Storage failure retains usable in-memory state. Explicit
+storage consent, one point, seven-day retention and Forget remain unchanged.
+Area changes suppress previous movement UI until session dependency evaluation
+finishes. Stale/unconfirmed device fixes cannot imply live navigation.
+
 ## Authorized P1 spatial extension
 
 LIVE and synthetic Replay snapshots use separate validated cache stores.

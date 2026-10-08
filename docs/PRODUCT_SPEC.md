@@ -1,5 +1,24 @@
 # 72H Product Specification v0.1
 
+## Authorized P1.1 accessible GPS extension (2026-10-08)
+
+The approved local milestone is defined in
+[VNEXT_P1_1_ACCESSIBLE_GPS_UI.md](VNEXT_P1_1_ACCESSIBLE_GPS_UI.md).
+First use explains location, requests permission only after a user action,
+confirms a resolved area, then starts Live. Nationwide prefecture/municipality
+selection and emergency basics remain available without GPS or text entry.
+Accommodation defaults to unset, party size to one, and self-reported safety
+to UNKNOWN; optional profile settings belong in More. Consumer text and primary
+controls are enlarged, with a labeled Home / Plan / More navigation.
+
+An official N03 boundary resolver runs locally in a Web Worker. Only canonical
+area IDs, source and observation time reach the session API; precise device
+coordinates stay local. This explicitly extends the earlier contract that GPS
+did not select areas. It does not extend source trust, disaster verification,
+route safety or movement authorization. Freshness and network verification are
+independent. GPS is optional on desktop, whose role remains preparedness/review.
+Real-device GPS and production acceptance are separate release gates.
+
 ## Authorized vNext P1 extension
 
 The user's 2026-10-06 JST `/goal complete` request authorizes the live-source,

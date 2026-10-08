@@ -29,6 +29,7 @@ class CoreState:
     scenario_key: str = ""
     area_catalog: tuple[AreaDefinition, ...] = ()
     reconnect_evidence_count: int | None = None
+    last_reconnect_at: datetime | None = None
     events: tuple[DisasterEvent, ...] = ()
     evidence: tuple[Evidence, ...] = ()
     plans: tuple[Plan, ...] = ()
