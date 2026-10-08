@@ -1,8 +1,13 @@
 # vNext P1.1 — Accessible Mobile + GPS-first UX
 
-Status: **APPROVED FOR IMPLEMENTATION**
+Status: **LOCAL IMPLEMENTATION AND ACCEPTANCE COMPLETE — FULL RELEASE PENDING**
 
 Date: 2026-10-08 JST
+
+Authorized local delivery: `2bea4a70fe953c32f4f6a5bab5c427703231dd86` on
+`codex/vnext-p1-1-accessible-gps`, build `9H889OhKjWnSKj1ZwsfEQ`.
+See [local acceptance evidence and remaining release gates](VNEXT_P1_1_VALIDATION.md).
+Real-device GPS, production preview and traffic switching remain outside this delivery.
 
 This document defines the next 72H mobile UX milestone after the accepted P1 and first-use polish release.
 
