@@ -2,11 +2,19 @@ import { NextRequest } from 'next/server';
 import { sameOrigin } from '@/lib/request-origin';
 
 export const dynamic = 'force-dynamic';
-const allowed = /^(health|version|replay\/(start|[a-zA-Z0-9_-]{1,80}(\/(pause|resume|next|reset|speed))?)|live\/(start|[a-zA-Z0-9_-]{1,80}(\/(refresh|routes\/search))?))$/;
+const allowed = /^(health|version|replay\/(start|[a-zA-Z0-9_-]{1,80}(\/(pause|resume|next|reset|speed))?)|live\/(start|[a-zA-Z0-9_-]{1,80}(\/(refresh|routes\/search|location|profile))?))$/;
+export function isAllowedApiProxyPath(path: string) { return allowed.test(path); }
+export function isAllowedApiProxyRequest(path: string, method: string) {
+  if (!isAllowedApiProxyPath(path) || !['GET', 'POST'].includes(method)) return false;
+  return !/^live\/[a-zA-Z0-9_-]{1,80}\/(location|profile)$/.test(path) || method === 'POST';
+}
 async function forward(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params;
   const suffix = path.join('/');
-  if (!allowed.test(suffix)) return Response.json({ error: 'Not found' }, { status: 404 });
+  if (!isAllowedApiProxyPath(suffix)) return Response.json({ error: 'Not found' }, { status: 404 });
+  if (!isAllowedApiProxyRequest(suffix, request.method)) {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
   const protocol = request.headers.get('x-forwarded-proto')?.split(',')[0].trim() || request.nextUrl.protocol.replace(':', '');
   if (request.method === 'POST' && !sameOrigin(request.headers.get('origin'), request.headers.get('host'), protocol)) {
     return Response.json({ error: 'Origin rejected' }, { status: 403 });

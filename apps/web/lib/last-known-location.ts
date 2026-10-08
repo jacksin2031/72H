@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 export const LOCATION_STORAGE_KEY = '72h-last-known-location-v1';
-export const LIVE_LOCATION_MS = 60_000;
+export const LIVE_LOCATION_MS = 2 * 60_000;
+export const AGING_LOCATION_MS = 10 * 60_000;
 export const LOCATION_RETENTION_MS = 7 * 24 * 60 * 60_000;
 export const devicePositionSchema = z.object({
   latitude: z.number().finite().min(-90).max(90),
@@ -46,7 +47,11 @@ export function writeLastLocation(store: LocalStore, consent: boolean, position:
 }
 
 /** A restored point never becomes LIVE merely because it was saved recently. */
-export function deviceLocationState(position: DevicePosition | null, restored: boolean, online: boolean, now: number) {
+export function deviceLocationState(position: DevicePosition | null, restored: boolean, _online: boolean, now: number) {
   if (!position || !validDevicePosition(position, now)) return 'unavailable' as const;
-  return !restored && online && now - position.captured_at < LIVE_LOCATION_MS ? 'live' as const : 'last' as const;
+  if (restored) return 'last' as const;
+  const age = now - position.captured_at;
+  if (age <= LIVE_LOCATION_MS) return 'live' as const;
+  if (age <= AGING_LOCATION_MS) return 'aging' as const;
+  return 'stale' as const;
 }

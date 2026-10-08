@@ -13,6 +13,7 @@ from seventytwoh_contracts.models import (
     DestinationProjection,
     DisasterEventType,
     FreshnessStatus,
+    LocationSource,
     NetworkState,
     PlanActionCategory,
     PlanActionStatus,
@@ -29,6 +30,7 @@ from seventytwoh_contracts.models import (
 
 from .safety import SafetyPolicy, derive_claim_states, project_evidence
 from .state import CoreState
+from .location_freshness import gps_observation_is_fresh
 
 MOVEMENT_DIRECTIVE_VALUE = "EVACUATE_TO_DESIGNATED_SHELTER"
 
@@ -61,6 +63,10 @@ def resolve_movement_support(
     location_areas = state.profile.current_location.area_ids
     if not location_areas or state.situation.network_state != NetworkState.ONLINE_VERIFIED:
         return None
+    current_location = state.profile.current_location
+    if current_location.source == LocationSource.GPS:
+        if not gps_observation_is_fresh(current_location.observed_at, now):
+            return None
     hazard_types = {
         event.event_type for event in state.events
         if event.status.value == "ACTIVE" and event.event_type == DisasterEventType.EARTHQUAKE
@@ -74,6 +80,8 @@ def resolve_movement_support(
     if latest_route is None or latest_route.destination_id is None:
         return None
     route = latest_route
+    if state.last_reconnect_at is not None and route.checked_at < state.last_reconnect_at:
+        return None
     destination_record = next((item for item in state.destinations if item.id == route.destination_id), None)
     if destination_record is None or destination_record.is_synthetic:
         return None
@@ -138,6 +146,13 @@ def resolve_movement_support(
             and not evidence.conflict
             and evidence.id not in conflicting_ids
             and project_evidence(evidence, now, policy).eligible_for_high_risk
+            and (
+                state.last_reconnect_at is None
+                or (
+                    evidence.published_at >= state.last_reconnect_at
+                    and evidence.received_at >= state.last_reconnect_at
+                )
+            )
         ]
         if not allowed:
             return None

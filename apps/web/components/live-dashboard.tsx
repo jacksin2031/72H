@@ -5,6 +5,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, FormEvent, ReactNode, SetStateAction } from 'react';
 import { usePower } from '@/lib/use-power';
 import { useDeviceLocation } from '@/lib/use-device-location';
+import { resolveDeviceArea } from '@/lib/area-resolution';
+import type { DevicePosition } from '@/lib/last-known-location';
+import { locationFreshness, shouldRefreshGpsAreaTimestamp } from '@/lib/location-freshness';
+import { canClearLocationGateForSameArea, canClearLocationGateForUpdate, requiresFreshGpsForLocationRetry, shouldPostSameAreaToResolveGate, shouldReconcileLatestLocationFix } from '@/lib/location-sync';
 import { useTheme } from '@/lib/use-theme';
 import { useDeviceRole } from '@/lib/device-role';
 import { adaptiveMessages } from '@/lib/adaptive-i18n';
@@ -13,7 +17,7 @@ import { liveProfileSeedSchema, type Language, type LiveProfileSeed, type LiveSn
 import { loadLiveSnapshot, saveLiveSnapshot } from '@/lib/continuity';
 import { canReconcileLiveSnapshot, isPrimarySourceCurrent, liveRouteNotification, nextLiveSafetyDeadline, projectLiveSnapshot, shouldRenderCandidateRoutePreview, shouldUseCriticalMobileTakeover } from '@/lib/live-presentation';
 import { publicHandoffUrl } from '@/lib/live-handoff';
-import { isMissingLiveSessionError, refreshLiveSession, searchLiveRoute, startLiveSession } from '@/lib/live-api';
+import { buildLiveProfileUpdate, isMissingLiveSessionError, LiveApiError, refreshLiveSession, searchLiveRoute, startLiveSession, updateLiveLocation, updateLiveProfile, type LiveLocationUpdate } from '@/lib/live-api';
 import { deriveNotifications, deriveSeverity, initialSafetyCheck, reduceSafetyCheck, safetyCheckSchema, type Notification, type SafetyCheckState } from '@/lib/vnext';
 import { aggregateNotifications, notificationLedgerSchema } from '@/lib/notification-inbox';
 import { mapCatalogSchema, verifyMapPack } from '@/lib/offline-map';
@@ -22,9 +26,23 @@ import { AdaptiveHome } from './adaptive-home';
 import { EmergencyMap } from './emergency-map';
 import { PowerControls } from './power-controls';
 import { DeviceLocationControls } from './device-location';
+import { AreaFallbackPicker, LocationOnboarding, type OnboardingLocation } from './location-onboarding';
 
 type Connection = 'online' | 'offline' | 'reconnecting';
 type AreaChoice = '' | 'JP-13' | 'JP-27';
+type LocationSyncState = { phase: 'pending' | 'failed'; update: LiveLocationUpdate | null };
+
+export function LiveHeaderStatus({ hasSession, busy, networkLabel, messages }: {
+  hasSession: boolean; busy: boolean; networkLabel: string; messages: Record<string, string>;
+}) {
+  return <div className="live-topbar-state"><strong>{hasSession ? messages.monitor : busy ? messages.refreshing : messages.setupRequired}</strong>
+    {hasSession && <span>{networkLabel}</span>}
+  </div>;
+}
+
+export function JudgeFooter({ messages }: { messages: Record<string, string> }) {
+  return <footer className="desktop-footer"><Link href="/demo">{messages.judge} →</Link></footer>;
+}
 
 function reducerSnapshot(snapshot: LiveSnapshot): Snapshot {
   // The existing deterministic reducers need a replay cursor only for event identity.
@@ -38,8 +56,30 @@ function reducerSnapshot(snapshot: LiveSnapshot): Snapshot {
 }
 
 function location(label: string, area: AreaChoice): Location {
-  return { label: label.trim(), lat: null, lng: null, area_ids: area ? [area, 'JP'] : [], observed_at: null };
+  return { label: label.trim(), lat: null, lng: null, area_ids: area ? [area, 'JP'] : [], observed_at: null, source: null };
 }
+
+export function preserveCurrentLocationForNewSession(current: Location): Location {
+  return { ...current, lat: null, lng: null };
+}
+
+export function preserveAccommodationLocationWhenUnchanged(original: Location, label: string, area: AreaChoice): Location | null {
+  const originalPrefecture = original.area_ids.find(id => /^JP-\d{2}$/.test(id)) ?? '';
+  return original.label.trim() === label.trim() && originalPrefecture === area
+    ? { ...original, lat: null, lng: null } : null;
+}
+
+export function buildManualRouteSearchOrigin(label: string, lat: number, lng: number): Location {
+  return { label: label.trim(), lat, lng, area_ids: [], observed_at: null, source: 'USER_SELECTED' };
+}
+
+const accessibilityChoices = [
+  ['MOBILITY_SUPPORT', 'accessibilityMobility'],
+  ['VISION_SUPPORT', 'accessibilityVision'],
+  ['HEARING_SUPPORT', 'accessibilityHearing'],
+  ['MEDICAL_SUPPORT', 'accessibilityMedical'],
+  ['COMMUNICATION_SUPPORT', 'accessibilityCommunication'],
+] as const;
 
 function displayTime(value: string | null, language: Language) {
   return value ? new Date(value).toLocaleString(language, { timeZone: 'Asia/Tokyo' }) : '—';
@@ -158,45 +198,86 @@ function sessionRef(): string | null {
   } catch { return null; }
 }
 
-function ProfileForm({ language, busy, submit, initial, startLabel, title, copy, messages }: {
+export function ProfileForm({ language, busy, submit, initial, startLabel, title, copy, messages, onboarding = false, preserveCurrentArea = false }: {
   language: Language; busy: boolean; submit: (profile: LiveProfileSeed) => void; initial?: LiveSnapshot['profile'];
   startLabel: string; title: string; copy: string; messages: Record<string, string>;
+  onboarding?: boolean; preserveCurrentArea?: boolean;
 }) {
+  const [step, setStep] = useState(0);
+  const sceneTitle = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { if (onboarding) sceneTitle.current?.focus(); }, [onboarding, step]);
   const [current, setCurrent] = useState(initial?.current_location.label ?? '');
   const [accommodation, setAccommodation] = useState(initial?.accommodation_location.label ?? '');
   const [currentArea, setCurrentArea] = useState<AreaChoice>((initial?.current_location.area_ids.find(id => id === 'JP-13' || id === 'JP-27') as AreaChoice) ?? '');
   const [accommodationArea, setAccommodationArea] = useState<AreaChoice>((initial?.accommodation_location.area_ids.find(id => id === 'JP-13' || id === 'JP-27') as AreaChoice) ?? '');
   const [partySize, setPartySize] = useState(initial?.party_size ?? 1);
   const [safety, setSafety] = useState<LiveProfileSeed['self_reported_safety_status']>(initial?.self_reported_safety_status ?? 'UNKNOWN');
+  const [accessibilityConstraints, setAccessibilityConstraints] = useState<string[]>(initial?.accessibility_constraints ?? []);
   const [validationError, setValidationError] = useState(false);
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (onboarding && step < 2) {
+      if (!(step === 0 ? current : accommodation).trim()) { setValidationError(true); return; }
+      setValidationError(false); setStep(value => value + 1); return;
+    }
+    const preservedAccommodation = preserveCurrentArea && initial
+      ? preserveAccommodationLocationWhenUnchanged(initial.accommodation_location, accommodation, accommodationArea) : null;
     const parsed = liveProfileSeedSchema.safeParse({
-      current_location: location(current, currentArea), accommodation_location: location(accommodation, accommodationArea),
+      current_location: preserveCurrentArea && initial
+        ? preserveCurrentLocationForNewSession(initial.current_location) : location(current, currentArea),
+      accommodation_location: preservedAccommodation ?? location(accommodation, accommodationArea),
       current_destination: null, party_size: partySize, self_reported_safety_status: safety,
-      current_plan_summary: '', accessibility_constraints: [],
+      current_plan_summary: '', accessibility_constraints: accessibilityConstraints,
     });
     if (!parsed.success) { setValidationError(true); return; }
     setValidationError(false);
     submit(parsed.data);
   };
-  return <section className="live-profile-card">
-    <h2>{title}</h2><p>{copy}</p>
-    <form className="live-profile-form" onSubmit={onSubmit}>
-      <label>{messages.currentLocation}<input required maxLength={160} value={current} onChange={event => setCurrent(event.target.value)} placeholder={messages.locationPlaceholder} /></label>
+  const currentFields = preserveCurrentArea && initial ? <div className="profile-location-locked">
+      <strong>{messages.currentLocation}</strong>
+      <p>{initial.current_location.label}</p>
+      <p>{messages.currentAreaLocked}</p>
+    </div> : <>
+      <label>{messages.currentLocation}<input required pattern=".*\S.*" maxLength={160} value={current} onChange={event => setCurrent(event.target.value)} placeholder={messages.locationPlaceholder} /></label>
       <label>{messages.area}<select value={currentArea} onChange={event => setCurrentArea(event.target.value as AreaChoice)}><option value="">{messages.noArea}</option><option value="JP-13">{messages.tokyo}</option><option value="JP-27">{messages.osaka}</option></select></label>
-      <label>{messages.accommodation}<input required maxLength={160} value={accommodation} onChange={event => setAccommodation(event.target.value)} placeholder={messages.locationPlaceholder} /></label>
+    </>;
+  const accommodationFields = <>
+      <label>{messages.accommodation}<input required pattern=".*\S.*" maxLength={160} value={accommodation} onChange={event => setAccommodation(event.target.value)} placeholder={messages.locationPlaceholder} /></label>
       <label>{messages.area}<select value={accommodationArea} onChange={event => setAccommodationArea(event.target.value as AreaChoice)}><option value="">{messages.noArea}</option><option value="JP-13">{messages.tokyo}</option><option value="JP-27">{messages.osaka}</option></select></label>
-      <label>{messages.profile}<select value={partySize} onChange={event => setPartySize(Number(event.target.value))}>{Array.from({ length: 8 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label>
-      <label>{language === 'ja' ? '現在の状態（自己申告）' : language === 'zh-TW' ? '目前狀態（自行回報）' : 'Current status (self-reported)'}
+    </>;
+  const partyField = <label>{messages.partySize}<select value={partySize} onChange={event => setPartySize(Number(event.target.value))}>{Array.from({ length: 8 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label>;
+  const safetyField = <label>{language === 'ja' ? '現在の状態（自己申告）' : language === 'zh-TW' ? '目前狀態（自行回報）' : 'Current status (self-reported)'}
         <select value={safety} onChange={event => setSafety(event.target.value as LiveProfileSeed['self_reported_safety_status'])}>
           <option value="UNKNOWN">{language === 'ja' ? '未回答' : language === 'zh-TW' ? '尚未回答' : 'Not reported'}</option>
           <option value="SAFE">{language === 'ja' ? '安全' : language === 'zh-TW' ? '安全' : 'Safe'}</option>
           <option value="UNCERTAIN">{language === 'ja' ? '不明' : language === 'zh-TW' ? '不確定' : 'Unsure'}</option>
           <option value="NEEDS_ASSISTANCE">{language === 'ja' ? '支援が必要' : language === 'zh-TW' ? '需要協助' : 'Needs assistance'}</option>
         </select>
-      </label>
-      <button className="primary" disabled={busy} type="submit">{busy ? messages.refreshing : startLabel}</button>
+      </label>;
+  const accessibilityField = <div className="accessibility-choices" role="group" aria-label={messages.accessibilityNeeds}>
+      <strong>{messages.accessibilityNeeds}</strong>
+      {accessibilityChoices.map(([value, messageKey]) => <label key={value}>
+        <input type="checkbox" checked={accessibilityConstraints.includes(value)} onChange={event => setAccessibilityConstraints(currentValues => {
+          const next = currentValues.filter(item => item !== value);
+          return event.target.checked ? [...next, value] : next;
+        })} />{messages[messageKey]}
+      </label>)}
+    </div>;
+  return <section className={`live-profile-card${onboarding ? ' live-onboarding' : ''}`}>
+    {onboarding ? <><p className="onboarding-progress">{messages.setup} · {step + 1} / 3</p>
+      <h1 ref={sceneTitle} tabIndex={-1}>{[messages.whereNow, messages.whereStay, messages.whoWith][step]}</h1></> : <h2>{title}</h2>}
+    <p>{onboarding && step === 2 ? messages.partyIncludesYou : copy}</p>
+    <form className="live-profile-form" onSubmit={onSubmit}>
+      <fieldset className="onboarding-fields" disabled={busy}>
+        {(!onboarding || step === 0) && currentFields}
+        {(!onboarding || step === 1) && accommodationFields}
+        {(!onboarding || step === 2) && <>{partyField}{onboarding
+          ? <details><summary>{messages.optionalSafety}</summary>{safetyField}</details> : <>{safetyField}{accessibilityField}</>}</>}
+      </fieldset>
+      <div className="onboarding-actions">
+        {onboarding && step > 0 && <button type="button" disabled={busy} onClick={() => { setValidationError(false); setStep(value => value - 1); }}>{messages.back}</button>}
+        <button className="primary" disabled={busy} type="submit">{busy ? messages.refreshing : onboarding && step < 2 ? messages.next : onboarding ? messages.finishSetup : startLabel}</button>
+      </div>
       {validationError && <p className="error" role="alert">{language === 'ja' ? '場所を入力してください。' : language === 'zh-TW' ? '請填寫地點。' : 'Enter both locations.'}</p>}
     </form>
   </section>;
@@ -263,11 +344,11 @@ function SourceReview({ snapshot, language, messages, projection }: {
   </div>;
 }
 
-function RoutePreview({ snapshot, projectedRoute, language, messages, busy, connection, now, location: deviceLocation,
+function RoutePreview({ snapshot, projectedRoute, language, messages, busy, connection, now, location: deviceLocation, locationResolving = false,
   power, search }: {
   snapshot: LiveSnapshot; language: Language; messages: Record<string, string>; busy: boolean; connection: Connection; now: number;
   projectedRoute: ReturnType<typeof projectLiveSnapshot>['route'];
-  location: ReturnType<typeof useDeviceLocation>; power: ReturnType<typeof usePower>['power']; search: (origin: Location, destinationId: string) => Promise<boolean>;
+  location: ReturnType<typeof useDeviceLocation>; locationResolving?: boolean; power: ReturnType<typeof usePower>['power']; search: (origin: Location, destinationId: string) => Promise<boolean>;
 }) {
   const [originLabel, setOriginLabel] = useState(snapshot.profile.current_location.label);
   const [originLatitude, setOriginLatitude] = useState(snapshot.profile.current_location.lat === null ? '' : String(snapshot.profile.current_location.lat));
@@ -303,8 +384,7 @@ function RoutePreview({ snapshot, projectedRoute, language, messages, busy, conn
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); setRequestError(false); setPreviewOpen(false);
     if (!consent || !originLabel.trim() || !destinationId || !validOriginCoordinates) return;
-    const approvedOrigin: Location = { ...snapshot.profile.current_location, label: originLabel.trim(),
-      lat: latitude, lng: longitude, observed_at: null };
+    const approvedOrigin = buildManualRouteSearchOrigin(originLabel, latitude, longitude);
     setRequestedOrigin(originLabel.trim());
     setRequestedOriginCoordinates({ lat: latitude, lng: longitude });
     setConsent(false);
@@ -333,7 +413,7 @@ function RoutePreview({ snapshot, projectedRoute, language, messages, busy, conn
       {shouldRenderCandidateRoutePreview(previewOpen, previewAllowed, power.allowMap) && <><p className="route-candidate-warning" role="status">{messages.candidatePreview}</p>
         <EmergencyMap language={language} conserve={power.mode !== 'NORMAL'}
           originRef={requestedOrigin} routeOrigin={requestedOriginCoordinates ? { label: requestedOrigin, ...requestedOriginCoordinates } : null}
-          location={deviceLocation} route={route}
+          location={deviceLocation} locationResolving={locationResolving} route={route}
           routeDestination={candidateDestination ? { id: candidateDestination.id, name: candidateDestination.name,
             lng: candidateDestination.coordinates.lng, lat: candidateDestination.coordinates.lat } : null} />
       </>}
@@ -354,16 +434,41 @@ function NotificationsScene({ notifications, messages, dismiss }: {
   </section>;
 }
 
-function MobileScene({ view, snapshot, language, messages, projection, deviceLocation, power, level, override, choose, theme, chooseTheme,
-  busy, onProfile, onRefresh, onRouteSearch, link, now, connection, check, setCheck, notifications, dismissNotification, sessionLost }: {
+function LocationSyncGate({ state, messages, retry, canRetry, chooseArea }: {
+  state: LocationSyncState; messages: Record<string, string>; retry: () => void; canRetry: boolean; chooseArea: (location: OnboardingLocation) => void;
+}) {
+  const freshGpsRequired = requiresFreshGpsForLocationRetry(state);
+  const retryLabel = freshGpsRequired ? messages.locationSyncRetryGps
+    : state.update ? messages.locationSyncRetry : messages.locationLocate;
+  return <section className="location-sync-gate" aria-labelledby="location-sync-title" aria-live="polite">
+    <p className="onboarding-progress">{state.update?.source === 'USER_SELECTED' ? messages.locationMethodSelected : messages.locationMethodGps}</p>
+    <h1 id="location-sync-title">{state.phase === 'pending' ? messages.locationSyncPending : messages.locationSyncFailed}</h1>
+    <p>{state.phase === 'pending' ? messages.locationSyncPending
+      : freshGpsRequired ? messages.locationSyncFreshGpsRequired
+        : state.update ? messages.locationSyncFailed : messages.locationSyncUnavailable}</p>
+    {state.phase === 'failed' && <button type="button" className="primary location-primary-action" disabled={!canRetry} onClick={retry}>{retryLabel}</button>}
+    <AreaFallbackPicker messages={messages} disabled={state.phase === 'pending' || !canRetry} onConfirm={chooseArea} />
+    <section className="onboarding-emergency" aria-labelledby="location-sync-emergency-title">
+      <h2 id="location-sync-emergency-title">{messages.emergencyBasics}</h2><p>{messages.emergencyBasicsText}</p>
+      <p><a href="tel:119">119</a> · <a href="tel:110">110</a></p>
+    </section>
+  </section>;
+}
+
+function MobileScene({ view, snapshot, language, messages, projection, deviceLocation, locationResolving, onHomeMapReady, power, level, override, choose, theme, chooseTheme,
+  busy, onProfile, onProfileUpdate, onRefresh, onRouteSearch, link, now, connection, check, setCheck, notifications, dismissNotification, sessionLost,
+  canStart, locationSync, onRetryLocation, onChooseArea }: {
   view: string; snapshot: LiveSnapshot | null; language: Language; messages: Record<string, string>;
-  projection: ReturnType<typeof projectLiveSnapshot> | null; deviceLocation: ReturnType<typeof useDeviceLocation>;
+  projection: ReturnType<typeof projectLiveSnapshot> | null; deviceLocation: ReturnType<typeof useDeviceLocation>; locationResolving: boolean;
+  onHomeMapReady: (ready: boolean) => void;
   power: ReturnType<typeof usePower>['power']; level: number | null; override: string; choose: (value: string) => void;
-  theme: string; chooseTheme: (value: string) => void; busy: boolean; onProfile: (profile: LiveProfileSeed) => void; onRefresh: () => void;
+  theme: string; chooseTheme: (value: string) => void; busy: boolean; onProfile: (profile: LiveProfileSeed) => void; onProfileUpdate: (profile: LiveProfileSeed) => void; onRefresh: () => void;
   onRouteSearch: (origin: Location, destinationId: string) => Promise<boolean>; link: string | null; now: number; connection: Connection;
   check: SafetyCheckState; setCheck: Dispatch<SetStateAction<SafetyCheckState>>; notifications: Notification[]; dismissNotification: (id: string) => void; sessionLost: boolean;
+  canStart: boolean; locationSync: LocationSyncState | null; onRetryLocation: () => void; onChooseArea: (location: OnboardingLocation) => void;
 }) {
-  if (!snapshot || !projection) return <ProfileForm language={language} busy={busy} submit={onProfile} startLabel={messages.begin} title={messages.startTitle} copy={messages.startText} messages={messages} />;
+  if (locationSync) return <LocationSyncGate state={locationSync} messages={messages} retry={onRetryLocation} canRetry={canStart && !busy} chooseArea={onChooseArea} />;
+  if (!snapshot || !projection) return <LocationOnboarding language={language} messages={messages} location={deviceLocation} busy={busy} canStart={canStart} submit={onProfile} />;
   const urgent = ['SAFETY_CHECK', 'EMERGENCY_PROTECT', 'SURVIVAL', 'MAP_ASSISTED'].includes(projection.presentation.mode)
     || ['SHELTER_IN_PLACE', 'EVACUATE'].includes(snapshot.spatial_guidance.current_action_kind);
   const currentPlan = projection.plan;
@@ -372,7 +477,7 @@ function MobileScene({ view, snapshot, language, messages, projection, deviceLoc
   const routeDestination = route ? snapshot.destinations.find(item => item.id === route.destination_id) : null;
   const mapSurface: ReactNode = projection.mapGate && view === 'dashboard' && route?.geometry
     ? <section className="verified-route-panel"><h2>{messages.map}</h2><p>{messages.mapLabel}</p>
-      <EmergencyMap language={language} conserve={power.mode !== 'NORMAL'} profile={snapshot.profile} location={deviceLocation} route={route}
+      <EmergencyMap language={language} conserve={power.mode !== 'NORMAL'} profile={snapshot.profile} location={deviceLocation} locationResolving={locationResolving} onHomeMapReady={onHomeMapReady} route={route}
         routeDestination={routeDestination ? { id: routeDestination.id, name: routeDestination.name,
           lng: routeDestination.coordinates.lng, lat: routeDestination.coordinates.lat } : null} />
     </section> : undefined;
@@ -400,8 +505,11 @@ function MobileScene({ view, snapshot, language, messages, projection, deviceLoc
     {view === 'notifications' && <NotificationsScene notifications={notifications} messages={messages} dismiss={dismissNotification} />}
     {view === 'sources' && <SourceReview snapshot={snapshot} language={language} messages={messages} projection={projection} />}
     {view === 'more' && <section className="live-more-scene"><h1>{messages.more}</h1>
-      <section className="settings-panel"><h2>{messages.profile}</h2><ProfileForm language={language} busy={busy} submit={onProfile} initial={snapshot.profile}
-        startLabel={messages.begin} title={messages.setup} copy={messages.profileUpdated} messages={messages} /></section>
+      <section className="settings-panel"><h2>{messages.profile}</h2><ProfileForm language={language} busy={busy} submit={onProfileUpdate} initial={snapshot.profile}
+        startLabel={messages.saveProfile} title={messages.setup} copy={messages.profileUpdated} messages={messages} preserveCurrentArea /></section>
+      <section className="settings-panel"><h2>{messages.currentLocation}</h2><p>{messages.locationUpdateIntro}</p>
+        <AreaFallbackPicker messages={messages} disabled={busy || !canStart} onConfirm={onChooseArea} />
+      </section>
       <section className="settings-panel"><h2>{messages.settings}</h2><label>{messages.appearance}<select value={theme} onChange={event => chooseTheme(event.target.value)}>
         <option value="dark">{adaptiveMessages[language].dark}</option><option value="system">{adaptiveMessages[language].system}</option><option value="contrast">{adaptiveMessages[language].contrast}</option>
       </select></label>
@@ -409,7 +517,7 @@ function MobileScene({ view, snapshot, language, messages, projection, deviceLoc
         <DeviceLocationControls location={deviceLocation} language={language} />
       </section>
       <SafetyCheckControls check={check} setCheck={setCheck} messages={messages} />
-      <RoutePreview snapshot={snapshot} projectedRoute={projection.route} language={language} messages={messages} busy={busy} connection={connection} now={now} location={deviceLocation} power={power} search={onRouteSearch} />
+      <RoutePreview snapshot={snapshot} projectedRoute={projection.route} language={language} messages={messages} busy={busy} connection={connection} now={now} location={deviceLocation} locationResolving={locationResolving} power={power} search={onRouteSearch} />
       <HandoffCard link={link} messages={messages} />
       <OfflineReadinessPanel messages={messages} />
       <PlanHistory snapshot={snapshot} projection={projection} language={language} messages={messages} now={now} />
@@ -423,13 +531,14 @@ function MobileScene({ view, snapshot, language, messages, projection, deviceLoc
   </>;
 }
 
-function DesktopPreparedness({ view, snapshot, language, messages, projection, link, busy, power, location, connection, now, refresh, onProfile,
-  onRouteSearch, check, setCheck, notifications, dismissNotification, sessionLost }: {
+function DesktopPreparedness({ view, snapshot, language, messages, projection, link, busy, power, location, connection, now, refresh, onProfile, onProfileUpdate,
+  onRouteSearch, check, setCheck, notifications, dismissNotification, sessionLost, onChooseArea, canUpdateLocation }: {
   view: string; snapshot: LiveSnapshot | null; language: Language; messages: Record<string, string>;
   projection: ReturnType<typeof projectLiveSnapshot> | null; link: string | null; busy: boolean; power: ReturnType<typeof usePower>['power'];
   location: ReturnType<typeof useDeviceLocation>; connection: Connection; now: number; refresh: () => void; onProfile: (profile: LiveProfileSeed) => void;
-  onRouteSearch: (origin: Location, destinationId: string) => Promise<boolean>; check: SafetyCheckState;
+  onProfileUpdate: (profile: LiveProfileSeed) => void; onRouteSearch: (origin: Location, destinationId: string) => Promise<boolean>; check: SafetyCheckState;
   setCheck: Dispatch<SetStateAction<SafetyCheckState>>; notifications: Notification[]; dismissNotification: (id: string) => void; sessionLost: boolean;
+  onChooseArea: (location: OnboardingLocation) => void; canUpdateLocation: boolean;
 }) {
   const currentPlan = projection?.plan;
   const currentActions = snapshot?.plan_actions.filter(item => item.plan_id === currentPlan?.id && !projection?.invalidActionIds.includes(item.id)) ?? [];
@@ -438,7 +547,10 @@ function DesktopPreparedness({ view, snapshot, language, messages, projection, l
       {snapshot && projection && <div className="desktop-status"><strong>{isPrimarySourceCurrent(snapshot, projection) ? messages.sourceFresh : messages.sourceStale}</strong><span>{displayTime(snapshot.situation.latest_evidence_at, language)}</span></div>}
     </header>
     <p className="desktop-role-note">{messages.roleNote}</p>
-    {!snapshot || !projection ? <ProfileForm language={language} busy={busy} submit={onProfile} startLabel={messages.begin} title={messages.startTitle} copy={messages.startText} messages={messages} /> : <>
+    {!snapshot || !projection ? <>
+      <ProfileForm language={language} busy={busy} submit={onProfile} startLabel={messages.begin} title={messages.startTitle} copy={messages.startText} messages={messages} />
+      <section className="settings-panel"><h2>{messages.locationLocate}</h2><DeviceLocationControls location={location} language={language} /></section>
+    </> : <>
       <div className="desktop-overview-grid">
         <section className="desktop-overview-card"><small>{messages.monitor}</small><h2>{projection.primaryAction?.text || messages.pending}</h2>
           <p>{messages.lastVerified}: {displayTime(snapshot.situation.latest_evidence_at, language)}</p>
@@ -457,8 +569,11 @@ function DesktopPreparedness({ view, snapshot, language, messages, projection, l
       </section>}
       {view === 'sources' && <SourceReview snapshot={snapshot} language={language} messages={messages} projection={projection} />}
       {view === 'notifications' && <NotificationsScene notifications={notifications} messages={messages} dismiss={dismissNotification} />}
-      {view === 'more' && <section className="desktop-settings"><h2>{messages.settings}</h2><ProfileForm language={language} busy={busy} submit={onProfile} initial={snapshot.profile}
-        startLabel={messages.begin} title={messages.setup} copy={messages.profileUpdated} messages={messages} />
+      {view === 'more' && <section className="desktop-settings"><h2>{messages.settings}</h2><ProfileForm language={language} busy={busy} submit={onProfileUpdate} initial={snapshot.profile}
+        startLabel={messages.saveProfile} title={messages.setup} copy={messages.profileUpdated} messages={messages} preserveCurrentArea />
+        <section className="settings-panel"><h2>{messages.currentLocation}</h2><p>{messages.locationUpdateIntro}</p>
+          <AreaFallbackPicker messages={messages} disabled={busy || !canUpdateLocation} onConfirm={onChooseArea} />
+        </section>
         <SafetyCheckControls check={check} setCheck={setCheck} messages={messages} />
         <RoutePreview snapshot={snapshot} projectedRoute={projection.route} language={language} messages={messages} busy={busy} connection={connection} now={now} location={location} power={power} search={onRouteSearch} />
         <HandoffCard link={link} messages={messages} />
@@ -472,7 +587,7 @@ function DesktopPreparedness({ view, snapshot, language, messages, projection, l
         <section className="emergency-contact"><h2>{messages.emergencyGuide}</h2><p>{messages.builtInGuide}</p><a href="tel:119">119</a> · <a href="tel:110">110</a></section>
       </div>}
     </>}
-    <footer className="desktop-footer"><Link href="/demo">{messages.judge} / Demo →</Link></footer>
+    <JudgeFooter messages={messages} />
   </div>;
 }
 
@@ -489,6 +604,14 @@ export function LiveDashboard({ view }: { view: string }) {
   const [check, setCheck] = useState(initialSafetyCheck);
   const [checkRestored, setCheckRestored] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [locationSync, setLocationSync] = useState<LocationSyncState | null>(null);
+  const [locationResolving, setLocationResolving] = useState(false);
+  const [locationReconcileRevision, setLocationReconcileRevision] = useState(0);
+  const [homeMapReady, setHomeMapReady] = useState(false);
+  const locationSyncRef = useRef<LocationSyncState | null>(null);
+  const lastLocationResolutionKey = useRef('');
+  const activeLocationResolutionKey = useRef('');
+  const latestDevicePosition = useRef<DevicePosition | null>(null);
   const snapshotRef = useRef<LiveSnapshot | null>(null);
   const connectionRef = useRef<Connection>('reconnecting');
   const reconnectAnchor = useRef<number | null>(null);
@@ -501,10 +624,10 @@ export function LiveDashboard({ view }: { view: string }) {
   const previousSafetyCheck = useRef<SafetyCheckState | null>(null);
   const power = usePower();
   const { theme, chooseTheme } = useTheme();
-  const deviceLocation = useDeviceLocation(connection === 'online');
   const messages = liveMessages[language];
 
   const setNetwork = useCallback((value: Connection) => { connectionRef.current = value; setConnection(value); }, []);
+  const onHomeMapReady = useCallback((ready: boolean) => setHomeMapReady(ready), []);
   const store = useCallback((state: LiveSnapshot) => {
     snapshotRef.current = state; setSnapshot(state);
     try { localStorage.setItem('72h-live-session', state.session_id); } catch { setError(messages.sourceUnavailable); }
@@ -571,12 +694,31 @@ export function LiveDashboard({ view }: { view: string }) {
       setNetwork(verified ? 'online' : 'reconnecting');
       reconnectAnchor.current = verified ? null : requestStartedAt;
       setNow(Date.now());
-    } catch {
-      setError(messages.sourceUnavailable);
-      setNetwork(navigator.onLine ? 'reconnecting' : 'offline');
-      reconnectAnchor.current = requestStartedAt;
+    } catch (startError) {
+      const rejected = startError instanceof LiveApiError && startError.status === 422;
+      setError(rejected ? messages.locationStartRejected : messages.sourceUnavailable);
+      setNetwork(rejected ? 'online' : navigator.onLine ? 'reconnecting' : 'offline');
+      reconnectAnchor.current = rejected ? null : requestStartedAt;
     } finally { requestPending.current = false; setBusy(false); }
   }, [language, messages.sourceUnavailable, power.power.allowNonCriticalNetwork, setNetwork, store]);
+
+  const updateProfile = useCallback(async (profile: LiveProfileSeed) => {
+    const current = snapshotRef.current;
+    if (!current || requestPending.current) return;
+    if (!navigator.onLine || connectionRef.current === 'offline' || !power.power.allowNonCriticalNetwork) {
+      setError(messages.locationStartNeedsNetwork);
+      return;
+    }
+    requestPending.current = true; setBusy(true); setError('');
+    try {
+      const received = await updateLiveProfile(current.session_id, buildLiveProfileUpdate(profile));
+      store(received); setNow(Date.now());
+    } catch (updateError) {
+      if (isMissingLiveSessionError(updateError)) { setSessionLost(true); setError(''); setNetwork('reconnecting'); }
+      else setError(updateError instanceof LiveApiError && [400, 422].includes(updateError.status)
+        ? messages.profileUpdateRejected : messages.sourceUnavailable);
+    } finally { requestPending.current = false; setBusy(false); }
+  }, [messages.locationStartNeedsNetwork, messages.profileUpdateRejected, messages.sourceUnavailable, power.power.allowNonCriticalNetwork, setNetwork, store]);
 
   useEffect(() => {
     try {
@@ -717,11 +859,156 @@ export function LiveDashboard({ view }: { view: string }) {
   }, [messages.sourceUnavailable, notifications, snapshot]);
   const projection = useMemo(() => snapshot ? projectLiveSnapshot(snapshot, now, connection, power.power, notifications.length, checkActive) : null,
     [snapshot, now, connection, power.power, notifications.length, checkActive]);
+  const criticalMobileTakeover = shouldUseCriticalMobileTakeover(role, projection?.presentation.mode);
+  const mobileView = criticalMobileTakeover ? 'dashboard' : view;
+  const authorizedHomeMap = role === 'mobile' && mobileView === 'dashboard' && !locationSync
+    && projection?.presentation.mode === 'MAP_ASSISTED' && projection.presentation.showMap
+    && projection.mapGate && !!projection.route?.geometry && power.power.allowMap && homeMapReady;
+  const deviceLocation = useDeviceLocation(connection === 'online', { powerMode: power.power.mode, routeActive: !!authorizedHomeMap });
+  latestDevicePosition.current = deviceLocation.position;
+
+  const setLocationGate = useCallback((next: LocationSyncState | null) => {
+    locationSyncRef.current = next;
+    setLocationSync(next);
+  }, []);
+
+  const postLocationUpdate = useCallback(async (update: LiveLocationUpdate) => {
+    const current = snapshotRef.current;
+    if (!current || !navigator.onLine || connectionRef.current === 'offline' || !power.power.allowNonCriticalNetwork) {
+      setLocationGate({ phase: 'failed', update });
+      return false;
+    }
+    if (requestPending.current) {
+      setLocationGate({ phase: 'failed', update });
+      return false;
+    }
+    const sessionId = current.session_id;
+    requestPending.current = true; setBusy(true); setError('');
+    try {
+      const received = await updateLiveLocation(sessionId, update);
+      const accepted = received.profile.current_location;
+      const matches = JSON.stringify(accepted.area_ids) === JSON.stringify(update.area_ids)
+        && accepted.source === update.source && Date.parse(accepted.observed_at ?? '') === Date.parse(update.observed_at);
+      if (!matches) throw new Error('Location update was not confirmed by the live session');
+      store(received); setNow(Date.now());
+      const latest = latestDevicePosition.current;
+      if (canClearLocationGateForUpdate({ gateUpdate: locationSyncRef.current?.update, completedUpdate: update,
+        latestFixAt: latest?.captured_at ?? null })) setLocationGate(null);
+      if (shouldReconcileLatestLocationFix(latest?.captured_at ?? null, update)) {
+        lastLocationResolutionKey.current = '';
+        setLocationReconcileRevision(value => value + 1);
+      }
+      return true;
+    } catch (updateError) {
+      if (isMissingLiveSessionError(updateError)) { setSessionLost(true); setError(''); setNetwork('reconnecting'); }
+      const active = locationSyncRef.current;
+      const currentRequest = active?.update && Date.parse(active.update.observed_at) === Date.parse(update.observed_at);
+      if (currentRequest || !active) setLocationGate({ phase: 'failed', update });
+      const latest = latestDevicePosition.current;
+      if (shouldReconcileLatestLocationFix(latest?.captured_at ?? null, update)) {
+        lastLocationResolutionKey.current = '';
+        setLocationReconcileRevision(value => value + 1);
+      }
+      return false;
+    } finally { requestPending.current = false; setBusy(false); }
+  }, [power.power.allowNonCriticalNetwork, setLocationGate, setNetwork, store]);
+
+  const resolveAndSyncFix = useCallback(async (fix: DevicePosition) => {
+    const current = snapshotRef.current;
+    if (!current || locationFreshness(fix, false, Date.now()) !== 'CURRENT') return;
+    const currentLocation = current.profile.current_location;
+    const currentObservedAt = Date.parse(currentLocation.observed_at ?? '') || 0;
+    if (fix.captured_at <= currentObservedAt) return;
+    const key = `${current.session_id}:${fix.captured_at}`;
+    lastLocationResolutionKey.current = key;
+    activeLocationResolutionKey.current = key;
+    setLocationResolving(true);
+    try {
+      const resolved = await resolveDeviceArea({ latitude: fix.latitude, longitude: fix.longitude, accuracy_m: fix.accuracy_m });
+      const latest = latestDevicePosition.current;
+      if (latest && latest.captured_at > fix.captured_at) return;
+      if (!['RESOLVED', 'AMBIGUOUS'].includes(resolved.status) || !resolved.area_ids.length || !resolved.label) {
+        setLocationGate({ phase: 'failed', update: null });
+        return;
+      }
+      if (JSON.stringify(resolved.area_ids) === JSON.stringify(currentLocation.area_ids)) {
+        const currentGate = locationSyncRef.current;
+        if (canClearLocationGateForSameArea(currentGate)) setLocationGate(null);
+        const sameAreaUpdate = { area_ids: resolved.area_ids, source: 'GPS' as const,
+          observed_at: new Date(fix.captured_at).toISOString() };
+        if (shouldPostSameAreaToResolveGate(currentGate, requestPending.current)) {
+          setLocationGate({ phase: 'pending', update: sameAreaUpdate });
+          await postLocationUpdate(sameAreaUpdate);
+          return;
+        }
+        if (shouldRefreshGpsAreaTimestamp({ source: currentLocation.source, areaUnchanged: true,
+          observedAt: currentLocation.observed_at, fixCapturedAt: fix.captured_at })
+          && navigator.onLine && connectionRef.current !== 'offline' && power.power.allowNonCriticalNetwork && !requestPending.current) {
+          await postLocationUpdate(sameAreaUpdate);
+        }
+        return;
+      }
+      const update: LiveLocationUpdate = { area_ids: resolved.area_ids, source: 'GPS', observed_at: new Date(fix.captured_at).toISOString() };
+      setLocationGate({ phase: 'pending', update });
+      await postLocationUpdate(update);
+    } catch {
+      const latest = latestDevicePosition.current;
+      if (!latest || latest.captured_at <= fix.captured_at) setLocationGate({ phase: 'failed', update: null });
+    } finally {
+      if (activeLocationResolutionKey.current === key) setLocationResolving(false);
+    }
+  }, [postLocationUpdate, setLocationGate, power.power.allowNonCriticalNetwork]);
+
+  useEffect(() => {
+    const fix = deviceLocation.position;
+    const current = snapshot;
+    if (!fix || !current || deviceLocation.freshness !== 'CURRENT') return;
+    const observedAt = Date.parse(current.profile.current_location.observed_at ?? '') || 0;
+    if (fix.captured_at <= observedAt) return;
+    const key = `${current.session_id}:${fix.captured_at}`;
+    if (lastLocationResolutionKey.current === key) return;
+    void resolveAndSyncFix(fix);
+  }, [deviceLocation.position, deviceLocation.freshness, resolveAndSyncFix, snapshot, locationReconcileRevision]);
+
+  const retryLocationUpdate = useCallback(async () => {
+    const pending = locationSyncRef.current;
+    if (pending?.update) {
+      const latest = latestDevicePosition.current;
+      if (requiresFreshGpsForLocationRetry(pending)) {
+        if (latest && latest.captured_at > Date.parse(pending.update.observed_at)
+          && locationFreshness(latest, false, Date.now()) === 'CURRENT') {
+          lastLocationResolutionKey.current = '';
+          await resolveAndSyncFix(latest);
+          return;
+        }
+        setLocationGate({ phase: 'pending', update: null });
+        const fix = await deviceLocation.locate();
+        if (!fix) { setLocationGate({ phase: 'failed', update: null }); return; }
+        lastLocationResolutionKey.current = '';
+        await resolveAndSyncFix(fix);
+        return;
+      }
+      if (pending.update.source === 'GPS' && latest && latest.captured_at > Date.parse(pending.update.observed_at)) {
+        lastLocationResolutionKey.current = '';
+        await resolveAndSyncFix(latest);
+        return;
+      }
+      await postLocationUpdate(pending.update); return;
+    }
+    setLocationGate({ phase: 'pending', update: null });
+    const fix = await deviceLocation.locate();
+    if (!fix) { setLocationGate({ phase: 'failed', update: null }); return; }
+    lastLocationResolutionKey.current = '';
+    await resolveAndSyncFix(fix);
+  }, [deviceLocation.locate, postLocationUpdate, resolveAndSyncFix, setLocationGate]);
+  const chooseLocationArea = useCallback((selection: OnboardingLocation) => {
+    const update: LiveLocationUpdate = { area_ids: selection.area_ids, source: 'USER_SELECTED', observed_at: selection.observed_at };
+    setLocationGate({ phase: 'pending', update });
+    void postLocationUpdate(update);
+  }, [postLocationUpdate, setLocationGate]);
   const networkLabel = connection === 'offline' ? messages.offline
     : connection === 'reconnecting' || projection?.networkState === 'RECONNECTING' ? messages.reconnecting
       : projection?.networkState === 'ONLINE_VERIFIED' && snapshot && isPrimarySourceCurrent(snapshot, projection) ? messages.sourceFresh : messages.sourceStale;
-  const criticalMobileTakeover = shouldUseCriticalMobileTakeover(role, projection?.presentation.mode);
-  const mobileView = criticalMobileTakeover ? 'dashboard' : view;
   const nav = [
     { key: 'dashboard', label: messages.home, icon: '⌂' },
     { key: 'plan', label: messages.plan, icon: '▤' },
@@ -732,21 +1019,28 @@ export function LiveDashboard({ view }: { view: string }) {
     { key: 'sources', label: messages.source }, { key: 'notifications', label: messages.notifications },
     { key: 'more', label: messages.more },
   ];
+  const canUseNetwork = (typeof navigator === 'undefined' || navigator.onLine) && connection !== 'offline' && power.power.allowNonCriticalNetwork && !busy;
   const mainContent = role === 'unknown' ? <div className="device-role-pending" role="status">{messages.loading}</div>
     : role === 'desktop'
-      ? <DesktopPreparedness view={view} snapshot={snapshot} language={language} messages={messages} projection={projection}
+      ? locationSync
+        ? <LocationSyncGate state={locationSync} messages={messages} retry={() => void retryLocationUpdate()} canRetry={canUseNetwork} chooseArea={chooseLocationArea} />
+        : <DesktopPreparedness view={view} snapshot={snapshot} language={language} messages={messages} projection={projection}
         link={link} busy={busy} power={power.power} location={deviceLocation} connection={connection} now={now}
-        refresh={() => void refresh()} onProfile={profile => void begin(profile)} onRouteSearch={searchRoute}
-        check={check} setCheck={setCheck} notifications={notifications} dismissNotification={id => setNotifications(items => items.filter(item => item.id !== id))} sessionLost={sessionLost} />
+        refresh={() => void refresh()} onProfile={profile => void begin(profile)} onProfileUpdate={profile => void updateProfile(profile)} onRouteSearch={searchRoute}
+        check={check} setCheck={setCheck} notifications={notifications} dismissNotification={id => setNotifications(items => items.filter(item => item.id !== id))} sessionLost={sessionLost}
+        onChooseArea={chooseLocationArea} canUpdateLocation={canUseNetwork} />
       : <MobileScene view={mobileView} snapshot={snapshot} language={language} messages={messages} projection={projection}
-        deviceLocation={deviceLocation} power={power.power} level={power.level} override={power.override} choose={power.choose}
-        theme={theme} chooseTheme={chooseTheme} busy={busy} onProfile={profile => void begin(profile)} onRefresh={() => void refresh()}
+        deviceLocation={deviceLocation} locationResolving={locationResolving} onHomeMapReady={onHomeMapReady}
+        power={power.power} level={power.level} override={power.override} choose={power.choose}
+        theme={theme} chooseTheme={chooseTheme} busy={busy} onProfile={profile => void begin(profile)} onProfileUpdate={profile => void updateProfile(profile)} onRefresh={() => void refresh()}
         onRouteSearch={searchRoute} link={link} now={now} connection={connection} check={check} setCheck={setCheck}
-        notifications={notifications} dismissNotification={id => setNotifications(items => items.filter(item => item.id !== id))} sessionLost={sessionLost} />;
+        notifications={notifications} dismissNotification={id => setNotifications(items => items.filter(item => item.id !== id))} sessionLost={sessionLost}
+        canStart={canUseNetwork}
+        locationSync={locationSync} onRetryLocation={() => void retryLocationUpdate()} onChooseArea={chooseLocationArea} />;
 
   return <div className={`live-shell theme-${theme} power-${power.power.mode.toLowerCase()} role-${role}`}>
     {!criticalMobileTakeover && <header className="live-topbar"><Link className="live-brand" href="/dashboard">72<span>H</span></Link>
-      <div className="live-topbar-state"><strong>{messages.monitor}</strong><span>{networkLabel}</span></div>
+      <LiveHeaderStatus hasSession={!!snapshot} busy={busy} networkLabel={networkLabel} messages={messages} />
       {role === 'desktop' && <nav className="desktop-primary-nav" aria-label={messages.preparedness}>{desktopNav.map(item => <Link key={item.key} href={`/${item.key}`} aria-current={view === item.key ? 'page' : undefined}>{item.label}</Link>)}</nav>}
       <label className="live-language">{messages.language}<select aria-label={messages.language} value={language} onChange={event => {
         const next = event.target.value as Language; setLanguage(next); try { localStorage.setItem('72h-language', next); } catch { /* In-memory fallback. */ }
@@ -758,6 +1052,7 @@ export function LiveDashboard({ view }: { view: string }) {
         <strong>{messages.sessionLost}</strong><p>{messages.lastVerified}: {displayTime(snapshot.situation.latest_evidence_at, language)}</p>
         <Link href="/more">{messages.startNewSession} →</Link>
       </section>}
+      {locationResolving && snapshot && <p className="location-resolution-status" role="status">{messages.locationCheckingArea}</p>}
       {mainContent}
       {role === 'mobile' && !criticalMobileTakeover && <nav className="mobile-primary-nav" aria-label={language === 'ja' ? 'メイン' : language === 'zh-TW' ? '主選單' : 'Main navigation'}>
         {nav.map(item => <Link key={item.key} href={`/${item.key}`} aria-current={view === item.key ? 'page' : undefined} className={view === item.key ? 'selected' : ''}>

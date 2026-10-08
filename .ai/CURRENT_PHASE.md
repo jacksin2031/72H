@@ -1,5 +1,35 @@
 # 72H — Current Development Phase
 
+## Current authorized work — accessible GPS P1.1 (2026-10-08 JST)
+
+Scope: local implementation and acceptance of
+`docs/VNEXT_P1_1_ACCESSIBLE_GPS_UI.md`, baseline
+`6eeba78b180d52ce1bb845728442251b9d38a50b`, isolated branch
+`codex/vnext-p1-1-accessible-gps`. The original checkout and its untracked spec
+are preserved. Status: COMPLETE for the authorized local delivery; evidence is recorded in
+`docs/VNEXT_P1_1_VALIDATION.md`. GPS-first onboarding, national N03 resolution,
+same-session location updates and accessible consumer UI do not grant new
+safety authority. Real-device GPS, preview deployment and production traffic
+switching are outside this delivery. Production references below are historical
+and are not evidence for this new branch.
+
+Implementation commit: `2bea4a70fe953c32f4f6a5bab5c427703231dd86`.
+Production web build: `9H889OhKjWnSKj1ZwsfEQ` (local runtime only).
+Validation: frontend 211/211, backend 133/133, typecheck/build, national asset
+reproduction, browser acceptance and independent Luna Max review passed.
+Full P1.1 release remains pending real-device and production acceptance.
+
+## Current follow-up — first-use UI polish (2026-10-08 JST)
+
+The user requested neutral pre-session status, mobile onboarding scenes and a
+single desktop Judge / Demo footer label. These bounded changes pass 160 frontend
+and 103 backend tests, TypeScript/build, source hygiene and Main's In-app Browser
+checks. Zero-traffic preview, actual Gemini replay, Live, offline reload and
+canonical acceptance passed. `h72-ui-910c1d2` receives 100% production traffic;
+previous P1/P0 revisions are retained. Status is COMPLETE for this follow-up;
+remote Git synchronization remains separately BLOCKED by repository access. See
+`docs/VNEXT_FIRST_USE_POLISH.md`; previous production evidence below is historical.
+
 ## Current authorized work — vNext P1 (2026-10-07 JST)
 
 The user's `/goal complete` request authorizes implementation and necessary

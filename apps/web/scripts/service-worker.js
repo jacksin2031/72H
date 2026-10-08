@@ -1,6 +1,6 @@
 /* Cache public application assets only. API/model responses never enter Cache Storage. */
 const VERSION = '72h-shell-__BUILD_ID__';
-const SHELL = ['/', '/dashboard', '/plan', '/more', '/notifications', '/sources', '/trace', '/demo', '/icon.svg', '/manifest.webmanifest', '/maps/catalog.json', '/maps/manifest.json', '/maplibre/maplibre-gl-worker.mjs', '/maplibre/maplibre-gl-shared.mjs'];
+const SHELL = ['/', '/dashboard', '/plan', '/more', '/notifications', '/sources', '/trace', '/demo', '/icon.svg', '/manifest.webmanifest', '/maps/catalog.json', '/maps/manifest.json', '/maplibre/maplibre-gl-worker.mjs', '/maplibre/maplibre-gl-shared.mjs', '/areas/catalog.json', '/areas/manifest.json', '/areas/worker.mjs', '/areas/area-geometry.mjs'];
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const response = await fetch('/precache-manifest.json', { cache: 'no-store' });

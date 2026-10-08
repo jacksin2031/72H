@@ -2,6 +2,8 @@ from dataclasses import replace
 from datetime import timedelta
 from types import SimpleNamespace
 
+import pytest
+
 from seventytwoh_contracts.models import (
     Claim,
     ClaimType,
@@ -15,6 +17,7 @@ from seventytwoh_contracts.models import (
     Evidence,
     FreshnessStatus,
     NetworkState,
+    LocationSource,
     PlanActionCategory,
     PlanActionStatus,
     PlanEvaluationStatus,
@@ -27,7 +30,8 @@ from seventytwoh_contracts.models import (
     GeoJsonLineString,
 )
 
-from agent_api.planning import evaluate_and_replan
+from agent_api.domain import _network_transition
+from agent_api.planning import evaluate_and_replan, route_status_claim_key
 from agent_api.safety import SafetyPolicy, project_evidence
 from agent_api.spatial import (
     MOVEMENT_DIRECTIVE_VALUE,
@@ -185,6 +189,164 @@ def test_typed_server_source_evidence_can_authorize_high_risk_map_gate_positive(
     assert projection.map_mount_eligible is True
     assert projection.plan_id == plan.id
     assert projection.action_id == action.id
+
+
+@pytest.mark.parametrize(
+    "observed_delta",
+    [timedelta(days=-1), timedelta(seconds=1)],
+)
+def test_explicit_gps_movement_gate_rejects_stale_or_future_observation(initial_state, observed_delta):
+    observed_at = initial_state.current_time + observed_delta
+    location = initial_state.profile.current_location.model_copy(
+        update={"source": LocationSource.GPS, "observed_at": observed_at}
+    )
+    base = replace(
+        initial_state,
+        profile=initial_state.profile.model_copy(update={"current_location": location}),
+    )
+    state, policy, _route = _movement_state(base)
+    planned = _generate_fixture_plan(state, policy)
+
+    assert evaluated_spatial_guidance(planned, planned.current_time, policy).movement_authorized is False
+    assert evaluated_spatial_guidance(planned, planned.current_time, policy).map_mount_eligible is False
+
+
+def test_user_selected_and_legacy_location_timestamps_remain_compatible_with_movement_gate(initial_state):
+    state, policy, _route = _movement_state(initial_state)
+    stale_observation = state.current_time - timedelta(days=1)
+    manual_location = state.profile.current_location.model_copy(
+        update={"source": LocationSource.USER_SELECTED, "observed_at": stale_observation}
+    )
+    manual_state = replace(
+        state,
+        profile=state.profile.model_copy(update={"current_location": manual_location}),
+    )
+
+    assert evaluated_spatial_guidance(
+        _generate_fixture_plan(manual_state, policy), state.current_time, policy
+    ).movement_authorized is True
+    assert evaluated_spatial_guidance(
+        _generate_fixture_plan(state, policy), state.current_time, policy
+    ).movement_authorized is True
+
+
+def test_reconnect_generic_evidence_cannot_reuse_old_spatial_proofs(initial_state):
+    from agent_api.planning import disaster_status_claim_keys
+
+    state, policy, _route = _movement_state(initial_state)
+    planned = _generate_fixture_plan(state, policy)
+    marker_time = planned.current_time
+    reconnecting = _network_transition(
+        planned,
+        "network-restored-fixture",
+        marker_time,
+        NetworkState.RECONNECTING,
+        "NETWORK_RESTORED",
+        "Connectivity returned; fresh evidence is required before reconciliation completes.",
+    )
+    checked_at = marker_time + timedelta(seconds=1)
+    jma_key = disaster_status_claim_keys(reconnecting)[0]
+    route_key = route_status_claim_key(reconnecting)
+    assert route_key is not None
+
+    old_jma = next(item for item in reconnecting.evidence if item.id == "ev-current-disaster")
+    post_reconnect_jma = old_jma.model_copy(
+        update={
+            "id": "post-reconnect-official",
+            "published_at": checked_at,
+            "received_at": checked_at,
+            "claims": (Claim(key=jma_key, value="ACTIVE"),),
+        }
+    )
+    old_route = next(item for item in reconnecting.evidence if item.id == "ev-route-safety")
+    post_reconnect_partner = old_route.model_copy(
+        update={
+            "id": "post-reconnect-partner",
+            "source_class": SourceClass.PARTNER,
+            "trust_status": TrustStatus.VERIFIED_PARTNER,
+            "published_at": checked_at,
+            "received_at": checked_at,
+            "claims": (Claim(key=route_key, value="UNKNOWN"),),
+        }
+    )
+    after_generic_reconciliation = replace(
+        reconnecting,
+        current_time=checked_at,
+        situation=reconnecting.situation.model_copy(update={"updated_at": checked_at}),
+        evidence=(*reconnecting.evidence, post_reconnect_jma, post_reconnect_partner),
+    )
+    reconciled = evaluate_and_replan(
+        reconnecting,
+        after_generic_reconciliation,
+        SimpleNamespace(id="post-reconnect-update"),
+        policy,
+    )
+    projection = evaluated_spatial_guidance(reconciled, checked_at, policy)
+    current_plan = next(item for item in reconciled.plans if item.id == reconciled.situation.current_plan_id)
+    current_actions = [item for item in reconciled.plan_actions if item.plan_id == current_plan.id]
+
+    assert reconciled.situation.network_state == NetworkState.ONLINE_VERIFIED
+    assert reconciled.last_reconnect_at == marker_time
+    assert projection.movement_authorized is False
+    assert not any(
+        item.risk_level.value == "HIGH" and item.status == PlanActionStatus.ACTIVE
+        for item in current_actions
+    )
+
+    proof_ids = (
+        "ev-movement",
+        "ev-destination-open",
+        "ev-destination-hazard",
+        "ev-route-safety",
+    )
+    refreshed_proofs = tuple(
+        next(item for item in planned.evidence if item.id == old_id).model_copy(
+            update={
+                "id": f"post-reconnect-{old_id}",
+                "published_at": checked_at,
+                "received_at": checked_at,
+            }
+        )
+        for old_id in proof_ids
+    )
+    refreshed_route = planned.routes[-1].model_copy(
+        update={
+            "checked_at": checked_at,
+            "expires_at": checked_at + timedelta(minutes=2),
+            "evidence_ids": ("post-reconnect-ev-route-safety",),
+        }
+    )
+    rechecked_old_publications = tuple(
+        next(item for item in planned.evidence if item.id == old_id).model_copy(
+            update={"id": f"post-reconnect-old-publication-{old_id}", "received_at": checked_at}
+        )
+        for old_id in proof_ids
+    )
+    after_old_publication_recheck = replace(
+        reconciled,
+        evidence=(*reconciled.evidence, *rechecked_old_publications),
+        routes=(refreshed_route,),
+    )
+    still_blocked = evaluate_and_replan(
+        reconciled,
+        after_old_publication_recheck,
+        SimpleNamespace(id="post-reconnect-old-publication"),
+        policy,
+    )
+    assert evaluated_spatial_guidance(still_blocked, checked_at, policy).movement_authorized is False
+
+    after_spatial_recheck = replace(
+        still_blocked,
+        evidence=(*still_blocked.evidence, *refreshed_proofs),
+    )
+    restored = evaluate_and_replan(
+        still_blocked,
+        after_spatial_recheck,
+        SimpleNamespace(id="post-reconnect-spatial-proof"),
+        policy,
+    )
+    assert restored.last_reconnect_at == marker_time
+    assert evaluated_spatial_guidance(restored, checked_at, policy).movement_authorized is True
 
 
 def test_candidate_route_replacement_invalidates_active_plan_and_appends_safe_version(initial_state):

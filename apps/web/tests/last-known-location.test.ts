@@ -17,8 +17,10 @@ describe('last known device location boundary', () => {
     expect(saved.position).toEqual(fix);
     expect(deviceLocationState(saved.position, true, true, now + 100)).toBe('last');
     expect(deviceLocationState(fix, false, true, now + 100)).toBe('live');
-    expect(deviceLocationState(fix, false, false, now + 100)).toBe('last');
-    expect(deviceLocationState(fix, false, true, now + 60_000)).toBe('last');
+    expect(deviceLocationState(fix, false, false, now + 100)).toBe('live');
+    expect(deviceLocationState(fix, false, true, now + 60_000)).toBe('live');
+    expect(deviceLocationState(fix, false, true, now + 120_001)).toBe('aging');
+    expect(deviceLocationState(fix, false, true, now + 600_001)).toBe('stale');
     writeLastLocation(cache, true, { ...fix, latitude: 34.7, captured_at: now + 100 }, now + 100);
     expect(readLastLocation(cache, now + 100).position?.latitude).toBe(34.7);
     writeLastLocation(cache, false, fix, now);

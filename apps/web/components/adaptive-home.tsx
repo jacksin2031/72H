@@ -83,7 +83,7 @@ export function AdaptiveHome({ presentation, snapshot, language, networkState, p
       {mapSurface}
     </>}
     {mapClosed && !presentation.showMap && <p role="status" className="muted">{t.mapEnded}</p>}
-    {survival && <><p>{t.lastVerified}: {verifiedTime}</p><p>{t.position}: {location.position ? `${location.position.latitude.toFixed(4)}, ${location.position.longitude.toFixed(4)} · ±${Math.round(location.position.accuracy_m)} m · ${new Date(location.position.captured_at).toLocaleString(language, { timeZone: 'Asia/Tokyo' })} · ${vt.locationStates.last}` : t.noPosition}</p></>}
+    {survival && <><p>{t.lastVerified}: {verifiedTime}</p><p>{t.position}: {location.position ? `${vt.locationStates[location.state]} · ${new Date(location.position.captured_at).toLocaleString(language, { timeZone: 'Asia/Tokyo' })}` : t.noPosition}</p></>}
     {(survival || mode === 'SAFETY_CHECK' || mode === 'EMERGENCY_PROTECT') && <section className="emergency-contact"><h2>{t.emergency}</h2><p>{t.emergencyDetail}</p><a href="tel:119">119</a> · <a href="tel:110">110</a></section>}
     {!urgentMode && <button ref={detailsTrigger} type="button" className="plan-sheet-trigger" onClick={() => setDetailsOpen(true)}>{t.details}</button>}
     {!urgentMode && detailsOpen && <div className="plan-sheet-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setDetailsOpen(false); }}>

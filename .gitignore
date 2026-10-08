@@ -21,6 +21,8 @@ playwright-report/
 apps/web/public/precache-manifest.json
 apps/web/public/sw.js
 apps/web/public/maplibre/
+apps/web/public/areas/worker.mjs
+apps/web/public/areas/area-geometry.mjs
 output/playwright/
 output/cloud-shell/
 .playwright-cli/

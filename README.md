@@ -13,7 +13,9 @@ The project focuses on one question:
 
 ## Public demo
 
-This public deployment runs accepted vNext P1 (`h72-p1-b6950fb`, 100% traffic).
+This public deployment runs vNext P1 with the accepted first-use UI polish
+(`h72-ui-910c1d2`, 100% traffic). See the
+[current runtime and UI acceptance](docs/VNEXT_FIRST_USE_POLISH.md).
 See the [P1 acceptance ledger](docs/VNEXT_P1_VALIDATION.md) and
 [production record](docs/VNEXT_P1_PRODUCTION_RELEASE.md) for runtime identity,
 rollback and capability limits. Remote Git synchronization is separately blocked.
@@ -111,7 +113,7 @@ pnpm backend has been imported. Hackathon skills are retained under `.codex/skil
 sourced from [Zenn's participant skills](https://github.com/zenn-dev/hackathon-agent-skills).
 
 Temporary P1 release exception: the immutable runtime source is local
-`codex/vnext-p1` commit `b6950fb`. The configured GitHub remote returns repository
+`codex/vnext-p1` commit `910c1d2`. The configured GitHub remote returns repository
 not found, so `main` and remote integration remain pending; do not mistake the
 older main checkout for the deployed P1 source.
 

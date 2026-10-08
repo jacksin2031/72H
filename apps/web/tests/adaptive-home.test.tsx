@@ -10,8 +10,8 @@ import { activeSnapshot } from './fixtures';
 import { LIVE_NOW, movementLiveSnapshot } from './live-fixtures';
 
 const location: DeviceLocation = {
-  position: null, state: 'unavailable', consent: false, ready: true, busy: false,
-  failed: false, storageUnavailable: false, locate: async () => {}, retain: () => {},
+  position: null, state: 'unavailable', freshness: 'UNAVAILABLE', now: Date.now(), consent: false, ready: true, busy: false,
+  failed: false, permissionDenied: false, permissionGranted: false, storageUnavailable: false, locate: async () => null, retain: () => {},
 };
 function render(overrides: Partial<React.ComponentProps<typeof AdaptiveHome>> = {}) {
   const snapshot = activeSnapshot();

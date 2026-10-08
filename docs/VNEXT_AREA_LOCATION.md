@@ -1,5 +1,13 @@
 # vNext — configurable map/profile, last known location, generic severity
 
+P1.1 amendment (2026-10-08): the user approved device-local N03 GPS-to-area
+resolution and same-session area updates. The earlier no-area-selection,
+single-shot-only and 60-second/offline classification below are historical P0
+rules, superseded by [VNEXT_P1_1_LOCATION_CONTRACT.md](VNEXT_P1_1_LOCATION_CONTRACT.md).
+Coordinates remain device-local; resolved IDs/time/source may reach the backend.
+The full registry is national; the 512-entry bound below applies to the session
+snapshot projection. GPS never grants source authority or movement permission.
+
 Authorized by the user on 2026-10-05 JST. This extends the locally validated P0
 branch without deploying or activating live feeds. Status: COMPLETE for local
 implementation and required validation. The follow-up's 69 backend / 77 frontend

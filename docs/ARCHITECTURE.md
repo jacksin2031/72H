@@ -1,5 +1,32 @@
 # 72H Architecture v0.2
 
+## Authorized P1.1 device-local area resolution
+
+Explicit GPS fix -> coordinate/accuracy validation -> pinned N03 metadata ->
+lazy bounded boundary shards -> Web Worker geometry intersection -> complete
+canonical area path -> same-session location API -> existing dependency
+evaluation / Safety Core / immutable plan history. Precise coordinates do not
+cross this API boundary. The server loads the full national registry, while each
+snapshot projects only required areas/ancestors, at most 512 entries.
+
+More settings use a separate metadata-only same-session profile API, preserving
+the current location and plan history. It cannot reconcile network verification
+or refresh GPS age. Reconnection movement gates require all relevant official
+proof to be published and received after the reconnect marker.
+
+The worker verifies catalog, manifest and shard SHA-256, retains original rings,
+and uses common ancestry for accuracy overlaps and provisional boundaries.
+Outside Japan has no Japan fallback. Administrative geometry is distinct from
+the installed reference road map. Shards are fetched on demand and cached with
+a 32 MiB budget; the national dataset is never precached in full.
+
+Device tracking is gated by the actual authorized mobile Home map. Normal
+tracking stops on background, map/scene exit, permission denial or gate closure;
+CONSERVE uses bounded one-shots and EMERGENCY_POWER stops continuous tracking.
+Restored fixes always remain last-known observations. This P1.1 section supersedes
+the historical P0 single-shot/60-second/offline location presentation below.
+See [VNEXT_P1_1_LOCATION_CONTRACT.md](VNEXT_P1_1_LOCATION_CONTRACT.md).
+
 ## Authorized P1 architecture
 
 P1 extends the existing pipeline with separate live-source intake and device

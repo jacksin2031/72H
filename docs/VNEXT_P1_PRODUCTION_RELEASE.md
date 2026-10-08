@@ -1,5 +1,10 @@
 # vNext P1 production acceptance — 2026-10-07 JST
 
+This is the historical October 7 P1 acceptance. The October 8 first-use UI
+follow-up is now deployed as `h72-ui-910c1d2` at 100% traffic. See
+[current runtime and acceptance](VNEXT_FIRST_USE_POLISH.md). Values below describe
+the accepted prior P1 revision, which remains available for rollback.
+
 Status: **COMPLETE for the bounded P1 implementation and release acceptance.**
 GitHub synchronization is separately BLOCKED: the configured `jacksin2031/72H`
 remote returns repository not found. No remote, credentials, original checkout

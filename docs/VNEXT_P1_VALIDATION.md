@@ -1,5 +1,9 @@
 # vNext P1 implementation and acceptance
 
+The October 8 first-use UI follow-up is accepted and deployed. Its current
+runtime identity and evidence are in [first-use acceptance](VNEXT_FIRST_USE_POLISH.md).
+The original P1 checks below retain their October 7 provenance.
+
 Status: **COMPLETE — bounded P1 implementation and release acceptance** (2026-10-07 JST).
 The user's `/goal complete` request authorizes the [P1 specification](VNEXT_P1_LIVE_ROUTE_DEVICE_ROLES.md), including the approved mobile scene system.
 Local implementation, GUI and browser offline/reconnect verification are recorded below.

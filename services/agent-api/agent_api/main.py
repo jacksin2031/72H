@@ -7,9 +7,11 @@ from uuid import UUID
 from fastapi import Body, FastAPI, HTTPException, status
 from seventytwoh_contracts.models import (
     ApiVersion,
+    LiveLocationUpdateRequest,
+    LiveProfileUpdateRequest,
     LiveSnapshot,
-    ReplaySnapshot,
     ReplayScenarioOption,
+    ReplaySnapshot,
     SpeedRequest,
     StartReplayRequest,
     StartLiveRequest,
@@ -26,11 +28,13 @@ from .storage import (
     SessionNotFound,
 )
 from .live import (
+    InvalidLiveLocationRequest,
+    InvalidLiveProfileUpdate,
+    InvalidLiveRouteRequest,
     InvalidLiveProfile,
     LiveSessionCapacityReached,
     LiveSessionNotFound,
     LiveStore,
-    InvalidLiveRouteRequest,
 )
 from .planner import CandidatePlanner
 
@@ -114,6 +118,30 @@ def create_app(store: ReplayStore | None = None, live_store: LiveStore | None = 
     @application.get("/api/live/{session_id}", response_model=LiveSnapshot)
     def get_live(session_id: UUID) -> LiveSnapshot:
         return _run_live(lambda: live_session_store.get(session_id))
+
+    @application.post("/api/live/{session_id}/location", response_model=LiveSnapshot)
+    async def update_live_location(
+        session_id: UUID,
+        request: LiveLocationUpdateRequest,
+    ) -> LiveSnapshot:
+        try:
+            return await live_session_store.update_location(session_id, request)
+        except LiveSessionNotFound as exc:
+            raise HTTPException(status_code=404, detail="live session not found") from exc
+        except InvalidLiveLocationRequest as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @application.post("/api/live/{session_id}/profile", response_model=LiveSnapshot)
+    async def update_live_profile(
+        session_id: UUID,
+        request: LiveProfileUpdateRequest,
+    ) -> LiveSnapshot:
+        try:
+            return await live_session_store.update_profile(session_id, request)
+        except LiveSessionNotFound as exc:
+            raise HTTPException(status_code=404, detail="live session not found") from exc
+        except InvalidLiveProfileUpdate as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     @application.post("/api/live/{session_id}/refresh", response_model=LiveSnapshot)
     async def refresh_live(session_id: UUID) -> LiveSnapshot:

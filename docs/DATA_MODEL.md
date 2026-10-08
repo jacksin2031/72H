@@ -1,5 +1,31 @@
 # 72H Data Model v0.1
 
+## Authorized P1.1 location contract
+
+The full national registry uses JP, JP-01..JP-47 and JP-MUNI-{five-digit N03 code}.
+Legacy Replay IDs remain valid. `area_catalog` in a session remains bounded to
+512 required entries plus ancestors, rather than the entire national registry.
+`Location.source` is an optional nullable GPS / USER_SELECTED field so old
+snapshots still parse. Device-only LAST_KNOWN is a presentation state, not a new
+official observation or permission.
+
+`POST /api/live/{session_id}/location` accepts only a complete registered
+specific-to-root `area_ids` path, GPS / USER_SELECTED `source`, and timezone-aware
+`observed_at`. It returns the existing LiveSnapshot. Unknown session is 404;
+unknown/incomplete paths, extra coordinates and stale/future GPS are 422.
+Registry labels replace submitted names. Existing plans remain immutable;
+location-dependent routes/actions are re-evaluated through the existing planner
+and Safety Core. Parent-prefecture evidence can apply to a municipality without
+being relabeled as intensity measured in that municipality.
+
+`POST /api/live/{session_id}/profile` accepts accommodation metadata, party size,
+self-reported safety and accessibility constraints. It excludes current location
+and precise coordinates, canonicalizes accommodation ancestry and preserves the
+same session/current GPS timestamp. Metadata changes trigger dependency/plan
+evaluation without promoting network or movement verification. It returns the
+same LiveSnapshot; unknown session is 404 and invalid body is 422.
+See [VNEXT_P1_1_LOCATION_CONTRACT.md](VNEXT_P1_1_LOCATION_CONTRACT.md).
+
 ## Authorized generic location / area extension
 
 `Location` now carries paired optional `lat / lng`, nullable `observed_at`, and
