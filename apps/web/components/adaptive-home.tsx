@@ -6,12 +6,13 @@ import type { PresentationProjection } from '../lib/adaptive-ui';
 import type { DeviceLocation } from '../lib/use-device-location';
 import { adaptiveMessages } from '../lib/adaptive-i18n';
 import { vnextMessages } from '../lib/vnext-i18n';
+import { projectLocationPresentation } from '../lib/location-presentation';
 
 export function AdaptiveHome({ presentation, snapshot, language, networkState, planStatus, notifications,
-  actions, mapSurface, checkControls, powerMode, location, mapClosed }: {
+  actions, mapSurface, checkControls, powerMode, location, mapClosed, now = Date.now() }: {
   presentation: PresentationProjection; snapshot: Snapshot | LiveSnapshot; language: Language; networkState: string;
   planStatus: string; notifications: number; actions: Action[]; mapSurface?: ReactNode; checkControls?: ReactNode;
-  powerMode: string; location: DeviceLocation; mapClosed: boolean;
+  powerMode: string; location: DeviceLocation; mapClosed: boolean; now?: number;
 }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsTrigger = useRef<HTMLButtonElement>(null);
@@ -27,6 +28,12 @@ export function AdaptiveHome({ presentation, snapshot, language, networkState, p
   const survival = mode === 'SURVIVAL';
   const restricted = survival || powerMode === 'EMERGENCY_POWER';
   const urgentMode = restricted || ['SAFETY_CHECK', 'EMERGENCY_PROTECT'].includes(mode);
+  const locationPresentation = projectLocationPresentation(snapshot.profile.current_location, location, now);
+  const areaSource = locationPresentation.area.source === 'GPS' ? t.areaSourceGps
+    : locationPresentation.area.source === 'USER_SELECTED' ? t.areaSourceSelected : t.areaSourceUnknown;
+  const areaFreshness = locationPresentation.area.freshness === 'CURRENT' ? t.locationFreshCurrent
+    : locationPresentation.area.freshness === 'AGING' ? t.locationFreshAging
+      : locationPresentation.area.freshness === 'STALE' ? t.locationFreshStale : t.locationFreshUnknown;
   urgentModeRef.current = urgentMode;
   const action = presentation.primaryAction;
   const destinationLabel = 'spatial_guidance' in snapshot
@@ -66,7 +73,18 @@ export function AdaptiveHome({ presentation, snapshot, language, networkState, p
     return <Link key={id} href="/sources">{e?.source_name ?? vt.unknown}</Link>;
   });
   return <section className={`adaptive-home presentation-${mode.toLowerCase()}`} data-presentation-mode={mode}>
-    {!urgentMode && <p className="muted">{t.currentPlace}: {snapshot.profile.current_location.label}</p>}
+    {!urgentMode && <section className="home-location-provenance" aria-label={t.currentPlace}>
+      <strong>{t.currentPlace}: {locationPresentation.area.label}</strong>
+      <p>{areaSource} · {areaFreshness}</p>
+      <p>{t.locationCheckedAt}: {locationPresentation.area.observedAt
+        ? new Date(locationPresentation.area.observedAt).toLocaleString(language, { timeZone: 'Asia/Tokyo' }) : '—'}</p>
+      {locationPresentation.area.accuracyM !== null && <p>{t.locationAccuracy}: ±{Math.round(locationPresentation.area.accuracyM)} m</p>}
+      {locationPresentation.devicePoint && (locationPresentation.devicePoint.source === 'LAST_KNOWN'
+        || locationPresentation.devicePoint.observedAt !== locationPresentation.area.observedAt) && <small>
+          {locationPresentation.devicePoint.source === 'GPS' ? t.deviceGps : t.deviceLastKnown} · {new Date(locationPresentation.devicePoint.observedAt).toLocaleString(language, { timeZone: 'Asia/Tokyo' })}
+          {' · '}{t.locationAccuracy}: ±{Math.round(locationPresentation.devicePoint.accuracyM)} m
+        </small>}
+    </section>}
     <header className="situation-header">
       <div><h1>{mode === 'EMERGENCY_PROTECT' ? t.protect : mode === 'SAFETY_CHECK' ? vt.check : survival ? t.survival : mode === 'MAP_ASSISTED' ? t.movement : mode === 'TEXT_WITH_DETAILS' ? t.prepare : t.monitoring}</h1>
         <p>{networkState === 'RECONNECTING' ? t.reconnecting : stale ? t.stale : offline ? t.cached : mode === 'MAP_ASSISTED' ? t.movementDetail : t.summary}</p></div>
@@ -85,6 +103,7 @@ export function AdaptiveHome({ presentation, snapshot, language, networkState, p
     {mapClosed && !presentation.showMap && <p role="status" className="muted">{t.mapEnded}</p>}
     {survival && <><p>{t.lastVerified}: {verifiedTime}</p><p>{t.position}: {location.position ? `${vt.locationStates[location.state]} · ${new Date(location.position.captured_at).toLocaleString(language, { timeZone: 'Asia/Tokyo' })}` : t.noPosition}</p></>}
     {(survival || mode === 'SAFETY_CHECK' || mode === 'EMERGENCY_PROTECT') && <section className="emergency-contact"><h2>{t.emergency}</h2><p>{t.emergencyDetail}</p><a href="tel:119">119</a> · <a href="tel:110">110</a></section>}
+    {!urgentMode && <details className="home-emergency-basics"><summary>{t.emergencyBasics}</summary><p>{t.emergencyDetail}</p><p><a href="tel:119">119</a> · <a href="tel:110">110</a></p></details>}
     {!urgentMode && <button ref={detailsTrigger} type="button" className="plan-sheet-trigger" onClick={() => setDetailsOpen(true)}>{t.details}</button>}
     {!urgentMode && detailsOpen && <div className="plan-sheet-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setDetailsOpen(false); }}>
       <section className="plan-sheet" role="dialog" aria-modal="true" aria-labelledby="plan-sheet-title" tabIndex={-1}>

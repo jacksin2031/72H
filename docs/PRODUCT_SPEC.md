@@ -1,5 +1,18 @@
 # 72H Product Specification v0.1
 
+## Authorized P1.2 simplified consumer settings (2026-10-09)
+
+The approved local milestone is defined in
+[VNEXT_P1_2_SIMPLIFIED_MORE_UI.md](VNEXT_P1_2_SIMPLIFIED_MORE_UI.md).
+Mobile More presents one location check and four destinations: personal/family,
+display/accessibility, offline readiness and privacy. Plan owns immutable
+history and deliberate advanced route candidate details. Emergency basics
+remain available from Home and before setup; PC retains source review, handoff
+and Judge/Demo. Location provenance and device observation age do not establish
+official verification or movement permission. Same-session P1.1 endpoints and
+deterministic safety/offline gates remain authoritative. This authorization is
+for implementation and local validation only, without deployment.
+
 ## Authorized P1.1 accessible GPS extension (2026-10-08)
 
 The approved local milestone is defined in

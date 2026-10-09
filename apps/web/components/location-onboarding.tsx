@@ -42,9 +42,10 @@ function selectedPath(id: string, catalog: AreaEntry[]) {
   return { area_ids: ids, label };
 }
 
-export function AreaFallbackPicker({ messages, disabled = false, onConfirm }: {
+export function AreaFallbackPicker({ messages, disabled = false, buttonLabel, onConfirm }: {
   messages: Record<string, string>;
   disabled?: boolean;
+  buttonLabel?: string;
   onConfirm: (location: OnboardingLocation) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -72,7 +73,7 @@ export function AreaFallbackPicker({ messages, disabled = false, onConfirm }: {
 
   return <section className="location-area-picker location-area-picker-recovery">
     {!open && <button type="button" disabled={disabled || loading} onClick={() => void show()}>
-      {loading ? messages.locationResolving : messages.locationChooseArea}
+      {loading ? messages.locationResolving : buttonLabel ?? messages.locationChooseArea}
     </button>}
     {error && <p role="alert">{messages.areaCatalogUnavailable}</p>}
     {open && <>

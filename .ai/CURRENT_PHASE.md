@@ -1,5 +1,17 @@
 # 72H — Current Development Phase
 
+## Current authorized work — simplified More P1.2 (2026-10-09 JST)
+
+Scope: local implementation and validation of
+`docs/VNEXT_P1_2_SIMPLIFIED_MORE_UI.md` on isolated branch
+`codex/vnext-p1-2-simplified-more`, baseline `7747b2b` (P1.1 preview ledger).
+Workspace: `C:\Users\jacks\.codex\worktrees\a353\72H`.
+Status: COMPLETE for the authorized local delivery. Evidence belongs in
+`docs/VNEXT_P1_2_VALIDATION.md`: 234 frontend tests, 133 backend tests,
+typecheck/build/secret scan, independent review and local browser acceptance.
+No cloud deployment, traffic promotion or real-device acceptance is authorized
+by this delivery. Historical P1.1/production results below are not P1.2 evidence.
+
 ## Current authorized work — accessible GPS P1.1 (2026-10-08 JST)
 
 Scope: local implementation and acceptance of

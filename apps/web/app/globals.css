@@ -156,3 +156,38 @@ button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible,
   .role-mobile .live-main .muted{font-size:1.125rem;overflow-wrap:anywhere}
 }
 @media(prefers-reduced-motion:reduce){.location-onboarding *,.location-sync-gate *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+.more-location-card,.more-emergency-footer,.home-location-provenance,.home-emergency-basics,.offline-evidence-status{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.more-location-card{display:grid;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0}
+.more-location-card h2{margin:6px 0;font-size:1.35rem;line-height:1.35}
+.more-location-card p{margin:5px 0}
+.more-location-card>.primary{width:100%;min-height:56px}
+.more-destinations{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;width:100%;max-width:100%;margin:16px 0}
+.more-destination{display:flex;width:100%;min-width:0;min-height:64px;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);text-align:left;overflow-wrap:anywhere}
+.more-destination span:first-child{min-width:0;overflow-wrap:anywhere}
+.more-destination span:last-child{flex:0 0 auto}
+.more-back,.plan-subviews button{width:100%;min-height:56px;margin:4px 0}
+.plan-subviews{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.personal-summary{display:grid;gap:12px;margin:14px 0}
+.personal-summary>div{min-width:0;padding:10px 0;border-bottom:1px solid var(--line)}
+.personal-summary dt{font-size:.875rem;color:var(--muted)}
+.personal-summary dd{margin:4px 0 0;overflow-wrap:anywhere}
+.more-emergency-footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin:16px 0 8px;padding:8px;text-align:center}
+.more-emergency-footer p{margin:0}
+.more-emergency-footer details{width:100%;text-align:left}
+.more-emergency-footer summary{padding:8px;cursor:pointer}
+.more-emergency-footer a{display:inline-flex;align-items:center;min-height:44px}
+.home-location-provenance{margin:8px 0 14px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);font-size:.875rem}
+.home-location-provenance p{margin:4px 0}
+.home-location-provenance small{display:block;margin-top:6px;overflow-wrap:anywhere}
+.home-emergency-basics{margin:14px 0;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.home-emergency-basics summary{min-height:44px;padding:8px 0;cursor:pointer}
+.offline-evidence-status{margin:8px 0 14px;padding:8px 12px;border-left:3px solid var(--line)}
+.offline-evidence-status p{margin:6px 0}
+@media(max-width:760px){
+  .role-mobile .more-location-card,.role-mobile .more-destinations,.role-mobile .more-destination{width:100%;max-width:100%}
+  .role-mobile .more-destination{min-height:56px}
+  .role-mobile .more-emergency-footer a{min-height:48px}
+  .role-mobile .plan-subviews{grid-template-columns:minmax(0,1fr)}
+  .role-mobile .home-location-provenance,.role-mobile .home-emergency-basics{font-size:1.125rem;line-height:1.5}
+}

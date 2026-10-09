@@ -93,6 +93,21 @@ describe('consumer adaptive home disclosure', () => {
     expect(html).toContain('Information has expired');
     expect(html).toContain('Last verified:');
   });
+  it('shows area provenance, restored-point status, and emergency contacts on offline Home', () => {
+    const snapshot = activeSnapshot();
+    const checkedAt = Date.parse('2026-10-09T02:59:00.000Z');
+    snapshot.profile.current_location = { ...snapshot.profile.current_location, source: 'USER_SELECTED',
+      observed_at: new Date(checkedAt).toISOString() };
+    const restoredLocation = { ...location, position: { latitude: 35.68, longitude: 139.76, accuracy_m: 40,
+      captured_at: checkedAt, source: 'BROWSER_GEOLOCATION' as const }, freshness: 'LAST_KNOWN' as const,
+      state: 'last' as const };
+    const html = render({ snapshot, location: restoredLocation, networkState: 'OFFLINE_RECENT', now: checkedAt + 20_000 });
+    expect(html).toContain('Area selected by you');
+    expect(html).toContain('Last known device position');
+    expect(html).toContain('href="tel:119"');
+    expect(html).toContain('href="tel:110"');
+    expect(html).toContain('Emergency basics');
+  });
   it('has essential contact and settings but no details, map or permission controls in survival', () => {
     const snapshot = activeSnapshot();
     const p = derivePresentation(snapshot, Date.parse(snapshot.replay.current_time), 'offline', derivePower(3, false), initialSafetyCheck());
