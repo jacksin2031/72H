@@ -191,3 +191,65 @@ button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible,
   .role-mobile .plan-subviews{grid-template-columns:minmax(0,1fr)}
   .role-mobile .home-location-provenance,.role-mobile .home-emergency-basics{font-size:1.125rem;line-height:1.5}
 }
+
+/* P1.3 one-screen presentation: all authorized safety logic remains unchanged. */
+.plan-empty-state{margin:8px 0 4px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--panel);line-height:1.5}
+.plan-tools{border:1px solid var(--line);border-radius:10px;padding:0 14px;margin:8px 0 16px}
+.plan-tools>summary{display:flex;align-items:center;min-height:56px;cursor:pointer;font-weight:600}
+.plan-tools>summary::marker{color:var(--muted)}
+.plan-tools[open]{padding-bottom:12px}
+.more-location-meta{margin:0}
+.more-location-meta summary{display:flex;align-items:center;min-height:44px;font-size:1rem;text-decoration:underline;text-underline-offset:3px;cursor:pointer;color:var(--muted)}
+.more-location-meta[open]{border-top:1px solid var(--line);padding-top:4px}
+.settings-language{display:grid;gap:8px;margin:12px 0}
+.settings-language select{width:100%;min-height:56px}
+.home-location-provenance summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;min-height:44px;line-height:1.4}
+.home-location-provenance summary span{color:var(--muted)}
+.home-location-details{border-top:1px solid var(--line);padding-top:8px}
+@media(max-width:760px){
+  .role-mobile.has-live-session .live-topbar{display:flex;flex-wrap:nowrap;align-items:center;gap:12px;min-height:56px;padding:7px 16px}
+  .role-mobile.has-live-session .live-brand{flex:0 0 auto}
+  .role-mobile.has-live-session .live-topbar-state{display:flex;min-width:0;flex:1 1 auto;align-items:center;font-size:1rem}
+  .role-mobile.has-live-session .live-topbar-state strong{display:none}
+  .role-mobile.has-live-session .live-topbar-state span{display:block;font-size:1rem;line-height:1.2;min-width:0;overflow-wrap:anywhere}
+  .role-mobile.has-live-session .live-language{display:none}
+  .role-mobile .live-main{padding-bottom:calc(88px + env(safe-area-inset-bottom))}
+  .role-mobile .adaptive-home{margin:8px auto 12px}
+  .role-mobile .situation-header{gap:8px}
+  .role-mobile .situation-header p{margin:4px 0}
+  .role-mobile .freshness-warning{margin:10px 0 6px;padding:8px 10px;line-height:1.35}
+  .role-mobile .now-card{padding:14px 16px}
+  .role-mobile .now-card h2{font-size:1.5rem;line-height:1.35;margin:5px 0}
+  .role-mobile .home-location-provenance{margin:8px 0;padding:6px 10px;font-size:1rem;line-height:1.3}
+  .role-mobile .home-location-provenance summary{font-size:1rem}
+  .role-mobile .home-emergency-basics{margin:8px 0;padding:5px 10px;font-size:1rem;line-height:1.3}
+  .role-mobile .home-emergency-basics summary{min-height:44px;padding:8px 0}
+  .role-mobile .plan-sheet-trigger{min-height:56px}
+  .role-mobile .live-plan-scene>h1,.role-mobile .live-more-scene>h1{margin:2px 0 12px}
+  .role-mobile .live-plan-scene,.role-mobile .live-more-scene{margin:0}
+  .role-mobile .plan-empty-state{font-size:1.125rem;padding:14px}
+  .role-mobile .plan-tools{margin:6px 0 12px}
+  .role-mobile .more-location-card{gap:5px;padding:12px;margin:6px 0}
+  .role-mobile .more-location-card h2{margin:2px 0;font-size:1.25rem}
+  .role-mobile .more-location-card p{margin:2px 0}
+  .role-mobile .more-location-meta summary{font-size:1rem}
+  .role-mobile .more-destinations{gap:6px;margin:10px 0}
+  .role-mobile .more-destination{min-height:56px;padding:9px 14px}
+  .role-mobile .more-emergency-footer{margin:8px 0;padding:0 8px}
+  .role-mobile .more-emergency-footer details summary{min-height:44px}
+}
+
+.more-area-summary{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);column-gap:12px;align-items:baseline}
+.more-area-summary>h2{min-width:0;overflow-wrap:anywhere}
+.more-area-summary>.more-location-meta{grid-column:1/-1}
+@media(max-width:760px){
+  .role-mobile .more-location-card .location-area-picker{margin:0;gap:4px}
+  .role-mobile .more-area-summary>small{font-size:.875rem}
+  .role-mobile .more-area-summary>h2{font-size:1.25rem}
+}
+
+@media(max-width:760px){
+  .role-mobile .live-more-scene>h1{margin:0 0 5px}
+  .role-mobile .more-location-card{margin:2px 0;padding:10px;gap:4px}
+  .role-mobile .more-destinations{margin:4px 0;gap:5px}
+}
