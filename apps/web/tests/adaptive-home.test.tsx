@@ -22,6 +22,16 @@ function render(overrides: Partial<React.ComponentProps<typeof AdaptiveHome>> = 
 }
 
 describe('consumer adaptive home disclosure', () => {
+  it('puts the primary action before expandable GPS diagnostics, without hiding source provenance', () => {
+    const html = render();
+    const now = html.indexOf('id="primary-now"');
+    const locationStart = html.indexOf('class="home-location-provenance"');
+    expect(now).toBeGreaterThanOrEqual(0);
+    expect(locationStart).toBeGreaterThan(now);
+    expect(html).toContain('<summary>');
+    expect(html).toContain('Area');
+    expect(html).toContain('Emergency basics');
+  });
   it('renders one primary NOW and a badge, without mounting map, safety, inbox or power controls', () => {
     const html = render({ mapSurface: <div>MAP_RENDERER</div>, checkControls: <div>SAFETY_CONTROLS</div> });
     expect(html).toContain('id="primary-now"');
@@ -84,7 +94,8 @@ describe('consumer adaptive home disclosure', () => {
   });
   it('exposes cache age and pending verification after a physical reconnect', () => {
     const html = render({ networkState: 'RECONNECTING' });
-    expect(html).toContain('Reconnecting · verification pending');
+    // The shell status already says reconnecting; Home keeps only the actionable stale-evidence warning.
+    expect(html).not.toContain('Reconnecting · verification pending');
     expect(html).toContain('Last verified:');
     expect(html).toContain('Cached information · not live');
   });
