@@ -1,5 +1,16 @@
 # 72H Architecture v0.2
 
+## Authorized P1.2 presentation scope
+
+Simplified mobile More reuses the existing device-location hook, P1.1 location
+and profile endpoints, LiveSnapshot and local privacy storage. Settings
+destinations disclose existing controls without creating another GPS store or
+safety engine. Plan contains immutable history and candidate route details;
+PC keeps preparedness/diagnostics/handoff. Device location and synchronized
+session region are separate observations, and neither renews official evidence.
+Implementation and current validation evidence are tracked in
+[VNEXT_P1_2_VALIDATION.md](VNEXT_P1_2_VALIDATION.md).
+
 ## Authorized P1.1 device-local area resolution
 
 Explicit GPS fix -> coordinate/accuracy validation -> pinned N03 metadata ->
