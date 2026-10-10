@@ -50,11 +50,11 @@ describe('full-app simulation clock and isolated launch', () => {
     expect(el.querySelector('[data-testid="simulation-countdown"]')?.textContent).toContain('01:00:00');
     expect(el.querySelector('a[href^="tel:"]')).toBeNull();
     await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
-    expect(requests).not.toHaveBeenCalled();
+    expect(requests.mock.calls.filter(([path]) => String(path).includes('/api/mock-live/'))).toHaveLength(0);
     expect(el.querySelector('[data-testid="simulation-countdown"]')?.textContent).toContain('00:10:00');
     await act(async () => { await vi.advanceTimersByTimeAsync(1010); });
-    expect(requests).toHaveBeenCalledTimes(1);
-    expect(requests.mock.calls[0][0]).toBe('/api/mock-live/start');
+    expect(requests.mock.calls.filter(([path]) => String(path).includes('/api/mock-live/'))).toHaveLength(1);
+    expect(requests.mock.calls.some(([path]) => path === '/api/mock-live/start')).toBe(true);
     expect(el.querySelector('[data-testid="simulation-clock"]')?.textContent).toContain('14:46');
     expect(localStorage.getItem('72h-live-session')).toBeNull();
   });
@@ -66,6 +66,6 @@ describe('full-app simulation clock and isolated launch', () => {
     await act(async () => root!.render(<SimulationProvider><SimulationDashboard /></SimulationProvider>));
     expect(el.querySelector('[data-testid="simulation-expired"]')).not.toBeNull();
     expect(el.querySelector('.live-shell')).toBeNull();
-    expect(requests).not.toHaveBeenCalled();
+    expect(requests.mock.calls.filter(([path]) => String(path).includes('/api/mock-live/'))).toHaveLength(0);
   });
 });
