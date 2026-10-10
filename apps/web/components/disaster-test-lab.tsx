@@ -8,6 +8,7 @@ import {
   type DisasterKind, type DisasterTestInput, type TestEvidence, type TestMobility,
   type TestNetwork, type TestSeverity,
 } from '@/lib/disaster-test';
+import { AgentDrillPanel } from './agent-drill-panel';
 import './disaster-test.css';
 
 const copy = {
@@ -110,7 +111,8 @@ export function DisasterTestLab() {
       <strong>TEST · L{input.severity} · {input.battery === null ? '—' : input.battery + '%'}</strong>
       <span>{primary} · {powerName}</span>
     </div>
-    <section className="lab-preview" aria-label={t.preview}>
+    <AgentDrillPanel input={input} language={language} />
+    <section className="lab-preview" aria-label={t.preview} data-local-preview="true">
       <div className="lab-preview-top"><strong>{t.preview}</strong><span>TEST / L{input.severity}</span></div>
       <p className="lab-preview-state">{t[input.kind.toLowerCase() as 'earthquake']} · {t.level} L{input.severity} · {input.battery === null ? '—' : input.battery + '%'}</p>
       <p data-testid="power-mode" className="lab-power">{t.powerMode}: <strong>{powerName}</strong></p>

@@ -27,3 +27,14 @@ it('allows only the session location update path through the API proxy allowlist
   expect(isAllowedApiProxyRequest('live/session_1/profile', 'POST')).toBe(true);
   expect(isAllowedApiProxyRequest('live/session_1/profile', 'GET')).toBe(false);
 });
+
+it('locks the drill API to exact authenticated start/read/next paths and methods', () => {
+  expect(isAllowedApiProxyRequest('drill/start', 'POST')).toBe(true);
+  expect(isAllowedApiProxyRequest('drill/start', 'GET')).toBe(false);
+  expect(isAllowedApiProxyRequest('drill/abc-123', 'GET')).toBe(true);
+  expect(isAllowedApiProxyRequest('drill/abc-123', 'POST')).toBe(false);
+  expect(isAllowedApiProxyRequest('drill/abc-123/next', 'POST')).toBe(true);
+  expect(isAllowedApiProxyRequest('drill/abc-123/next', 'GET')).toBe(false);
+  expect(isAllowedApiProxyPath('drill/abc-123/reset')).toBe(false);
+  expect(isAllowedApiProxyPath('drill/../../live/start')).toBe(false);
+});
