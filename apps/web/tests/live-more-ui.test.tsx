@@ -57,6 +57,15 @@ afterEach(async () => {
 });
 
 describe('mobile More and Plan navigation', () => {
+  it('keeps the disaster simulator behind a collapsed diagnostics disclosure, not a fifth primary setting', async () => {
+    const page = await mount(sceneProps());
+    expect(page.querySelectorAll('.more-destination')).toHaveLength(4);
+    const details = page.querySelector<HTMLDetailsElement>('.more-lab-entry');
+    expect(details?.open).toBe(false);
+    expect(details?.querySelector('summary')?.textContent).toBe('Testing & diagnostics');
+    expect(details?.querySelector('a')?.getAttribute('href')).toBe('/disaster-test');
+  });
+
   it('collapses location diagnostics while keeping the accurate area and GPS action visible', async () => {
     const page = await mount(sceneProps());
     const details = page.querySelector<HTMLDetailsElement>('.more-location-meta');

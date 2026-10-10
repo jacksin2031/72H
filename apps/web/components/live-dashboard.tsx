@@ -584,7 +584,12 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
     && ['SAFETY_CHECK', 'EMERGENCY_PROTECT'].includes(projection.presentation.mode);
   const locationGateOverride = !!locationSync && criticalProtection;
   if (locationSync && view !== 'more' && !criticalProtection) return <LocationSyncGate state={locationSync} messages={messages} retry={onRetryLocation} canRetry={canStart && !busy} chooseArea={onChooseArea} />;
-  if (!snapshot || !projection) return <LocationOnboarding language={language} messages={messages} location={deviceLocation} busy={busy} canStart={canStart} submit={onProfile} />;
+  if (!snapshot || !projection) return <>
+    <LocationOnboarding language={language} messages={messages} location={deviceLocation} busy={busy} canStart={canStart} submit={onProfile} />
+    {view === 'more' && <details className="more-lab-entry"><summary>{messages.testToolsLabel}</summary>
+      <Link href="/disaster-test">{messages.disasterTestDestination} →</Link>
+    </details>}
+  </>;
   const urgent = ['SAFETY_CHECK', 'EMERGENCY_PROTECT', 'SURVIVAL', 'MAP_ASSISTED'].includes(projection.presentation.mode)
     || ['SHELTER_IN_PLACE', 'EVACUATE'].includes(snapshot.spatial_guidance.current_action_kind);
   const currentPlan = projection.plan;
@@ -690,6 +695,9 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
             <span>{label}</span><span aria-hidden="true">→</span>
           </button>)}
         </nav>
+        <details className="more-lab-entry"><summary>{messages.testToolsLabel}</summary>
+          <Link href="/disaster-test">{messages.disasterTestDestination} →</Link>
+        </details>
         <footer className="more-emergency-footer">
           <p><a href="tel:119">119</a> · <a href="tel:110">110</a> · <Link href="/dashboard">72H</Link></p>
           <details><summary>{messages.emergencyBasicsTitle}</summary><p>{messages.emergencyBasicsText}</p></details>
