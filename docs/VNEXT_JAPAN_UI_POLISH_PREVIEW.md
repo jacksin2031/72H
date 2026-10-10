@@ -47,10 +47,16 @@ The tile proxy validates zoom/coordinate/extent, fixed upstream, PNG type and ma
   documented point, nested rings animate, reduced motion disables them.
 - Physical Android/iPhone GPS, screen reader and battery endurance: NOT RUN.
 
-## Cloud acceptance
+## Cloud acceptance — verified after original draft
 
-Pending immutable build, zero-traffic deployment and HTTP/browser acceptance.
-The prior Tokyo-only UI Preview `h72-uimap-d7f7f2f` passed its own scoped acceptance;
-its evidence is in `.work/ui-map-preview/final` and is not nationwide acceptance.
-Production rollback/current revision remains `h72-more-0434633` at 100%.
-Source synchronization must be verified separately from deployment.
+National map UI Preview h72-japanui-bfb2574 was deployed as a Ready
+0%-traffic revision. Public /map, disaster test, national GeoJSON and
+GSI tile endpoints returned HTTP 200. Browser map images were reviewed.
+This supersedes the earlier Cloud acceptance pending wording.
+
+Follow-up map readability P2.3 source b2a844f was verified in a second
+0%-traffic Cloud Preview h72-mapread-b2a844f. Exact cloud evidence
+is in docs/VNEXT_P2_3_CLOUD_ACCEPTANCE.md.
+Production h72-more-0434633 still gets 100% traffic.
+Physical GPS, accessibility, real tsunami hazard and verified evacuation
+routes are not covered; GitHub push/merge/promotion was not performed.
