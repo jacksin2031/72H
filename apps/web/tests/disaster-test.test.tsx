@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { SimulationProvider } from '../lib/simulation-session';
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => '/disaster-test' }));
 import { DisasterTestLab } from '../components/disaster-test-lab';
 import { defaultDisasterTest, disasterPresets, projectDisasterTest } from '../lib/disaster-test';
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -13,6 +15,7 @@ afterEach(async () => {
   container?.remove();
   root = null; container = null;
   localStorage.clear();
+  vi.unstubAllGlobals();
 });
 
 describe('isolated disaster test lab', () => {
@@ -42,10 +45,11 @@ describe('isolated disaster test lab', () => {
     expect(projectDisasterTest({ ...defaultDisasterTest, severity: 4 }).critical).toBe(true);
     expect(projectDisasterTest({ ...defaultDisasterTest, severity: 4, battery: 3 }).presentationMode).toBe('SURVIVAL');
   });
-  it('renders accessible test controls and changes the simulation without external calls', async () => {
+  it('renders accessible controls without mutating real Live sessions', async () => {
     container = document.createElement('div'); document.body.append(container);
     root = createRoot(container);
-    await act(async () => { root!.render(<DisasterTestLab />); });
+    vi.stubGlobal('fetch', vi.fn(async () => ({ok: true, json: async () => []})));
+    await act(async () => { root!.render(<SimulationProvider><DisasterTestLab /></SimulationProvider>); });
     expect(container.querySelector('[data-testid="disaster-test-lab"]')).not.toBeNull();
     expect(container.textContent).toContain('TEST');
     expect(container.querySelector('[data-testid="simulation-now"]')).not.toBeNull();

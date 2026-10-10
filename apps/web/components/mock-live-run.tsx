@@ -1,10 +1,11 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSimulationSession } from '@/lib/simulation-session';
 import { z } from 'zod';
 import { type Language } from '@/lib/contracts';
-import { mockLiveSnapshotSchema } from '@/lib/mock-live-contract';
 import type { DisasterTestInput } from '@/lib/disaster-test';
-import { ACCELERATION_OPTIONS, advanceVirtualClock, canPlayRealtime, jstEpoch, jstInputFromEpoch, validAcceleratedPrelude, selectHistoricalRange, type Acceleration, type TimeMode } from '@/lib/historical-playback';
+import { ACCELERATION_OPTIONS, canPlayRealtime, jstInputFromEpoch, validAcceleratedPrelude, selectHistoricalRange, type Acceleration, type TimeMode } from '@/lib/historical-playback';
 
 const milestoneSchema = z.object({
   at_jst: z.string(),
@@ -25,27 +26,6 @@ const historicalCaseSchema = z.object({
   milestones: z.array(milestoneSchema),
 });
 type HistoricalCase = z.infer<typeof historicalCaseSchema>;
-const historicalViewSchema = z.object({
-  case_id: z.string(),
-  title: historicalCaseSchema.shape.label,
-  source_url: z.string(),
-  magnitude: z.string(),
-  max_intensity: z.string(),
-  milestones: z.array(milestoneSchema),
-  current_milestone: milestoneSchema.nullable(),
-  advisory_is_not_safety_core_input: z.boolean(),
-});
-const envelope = z.object({
-  mode: z.literal('MOCK_LIVE'),
-  current_step: z.number().int().nonnegative(),
-  total_steps: z.number().int().positive().max(24),
-  ai_modes: z.array(z.string()),
-  battery: z.number().nullable(),
-  snapshot: mockLiveSnapshotSchema,
-  historical: historicalViewSchema.nullable().optional(),
-});
-type MockResponse = z.infer<typeof envelope>;
-
 const text = {
   ja: {
     title: 'Mock Live 実戦 — 正規 Live 処理経路', run: 'Mock Live で AI 実戦',
@@ -127,236 +107,108 @@ const text = {
   },
 } as const;
 
-async function call(path:string, key:string, input?:unknown, signal?:AbortSignal):Promise<MockResponse>{
-  const res=await fetch('/api/mock-live/'+path,{
-    method:input===undefined?'GET':'POST',
-    headers:{'Content-Type':'application/json','X-Drill-Key':key},
-    body:input===undefined?undefined:JSON.stringify(input), cache:'no-store', signal,
-  });
-  if(!res.ok)throw new Error(String(res.status));
-  return envelope.parse(await res.json());
-}
-
-export function MockLiveRun({input,language,accessKey}:{input:DisasterTestInput;language:Language;accessKey:string}){
-  const t=text[language];
-  const [historicalCase,setHistoricalCase]=useState('tohoku-2011');
-  const [timeMode,setTimeMode]=useState<TimeMode>('FAST_RANGE');
-  const [acceleratedStart,setAcceleratedStart]=useState('');
-  const [acceleration,setAcceleration]=useState<Acceleration>(600);
-  const [clockEpoch,setClockEpoch]=useState<number|null>(null);
-  const [clockSpeed,setClockSpeed]=useState<number>(1);
-  const [startJst,setStartJst]=useState('');
-  const [endJst,setEndJst]=useState('');
-  const [remainingSeconds,setRemainingSeconds]=useState(0);
-  const [catalog,setCatalog]=useState<HistoricalCase[]>([]);
-  const [loading,setLoading]=useState(true);
-  const [state,setState]=useState<MockResponse|null>(null);
-  const [busy,setBusy]=useState(false);
-  const [error,setError]=useState('');
-  const [complete,setComplete]=useState(false);
-  const controller=useRef<AbortController|null>(null);
-  const normalClock=useRef<{simEpoch:number;wallEpoch:number}|null>(null);
-  useEffect(()=>{
-    if(!busy||clockSpeed!==1||!normalClock.current)return;
-    const interval=setInterval(()=>{
-      const anchor=normalClock.current;
-      if(anchor)setClockEpoch(anchor.simEpoch+Date.now()-anchor.wallEpoch);
-    },250);
-    return ()=>clearInterval(interval);
-  },[busy,clockSpeed]);
-
-  useEffect(()=>{
-    const controller=new AbortController();
-    fetch('/api/mock-live/cases',{cache:'no-store',signal:controller.signal})
-      .then(res=>{ if(!res.ok)throw Error(String(res.status));return res.json();})
-      .then(data=>{ if(!controller.signal.aborted)setCatalog(z.array(historicalCaseSchema).parse(data)); })
-      .catch(()=>{ if(!controller.signal.aborted)setCatalog([]); })
-      .finally(()=>{ if(!controller.signal.aborted)setLoading(false); });
-    return ()=>controller.abort();
-  },[]);
-  useEffect(()=>{
-    const selected=catalog.find(c=>c.id===historicalCase);
-    setStartJst(selected?.milestones[0]?.at_jst.slice(0,16) ?? '');
-    setEndJst(selected?.milestones[selected.milestones.length-1]?.at_jst.slice(0,16) ?? '');
-    const first=selected?.milestones[0]?.at_jst;
+export function MockLiveRun({ input, language, accessKey }: { input: DisasterTestInput; language: Language; accessKey: string }) {
+  const t = text[language];
+  const router = useRouter();
+  const { startSimulation } = useSimulationSession();
+  const [historicalCase, setHistoricalCase] = useState('tohoku-2011');
+  const [timeMode, setTimeMode] = useState<TimeMode>('ACCELERATED');
+  const [acceleratedStart, setAcceleratedStart] = useState('');
+  const [acceleration, setAcceleration] = useState<Acceleration>(600);
+  const [startJst, setStartJst] = useState('');
+  const [endJst, setEndJst] = useState('');
+  const [catalog, setCatalog] = useState<HistoricalCase[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const abort = new AbortController();
+    fetch('/api/mock-live/cases', { cache: 'no-store', signal: abort.signal })
+      .then(res => { if (!res.ok) throw Error(String(res.status)); return res.json(); })
+      .then(data => { if (!abort.signal.aborted) setCatalog(z.array(historicalCaseSchema).parse(data)); })
+      .catch(() => { if (!abort.signal.aborted) setCatalog([]); })
+      .finally(() => { if (!abort.signal.aborted) setLoading(false); });
+    return () => abort.abort();
+  }, []);
+  useEffect(() => {
+    const chosen = catalog.find(c => c.id === historicalCase);
+    const first = chosen?.milestones[0]?.at_jst;
+    setStartJst(first?.slice(0,16) ?? '');
+    setEndJst(chosen?.milestones.at(-1)?.at_jst.slice(0,16) ?? '');
     setAcceleratedStart(first ? jstInputFromEpoch(Date.parse(first) - 60*60*1000) : '');
-  },[catalog,historicalCase]);
-  useEffect(()=>{
-    controller.current?.abort(); controller.current=null;
-    setState(null);setBusy(false);setError('');setComplete(false);setRemainingSeconds(0);
-    normalClock.current=null;setClockEpoch(null);setClockSpeed(1);
-  },[input.kind,input.severity,input.battery,input.network,input.evidence,input.mobility,language,historicalCase,timeMode,startJst,endJst,acceleratedStart,acceleration]);
-
-  const chosen=catalog.find(c=>c.id===historicalCase);
-  const selectedEvents=chosen
-    ? timeMode==='FAST_RANGE' ? selectHistoricalRange(chosen.milestones,startJst,endJst) : chosen.milestones
-    : [];
-  const rangeValid=!chosen || (selectedEvents.length>0 && startJst<=endJst
-    && startJst>=chosen.milestones[0].at_jst.slice(0,16)
-    && endJst<=chosen.milestones[chosen.milestones.length-1].at_jst.slice(0,16));
-  const realtimeValid=timeMode==='FAST_RANGE'||canPlayRealtime(selectedEvents);
-  const preludeValid=timeMode!=='ACCELERATED'|| !chosen ||
-    validAcceleratedPrelude(acceleratedStart,chosen.milestones[0].at_jst,acceleration);
-  const stop=()=>{controller.current?.abort();controller.current=null;normalClock.current=null;setBusy(false);setRemainingSeconds(0);};
-  const run=async()=>{
-    if(busy||input.kind!=='EARTHQUAKE'||!accessKey.trim()
-      ||(Boolean(historicalCase)&&(!chosen||!rangeValid||!realtimeValid||!preludeValid)))return;
-    const task=new AbortController();controller.current=task;
-    setState(null);setError('');setComplete(false);setBusy(true);
-    setRemainingSeconds(0);
-    try{
-      // Wait before creating a server session, so the 30-minute Mock Live
-      // session TTL does not expire while waiting for the virtual disaster.
-      if(timeMode==='ACCELERATED' && chosen){
-        setClockSpeed(acceleration);
-        await advanceVirtualClock(
-          acceleratedStart+':00+09:00',chosen.milestones[0].at_jst,acceleration,
-          task.signal,(clock,remaining)=>{setClockEpoch(clock);setRemainingSeconds(remaining);}
-        );
-        if(task.signal.aborted)return;
-        setClockSpeed(1);
-        setRemainingSeconds(0);
-      }
-      if(chosen && timeMode!=='FAST_RANGE'){
-        const firstEpoch=Date.parse(chosen.milestones[0].at_jst);
-        normalClock.current={simEpoch:firstEpoch,wallEpoch:Date.now()};
-        setClockEpoch(firstEpoch);
-        setClockSpeed(1);
-      }
-      let result=await call('start',accessKey.trim(),{
-        kind:input.kind,severity:input.severity,battery:input.battery,network:input.network,
-        evidence:input.evidence,mobility:input.mobility,language,
-        historical_case:historicalCase || null,
-        historical_start_jst: historicalCase && timeMode==='FAST_RANGE' ? startJst+':00+09:00' : null,
-        historical_end_jst: historicalCase && timeMode==='FAST_RANGE' ? endJst+':00+09:00' : null,
-      },task.signal);
-      if(task.signal.aborted)return;
-      setState(result);
-      for(let i=0;i<result.total_steps;i++){
-        const events=result.historical?.milestones;
-        if(timeMode!=='FAST_RANGE' && i>0 && events?.[i] && normalClock.current){
-          const target=Date.parse(events[i].at_jst);
-          const {simEpoch,wallEpoch}=normalClock.current;
-          const nowOnClock=simEpoch+Math.max(0,Date.now()-wallEpoch);
-          if(target>nowOnClock){
-            await advanceVirtualClock(new Date(nowOnClock).toISOString(),events[i].at_jst,1,task.signal,
-              (_,remaining)=>setRemainingSeconds(remaining));
-          }
-        }
-        if(task.signal.aborted)return;
-        result=await call(result.snapshot.session_id+'/next',accessKey.trim(),{},task.signal);
-        if(task.signal.aborted)return;
-        if(events?.[i])setClockEpoch(Date.parse(events[i].at_jst));
-        setState(result);
-        setRemainingSeconds(0);
-      }
-      setComplete(true);
-    }catch(ex){
-      if(!task.signal.aborted)setError(t.error+' ('+(ex instanceof Error?ex.message:'unknown')+')');
-    }finally{
-      if(controller.current===task){
-        controller.current=null;normalClock.current=null;setBusy(false);setRemainingSeconds(0);
-      }
-    }
+  }, [catalog, historicalCase]);
+  const chosen = catalog.find(c => c.id === historicalCase);
+  const selectedEvents = chosen ? timeMode === 'FAST_RANGE'
+    ? selectHistoricalRange(chosen.milestones, startJst, endJst) : chosen.milestones : [];
+  const rangeValid = !chosen || (selectedEvents.length > 0 && startJst <= endJst &&
+    startJst >= chosen.milestones[0].at_jst.slice(0,16) && endJst <= chosen.milestones.at(-1)!.at_jst.slice(0,16));
+  const realtimeValid = timeMode === 'FAST_RANGE' || canPlayRealtime(selectedEvents);
+  const preludeValid = timeMode !== 'ACCELERATED' || !chosen ||
+    validAcceleratedPrelude(acceleratedStart, chosen.milestones[0].at_jst, acceleration);
+  const enabled = Boolean(accessKey.trim()) && input.kind === 'EARTHQUAKE' &&
+    (!historicalCase || Boolean(chosen)) && rangeValid && realtimeValid && preludeValid;
+  const start = () => {
+    if (!enabled) return;
+    startSimulation({
+      input: { ...input }, language, accessKey: accessKey.trim(),
+      historicalCase: historicalCase || null,
+      title: chosen?.label[language] ?? t.custom,
+      milestones: selectedEvents.map(m => ({ ...m })),
+      timeMode, acceleratedStart, acceleration, startJst, endJst,
+    });
+    router.push('/simulation');
   };
-  const snapshot=state?.snapshot;
-  const plan=snapshot?.plans.find(p=>p.id===snapshot.situation.current_plan_id);
-  const actions=snapshot?.plan_actions.filter(a=>a.plan_id===plan?.id)||[];
-  const ai=state?.ai_modes.includes('GEMINI_ADK') ? t.ai :
-    state?.ai_modes.some(s=>s.includes('FALLBACK')) ? t.fallback :t.noAi;
-  return <div className="lab-mock-live" data-testid="mock-live-panel">
+  return <section className="lab-mock-live" data-testid="mock-live-panel">
     <h3>{t.title}</h3>
-    <p className="lab-muted"><strong>MOCK_LIVE · SIMULATION ONLY</strong> — {t.blocked}</p>
-    {input.kind!=='EARTHQUAKE'&&<p role="status">{t.unsupported}</p>}
+    <p className="lab-muted"><strong>SIMULATION ONLY</strong> — {t.blocked}</p>
+    {input.kind !== 'EARTHQUAKE' && <p role="status">{t.unsupported}</p>}
     <label className="lab-history-select">{t.history}
-      <select data-testid="historical-case" value={historicalCase} onChange={e=>setHistoricalCase(e.target.value)} aria-label={t.history}>
+      <select data-testid="historical-case" value={historicalCase} onChange={e => setHistoricalCase(e.target.value)}>
         <option value="">{t.custom}</option>
-        {catalog.map(c=><option key={c.id} value={c.id}>{c.label[language]} · M{c.magnitude}</option>)}
+        {catalog.map(c => <option key={c.id} value={c.id}>{c.label[language]} · M{c.magnitude}</option>)}
       </select>
     </label>
-    {loading&&<p role="status" className="lab-muted">{t.loading}</p>}
-    {historicalCase&&chosen&&<div className="lab-history-details" data-testid="historical-timeline">
-      <p><strong>{chosen.label[language]} · M{chosen.magnitude} · 最大震度 {chosen.max_intensity}</strong></p>
-      <p className="lab-muted">{t.historyNote}</p>
-      <details open={false} key={chosen.id}>
-        <summary>{t.timeline} ({chosen.milestones.length})</summary>
-        <ol>{chosen.milestones.map((m,i)=><li key={m.at_jst} data-verified={m.historic_observation}>
-          <span className="lab-history-date">{m.at_jst.replace('T',' ').slice(0,16)} JST</span>
+    {loading && <p role="status" className="lab-muted">{t.loading}</p>}
+    {chosen && <div className="lab-history-details" data-testid="historical-timeline">
+      <strong>{chosen.label[language]} · M{chosen.magnitude} · {t.history}</strong>
+      <details><summary>{t.timeline} ({chosen.milestones.length})</summary>
+        <ol>{chosen.milestones.map(m => <li key={m.at_jst}>
+          <small>{m.at_jst.slice(0,16).replace('T',' ')} JST · {m.fed_to_safety_core ? t.processed : t.contextual}</small>
           <strong>{m.label[language]}</strong>
-          <small>{m.historic_observation?t.documented:t.assumption} · {m.fed_to_safety_core?t.processed:t.contextual}</small>
-          {m.source_url.startsWith('https://')&&<a href={m.source_url} rel="noopener noreferrer" target="_blank">{t.source} ↗</a>}
+          {!m.historic_observation && <small>{t.assumption}</small>}
+          <a href={m.source_url} target="_blank" rel="noopener noreferrer">{t.source} ↗</a>
         </li>)}</ol>
       </details>
-      {chosen.milestones.some(m=>!m.fed_to_safety_core)&&<p role="note" className="lab-history-caution">{t.unsupportedAdvisory}</p>}
+      {chosen.milestones.some(m => !m.fed_to_safety_core) && <p className="lab-history-caution">{t.unsupportedAdvisory}</p>}
     </div>}
-    {chosen&&<fieldset className="lab-history-timing">
+    {chosen && <fieldset className="lab-history-timing">
       <legend>{t.timeMode}</legend>
-      <label><input type="radio" name="history-time" value="FAST_RANGE" checked={timeMode==='FAST_RANGE'} onChange={()=>setTimeMode('FAST_RANGE')} />{t.fast}</label>
-      <label><input type="radio" name="history-time" value="REALTIME" checked={timeMode==='REALTIME'} onChange={()=>setTimeMode('REALTIME')} />{t.realtime}</label>
-      <label><input type="radio" name="history-time" value="ACCELERATED" checked={timeMode==='ACCELERATED'} onChange={()=>setTimeMode('ACCELERATED')} />{t.accelerate}</label>
-      {timeMode==='ACCELERATED'&&<div className="lab-history-window">
-        <label>{t.simulatedStart}
-          <input data-testid="accelerated-start" type="datetime-local" value={acceleratedStart}
-            min={jstInputFromEpoch(Date.parse(chosen.milestones[0].at_jst)-24*60*60*1000)}
-            max={jstInputFromEpoch(Date.parse(chosen.milestones[0].at_jst)-60*1000)}
-            onChange={e=>setAcceleratedStart(e.target.value)} />
-        </label>
-        <label>{t.speed}
-          <select data-testid="acceleration" value={acceleration}
-            onChange={e=>setAcceleration(Number(e.target.value) as Acceleration)}>
-            {ACCELERATION_OPTIONS.map(rate=><option key={rate} value={rate}>{rate}×</option>)}
-          </select>
-        </label>
+      <label><input type="radio" name="history-time" value="ACCELERATED" checked={timeMode === 'ACCELERATED'} onChange={() => setTimeMode('ACCELERATED')}/>{t.accelerate}</label>
+      <label><input type="radio" name="history-time" value="FAST_RANGE" checked={timeMode === 'FAST_RANGE'} onChange={() => setTimeMode('FAST_RANGE')}/>{t.fast}</label>
+      <label><input type="radio" name="history-time" value="REALTIME" checked={timeMode === 'REALTIME'} onChange={() => setTimeMode('REALTIME')}/>{t.realtime}</label>
+      {timeMode === 'ACCELERATED' && <div className="lab-history-window">
+        <label>{t.simulatedStart}<input type="datetime-local" data-testid="accelerated-start" value={acceleratedStart}
+          min={jstInputFromEpoch(Date.parse(chosen.milestones[0].at_jst) - 24*60*60*1000)}
+          max={jstInputFromEpoch(Date.parse(chosen.milestones[0].at_jst) - 60*1000)}
+          onChange={e => setAcceleratedStart(e.target.value)}/></label>
+        <label>{t.speed}<select data-testid="acceleration" value={acceleration} onChange={e => setAcceleration(Number(e.target.value) as Acceleration)}>
+          {ACCELERATION_OPTIONS.map(x => <option key={x} value={x}>{x}×</option>)}</select></label>
       </div>}
-      {timeMode==='FAST_RANGE'&&<div className="lab-history-window">
+      {timeMode === 'FAST_RANGE' && <div className="lab-history-window">
         <label>{t.begin}<input type="datetime-local" data-testid="historical-start" value={startJst}
-          min={chosen.milestones[0].at_jst.slice(0,16)}
-          max={chosen.milestones[chosen.milestones.length-1].at_jst.slice(0,16)}
-          onChange={e=>setStartJst(e.target.value)} /></label>
+          min={chosen.milestones[0].at_jst.slice(0,16)} max={chosen.milestones.at(-1)!.at_jst.slice(0,16)}
+          onChange={e => setStartJst(e.target.value)}/></label>
         <label>{t.end}<input type="datetime-local" data-testid="historical-end" value={endJst}
-          min={chosen.milestones[0].at_jst.slice(0,16)}
-          max={chosen.milestones[chosen.milestones.length-1].at_jst.slice(0,16)}
-          onChange={e=>setEndJst(e.target.value)} /></label>
+          min={chosen.milestones[0].at_jst.slice(0,16)} max={chosen.milestones.at(-1)!.at_jst.slice(0,16)}
+          onChange={e => setEndJst(e.target.value)}/></label>
       </div>}
-      <p className="lab-muted">{timeMode==='FAST_RANGE'?t.immediate:timeMode==='ACCELERATED'?t.preludeNote:t.historyNote}</p>
+      <p className="lab-muted">{timeMode === 'FAST_RANGE' ? t.immediate : timeMode === 'ACCELERATED' ? t.preludeNote : t.historyNote}</p>
       <p data-testid="history-count">{t.selection}: {selectedEvents.length}/{chosen.milestones.length}</p>
-      {timeMode==='FAST_RANGE'&&<p className="lab-muted">{t.windowNote}</p>}
-      {!rangeValid&&<p className="lab-drill-warning" role="alert">{t.invalid} — {t.noEvents}</p>}
-      {!realtimeValid&&<p className="lab-drill-warning" role="alert">{t.longGap}</p>}
-      {!preludeValid&&<p className="lab-drill-warning" role="alert">{t.preludeInvalid}</p>}
+      {!rangeValid && <p className="lab-drill-warning" role="alert">{t.invalid}</p>}
+      {!realtimeValid && <p className="lab-drill-warning" role="alert">{t.longGap}</p>}
+      {!preludeValid && <p className="lab-drill-warning" role="alert">{t.preludeInvalid}</p>}
     </fieldset>}
-    <div className="lab-agent-actions">
-      <button type="button" className="primary" disabled={busy||!accessKey.trim()||input.kind!=='EARTHQUAKE'||(Boolean(historicalCase)&&(!chosen||!rangeValid||!realtimeValid||!preludeValid))} onClick={()=>void run()}>{t.run}</button>
-      {busy&&<button type="button" onClick={stop}>{t.stop}</button>}
-    </div>
-    {!accessKey.trim()&&<p className="lab-muted">{t.missing}</p>}
-    {busy&&<p role="status">{t.wait} · {state?.current_step??0}/{state?.total_steps??'…'}</p>}
-    {clockEpoch!==null&&<div data-testid="simulated-clock" role="status" className="lab-sim-clock">
-      <strong>{t.liveClock}: {jstInputFromEpoch(clockEpoch).replace('T',' ')} JST</strong>
-      <span>{clockSpeed>1?t.prelude:t.normalSpeed} · {clockSpeed}×</span>
-    </div>}
-    {busy&&remainingSeconds>0&&<p role="timer">{t.waiting}: {remainingSeconds} {t.seconds}</p>}
-    {complete&&<p role="status">{t.complete}</p>}
-    {error&&<p role="alert" className="lab-drill-warning">{error}</p>}
-    {snapshot&&<section className="lab-agent-results" aria-label={t.status}>
-      <strong>{ai}</strong>
-      {state?.historical?.current_milestone&&<p className="lab-history-now">
-        <strong>JST {state.historical.current_milestone.at_jst.slice(0,16).replace('T',' ')} — {state.historical.current_milestone.label[language]}</strong>
-        <small>{state.historical.current_milestone.fed_to_safety_core?t.processed:t.contextual}</small>
-      </p>}
-      <p>{t.status}: {state?.current_step}/{state?.total_steps} · {snapshot.situation.network_state} · {snapshot.source.status}</p>
-      <p className="lab-hard-gates">{t.blocked}: {String(snapshot.spatial_guidance.movement_authorized)}</p>
-      <h3>{t.actions}</h3>
-      {actions.map(action=><article key={action.id} className="lab-drill-action">
-        <b>{action.category} · {action.safety_decision}</b>
-        <p>{action.text}</p>
-      </article>)}
-      <details><summary>{t.evidence} ({snapshot.evidence.length})</summary>
-        {snapshot.evidence.map(e=><p key={e.id}><strong>SIMULATED · {e.source_name}</strong> · {e.summary} · {e.freshness_status}</p>)}
-      </details>
-      <details><summary>{t.trace} ({snapshot.trace.length})</summary>
-        {snapshot.trace.map(e=><p key={e.id}><b>{e.event_type}</b> · {e.status} — {e.public_summary}</p>)}
-      </details>
-    </section>}
-  </div>;
+    <button className="primary sim-launch" data-testid="launch-full-simulation" type="button" disabled={!enabled} onClick={start}>
+      {language === 'ja' ? 'シミュレーション開始 → ホーム画面' : language === 'en' ? 'Start full simulation → Home' : '開始整體模擬 → 進入主畫面'}
+    </button>
+    {!accessKey.trim() && <p className="lab-muted">{t.missing}</p>}
+  </section>;
 }

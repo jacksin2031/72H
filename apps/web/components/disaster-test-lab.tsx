@@ -14,7 +14,7 @@ import './disaster-test.css';
 const copy = {
   ja: {
     title: '災害シミュレーション', test: 'テストモード — 実際の警報ではありません',
-    explanation: 'この画面だけの模擬表示です。実際の電池残量・通信・位置情報・安全判定は変更せず、通知や緊急通報も行いません。',
+    explanation: 'ここで条件を設定し、開始すると独立した72H模擬ホームへ移動します。実際の電池・通信・GPS・緊急通報・公式Live状態は変更しません。',
     back: '設定に戻る', presets: 'すぐに試す', routine: '平常時', moderate: '中程度', critical: '重大・オフライン', survival: '残量3%',
     settings: 'シナリオ条件', disaster: '災害の種類', severity: '模擬レベル（公式の震度等とは異なります）',
     battery: '模擬バッテリー残量', batteryUnknown: '残量不明を再現', network: '模擬通信', evidence: '模擬情報の状態', mobility: '本人の状態',
@@ -34,7 +34,7 @@ const copy = {
   },
   en: {
     title: 'Disaster test lab', test: 'TEST MODE — Not a real emergency alert',
-    explanation: 'Visual simulation on this page only. It does not change actual battery, network, GPS, safety decisions, notifications or emergency calls.',
+    explanation: 'Configure the drill here. Start to enter the isolated 72H simulation home, with timed events and actual Mock Live / AI decisions. No real GPS, battery, alerts or calls change.',
     back: 'Back to settings', presets: 'Quick scenarios', routine: 'Routine', moderate: 'Moderate', critical: 'Critical / offline', survival: '3% battery',
     settings: 'Scenario settings', disaster: 'Hazard type', severity: 'Simulated level (not an official hazard scale)',
     battery: 'Simulated battery', batteryUnknown: 'Simulate unknown level', network: 'Simulated network', evidence: 'Simulated source status', mobility: 'Mobility',
@@ -54,7 +54,7 @@ const copy = {
   },
   'zh-TW': {
     title: '災難測試', test: '測試模式 — 並非真實災難警報',
-    explanation: '只在本頁模擬。絕不更改手機真實電量、網絡、GPS、安全判斷，也不發送通知或撥打緊急電話。',
+    explanation: '在這裏設定情境，開始後會進入獨立 72H 模擬主畫面，按倒數時間執行事件及 AI 判斷。不會更改真實 GPS、電量、網絡或發出緊急通知。',
     back: '返回設定', presets: '快速情境', routine: '日常', moderate: '中等災難', critical: '重大／離線', survival: '電量 3%',
     settings: '情境設定', disaster: '災難類型', severity: '模擬程度（不是官方震度或警報等級）',
     battery: '模擬手機電量', batteryUnknown: '模擬無法讀取電量', network: '模擬網絡', evidence: '模擬資訊狀態', mobility: '行動能力',

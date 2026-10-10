@@ -1,0 +1,43 @@
+import { z } from 'zod';
+import { mockLiveSnapshotSchema } from './mock-live-contract';
+
+const historicalLabel = z.object({ ja: z.string(), en: z.string(), 'zh-TW': z.string() });
+export const mockMilestoneSchema = z.object({
+  at_jst: z.string(),
+  kind: z.string(),
+  label: historicalLabel,
+  source_url: z.string().url(),
+  historic_observation: z.boolean(),
+  fed_to_safety_core: z.boolean(),
+});
+export const mockLiveResponseSchema = z.object({
+  mode: z.literal('MOCK_LIVE'),
+  current_step: z.number().int().nonnegative(),
+  total_steps: z.number().int().positive().max(24),
+  ai_modes: z.array(z.string()),
+  battery: z.number().int().min(0).max(100).nullable(),
+  snapshot: mockLiveSnapshotSchema,
+  historical: z.object({
+    case_id: z.string(),
+    title: historicalLabel,
+    source_url: z.string(),
+    magnitude: z.string(),
+    max_intensity: z.string(),
+    milestones: z.array(mockMilestoneSchema),
+    current_milestone: mockMilestoneSchema.nullable(),
+    advisory_is_not_safety_core_input: z.boolean(),
+  }).nullable().optional(),
+});
+export type MockLiveResponse = z.infer<typeof mockLiveResponseSchema>;
+export async function mockLiveRequest(path: string, key: string, input: unknown, signal: AbortSignal) {
+  // The path is derived exclusively from an internal UUID or the static start
+  // route; never accept arbitrary URLs or browser-controlled paths.
+  if (path !== 'start' && !/^[0-9a-f-]{36}\/next$/i.test(path)) throw new Error('Invalid simulation endpoint');
+  const response = await fetch('/api/mock-live/' + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Drill-Key': key },
+    body: JSON.stringify(input), cache: 'no-store', signal,
+  });
+  if (!response.ok) throw new Error('Simulation API unavailable (' + response.status + ')');
+  return mockLiveResponseSchema.parse(await response.json());
+}
