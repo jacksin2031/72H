@@ -48,6 +48,24 @@ describe('isolated simulation reference map', () => {
     expect(mapHarness.removed).toBeGreaterThan(0);
   });
 
+  it('keeps a short warning and attribution visible while detailed map notes remain collapsible', async () => {
+    vi.stubGlobal('fetch',vi.fn(async()=>({ok:false,status:404})));
+    container=document.createElement('div');document.body.append(container);
+    root=createRoot(container);
+    await act(async()=>{root!.render(<SimulationReferenceMap language="zh-TW"/>);});
+    const info=container.querySelector('.sim-map-information');
+    const quick=info?.querySelector('.sim-map-quick-caution');
+    const details=info?.querySelector<HTMLDetailsElement>('[data-testid=japan-map-details]');
+    expect(quick?.textContent).toContain('不可作避難導航');
+    expect(details?.open).toBe(false);
+    expect(details?.textContent).toContain('不代表震動影響範圍');
+    expect(info?.querySelector('a[href*="maps.gsi.go.jp"]')).not.toBeNull();
+    await act(async()=>{details?.querySelector('summary')?.click();});
+    expect(details?.open).toBe(true);
+    await act(async()=>{details?.querySelector('summary')?.click();});
+    expect(details?.open).toBe(false);
+  });
+
   it('fails closed on missing verified country coastline without requesting GPS or untrusted data', async () => {
     const fetcher=vi.fn(async (_url: string | URL, _init?: RequestInit) => ({ok:false,status:404}));
     const gps=vi.fn();

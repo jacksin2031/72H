@@ -25,6 +25,7 @@ const mapText={
     unavailable:'日本全国の基礎地図が検証できません。誤った地図を表示しません。',
     ready:'全国の海陸輪郭 · 拡大して地理院の詳細地図を表示',tilesUnavailable:'詳細地図はネット接続が必要 · 海陸の輪郭のみ表示中',
     zoomIn:'拡大',zoomOut:'縮小',overview:'日本全国を表示',focusEpicenter:'震央へ',focusGPS:'取得した GPS へ',
+    shortCaution:'海岸線 ≠ 津波浸水範囲 · 避難経路に使用不可',details:'地図の注意事項',
     land:'陸地',sea:'海',gps:'● GPS · 演習',epicenter:'✕ 気象庁 過去の震央',
     gpsOut:'GPS は表示範囲外',epicenterOut:'震央は表示範囲外',noAccess:'経路案内・安全判断には使えません',
   },
@@ -36,6 +37,7 @@ const mapText={
     ready:'Verified Japan outlines · zoom in for GSI detail',
     tilesUnavailable:'Detail tiles need internet · offline sea/land outlines only',
     zoomIn:'Zoom in',zoomOut:'Zoom out',overview:'View all Japan',focusEpicenter:'Go to historical epicenter',focusGPS:'Go to permitted GPS',
+    shortCaution:'Coastline ≠ tsunami zone · no safe routes',details:'Map details & limits',
     land:'Land',sea:'Sea',gps:'● GPS · exercise',epicenter:'✕ Archived JMA epicenter',
     gpsOut:'GPS outside map coverage',epicenterOut:'Epicenter outside coverage',noAccess:'Not a safe-route or clearance map',
   },
@@ -47,6 +49,7 @@ const mapText={
     ready:'已驗證全日本海陸輪廓 · 放大查看國土地理院詳細地圖',
     tilesUnavailable:'詳細地圖需要網絡 · 現只顯示離線海陸輪廓',
     zoomIn:'放大',zoomOut:'縮小',overview:'顯示全日本',focusEpicenter:'前往歷史震央',focusGPS:'前往已授權定位',
+    shortCaution:'海岸線 ≠ 海嘯浸水區 · 不可作避難導航',details:'地圖限制與資料',
     land:'陸地',sea:'海洋',gps:'● GPS · 模擬',epicenter:'✕ 氣象廳歷史震央',
     gpsOut:'GPS 超出地圖範圍',epicenterOut:'震央超出地圖範圍',noAccess:'不可用作安全導航或避難授權',
   },
@@ -106,9 +109,9 @@ export function SimulationReferenceMap({
               },
             },
             layers:[
-              {id:'sea',type:'background',paint:{'background-color':'#0b131e'}},
+              {id:'sea',type:'background',paint:{'background-color':'#0c2535'}},
               {id:'land-fill',type:'fill',source:'natural-earth-land',
-                paint:{'fill-color':'#29343f','fill-opacity':1}},
+                paint:{'fill-color':'#35574e','fill-opacity':1}},
 
               {id:'gsi-topographic',type:'raster',source:'gsi-standard',
                 paint:{
@@ -119,9 +122,9 @@ export function SimulationReferenceMap({
                   'raster-fade-duration':0,
                 }},
               {id:'coastline-halo',type:'line',source:'natural-earth-land',maxzoom:9,
-                paint:{'line-color':'#0b131e','line-width':4}},
+                paint:{'line-color':'#0c2535','line-width':4}},
               {id:'coastline',type:'line',source:'natural-earth-land',maxzoom:9,
-                paint:{'line-color':'#a3b6c7','line-width':1.5,'line-opacity':1}},
+                paint:{'line-color':'#aad2c5','line-width':1.5,'line-opacity':1}},
             ],
           },
         });
@@ -235,20 +238,26 @@ export function SimulationReferenceMap({
         <option value="153.98,24.28,10">南鳥島</option>
       </select>
     </label>}
-    <div className="sim-map-information"><div className="sim-map-maplabel"><strong>{t.title}</strong><small>{t.note}</small></div>
-    <div className="sim-map-landsea-legend" data-testid="japan-land-sea-legend">
-      <span><i className="sim-map-land-color"/>{t.land}</span>
-      <span><i className="sim-map-sea-color"/>{t.sea}</span>
-    </div>
-    <p className="sim-map-status" role="status">
-      {status==='loading'?t.loading:status==='unavailable'?t.unavailable:tileIssues?t.tilesUnavailable:t.ready}
-    </p>
-    <p className="sim-map-caution">{t.caution}</p>
-    <div className="sim-map-attribution">
-      <a href={GSI_ATTRIBUTION_URL} target="_blank" rel="noopener noreferrer">© 国土地理院</a>
-      <span> · </span>
-      <a href={NATURAL_EARTH_LICENSE_URL} target="_blank" rel="noopener noreferrer">Natural Earth</a>
-    </div>
+    <div className="sim-map-information">
+      <div className="sim-map-maplabel"><strong>{t.title}</strong><small>{t.note}</small></div>
+      <div className="sim-map-landsea-legend" data-testid="japan-land-sea-legend">
+        <span><i className="sim-map-land-color"/>{t.land}</span>
+        <span><i className="sim-map-sea-color"/>{t.sea}</span>
+      </div>
+      <p className="sim-map-quick-caution">{t.shortCaution}</p>
+      {(status!=='ready'||tileIssues)&&<p className="sim-map-status" role="status">
+        {status==='loading'?t.loading:status==='unavailable'?t.unavailable:t.tilesUnavailable}
+      </p>}
+      <details className="sim-map-details" data-testid="japan-map-details">
+        <summary>{t.details}</summary>
+        <p className="sim-map-caution">{t.caution}</p>
+        <p className="sim-map-detail-ready">{t.ready}</p>
+      </details>
+      <div className="sim-map-attribution">
+        <a href={GSI_ATTRIBUTION_URL} target="_blank" rel="noopener noreferrer">© 国土地理院</a>
+        <span> · </span>
+        <a href={NATURAL_EARTH_LICENSE_URL} target="_blank" rel="noopener noreferrer">Natural Earth</a>
+      </div>
     </div>
     {!compact&&<div className="sim-map-controls">
       <button type="button" aria-label={t.zoomIn} onClick={()=>mapRef.current?.zoomIn()} disabled={status!=='ready'}><UiIcon name="plus" /></button>

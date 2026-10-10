@@ -345,3 +345,102 @@
 .japan-history-picker select{min-height:40px;width:100%;max-width:260px;background:#18232f;color:#e5edf5;border:1px solid #526272;border-radius:8px;padding:5px 8px;font:inherit;font-size:11px}
 .japan-reference-page .sim-map-geo-note{top:112px}
 @media(prefers-reduced-motion:reduce){.sim-quake-ripple i{animation:none;transform:scale(1.5);opacity:.35}.sim-quake-ripple i:nth-child(2){transform:scale(2.4);opacity:.2}.sim-quake-ripple i:nth-child(3){transform:scale(3.3);opacity:.1}}
+
+/* P2.3: distinct geography and compact, readable map information */
+.sim-map-reference{background:#0c2535}
+.sim-map-land-color{background:#35574e}
+.sim-map-sea-color{background:#0c2535}
+.sim-map-information{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:6px 8px;
+  align-items:center;
+  padding:10px 12px;
+  background:#101c25f5;
+  border-color:#587468;
+  pointer-events:auto;
+}
+.sim-map-information .sim-map-maplabel{min-width:0;flex:none}
+.sim-map-information .sim-map-maplabel strong{font-size:12px;line-height:1.3}
+.sim-map-information .sim-map-maplabel small{font-size:10px}
+.sim-map-information .sim-map-landsea-legend{flex:none;justify-content:flex-end;gap:9px;font-size:11px}
+.sim-map-information .sim-map-quick-caution{
+  grid-column:1 / -1;
+  margin:0;
+  padding:0;
+  color:#f0ca97;
+  font-size:11px;
+  line-height:1.4;
+  overflow-wrap:anywhere;
+}
+.sim-map-information .sim-map-status{
+  grid-column:1 / -1;
+  margin:0;
+  font-size:11px;
+  color:#f0ca97;
+  line-height:1.4;
+}
+.sim-map-information .sim-map-details{
+  min-width:0;
+  grid-column:1;
+  align-self:start;
+  color:#c0e5d7;
+  font-size:11px;
+}
+.sim-map-information .sim-map-details summary{
+  cursor:pointer;
+  min-height:26px;
+  display:list-item;
+  padding:4px 3px 2px 15px;
+  list-style:disclosure-closed inside;
+  font-weight:600;
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
+.sim-map-information .sim-map-details[open]{
+  grid-column:1 / -1;
+  grid-row:auto;
+}
+.sim-map-information .sim-map-details[open] summary{
+  list-style:disclosure-open inside;
+}
+.sim-map-information .sim-map-details .sim-map-caution,
+.sim-map-information .sim-map-detail-ready{
+  margin:5px 0 3px;
+  font-size:11px;
+  line-height:1.5;
+  color:#d8e6dd;
+  text-align:left;
+}
+.sim-map-information .sim-map-details .sim-map-detail-ready{color:#b2caba}
+.sim-map-information .sim-map-attribution{
+  grid-column:2;
+  font-size:10px;
+  justify-self:end;
+  align-self:start;
+  line-height:1.5;
+}
+.sim-map-information .sim-map-details[open]+.sim-map-attribution{
+  grid-column:1 / -1;
+  justify-self:start;
+}
+.sim-map-information .sim-map-attribution a{
+  min-height:24px;
+  display:inline-flex;
+  align-items:center;
+}
+.sim-map-compact .sim-map-information{
+  grid-template-columns:minmax(0,1fr) auto;
+  padding:6px 8px;
+  gap:3px 8px;
+}
+.sim-map-compact .sim-map-information .sim-map-quick-caution{font-size:10px}
+.sim-map-compact .sim-map-details{display:none}
+.sim-map-compact .sim-map-attribution{grid-column:1 / -1;justify-self:start}
+.sim-v2-timeline-map .sim-map-information{bottom:54px}
+@media(max-width:350px){
+  .sim-map-information{gap:5px 5px;padding:8px 9px}
+  .sim-map-information .sim-map-landsea-legend{gap:6px;font-size:10px}
+  .sim-map-information .sim-map-maplabel strong{font-size:11px}
+  .sim-map-information .sim-map-attribution{font-size:9px}
+}
