@@ -31,7 +31,8 @@ self.addEventListener('fetch', event => {
       if (response.ok) { const copy = response.clone(); event.waitUntil(caches.open(VERSION).then(cache => cache.put(request, copy))); }
       return response;
     }).catch(async () => (await caches.match(url.pathname)) || (await caches.match('/dashboard')) || Response.error()));
-  } else if (url.pathname.startsWith('/_next/static/') || SHELL.includes(url.pathname)) {
+  } else if (url.pathname.startsWith('/_next/static/') || SHELL.includes(url.pathname)
+    || /^\/maps\/[a-z0-9][a-z0-9._-]{0,96}\.geojson$/.test(url.pathname)) {
     event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => {
       if (response.ok) { const copy = response.clone(); event.waitUntil(caches.open(VERSION).then(cache => cache.put(request, copy))); }
       return response;
