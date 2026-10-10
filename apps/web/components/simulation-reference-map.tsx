@@ -61,6 +61,7 @@ export function SimulationReferenceMap({
   const host=useRef<HTMLDivElement>(null);
   const mapRef=useRef<import('maplibre-gl').Map|null>(null);
   const pins=useRef<import('maplibre-gl').Marker[]>([]);
+  const fitCountry=useRef<()=>void>(()=>{});
   const [status,setStatus]=useState<'loading'|'ready'|'unavailable'>('loading');
   const [tileIssues,setTileIssues]=useState(false);
   const t=mapText[language];
@@ -89,11 +90,11 @@ export function SimulationReferenceMap({
         const map=new Map({
           container:host.current,
           center:[...JAPAN_DEFAULT_CENTER],zoom:4.15,
-          minZoom:3.0,maxZoom:17,attributionControl:false,
+          minZoom:2,maxZoom:17,attributionControl:false,
           renderWorldCopies:false,fadeDuration:0,
           // Camera padding lets a portrait viewport fit the entire country.
           // Exact tile/data coverage remains JAPAN_VIEW_BOUNDS.
-          maxBounds:[[100,-10],[175,70]],
+          maxBounds:[[80,-50],[180,80]],
           style:{
             version:8,
             sources:{
@@ -125,6 +126,17 @@ export function SimulationReferenceMap({
           },
         });
         mapRef.current=map;
+        fitCountry.current=()=>{
+          if(cancelled||!host.current)return;
+          const rect=host.current.getBoundingClientRect();
+          const info=host.current.parentElement?.querySelector('.sim-map-information')?.getBoundingClientRect();
+          // Fit the declared coverage into the unobscured viewport, including
+          // remote islands. A z=3 minimum would crop its width on narrow phones.
+          const bottom=Math.min(rect.height*.45,Math.max(compact?85:160,info?rect.bottom-info.top+24:0));
+          map.fitBounds([[...JAPAN_VIEW_BOUNDS[0]],[...JAPAN_VIEW_BOUNDS[1]]],{
+            padding:{top:compact?25:130,bottom,left:25,right:compact?25:70},duration:0,
+          });
+        };
         if(typeof ResizeObserver!=='undefined'){
           observer=new ResizeObserver(()=>{if(!cancelled)map.resize();});
           observer.observe(host.current);
@@ -141,7 +153,7 @@ export function SimulationReferenceMap({
           if(!cancelled){
             map.resize();
             setStatus('ready');
-            map.fitBounds([[122,20],[155,46.5]],{padding:25,duration:0});
+            fitCountry.current();
           }
         });
       }catch{if(!cancelled)setStatus('unavailable');}
@@ -150,6 +162,7 @@ export function SimulationReferenceMap({
       cancelled=true;abort.abort();observer?.disconnect();
       pins.current.forEach(marker=>marker.remove());pins.current=[];
       mapRef.current?.remove();mapRef.current=null;
+      fitCountry.current=()=>{};
     };
   },[compact]);
 
@@ -200,7 +213,7 @@ export function SimulationReferenceMap({
   const displayedEpicenter=!!epicenter&&inCoverage(epicenter);
   const displayedGps=!!userLocation&&userLocation.source==='BROWSER_GEOLOCATION'&&userLocation.accuracy_m<=1000&&inCoverage(userLocation);
   const nationwide=()=>{
-    mapRef.current?.fitBounds([[122,20],[155,46.5]],{padding:25,duration:250});
+    fitCountry.current();
   };
   return <section className={compact?'sim-map-reference sim-map-compact':'sim-map-reference sim-map-full'}
     aria-label={t.title} data-testid="simulation-reference-map">
