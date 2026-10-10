@@ -2,10 +2,12 @@ import { NextRequest } from 'next/server';
 import { sameOrigin } from '@/lib/request-origin';
 
 export const dynamic = 'force-dynamic';
-const allowed = /^(health|version|replay\/(start|[a-zA-Z0-9_-]{1,80}(\/(pause|resume|next|reset|speed))?)|drill\/(start|[a-zA-Z0-9_-]{1,80}(\/next)?)|live\/(start|[a-zA-Z0-9_-]{1,80}(\/(refresh|routes\/search|location|profile))?))$/;
+const allowed = /^(health|version|replay\/(start|[a-zA-Z0-9_-]{1,80}(\/(pause|resume|next|reset|speed))?)|mock-live\/(start|[a-zA-Z0-9_-]{1,80}(\/next)?)|drill\/(start|[a-zA-Z0-9_-]{1,80}(\/next)?)|live\/(start|[a-zA-Z0-9_-]{1,80}(\/(refresh|routes\/search|location|profile))?))$/;
 export function isAllowedApiProxyPath(path: string) { return allowed.test(path); }
 export function isAllowedApiProxyRequest(path: string, method: string) {
   if (!isAllowedApiProxyPath(path) || !['GET', 'POST'].includes(method)) return false;
+  if (path === 'mock-live/start' || /^mock-live\/[a-zA-Z0-9_-]{1,80}\/next$/.test(path)) return method === 'POST';
+  if (/^mock-live\/[a-zA-Z0-9_-]{1,80}$/.test(path)) return method === 'GET';
   if (path === 'drill/start' || /^drill\/[a-zA-Z0-9_-]{1,80}\/next$/.test(path)) return method === 'POST';
   if (/^drill\/[a-zA-Z0-9_-]{1,80}$/.test(path)) return method === 'GET';
   return !/^live\/[a-zA-Z0-9_-]{1,80}\/(location|profile)$/.test(path) || method === 'POST';
@@ -26,7 +28,7 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
   const backend = process.env.API_BASE_URL || 'http://127.0.0.1:8000';
   try {
     const response = await fetch(`${backend}/${suffix === 'health' || suffix === 'version' ? '' : 'api/'}${suffix}`, {
-      method: request.method, headers: { 'Content-Type': 'application/json', ...(suffix.startsWith('drill/') ? { 'X-Drill-Key': request.headers.get('x-drill-key') || '' } : {}) },
+      method: request.method, headers: { 'Content-Type': 'application/json', ...((suffix.startsWith('drill/') || suffix.startsWith('mock-live/')) ? { 'X-Drill-Key': request.headers.get('x-drill-key') || '' } : {}) },
       body, cache: 'no-store', signal: AbortSignal.timeout(35000),
     });
     return new Response(await response.text(), {

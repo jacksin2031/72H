@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Language } from '@/lib/contracts';
 import { snapshotSchema, type Snapshot } from '@/lib/contracts';
 import type { DisasterTestInput } from '@/lib/disaster-test';
+import { MockLiveRun } from './mock-live-run';
 
 const copy = {
   ja: {
@@ -120,6 +121,8 @@ export function AgentDrillPanel({ input, language }: { input: DisasterTestInput;
     {input.kind !== 'EARTHQUAKE' && <p className="lab-drill-warning" role="status">{t.unsupported}</p>}
     <label className="lab-agent-key">{t.key}<input type="password" autoComplete="off" spellCheck={false} value={key} onChange={e => setKey(e.target.value)} /></label>
     <p className="lab-muted">{t.keyHint}</p>
+    <MockLiveRun input={input} language={language} accessKey={key} />
+    <details className="lab-legacy-replay"><summary>Replay / P1.5 — {t.run}</summary>
     <div className="lab-agent-actions">
       <button className="primary" type="button" disabled={busy || !key.trim() || input.kind !== 'EARTHQUAKE'} onClick={() => void run()}>{t.run}</button>
       {busy && <button type="button" onClick={stop}>{t.stop}</button>}
@@ -143,5 +146,6 @@ export function AgentDrillPanel({ input, language }: { input: DisasterTestInput;
         {snapshot.trace.map(e => <p key={e.id}><strong>{e.event_type}</strong> · {e.status}: {e.public_summary}</p>)}
       </details>
     </div>}
+    </details>
   </section>;
 }

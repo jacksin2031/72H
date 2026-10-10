@@ -38,3 +38,14 @@ it('locks the drill API to exact authenticated start/read/next paths and methods
   expect(isAllowedApiProxyPath('drill/abc-123/reset')).toBe(false);
   expect(isAllowedApiProxyPath('drill/../../live/start')).toBe(false);
 });
+
+it('keeps Mock Live behind explicit route and method allowlist', () => {
+  expect(isAllowedApiProxyRequest('mock-live/start','POST')).toBe(true);
+  expect(isAllowedApiProxyRequest('mock-live/start','GET')).toBe(false);
+  expect(isAllowedApiProxyRequest('mock-live/a-b','GET')).toBe(true);
+  expect(isAllowedApiProxyRequest('mock-live/a-b','POST')).toBe(false);
+  expect(isAllowedApiProxyRequest('mock-live/a-b/next','POST')).toBe(true);
+  expect(isAllowedApiProxyRequest('mock-live/a-b/next','GET')).toBe(false);
+  expect(isAllowedApiProxyPath('mock-live/a-b/route')).toBe(false);
+  expect(isAllowedApiProxyPath('mock-live/../../live/start')).toBe(false);
+});

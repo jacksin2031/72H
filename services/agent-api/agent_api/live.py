@@ -617,7 +617,7 @@ class LiveStore:
             destinations_payload = self._destinations.fetch_latest()
             now = self._now()
             pairs = self._apply_source_results_locked(aggregate, source_result, destinations_payload, now)
-            aggregate.state = apply_live_evidence_batch(aggregate.state, pairs, now, self._policy)
+            aggregate.state = apply_live_evidence_batch(aggregate.state, pairs, now, self._policy, synthetic_mode=getattr(self, "_synthetic_source_mode", False))
             self._touch(aggregate)
             return self._snapshot(aggregate)
 
@@ -639,6 +639,7 @@ class LiveStore:
                 self._planner,
                 f"live-{aggregate.session_id}",
                 self._policy,
+                synthetic_mode=getattr(self, "_synthetic_source_mode", False),
             )
             with aggregate.lock:
                 if aggregate.state is not prepared:
@@ -648,6 +649,7 @@ class LiveStore:
                         pairs,
                         max(now, aggregate.state.current_time),
                         self._policy,
+                        synthetic_mode=getattr(self, "_synthetic_source_mode", False),
                     )
                     after = aggregate.state
                 aggregate.state = after
