@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
-import { liveSnapshotSchema, type Language } from '@/lib/contracts';
+import { type Language } from '@/lib/contracts';
+import { mockLiveSnapshotSchema } from '@/lib/mock-live-contract';
 import type { DisasterTestInput } from '@/lib/disaster-test';
 import { ACCELERATION_OPTIONS, advanceVirtualClock, canPlayRealtime, jstEpoch, jstInputFromEpoch, validAcceleratedPrelude, selectHistoricalRange, type Acceleration, type TimeMode } from '@/lib/historical-playback';
 
@@ -37,10 +38,10 @@ const historicalViewSchema = z.object({
 const envelope = z.object({
   mode: z.literal('MOCK_LIVE'),
   current_step: z.number().int().nonnegative(),
-  total_steps: z.number().int().positive().max(3),
+  total_steps: z.number().int().positive().max(24),
   ai_modes: z.array(z.string()),
   battery: z.number().nullable(),
-  snapshot: liveSnapshotSchema,
+  snapshot: mockLiveSnapshotSchema,
   historical: historicalViewSchema.nullable().optional(),
 });
 type MockResponse = z.infer<typeof envelope>;
