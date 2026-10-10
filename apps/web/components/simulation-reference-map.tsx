@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { inMapPack, mapCatalogSchema, verifyMapPack } from '@/lib/offline-map';
 import type { Language } from '@/lib/contracts';
+import type { Epicenter, LocationFix } from '@/lib/geospatial-exposure';
+import { validPoint } from '@/lib/geospatial-exposure';
 
 const mapText = {
   ja: {
@@ -29,15 +31,19 @@ const mapText = {
 } as const;
 
 /**
- * Geography-only simulation reference. Never render GPS, source hazards,
- * shelters, evacuation routes, movement authorizations or synthetic markers.
- * This is central-Tokyo OSM reference roads, not a historical 311 impact map.
+ * Geography-only simulation reference: consented ephemeral GPS marker and
+ * sourced historical epicenter marker may be displayed inside the pack.
+ * No hazards, shelters, routes or movement authorizations are rendered.
+ * This is central-Tokyo OSM reference roads, not a 311 impact map.
  */
-export function SimulationReferenceMap({ language, compact = false }: {
+export function SimulationReferenceMap({ language, compact = false, epicenter=null, userLocation=null }: {
   language: Language; compact?: boolean;
+  epicenter?: Epicenter|null; userLocation?: LocationFix|null;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import('maplibre-gl').Map | null>(null);
+  const mapBounds = useRef<[number,number,number,number]|null>(null);
+  const pins = useRef<import('maplibre-gl').Marker[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading');
   const t = mapText[language];
 
@@ -58,6 +64,7 @@ export function SimulationReferenceMap({ language, compact = false }: {
         const fileResponse = await fetch(pack.asset, { signal: controller.signal });
         if (!fileResponse.ok) throw Error('Offline map unavailable');
         const roads = await verifyMapPack(pack, await fileResponse.arrayBuffer());
+        mapBounds.current = pack.bounds;
         const { Map, setWorkerCount, setWorkerUrl } = await import('maplibre-gl');
         if (cancelled || !host.current) return;
         setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
@@ -89,12 +96,44 @@ export function SimulationReferenceMap({ language, compact = false }: {
         map.on('error', () => { if (!cancelled) setStatus('unavailable'); });
       } catch { if (!cancelled) setStatus('unavailable'); }
     })();
-    return () => { cancelled=true; controller.abort(); observer?.disconnect(); mapRef.current?.remove(); mapRef.current=null; };
+    return () => { cancelled=true; controller.abort(); observer?.disconnect();
+      pins.current.forEach(marker=>marker.remove());pins.current=[];
+      mapRef.current?.remove(); mapRef.current=null;mapBounds.current=null; };
   }, [compact]);
 
+  useEffect(() => {
+    let cancelled=false;
+    pins.current.forEach(marker=>marker.remove());pins.current=[];
+    const map=mapRef.current, bounds=mapBounds.current;
+    if(status!=='ready'||!map||!bounds)return;
+    void import('maplibre-gl').then(({Marker})=>{
+      if(cancelled||mapRef.current!==map)return;
+      const marker=(point:{lat:number;lng:number},label:string,type:string)=>{
+        if(!validPoint(point)||!inMapPack(point.lng,point.lat,bounds))return;
+        const el=document.createElement('div');
+        el.className='sim-geo-marker sim-geo-'+type;
+        el.textContent=type==='gps'?'●':'✕';
+        el.setAttribute('role','img');el.setAttribute('aria-label',label);el.title=label;
+        pins.current.push(new Marker({element:el}).setLngLat([point.lng,point.lat]).addTo(map));
+      };
+      if(userLocation&&userLocation.accuracy_m<=1000&&userLocation.source==='BROWSER_GEOLOCATION'){
+        marker(userLocation,'GPS · unverified personal position, exercise only','gps');
+        if(inMapPack(userLocation.lng,userLocation.lat,bounds))
+          map.easeTo({center:[userLocation.lng,userLocation.lat],duration:0});
+      }
+      if(epicenter)marker(epicenter,'Archived JMA epicenter · historical reference','epicenter');
+    });
+    return ()=>{cancelled=true;pins.current.forEach(marker=>marker.remove());pins.current=[];};
+  },[status,epicenter?.lat,epicenter?.lng,userLocation?.lat,userLocation?.lng,userLocation?.accuracy_m,userLocation?.source]);
+  const displayedEpicenter=!!epicenter && !!mapBounds.current && inMapPack(epicenter.lng,epicenter.lat,mapBounds.current);
+  const displayedGps=!!userLocation && !!mapBounds.current && inMapPack(userLocation.lng,userLocation.lat,mapBounds.current);
   return <section className={compact ? 'sim-map-reference sim-map-compact' : 'sim-map-reference sim-map-full'}
     aria-label={t.title} data-testid="simulation-reference-map">
     <div ref={host} className="sim-map-canvas" aria-hidden="true"/>
+    {(epicenter||userLocation) && <div className="sim-map-geo-note" data-testid="simulation-geo-markers">
+      {userLocation ? displayedGps ? '● GPS · exercise / 未認證' : 'GPS · outside reference map / 底圖範圍外' : ''}
+      {epicenter && <span>{displayedEpicenter?' ✕ epicenter / 歷史震央':' · epicenter outside this map / 震央不在底圖內'}</span>}
+    </div>}
     <div className="sim-map-maplabel"><strong>{t.title}</strong><small>{t.note}</small></div>
     {!compact && <div className="sim-map-controls">
       <button type="button" aria-label={t.zoomIn} onClick={() => mapRef.current?.zoomIn()} disabled={status!=='ready'}>+</button>
@@ -104,5 +143,7 @@ export function SimulationReferenceMap({ language, compact = false }: {
       {status==='loading' ? t.loading : status==='ready' ? t.ready : t.unavailable}
     </p>
     <p className="sim-map-caution">{t.caution}</p>
+    <a className="sim-map-attribution" href="https://www.openstreetmap.org/copyright"
+      target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>
   </section>;
 }

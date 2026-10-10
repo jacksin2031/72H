@@ -6,6 +6,10 @@ import { jstInputFromEpoch } from '@/lib/historical-playback';
 import type { SimulationLaunch } from '@/lib/simulation-session';
 import type { MockLiveResponse } from '@/lib/mock-live-envelope';
 import { SimulationReferenceMap } from './simulation-reference-map';
+import { SimulationRiskPanel } from './simulation-risk-panel';
+import './simulation-geo.css';
+import { useSimulationGeo } from '@/lib/use-simulation-geo';
+import { epicenterForPlayedMilestones, historicTsunamiWarningStarted, screenGeoExposure } from '@/lib/geospatial-exposure';
 
 export type SimulationSection = 'home' | 'plan' | 'events' | 'map' | 'more';
 type Stage = 'waiting' | 'processing' | 'running' | 'completed' | 'failed';
@@ -65,6 +69,10 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
   const language:Language = config.language;
   const t=ui[language];
   const [eventDetail,setEventDetail]=useState<number|null>(null);
+  const geo=useSimulationGeo();
+  const epicenter=epicenterForPlayedMilestones(config.historicalCase,config.milestones,done);
+  const warning=historicTsunamiWarningStarted(config.milestones,done);
+  const assessment=screenGeoExposure({location:geo.location,epicenter,tsunamiWarningActive:warning,now:Date.now()});
   const current=config.milestones[Math.max(0,done-1)]??null;
   const upcoming=config.milestones[done]??null;
   const seconds=upcoming?Math.max(0,(Date.parse(upcoming.at_jst)-time)/1000):0;
@@ -121,7 +129,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
           </div>
         </div>
         <div className="sim-v2-map-teaser">
-          <SimulationReferenceMap language={language} compact/>
+          <SimulationReferenceMap language={language} compact userLocation={assessment.user_location} epicenter={epicenter}/>
           <button type="button" className="sim-v2-expand-map" onClick={()=>setTab('map')}>{t.reference} <span aria-hidden="true">↗</span></button>
         </div>
         <div className="sim-v2-event-dock">
@@ -168,7 +176,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
           </li>)}
         </ol>
         <div className="sim-v2-timeline-map">
-          <SimulationReferenceMap language={language} compact/>
+          <SimulationReferenceMap language={language} compact userLocation={assessment.user_location} epicenter={epicenter}/>
           <button type="button" onClick={()=>setTab('map')}>{t.reference} ↗</button>
         </div>
         <p className="sim-v2-timeline-caption">{t.note}</p>
@@ -178,9 +186,12 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
           <button type="button" onClick={()=>setTab('events')} aria-label={t.mapBack}>‹</button>
           <div><strong>{t.map}</strong><small>{t.mapData}</small></div>
         </header>
-        <SimulationReferenceMap language={language}/>
-        <div className="sim-v2-map-sheet">
+        <SimulationReferenceMap language={language} userLocation={assessment.user_location} epicenter={epicenter}/>
+        <div className="sim-v2-map-sheet sim-v2-map-sheet-risk">
           <div className="sim-v2-sheet-handle" aria-hidden="true"/>
+          <SimulationRiskPanel language={language} assessment={assessment}
+            gpsState={geo.state} gpsError={geo.error}
+            requestLocation={geo.request} clearLocation={geo.clear}/>
           <strong>{t.mapNotice}</strong>
           <p>{t.note}</p>
           <p>{t.risk}</p>
