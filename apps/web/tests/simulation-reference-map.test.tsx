@@ -14,7 +14,7 @@ afterEach(async () => {
 });
 
 describe('isolated simulation reference map', () => {
-  it('fails closed on missing verified road catalog without requesting GPS or any alternate tiles', async () => {
+  it('fails closed on missing verified country coastline without requesting GPS or untrusted data', async () => {
     const fetcher=vi.fn(async (_url: string | URL, _init?: RequestInit) => ({ok:false,status:404}));
     const gps=vi.fn();
     vi.stubGlobal('fetch',fetcher);
@@ -24,24 +24,27 @@ describe('isolated simulation reference map', () => {
     await act(async()=>{root!.render(<SimulationReferenceMap language="zh-TW"/>);});
     await act(async()=>{await Promise.resolve();});
     expect(fetcher).toHaveBeenCalledTimes(1);
-    expect(fetcher.mock.calls[0][0]).toBe('/maps/catalog.json');
+    expect(fetcher.mock.calls[0][0]).toBe('/maps/japan-land-50m.geojson');
     expect(gps).not.toHaveBeenCalled();
-    expect(container.textContent).toContain('不會改用未經核實的圖層');
-    expect(container.textContent).toContain('沒有已核實的災區、避難所或安全路線');
+    expect(container.textContent).toContain('不會顯示未經核實的地圖');
+    expect(container.textContent).toContain('海岸線只代表海陸邊界');
     expect([...container.querySelectorAll('button')].every(x=>x.disabled)).toBe(true);
     expect(container.querySelector('a[href^="tel:"]')).toBeNull();
     expect(container.querySelector('a[href*="maps.google"]')).toBeNull();
   });
-  it('offers only reference-road attribution, not simulated route or shelter markers', async () => {
+  it('shows land/sea legend and GSI source attribution but never invented hazards', async () => {
     const fetcher=vi.fn(async (_url: string | URL, _init?: RequestInit) => ({ok:false,status:404}));
     vi.stubGlobal('fetch',fetcher);
     container=document.createElement('div');document.body.append(container);
     root=createRoot(container);
     await act(async()=>{root!.render(<SimulationReferenceMap language="en" compact/>);});
     await act(async()=>{await Promise.resolve();});
-    expect(container.textContent).toContain('NOT your GPS or epicenter');
-    expect(container.textContent).toContain('No verified hazard coverage, shelters or safe routes');
+    expect(container.textContent).toContain('NOT a tsunami risk map');
+    expect(container.textContent).toContain('Coastlines show geography');
     expect(container.querySelectorAll('.sim-map-pin, .map-route-point')).toHaveLength(0);
     expect(container.querySelector('.sim-map-controls')).toBeNull();
+    expect(container.querySelector('[data-testid=japan-land-sea-legend]')?.textContent).toContain('Sea');
+    expect(container.querySelector('[data-testid=japan-land-sea-legend]')?.textContent).toContain('Land');
+    expect(container.querySelector('a[href*="maps.gsi.go.jp"]')).not.toBeNull();
   });
 });

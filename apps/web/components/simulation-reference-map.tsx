@@ -1,158 +1,215 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { inMapPack, mapCatalogSchema, verifyMapPack } from '@/lib/offline-map';
 import type { Language } from '@/lib/contracts';
 import type { Epicenter, LocationFix } from '@/lib/geospatial-exposure';
 import { validPoint } from '@/lib/geospatial-exposure';
+import {
+  GSI_ATTRIBUTION_URL, JAPAN_DEFAULT_CENTER, JAPAN_VIEW_BOUNDS,
+  NATURAL_EARTH_LICENSE_URL,
+} from '@/lib/japan-reference-map';
 
-const mapText = {
-  ja: {
-    title: '東京都心の参考道路', note: '参考地図 · 現在地や震源地ではありません',
-    caution: '浸水範囲・避難所・安全な経路は検証されていません。実際の移動判断に使用しないでください。',
-    loading: '検証済みオフライン地図を読み込み中',
-    unavailable: '検証済み道路地図を表示できません。未確認の地図に置き換えません。',
-    ready: 'OpenStreetMap 道路データ · 参考のみ', zoomIn: '拡大', zoomOut: '縮小',
+const LAND_ASSET='/maps/japan-land-50m.geojson';
+const LAND_BYTES=284073;
+const LAND_SHA256='32a1f99f53084df8d5aaae431d5edfbb41925248954a3836b071ec0861b29b42';
+const inCoverage=(point:{lng:number;lat:number}):boolean=>validPoint(point)
+  &&point.lng>=JAPAN_VIEW_BOUNDS[0][0]&&point.lng<=JAPAN_VIEW_BOUNDS[1][0]
+  &&point.lat>=JAPAN_VIEW_BOUNDS[0][1]&&point.lat<=JAPAN_VIEW_BOUNDS[1][1];
+
+const mapText={
+  ja:{
+    title:'日本全国の参考地図',note:'地理院タイル · 津波ハザードマップではありません',
+    caution:'海岸線は地理的な境界です。津波の浸水範囲・避難先・安全経路を示しません。',
+    loading:'日本全国の海岸線地図を検証しています',
+    unavailable:'日本全国の基礎地図が検証できません。誤った地図を表示しません。',
+    ready:'国土地理院 全国地図 · 参考用',tilesUnavailable:'詳細地図はネット接続が必要 · 海陸の輪郭のみ表示中',
+    zoomIn:'拡大',zoomOut:'縮小',overview:'日本全国を表示',focusEpicenter:'震央へ',focusGPS:'取得した GPS へ',
+    land:'陸地',sea:'海',gps:'● GPS · 演習',epicenter:'✕ 気象庁 過去の震央',
+    gpsOut:'GPS は表示範囲外',epicenterOut:'震央は表示範囲外',noAccess:'経路案内・安全判断には使えません',
   },
-  en: {
-    title: 'Central Tokyo reference roads', note: 'Reference map · NOT your GPS or epicenter',
-    caution: 'No verified hazard coverage, shelters or safe routes. Never use this map to authorize movement.',
-    loading: 'Loading integrity-verified offline roads',
-    unavailable: 'Verified map unavailable. No untrusted map substituted.',
-    ready: 'OpenStreetMap roads · reference only', zoomIn: 'Zoom in', zoomOut: 'Zoom out',
+  en:{
+    title:'All Japan reference map',note:'GSI official tiles · NOT a tsunami risk map',
+    caution:'Coastlines show geography, not inundation, verified shelters or safe evacuation routes.',
+    loading:'Verifying offline coastline reference',
+    unavailable:'The Japan coastline reference could not be verified. No untrusted map substituted.',
+    ready:'Geospatial Information Authority of Japan · reference only',
+    tilesUnavailable:'Detail tiles need internet · offline sea/land outlines only',
+    zoomIn:'Zoom in',zoomOut:'Zoom out',overview:'View all Japan',focusEpicenter:'Go to historical epicenter',focusGPS:'Go to permitted GPS',
+    land:'Land',sea:'Sea',gps:'● GPS · exercise',epicenter:'✕ Archived JMA epicenter',
+    gpsOut:'GPS outside map coverage',epicenterOut:'Epicenter outside coverage',noAccess:'Not a safe-route or clearance map',
   },
-  'zh-TW': {
-    title: '東京都心參考道路', note: '參考地圖 · 並非你的定位或震央',
-    caution: '沒有已核實的災區、避難所或安全路線；切勿用此地圖作移動決策。',
-    loading: '正在載入已驗證的離線道路圖',
-    unavailable: '無法顯示已驗證地圖，不會改用未經核實的圖層。',
-    ready: 'OpenStreetMap 道路資料 · 僅供參考', zoomIn: '放大', zoomOut: '縮小',
+  'zh-TW':{
+    title:'全日本參考地圖',note:'國土地理院地圖 · 並非海嘯風險圖',
+    caution:'海岸線只代表海陸邊界，並非浸水範圍、安全避難所或安全路線。',
+    loading:'正在驗證日本全國離線海岸線',
+    unavailable:'無法驗證日本全國海岸圖，不會顯示未經核實的地圖。',
+    ready:'日本國土地理院全國地圖 · 僅供參考',
+    tilesUnavailable:'詳細地圖需要網絡 · 現只顯示離線海陸輪廓',
+    zoomIn:'放大',zoomOut:'縮小',overview:'顯示全日本',focusEpicenter:'前往歷史震央',focusGPS:'前往已授權定位',
+    land:'陸地',sea:'海洋',gps:'● GPS · 模擬',epicenter:'✕ 氣象廳歷史震央',
+    gpsOut:'GPS 超出地圖範圍',epicenterOut:'震央超出地圖範圍',noAccess:'不可用作安全導航或避難授權',
   },
 } as const;
 
-/**
- * Geography-only simulation reference: consented ephemeral GPS marker and
- * sourced historical epicenter marker may be displayed inside the pack.
- * No hazards, shelters, routes or movement authorizations are rendered.
- * This is central-Tokyo OSM reference roads, not a 311 impact map.
- */
-export function SimulationReferenceMap({ language, compact = false, epicenter=null, userLocation=null }: {
-  language: Language; compact?: boolean;
-  epicenter?: Epicenter|null; userLocation?: LocationFix|null;
-}) {
-  const host = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<import('maplibre-gl').Map | null>(null);
-  const mapBounds = useRef<[number,number,number,number]|null>(null);
-  const pins = useRef<import('maplibre-gl').Marker[]>([]);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading');
-  const t = mapText[language];
+/** All-Japan reference map; no inferred inundation, shelter or routes. */
+export function SimulationReferenceMap({
+  language,compact=false,epicenter=null,userLocation=null,
+}:{
+  language:Language; compact?:boolean;epicenter?:Epicenter|null;userLocation?:LocationFix|null;
+}){
+  const host=useRef<HTMLDivElement>(null);
+  const mapRef=useRef<import('maplibre-gl').Map|null>(null);
+  const pins=useRef<import('maplibre-gl').Marker[]>([]);
+  const [status,setStatus]=useState<'loading'|'ready'|'unavailable'>('loading');
+  const [tileIssues,setTileIssues]=useState(false);
+  const t=mapText[language];
 
-  useEffect(() => {
-    const controller = new AbortController();
-    let cancelled = false;
-    let observer: ResizeObserver | null = null;
-    void (async () => {
-      try {
-        const catalogResponse = await fetch('/maps/catalog.json', { signal: controller.signal, cache: 'no-store' });
-        if (!catalogResponse.ok) throw Error('Map catalog unavailable');
-        const raw = await catalogResponse.text();
-        if (raw.length > 32_000) throw Error('Map catalog exceeds budget');
-        const catalog = mapCatalogSchema.parse(JSON.parse(raw));
-        // Explicitly choose Tokyo road reference; never infer user GPS or 311 geography.
-        const pack = catalog.packs.find(item => item.id === 'tokyo-central-v1');
-        if (!pack || !inMapPack(139.75, 35.69, pack.bounds)) throw Error('Expected reference area unavailable');
-        const fileResponse = await fetch(pack.asset, { signal: controller.signal });
-        if (!fileResponse.ok) throw Error('Offline map unavailable');
-        const roads = await verifyMapPack(pack, await fileResponse.arrayBuffer());
-        mapBounds.current = pack.bounds;
-        const { Map, setWorkerCount, setWorkerUrl } = await import('maplibre-gl');
-        if (cancelled || !host.current) return;
+  useEffect(()=>{
+    const abort=new AbortController();
+    let cancelled=false;
+    let observer:ResizeObserver|null=null;
+    setStatus('loading');setTileIssues(false);
+    void(async()=>{
+      try{
+        const response=await fetch(LAND_ASSET,{cache:'force-cache',signal:abort.signal});
+        if(!response.ok)throw Error('Coastline asset unavailable');
+        const bytes=await response.arrayBuffer();
+        if(bytes.byteLength!==LAND_BYTES)throw Error('Unexpected coastline byte length');
+        const digest=await crypto.subtle.digest('SHA-256',bytes);
+        const hash=Array.from(new Uint8Array(digest),x=>x.toString(16).padStart(2,'0')).join('');
+        if(hash!==LAND_SHA256)throw Error('Coastline integrity failure');
+        const land=JSON.parse(new TextDecoder().decode(bytes));
+        if(land?.type!=='FeatureCollection'||!Array.isArray(land.features)
+          ||land.features.length!==71)throw Error('Unexpected coastline data');
+        const {Map,setWorkerCount,setWorkerUrl}=await import('maplibre-gl');
+        if(cancelled||!host.current)return;
         setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
         setWorkerCount(1);
-        const map = new Map({
-          container: host.current,
-          center: [139.75, 35.69], zoom: compact ? 10.9 : 12,
-          minZoom: 10, maxZoom: 16, attributionControl: false,
-          renderWorldCopies: false, fadeDuration: 0,
-          maxBounds: [[pack.bounds[0],pack.bounds[1]],[pack.bounds[2],pack.bounds[3]]],
-          style: {
-            version: 8,
-            sources: { streets: { type: 'geojson', data: roads } },
-            layers: [
-              { id:'land',type:'background',paint:{'background-color':'#17342f'} },
-              { id:'roads-halo',type:'line',source:'streets',paint:{'line-color':'#162924','line-width':4,'line-opacity':0.75} },
-              { id:'roads',type:'line',source:'streets',paint:{'line-color':'#83aba3','line-width':1.65,'line-opacity':0.92} },
+        const map=new Map({
+          container:host.current,
+          center:[...JAPAN_DEFAULT_CENTER],zoom:4.15,
+          minZoom:3.0,maxZoom:17,attributionControl:false,
+          renderWorldCopies:false,fadeDuration:0,
+          maxBounds:[[...JAPAN_VIEW_BOUNDS[0]],[...JAPAN_VIEW_BOUNDS[1]]],
+          style:{
+            version:8,
+            sources:{
+              'natural-earth-land':{type:'geojson',data:land},
+              'gsi-standard':{
+                type:'raster',tiles:['/api/reference-tiles/{z}/{x}/{y}'],
+                tileSize:256,minzoom:3,maxzoom:17,
+                bounds:[120,19,156,48],
+              },
+            },
+            layers:[
+              {id:'sea',type:'background',paint:{'background-color':'#133f56'}},
+              {id:'land-fill',type:'fill',source:'natural-earth-land',
+                paint:{'fill-color':'#315944','fill-opacity':1}},
+              {id:'coastline',type:'line',source:'natural-earth-land',
+                paint:{'line-color':'#8bd0bd','line-width':0.9,'line-opacity':0.9}},
+              {id:'gsi-topographic',type:'raster',source:'gsi-standard',
+                paint:{
+                  'raster-opacity':0.59,
+                  'raster-brightness-min':0.05,
+                  'raster-brightness-max':0.83,
+                  'raster-saturation':-0.25,
+                  'raster-fade-duration':0,
+                }},
             ],
           },
         });
         mapRef.current=map;
-        if (typeof ResizeObserver !== 'undefined') {
-          observer = new ResizeObserver(() => { if (!cancelled) map.resize(); });
+        if(typeof ResizeObserver!=='undefined'){
+          observer=new ResizeObserver(()=>{if(!cancelled)map.resize();});
           observer.observe(host.current);
         }
-        map.scrollZoom.disable(); map.boxZoom.disable(); map.dragRotate.disable();
-        // Compact maps stay inert to prevent accidental gestures while
-        // navigating. Full map supports intentional pan / pinch zoom only.
-        if (compact) {
-          map.dragPan.disable();
-          map.touchZoomRotate.disable();
-        } else {
-          map.dragPan.enable();
-          map.touchZoomRotate.enable();
-          map.touchZoomRotate.disableRotation();
-        }
-        map.once('load', () => { if (!cancelled) { map.resize(); setStatus('ready'); } });
-        map.on('error', () => { if (!cancelled) setStatus('unavailable'); });
-      } catch { if (!cancelled) setStatus('unavailable'); }
+        map.scrollZoom.disable();map.boxZoom.disable();map.dragRotate.disable();
+        if(compact){map.dragPan.disable();map.touchZoomRotate.disable();}
+        else{map.dragPan.enable();map.touchZoomRotate.enable();map.touchZoomRotate.disableRotation();}
+        map.on('error',event=>{
+          if(cancelled)return;
+          const message=String(event.error?.message||'');
+          if(/tile|raster|reference-tiles|source/i.test(message))setTileIssues(true);
+        });
+        map.once('load',()=>{
+          if(!cancelled){
+            map.resize();
+            setStatus('ready');
+            map.fitBounds([[122,20],[155,46.5]],{padding:25,duration:0});
+          }
+        });
+      }catch{if(!cancelled)setStatus('unavailable');}
     })();
-    return () => { cancelled=true; controller.abort(); observer?.disconnect();
+    return()=>{
+      cancelled=true;abort.abort();observer?.disconnect();
       pins.current.forEach(marker=>marker.remove());pins.current=[];
-      mapRef.current?.remove(); mapRef.current=null;mapBounds.current=null; };
-  }, [compact]);
+      mapRef.current?.remove();mapRef.current=null;
+    };
+  },[compact]);
 
-  useEffect(() => {
+  useEffect(()=>{
     let cancelled=false;
     pins.current.forEach(marker=>marker.remove());pins.current=[];
-    const map=mapRef.current, bounds=mapBounds.current;
-    if(status!=='ready'||!map||!bounds)return;
+    const map=mapRef.current;
+    if(status!=='ready'||!map)return;
     void import('maplibre-gl').then(({Marker})=>{
       if(cancelled||mapRef.current!==map)return;
-      const marker=(point:{lat:number;lng:number},label:string,type:string)=>{
-        if(!validPoint(point)||!inMapPack(point.lng,point.lat,bounds))return;
-        const el=document.createElement('div');
-        el.className='sim-geo-marker sim-geo-'+type;
-        el.textContent=type==='gps'?'●':'✕';
-        el.setAttribute('role','img');el.setAttribute('aria-label',label);el.title=label;
-        pins.current.push(new Marker({element:el}).setLngLat([point.lng,point.lat]).addTo(map));
+      const attach=(point:{lat:number;lng:number},label:string,kind:string)=>{
+        if(!inCoverage(point))return;
+        const element=document.createElement('div');
+        element.className='sim-geo-marker sim-geo-'+kind;
+        element.textContent=kind==='gps'?'●':'✕';
+        element.setAttribute('role','img');element.setAttribute('aria-label',label);
+        element.title=label;
+        pins.current.push(new Marker({element}).setLngLat([point.lng,point.lat]).addTo(map));
       };
-      if(userLocation&&userLocation.accuracy_m<=1000&&userLocation.source==='BROWSER_GEOLOCATION'){
-        marker(userLocation,'GPS · unverified personal position, exercise only','gps');
-        if(inMapPack(userLocation.lng,userLocation.lat,bounds))
-          map.easeTo({center:[userLocation.lng,userLocation.lat],duration:0});
+      if(userLocation?.source==='BROWSER_GEOLOCATION'&&userLocation.accuracy_m<=1000&&inCoverage(userLocation)){
+        attach(userLocation,t.gps,'gps');
+        map.easeTo({center:[userLocation.lng,userLocation.lat],zoom:Math.max(map.getZoom(),9),duration:0});
       }
-      if(epicenter)marker(epicenter,'Archived JMA epicenter · historical reference','epicenter');
+      if(epicenter)attach(epicenter,t.epicenter,'epicenter');
     });
-    return ()=>{cancelled=true;pins.current.forEach(marker=>marker.remove());pins.current=[];};
-  },[status,epicenter?.lat,epicenter?.lng,userLocation?.lat,userLocation?.lng,userLocation?.accuracy_m,userLocation?.source]);
-  const displayedEpicenter=!!epicenter && !!mapBounds.current && inMapPack(epicenter.lng,epicenter.lat,mapBounds.current);
-  const displayedGps=!!userLocation && !!mapBounds.current && inMapPack(userLocation.lng,userLocation.lat,mapBounds.current);
-  return <section className={compact ? 'sim-map-reference sim-map-compact' : 'sim-map-reference sim-map-full'}
+    return()=>{cancelled=true;pins.current.forEach(marker=>marker.remove());pins.current=[];};
+  },[status,epicenter?.lat,epicenter?.lng,userLocation?.lat,userLocation?.lng,userLocation?.accuracy_m,userLocation?.source,language]);
+
+  const displayedEpicenter=!!epicenter&&inCoverage(epicenter);
+  const displayedGps=!!userLocation&&inCoverage(userLocation);
+  const nationwide=()=>{
+    mapRef.current?.fitBounds([[122,20],[155,46.5]],{padding:25,duration:250});
+  };
+  return <section className={compact?'sim-map-reference sim-map-compact':'sim-map-reference sim-map-full'}
     aria-label={t.title} data-testid="simulation-reference-map">
     <div ref={host} className="sim-map-canvas" aria-hidden="true"/>
-    {(epicenter||userLocation) && <div className="sim-map-geo-note" data-testid="simulation-geo-markers">
-      {userLocation ? displayedGps ? '● GPS · exercise / 未認證' : 'GPS · outside reference map / 底圖範圍外' : ''}
-      {epicenter && <span>{displayedEpicenter?' ✕ epicenter / 歷史震央':' · epicenter outside this map / 震央不在底圖內'}</span>}
-    </div>}
     <div className="sim-map-maplabel"><strong>{t.title}</strong><small>{t.note}</small></div>
-    {!compact && <div className="sim-map-controls">
-      <button type="button" aria-label={t.zoomIn} onClick={() => mapRef.current?.zoomIn()} disabled={status!=='ready'}>+</button>
-      <button type="button" aria-label={t.zoomOut} onClick={() => mapRef.current?.zoomOut()} disabled={status!=='ready'}>−</button>
+    <div className="sim-map-landsea-legend" data-testid="japan-land-sea-legend">
+      <span><i className="sim-map-land-color"/>{t.land}</span>
+      <span><i className="sim-map-sea-color"/>{t.sea}</span>
+    </div>
+    {!compact&&<div className="sim-map-controls">
+      <button type="button" aria-label={t.zoomIn} onClick={()=>mapRef.current?.zoomIn()} disabled={status!=='ready'}>+</button>
+      <button type="button" aria-label={t.zoomOut} onClick={()=>mapRef.current?.zoomOut()} disabled={status!=='ready'}>−</button>
+      <button type="button" className="sim-map-overview" aria-label={t.overview} data-testid="japan-map-overview"
+        onClick={nationwide} disabled={status!=='ready'}><span aria-hidden="true">⌖</span></button>
+      {displayedEpicenter&&<button type="button" className="sim-map-epicenter-jump"
+        aria-label={t.focusEpicenter} data-testid="japan-map-epicenter"
+        onClick={()=>mapRef.current?.easeTo({center:[epicenter!.lng,epicenter!.lat],zoom:Math.max(mapRef.current?.getZoom()??6,6),duration:250})}>
+        <span aria-hidden="true">✕</span>
+      </button>}
+      {displayedGps&&<button type="button" aria-label={t.focusGPS}
+        onClick={()=>mapRef.current?.easeTo({center:[userLocation!.lng,userLocation!.lat],zoom:11,duration:250})}>◎</button>}
+    </div>}
+    {status==='ready'&&<div className="sim-map-geo-note" data-testid="simulation-geo-markers">
+      {displayedGps?t.gps:userLocation?t.gpsOut:''}
+      {displayedEpicenter?' '+t.epicenter:epicenter?' '+t.epicenterOut:''}
     </div>}
     <p className="sim-map-status" role="status">
-      {status==='loading' ? t.loading : status==='ready' ? t.ready : t.unavailable}
+      {status==='loading'?t.loading:status==='unavailable'?t.unavailable:tileIssues?t.tilesUnavailable:t.ready}
     </p>
     <p className="sim-map-caution">{t.caution}</p>
-    <a className="sim-map-attribution" href="https://www.openstreetmap.org/copyright"
-      target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>
+    <div className="sim-map-attribution">
+      <a href={GSI_ATTRIBUTION_URL} target="_blank" rel="noopener noreferrer">© 国土地理院</a>
+      <span> · </span>
+      <a href={NATURAL_EARTH_LICENSE_URL} target="_blank" rel="noopener noreferrer">Natural Earth</a>
+    </div>
   </section>;
 }
