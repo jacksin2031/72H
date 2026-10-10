@@ -13,11 +13,12 @@ from time import monotonic
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 from seventytwoh_contracts.models import (
     LiveSnapshot, LiveSourceStatus, NetworkState, SelfReportedSafetyStatus, StartLiveRequest,
 )
 from .drill import DrillRequest
+from .historical_cases import CASES, HistoricalId, HistoricCase, list_historical_cases
 from .drill_store import _DrillCandidatePlanner
 from .live import LiveSessionNotFound, LiveStore
 from .live_sources import JmaEarthquakeReport, JmaPrefObservation, JmaFetchResult
@@ -30,6 +31,54 @@ MAX_MOCK_SESSIONS = 8
 MOCK_TTL = 30 * 60
 
 
+class MockLiveRequest(DrillRequest):
+    historical_case: HistoricalId | None = None
+    historical_start_jst: datetime | None = None
+    historical_end_jst: datetime | None = None
+
+    @model_validator(mode="after")
+    def validate_historical_window(self) -> "MockLiveRequest":
+        begin, end = self.historical_start_jst, self.historical_end_jst
+        if begin is None and end is None:
+            return self
+        if self.historical_case is None or begin is None or end is None:
+            raise ValueError("Historical time range requires case, start and end")
+        if begin.utcoffset() != timedelta(hours=9) or end.utcoffset() != timedelta(hours=9):
+            raise ValueError("Historical time selection must include JST +09:00 offset")
+        if begin > end:
+            raise ValueError("Historical range start must not exceed end")
+        case = CASES[self.historical_case]
+        first = datetime.fromisoformat(case.milestones[0].at_jst)
+        last = datetime.fromisoformat(case.milestones[-1].at_jst)
+        if begin < first or end > last:
+            raise ValueError("Historical range must be within the selected case")
+        if not any(begin <= datetime.fromisoformat(m.at_jst) <= end for m in case.milestones):
+            raise ValueError("Selected historical range has no milestones")
+        return self
+
+
+def selected_milestones(request: MockLiveRequest):
+    if request.historical_case is None:
+        return ()
+    case = CASES[request.historical_case]
+    if request.historical_start_jst is None:
+        return case.milestones
+    return tuple(m for m in case.milestones if
+                 request.historical_start_jst <= datetime.fromisoformat(m.at_jst) <= request.historical_end_jst)
+
+
+class HistoricalView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    case_id: HistoricalId
+    title: dict[str, str]
+    source_url: str
+    magnitude: str
+    max_intensity: str
+    milestones: tuple[dict, ...]
+    current_milestone: dict | None = None
+    advisory_is_not_safety_core_input: bool = True
+
+
 class MockLiveResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
     mode: Literal["MOCK_LIVE"] = MOCK_MODE
@@ -38,12 +87,15 @@ class MockLiveResponse(BaseModel):
     ai_modes: tuple[str, ...] = ()
     battery: int | None = None
     snapshot: LiveSnapshot
+    historical: HistoricalView | None = None
 
 
 class MockJmaSource:
     """No HTTP usage. Reports have synthetic provenance and current bounded timestamps."""
-    def __init__(self, request: DrillRequest) -> None:
+    def __init__(self, request: MockLiveRequest) -> None:
         self.request = request
+        self.historic = CASES.get(request.historical_case) if request.historical_case else None
+        self.milestones = selected_milestones(request)
         self.stage = 0
 
     def fetch_latest(self) -> JmaFetchResult:
@@ -52,6 +104,30 @@ class MockJmaSource:
         if stage == 0 or self.request.evidence == "UNKNOWN":
             return JmaFetchResult(LiveSourceStatus.UNAVAILABLE, now, None, None, (),
                                   "MOCK LIVE: no official data; synthetic exercise only")
+        if self.historic and stage <= len(self.milestones):
+            milestone = self.milestones[stage - 1]
+            # The actual 2011 etc timestamps live in the historic metadata; the
+            # official-source deadline evaluator uses the synthetic runtime clock.
+            if milestone.kind not in {"EARTHQUAKE", "AFTERSHOCK"}:
+                if self.request.network == "OFFLINE":
+                    return JmaFetchResult(LiveSourceStatus.UNAVAILABLE, now, None, None, (),
+                                          "MOCK historical timeline: simulated outage; no fresh feed.")
+                return JmaFetchResult(LiveSourceStatus.FRESH, now, now, None, (),
+                                      f"MOCK historical supplemental event {milestone.kind}: unsupported by earthquake Safety Core.")
+            published = now - timedelta(hours=2) if self.request.evidence == "STALE" else now
+            result_status = LiveSourceStatus.STALE if self.request.evidence == "STALE" else LiveSourceStatus.FRESH
+            report = JmaEarthquakeReport(
+                report_id=f"historical-{self.historic.id}-{stage}",
+                title=f"HISTORICAL EXERCISE: {milestone.en}",
+                published_at=published,
+                occurred_at=published,
+                reference_url=f"mock://72h/historical/{self.historic.id}/{stage}",
+                observations=(JmaPrefObservation(code=self.historic.area_code,
+                                                 name=f"{self.historic.area_ja} (MOCK)",
+                                                 max_intensity=self.historic.max_intensity),),
+            )
+            return JmaFetchResult(result_status, now, published, None, (report,),
+                                  f"MOCK LIVE historical {self.historic.id}; archived {milestone.at_jst}; not live JMA.")
         if stage == 2 and self.request.network != "ONLINE":
             return JmaFetchResult(LiveSourceStatus.UNAVAILABLE, now, None, None, (),
                                   "MOCK LIVE: simulated source outage, no provider queried")
@@ -100,7 +176,7 @@ class RecordingMockPlanner(_DrillCandidatePlanner):
 
 class MockLiveStore(LiveStore):
     """Use the existing Live reducers and planning with synthetic-only adapters."""
-    def __init__(self, request: DrillRequest, planner: RecordingMockPlanner):
+    def __init__(self, request: MockLiveRequest, planner: RecordingMockPlanner):
         self._synthetic_source_mode = True
         self.mock_source = MockJmaSource(request)
         self.mock_request = request
@@ -118,15 +194,18 @@ class MockLiveStore(LiveStore):
         if pair is None:
             return None
         event, evidence = pair
+        historic = self.mock_source.historic
         event = event.model_copy(update={
             "source_name": MOCK_JMA_NAME,
-            "severity_raw": f"SYNTHETIC L{self.mock_request.severity}; not real JMA seismic intensity",
+            "severity_raw": (f"HISTORICAL EXERCISE max intensity {historic.max_intensity} (not live)"
+                             if historic else f"SYNTHETIC L{self.mock_request.severity}; not real JMA seismic intensity"),
             "raw_reference": report.reference_url,
             "is_synthetic": True,
         })
         evidence = evidence.model_copy(update={
             "source_name": MOCK_JMA_NAME,
-            "summary": f"SYNTHETIC ONLY: emulated L{self.mock_request.severity} event in Tokyo. No verified Live JMA observation.",
+            "summary": (f"SYNTHETIC HISTORICAL EXERCISE: {historic.id}, archived maximum JMA intensity {historic.max_intensity}, replayed on an artificial runtime clock."
+                        if historic else f"SYNTHETIC ONLY: emulated L{self.mock_request.severity} event in Tokyo. No verified Live JMA observation."),
             "raw_reference": report.reference_url,
             "is_synthetic": True,
             "eligible_for_high_risk": False,
@@ -184,7 +263,7 @@ class MockLiveStore(LiveStore):
 class _MockSession:
     store: MockLiveStore
     planner: RecordingMockPlanner
-    request: DrillRequest
+    request: MockLiveRequest
     expires: float
     lock: asyncio.Lock
 
@@ -215,10 +294,27 @@ class MockLiveDrillStore:
         self._assert_not_live(snapshot)
         return MockLiveResponse(
             current_step=session.store.mock_source.stage,
-            total_steps=3 if session.request.network == "RECONNECTING" else 2,
+            total_steps=(len(session.store.mock_source.milestones)
+                         if session.request.historical_case else 3 if session.request.network == "RECONNECTING" else 2),
             ai_modes=tuple(session.planner.outcomes.get(f"live-{snapshot.session_id}", ())),
             battery=session.request.battery,
             snapshot=snapshot,
+            historical=self._historical_view(session),
+        )
+
+    @staticmethod
+    def _historical_view(session: _MockSession) -> HistoricalView | None:
+        if not session.request.historical_case:
+            return None
+        case = CASES[session.request.historical_case]
+        milestones = session.store.mock_source.milestones
+        step = session.store.mock_source.stage
+        return HistoricalView(
+            case_id=case.id, title={"ja": case.ja, "zh-TW": case.zh, "en": case.en},
+            source_url=case.source_url, magnitude=case.magnitude,
+            max_intensity=case.max_intensity,
+            milestones=tuple(m.public() for m in milestones),
+            current_milestone=(milestones[step - 1].public() if 0 < step <= len(milestones) else None),
         )
 
     @staticmethod
@@ -226,7 +322,7 @@ class MockLiveDrillStore:
         if snapshot.spatial_guidance.movement_authorized or snapshot.routes or snapshot.destinations:
             raise RuntimeError("Mock Live cannot authorize real movement or places")
 
-    async def start(self, request: DrillRequest) -> MockLiveResponse:
+    async def start(self, request: MockLiveRequest) -> MockLiveResponse:
         with self._lock:
             self._purge()
             if len(self._sessions) >= self._max:
@@ -237,9 +333,12 @@ class MockLiveDrillStore:
         # Replay sample contains area IDs that are intentionally absent in the
         # canonical Live registry. Use only registered synthetic Tokyo scope.
         base = load_scenario().profile_seed
+        historical = CASES.get(request.historical_case) if request.historical_case else None
+        area = f"JP-{historical.area_code}" if historical else "JP-13"
         mock_location = base.current_location.model_copy(update={
-            "label": "Tokyo exercise area (MOCK)", "lat": None, "lng": None,
-            "area_ids": ("JP-13", "JP"), "observed_at": None, "source": None,
+            "label": f"{historical.area_ja} exercise area (MOCK)" if historical else "Tokyo exercise area (MOCK)",
+            "lat": None, "lng": None,
+            "area_ids": (area, "JP"), "observed_at": None, "source": None,
         })
         seed = base.model_copy(update={
             "current_location": mock_location,
@@ -251,6 +350,9 @@ class MockLiveDrillStore:
         })
         snap = await store.start_async(StartLiveRequest(language=request.language, profile=seed))
         instrumented.register(f"live-{snap.session_id}", request)
+        if historical:
+            instrumented._conditions[f"live-{snap.session_id}"]["historical_case_id"] = historical.id
+            instrumented._conditions[f"live-{snap.session_id}"]["historical_disaster_reference"] = historical.source_url
         session = _MockSession(store, instrumented, request, monotonic() + MOCK_TTL, asyncio.Lock())
         with self._lock:
             self._purge()
@@ -267,11 +369,19 @@ class MockLiveDrillStore:
         session = self._lookup(id)
         async with session.lock:
             stage = session.store.mock_source.stage
-            max_steps = 3 if session.request.network == "RECONNECTING" else 2
+            max_steps = (len(session.store.mock_source.milestones)
+                         if session.request.historical_case else 3 if session.request.network == "RECONNECTING" else 2)
             if stage >= max_steps:
                 from .storage import InvalidReplayTransition
                 raise InvalidReplayTransition("mock live exercise completed")
             session.store.mock_source.stage = stage + 1
+            if session.request.historical_case:
+                milestone = session.store.mock_source.milestones[stage]
+                session.planner._conditions[f"live-{id}"]["historical_step"] = {
+                    "kind": milestone.kind, "date_jst": milestone.at_jst,
+                    "description": milestone.en,
+                    "supported_by_safety_core": milestone.kind in {"EARTHQUAKE", "AFTERSHOCK"},
+                }
             try:
                 snap = await session.store.refresh_async(id)
             except Exception:

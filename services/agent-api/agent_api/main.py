@@ -41,7 +41,8 @@ from .live import (
 from .planner import CandidatePlanner
 from .drill import DrillRequest
 from .drill_store import DrillStore
-from .mock_live import MockLiveDrillStore, MockLiveResponse
+from .mock_live import MockLiveDrillStore, MockLiveResponse, MockLiveRequest
+from .historical_cases import list_historical_cases
 
 
 def create_app(store: ReplayStore | None = None, live_store: LiveStore | None = None, drill_store: DrillStore | None = None, mock_live_store: MockLiveDrillStore | None = None) -> FastAPI:
@@ -187,8 +188,12 @@ def create_app(store: ReplayStore | None = None, live_store: LiveStore | None = 
     async def next_drill(session_id: UUID, _: None = Depends(authenticate_drill)) -> ReplaySnapshot:
         return await _run_async(lambda: isolated_drills.next(session_id))
 
+    @application.get("/api/mock-live/cases")
+    def list_mock_historical_cases() -> tuple[dict, ...]:
+        return list_historical_cases()
+
     @application.post("/api/mock-live/start", response_model=MockLiveResponse, status_code=status.HTTP_201_CREATED)
-    async def start_mock_live(request: DrillRequest, _: None = Depends(authenticate_drill)) -> MockLiveResponse:
+    async def start_mock_live(request: MockLiveRequest, _: None = Depends(authenticate_drill)) -> MockLiveResponse:
         try:
             return await isolated_mock_live.start(request)
         except SessionCapacityReached as exc:

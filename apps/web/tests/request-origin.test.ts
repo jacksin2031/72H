@@ -49,3 +49,10 @@ it('keeps Mock Live behind explicit route and method allowlist', () => {
   expect(isAllowedApiProxyPath('mock-live/a-b/route')).toBe(false);
   expect(isAllowedApiProxyPath('mock-live/../../live/start')).toBe(false);
 });
+
+it('accepts read-only historical case catalog but never write method', () => {
+  expect(isAllowedApiProxyPath('mock-live/cases')).toBe(true);
+  expect(isAllowedApiProxyRequest('mock-live/cases','GET')).toBe(true);
+  expect(isAllowedApiProxyRequest('mock-live/cases','POST')).toBe(false);
+  expect(isAllowedApiProxyPath('mock-live/cases/../../../live')).toBe(false);
+});
