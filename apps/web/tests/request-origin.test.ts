@@ -27,3 +27,32 @@ it('allows only the session location update path through the API proxy allowlist
   expect(isAllowedApiProxyRequest('live/session_1/profile', 'POST')).toBe(true);
   expect(isAllowedApiProxyRequest('live/session_1/profile', 'GET')).toBe(false);
 });
+
+it('locks the drill API to exact authenticated start/read/next paths and methods', () => {
+  expect(isAllowedApiProxyRequest('drill/start', 'POST')).toBe(true);
+  expect(isAllowedApiProxyRequest('drill/start', 'GET')).toBe(false);
+  expect(isAllowedApiProxyRequest('drill/abc-123', 'GET')).toBe(true);
+  expect(isAllowedApiProxyRequest('drill/abc-123', 'POST')).toBe(false);
+  expect(isAllowedApiProxyRequest('drill/abc-123/next', 'POST')).toBe(true);
+  expect(isAllowedApiProxyRequest('drill/abc-123/next', 'GET')).toBe(false);
+  expect(isAllowedApiProxyPath('drill/abc-123/reset')).toBe(false);
+  expect(isAllowedApiProxyPath('drill/../../live/start')).toBe(false);
+});
+
+it('keeps Mock Live behind explicit route and method allowlist', () => {
+  expect(isAllowedApiProxyRequest('mock-live/start','POST')).toBe(true);
+  expect(isAllowedApiProxyRequest('mock-live/start','GET')).toBe(false);
+  expect(isAllowedApiProxyRequest('mock-live/a-b','GET')).toBe(true);
+  expect(isAllowedApiProxyRequest('mock-live/a-b','POST')).toBe(false);
+  expect(isAllowedApiProxyRequest('mock-live/a-b/next','POST')).toBe(true);
+  expect(isAllowedApiProxyRequest('mock-live/a-b/next','GET')).toBe(false);
+  expect(isAllowedApiProxyPath('mock-live/a-b/route')).toBe(false);
+  expect(isAllowedApiProxyPath('mock-live/../../live/start')).toBe(false);
+});
+
+it('accepts read-only historical case catalog but never write method', () => {
+  expect(isAllowedApiProxyPath('mock-live/cases')).toBe(true);
+  expect(isAllowedApiProxyRequest('mock-live/cases','GET')).toBe(true);
+  expect(isAllowedApiProxyRequest('mock-live/cases','POST')).toBe(false);
+  expect(isAllowedApiProxyPath('mock-live/cases/../../../live')).toBe(false);
+});

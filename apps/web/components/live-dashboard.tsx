@@ -533,10 +533,10 @@ function LocationSyncGate({ state, messages, retry, canRetry, chooseArea }: {
   </section>;
 }
 
-export function MobileScene({ view, snapshot, language, messages, projection, deviceLocation, locationResolving, onHomeMapReady, power, level, override, choose, theme, chooseTheme,
+export function MobileScene({ view, snapshot, language, chooseLanguage, messages, projection, deviceLocation, locationResolving, onHomeMapReady, power, level, override, choose, theme, chooseTheme,
   busy, onProfile, onProfileUpdate, onRefresh, onRouteSearch, link, now, connection, check, setCheck, notifications, dismissNotification, sessionLost,
   canStart, locationSync, onRetryLocation, onLocalLocationChecked, onChooseArea }: {
-  view: string; snapshot: LiveSnapshot | null; language: Language; messages: Record<string, string>;
+  view: string; snapshot: LiveSnapshot | null; language: Language; chooseLanguage?: (value: Language) => void; messages: Record<string, string>;
   projection: ReturnType<typeof projectLiveSnapshot> | null; deviceLocation: ReturnType<typeof useDeviceLocation>; locationResolving: boolean;
   onHomeMapReady: (ready: boolean) => void;
   power: ReturnType<typeof usePower>['power']; level: number | null; override: string; choose: (value: string) => void;
@@ -585,7 +585,13 @@ export function MobileScene({ view, snapshot, language, messages, projection, de
     && ['SAFETY_CHECK', 'EMERGENCY_PROTECT'].includes(projection.presentation.mode);
   const locationGateOverride = !!locationSync && criticalProtection;
   if (locationSync && view !== 'more' && !criticalProtection) return <LocationSyncGate state={locationSync} messages={messages} retry={onRetryLocation} canRetry={canStart && !busy} chooseArea={onChooseArea} />;
-  if (!snapshot || !projection) return <LocationOnboarding language={language} messages={messages} location={deviceLocation} busy={busy} canStart={canStart} submit={onProfile} />;
+  if (!snapshot || !projection) return <>
+    <LocationOnboarding language={language} messages={messages} location={deviceLocation} busy={busy} canStart={canStart} submit={onProfile} />
+    {view === 'more' && <details className="more-lab-entry"><summary>{messages.testToolsLabel}</summary>
+      <Link href="/disaster-test">{messages.disasterTestDestination} →</Link>
+      <Link href="/map">{language === 'ja' ? '日本全国の参考地図' : language === 'en' ? 'All Japan reference map' : '全日本參考地圖'} →</Link>
+    </details>}
+  </>;
   const urgent = ['SAFETY_CHECK', 'EMERGENCY_PROTECT', 'SURVIVAL', 'MAP_ASSISTED'].includes(projection.presentation.mode)
     || ['SHELTER_IN_PLACE', 'EVACUATE'].includes(snapshot.spatial_guidance.current_action_kind);
   const currentPlan = projection.plan;
@@ -633,15 +639,19 @@ export function MobileScene({ view, snapshot, language, messages, projection, de
         focusPlanAfterBack.current = true; setPlanPanel('current');
       }}>{messages.backToPlan}</button>}
       {planPanel === 'current' && <>
-        <nav className="plan-subviews" aria-label={messages.planReview}>
-          <button type="button" data-plan-panel="history" onClick={() => { planTriggerPanel.current = 'history'; setPlanPanel('history'); }}>{messages.planHistoryOpen}</button>
-          <button type="button" data-plan-panel="advanced" onClick={() => { planTriggerPanel.current = 'advanced'; setPlanPanel('advanced'); }}>{messages.advancedPlanOpen}</button>
-        </nav>
-        <div className="action-grid live-action-grid">{(['NOW', 'NEXT', 'AVOID'] as const).map(category => <section className="action-panel" key={category}>
-          <small>{messages[category] ?? category}</small>{activeActions.filter(action => action.category === category).map(action => <article key={action.id}><h2>{action.text}</h2>
-            <p>{action.reason}</p>{action.evidence_ids.map(id => <Link key={id} href="/sources">{language === 'ja' ? '根拠を確認' : language === 'zh-TW' ? '檢視依據' : 'Review evidence'} →</Link>)}</article>)}
-          {!activeActions.some(action => action.category === category) && <p className="muted">{messages.noPlan}</p>}
-        </section>)}</div>
+        <details className="plan-tools">
+          <summary>{messages.planTools}</summary>
+          <nav className="plan-subviews" aria-label={messages.planReview}>
+            <button type="button" data-plan-panel="history" onClick={() => { planTriggerPanel.current = 'history'; setPlanPanel('history'); }}>{messages.planHistoryOpen}</button>
+            <button type="button" data-plan-panel="advanced" onClick={() => { planTriggerPanel.current = 'advanced'; setPlanPanel('advanced'); }}>{messages.advancedPlanOpen}</button>
+          </nav>
+        </details>
+        {activeActions.length === 0 ? <p className="plan-empty-state" role="status">{messages.noPlan}</p>
+          : <div className="action-grid live-action-grid">{(['NOW', 'NEXT', 'AVOID'] as const).filter(category =>
+            activeActions.some(action => action.category === category)).map(category => <section className="action-panel" key={category}>
+            <small>{messages[category] ?? category}</small>{activeActions.filter(action => action.category === category).map(action => <article key={action.id}><h2>{action.text}</h2>
+              <p>{action.reason}</p>{action.evidence_ids.map(id => <Link key={id} href="/sources">{language === 'ja' ? '根拠を確認' : language === 'zh-TW' ? '檢視依據' : 'Review evidence'} →</Link>)}</article>)}
+          </section>)}</div>}
         <p>{messages.lastVerified}: {displayTime(snapshot.situation.latest_evidence_at, language)}</p>
         {snapshot.plan_evaluations.findLast(item => item.plan_id === currentPlan?.id)?.reason && <p>{snapshot.plan_evaluations.findLast(item => item.plan_id === currentPlan?.id)?.reason}</p>}
         {urgent && <div className="emergency-contact"><h2>{messages.emergencyContacts}</h2><p>{messages.emergencyContactText}</p><a href="tel:119">119</a> · <a href="tel:110">110</a></div>}
@@ -658,13 +668,15 @@ export function MobileScene({ view, snapshot, language, messages, projection, de
     {view === 'more' && <section className="live-more-scene"><h1>{messages.more}</h1>
       {morePanel === 'home' && <>
         <section className="more-location-card" aria-labelledby="more-location-title">
-          <div><small id="more-location-title">{messages.locationAreaHeading}</small><h2>{areaPresentation.area.label}</h2>
-            <p>{areaSourceLabel} · {freshnessLabel}</p>
-            <p>{messages.locationCheckedAt}: {displayTime(areaPresentation.area.observedAt, language)}</p>
-            {areaPresentation.area.accuracyM !== null && <p>{messages.locationAccuracy}: ±{Math.round(areaPresentation.area.accuracyM)} m</p>}
-            {showDevicePoint && areaPresentation.devicePoint && <p className="device-point-provenance">
-              {areaPresentation.devicePoint.source === 'GPS' ? messages.locationDeviceGps : messages.locationDeviceLastKnown} · {displayTime(areaPresentation.devicePoint.observedAt, language)} · {messages.locationAccuracy}: ±{Math.round(areaPresentation.devicePoint.accuracyM)} m
-            </p>}
+          <div className="more-area-summary"><small id="more-location-title">{messages.locationAreaHeading}</small><h2>{areaPresentation.area.label}</h2>
+            <details className="more-location-meta">
+              <summary>{areaSourceLabel} · {freshnessLabel}<span className="sr-only"> · {messages.locationDetails}</span></summary>
+              <p>{messages.locationCheckedAt}: {displayTime(areaPresentation.area.observedAt, language)}</p>
+              {areaPresentation.area.accuracyM !== null && <p>{messages.locationAccuracy}: ±{Math.round(areaPresentation.area.accuracyM)} m</p>}
+              {showDevicePoint && areaPresentation.devicePoint && <p className="device-point-provenance">
+                {areaPresentation.devicePoint.source === 'GPS' ? messages.locationDeviceGps : messages.locationDeviceLastKnown} · {displayTime(areaPresentation.devicePoint.observedAt, language)} · {messages.locationAccuracy}: ±{Math.round(areaPresentation.devicePoint.accuracyM)} m
+              </p>}
+            </details>
           </div>
           <button className="primary" type="button" disabled={busy || deviceLocation.busy || !deviceLocation.ready || (!localOnlyLocation && !canStart)} onClick={checkLocation}>
             {deviceLocation.busy ? messages.locationResolving : messages.locationLocate}
@@ -685,6 +697,10 @@ export function MobileScene({ view, snapshot, language, messages, projection, de
             <span>{label}</span><UiIcon name="arrow" />
           </button>)}
         </nav>
+        <details className="more-lab-entry"><summary>{messages.testToolsLabel}</summary>
+      <Link href="/disaster-test">{messages.disasterTestDestination} →</Link>
+          <Link href="/map">{language === 'ja' ? '日本全国の参考地図' : language === 'en' ? 'All Japan reference map' : '全日本參考地圖'} →</Link>
+        </details>
         <footer className="more-emergency-footer">
           <p><a href="tel:119">119</a> · <a href="tel:110">110</a> · <Link href="/dashboard">72H</Link></p>
           <details><summary>{messages.emergencyBasicsTitle}</summary><p>{messages.emergencyBasicsText}</p></details>
@@ -709,7 +725,12 @@ export function MobileScene({ view, snapshot, language, messages, projection, de
         <SafetyCheckControls check={check} setCheck={setCheck} messages={messages} consentOnly />
       </section>}
       {morePanel === 'display' && <section className="settings-panel"><h2>{messages.displayDestination}</h2>
-        <p>{messages.textScaleHelp}</p><p>{messages.language}: {messages.languageChangeHint}</p>
+        <p>{messages.textScaleHelp}</p>
+        <label className="settings-language">{messages.language}
+          <select aria-label={messages.language} value={language} onChange={event => chooseLanguage?.(event.target.value as Language)}>
+            <option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option>
+          </select>
+        </label>
         <label>{messages.appearance}<select value={theme} onChange={event => chooseTheme(event.target.value)}>
           <option value="dark">{adaptiveMessages[language].dark}</option><option value="system">{adaptiveMessages[language].system}</option><option value="contrast">{adaptiveMessages[language].contrast}</option>
         </select></label>
@@ -1220,6 +1241,10 @@ export function LiveDashboard({ view }: { view: string }) {
     { key: 'more', label: messages.more },
   ];
   const canUseNetwork = (typeof navigator === 'undefined' || navigator.onLine) && connection !== 'offline' && power.power.allowNonCriticalNetwork && !busy;
+  const chooseLanguage = (next: Language) => {
+    setLanguage(next);
+    try { localStorage.setItem('72h-language', next); } catch { /* In-memory fallback. */ }
+  };
   const mainContent = role === 'unknown' ? <div className="device-role-pending" role="status">{messages.loading}</div>
     : role === 'desktop'
       ? locationSync
@@ -1229,7 +1254,7 @@ export function LiveDashboard({ view }: { view: string }) {
         refresh={() => void refresh()} onProfile={profile => void begin(profile)} onProfileUpdate={profile => void updateProfile(profile)} onRouteSearch={searchRoute}
         check={check} setCheck={setCheck} notifications={notifications} dismissNotification={id => setNotifications(items => items.filter(item => item.id !== id))} sessionLost={sessionLost}
         onChooseArea={chooseLocationArea} canUpdateLocation={canUseNetwork} />
-      : <MobileScene view={mobileView} snapshot={snapshot} language={language} messages={messages} projection={projection}
+      : <MobileScene view={mobileView} snapshot={snapshot} language={language} chooseLanguage={chooseLanguage} messages={messages} projection={projection}
         deviceLocation={deviceLocation} locationResolving={locationResolving} onHomeMapReady={onHomeMapReady}
         power={power.power} level={power.level} override={power.override} choose={power.choose}
         theme={theme} chooseTheme={chooseTheme} busy={busy} onProfile={profile => void begin(profile)} onProfileUpdate={profile => updateProfile(profile)} onRefresh={() => void refresh()}
@@ -1239,13 +1264,11 @@ export function LiveDashboard({ view }: { view: string }) {
         locationSync={locationSync} onRetryLocation={() => void retryLocationUpdate()}
         onLocalLocationChecked={() => setLocationGate({ phase: 'failed', update: null })} onChooseArea={chooseLocationArea} />;
 
-  return <div className={`live-shell theme-${theme} power-${power.power.mode.toLowerCase()} role-${role}`}>
+  return <div className={`live-shell theme-${theme} power-${power.power.mode.toLowerCase()} role-${role} ${snapshot ? 'has-live-session' : 'no-live-session'}`}>
     {!criticalMobileTakeover && <header className="live-topbar"><Link className="live-brand" href="/dashboard">72<span>H</span></Link>
       <LiveHeaderStatus hasSession={!!snapshot} busy={busy} networkLabel={networkLabel} messages={messages} />
       {role === 'desktop' && <nav className="desktop-primary-nav" aria-label={messages.preparedness}>{desktopNav.map(item => <Link key={item.key} href={`/${item.key}`} aria-current={view === item.key ? 'page' : undefined}>{item.label}</Link>)}</nav>}
-      <label className="live-language">{messages.language}<select aria-label={messages.language} value={language} onChange={event => {
-        const next = event.target.value as Language; setLanguage(next); try { localStorage.setItem('72h-language', next); } catch { /* In-memory fallback. */ }
-      }}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option></select></label>
+      <label className="live-language">{messages.language}<select aria-label={messages.language} value={language} onChange={event => chooseLanguage(event.target.value as Language)}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option></select></label>
     </header>}
     <main className="live-main">
       {error && <p className="error" role="alert">{error}</p>}

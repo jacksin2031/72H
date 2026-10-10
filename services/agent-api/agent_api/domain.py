@@ -94,8 +94,10 @@ def apply_live_evidence_batch(
     records: tuple[tuple[DisasterEvent, Evidence], ...],
     current_time,
     policy: SafetyPolicy = DEFAULT_POLICY,
+    *,
+    synthetic_mode: bool = False,
 ) -> CoreState:
-    """Append server-normalized live evidence, then run the same Safety Core evaluator."""
+    """Append server-normalized evidence; only an internal mock adapter may enable synthetic mode."""
     if current_time.tzinfo is None or current_time.utcoffset() is None:
         raise ValueError("live current_time must be timezone aware")
     if current_time < state.current_time:
@@ -103,7 +105,10 @@ def apply_live_evidence_batch(
     before = state
     reduced = replace(state, current_time=current_time)
     for event, evidence in records:
-        if event.is_synthetic or evidence.is_synthetic:
+        if synthetic_mode:
+            if not event.is_synthetic or not evidence.is_synthetic or evidence.eligible_for_high_risk:
+                raise ValueError("mock-live requires synthetic, high-risk-ineligible evidence")
+        elif event.is_synthetic or evidence.is_synthetic:
             raise ValueError("synthetic replay records cannot enter a live session")
         if event.source_class != SourceClass.OFFICIAL or evidence.trust_status != TrustStatus.VERIFIED_OFFICIAL:
             raise ValueError("live JMA records must use server-assigned official trust")
@@ -123,11 +128,14 @@ def apply_live_evidence_batch(
             situation_id=situation.id,
             timestamp=current_time,
             agent=AgentName.SOURCE_AGENT,
-            event_type="LIVE_OFFICIAL_EVENT_RECEIVED",
+            event_type="MOCK_LIVE_EVENT_RECEIVED" if synthetic_mode else "LIVE_OFFICIAL_EVENT_RECEIVED",
             input_refs=(event.id,),
             output_refs=(event.id,),
             status=TraceStatus.SUCCESS,
-            public_summary="An official JMA earthquake report entered the live evidence pipeline.",
+            public_summary=(
+                "MOCK LIVE: synthetic earthquake input exercised the Live reducer; not a JMA bulletin."
+                if synthetic_mode else "An official JMA earthquake report entered the live evidence pipeline."
+            ),
         )
         reduced = replace(
             reduced,
@@ -139,7 +147,7 @@ def apply_live_evidence_batch(
             reduced,
             event.id,
             evidence,
-            "OFFICIAL_LIVE_EVIDENCE_ADDED",
+            "MOCK_LIVE_EVIDENCE_ADDED" if synthetic_mode else "OFFICIAL_LIVE_EVIDENCE_ADDED",
             (event.id,),
         )
     from .planning import evaluate_and_replan
@@ -198,8 +206,10 @@ async def apply_live_evidence_batch_with_planner(
     planner,
     live_session_id: str,
     policy: SafetyPolicy = DEFAULT_POLICY,
+    *,
+    synthetic_mode: bool = False,
 ):
-    """Publish live evidence through the existing bounded candidate-planner boundary."""
+    """Publish official Live or isolated synthetic Mock Live evidence through identical planning."""
     if current_time.tzinfo is None or current_time.utcoffset() is None:
         raise ValueError("live current_time must be timezone aware")
     if current_time < state.current_time:
@@ -207,7 +217,10 @@ async def apply_live_evidence_batch_with_planner(
     before = state
     reduced = replace(state, current_time=current_time)
     for event, evidence in records:
-        if event.is_synthetic or evidence.is_synthetic:
+        if synthetic_mode:
+            if not event.is_synthetic or not evidence.is_synthetic or evidence.eligible_for_high_risk:
+                raise ValueError("mock-live requires synthetic, high-risk-ineligible evidence")
+        elif event.is_synthetic or evidence.is_synthetic:
             raise ValueError("synthetic replay records cannot enter a live session")
         if event.source_class != SourceClass.OFFICIAL or evidence.trust_status != TrustStatus.VERIFIED_OFFICIAL:
             raise ValueError("live JMA records must use server-assigned official trust")
@@ -227,11 +240,14 @@ async def apply_live_evidence_batch_with_planner(
             situation_id=situation.id,
             timestamp=current_time,
             agent=AgentName.SOURCE_AGENT,
-            event_type="LIVE_OFFICIAL_EVENT_RECEIVED",
+            event_type="MOCK_LIVE_EVENT_RECEIVED" if synthetic_mode else "LIVE_OFFICIAL_EVENT_RECEIVED",
             input_refs=(event.id,),
             output_refs=(event.id,),
             status=TraceStatus.SUCCESS,
-            public_summary="An official JMA earthquake report entered the live evidence pipeline.",
+            public_summary=(
+                "MOCK LIVE: synthetic earthquake input exercised the Live reducer; not a JMA bulletin."
+                if synthetic_mode else "An official JMA earthquake report entered the live evidence pipeline."
+            ),
         )
         reduced = replace(
             reduced,
@@ -243,7 +259,7 @@ async def apply_live_evidence_batch_with_planner(
             reduced,
             event.id,
             evidence,
-            "OFFICIAL_LIVE_EVIDENCE_ADDED",
+            "MOCK_LIVE_EVIDENCE_ADDED" if synthetic_mode else "OFFICIAL_LIVE_EVIDENCE_ADDED",
             (event.id,),
         )
     return await replan_live_transition_with_planner(

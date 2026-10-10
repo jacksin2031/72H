@@ -1,0 +1,34 @@
+
+/* P2.0: geospatial screening is advisory, never an approved evacuation route. */
+.sim-v2-map-sheet-risk{max-height:min(54dvh,540px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.sim-v2-map-sheet-risk>p{font-size:11px}
+.sim-risk-panel{color:#182b22;text-align:left}
+.sim-risk-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.sim-risk-header h2{font-size:17px;margin:0;font-weight:800}
+.sim-risk-exercise{font-size:9px;letter-spacing:.02em;color:#ad563d;font-weight:750}
+.sim-risk-gps{padding:12px 0;border-bottom:1px solid #d9e2dc;display:flex;gap:9px;align-items:center;justify-content:space-between}
+.sim-risk-gps p{margin:0;color:#4c6056;font-size:12px;line-height:1.45}
+.sim-risk-gps-observed strong{font-size:12px;display:block}
+.sim-risk-gps button{background:#14533b;color:#fff;border:none;border-radius:9px;padding:10px 13px;font-size:12px;font-weight:700;min-height:44px;white-space:normal;max-width:160px}
+.sim-risk-gps button:disabled{opacity:.5}
+.sim-risk-entry{border-bottom:1px solid #d9e2dc;padding:12px 0}
+.sim-risk-entry h3{font-size:14px;margin:0 0 7px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sim-risk-entry p{font-size:12px;color:#45594b;margin:6px 0;line-height:1.5}
+.sim-risk-entry p strong{font-size:19px;font-variant-numeric:tabular-nums;color:#172f25}
+.sim-risk-entry a{display:inline-block;font-size:12px;color:#006a57;text-decoration:underline;text-underline-offset:2px;min-height:34px;padding-top:7px}
+.sim-risk-entry small{display:block;font-size:11px;color:#637469}
+.sim-risk-unknown{border-radius:30px;background:#f2e5c3;padding:3px 8px;font-size:10px;color:#78521e;white-space:nowrap}
+.sim-risk-entry .sim-risk-limits{font-size:12px;color:#a44831;font-weight:700}
+.sim-risk-tsunami-on{border-left:4px solid #cd672f;padding-left:9px;background:#fff3e7}
+.sim-risk-entry .sim-risk-alert{color:#9e3d20;font-weight:700}
+.sim-risk-privacy{font-size:11px!important;color:#617568!important;margin:11px 0 5px!important}
+.sim-risk-panel>p.sim-risk-alert{color:#ae4a2c!important;font-size:12px!important;line-height:1.5!important}
+.sim-map-geo-note{position:absolute;z-index:5;top:40px;left:8px;right:8px;border-radius:6px;padding:4px 7px;background:#0c3028e6;color:#f0ffed;font-size:10px;pointer-events:none;line-height:1.4;max-width:calc(100% - 16px)}
+.sim-map-geo-note span{color:#f0cb9c}
+.sim-map-full .sim-map-geo-note{top:177px;left:14px;right:60px;max-width:calc(100% - 90px)}
+.sim-geo-marker{border-radius:50%;width:24px;height:24px;border:3px solid #fff;background:#3288dd;box-shadow:0 1px 7px #000b;display:grid;place-items:center;color:#fff;font-size:15px;font-weight:800;line-height:1}
+.sim-geo-epicenter{background:#d94347;transform:rotate(0deg)}
+@media(max-height:750px){.sim-v2-map-sheet-risk{max-height:min(49dvh,390px)}}
+
+.sim-map-attribution{position:absolute;z-index:6;right:5px;bottom:20px;background:#113128dd;color:#f1fff6;font-size:9px;padding:3px 6px;border-radius:4px;text-decoration:underline}
+.sim-v2-timeline-map .sim-map-attribution{display:none}

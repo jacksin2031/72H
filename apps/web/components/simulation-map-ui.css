@@ -1,0 +1,347 @@
+/* P2.1: Map-first, dark-only surface and progressively disclosed risk details.
+   Safety assessment is informational and NEVER implies an authorised route. */
+
+.sim-v2-shell {
+  --map-surface: #101f1d;
+  --map-surface-raised: #18312a;
+  --map-text: #eff9f2;
+  --map-secondary: #b3ccc0;
+  --map-border: #37594b;
+  --map-mint: #89efba;
+  --map-warning: #ffc080;
+}
+
+/* Use the viewport for mapping; the small, collapsible risk sheet is an overlay.
+   It does not reduce the MapLibre canvas dimensions. */
+.sim-v2-fullmap {
+  background: #102923;
+  min-height: calc(100dvh - 135px);
+  height: calc(100dvh - 135px);
+}
+.sim-v2-map-sheet.sim-v2-map-sheet-risk {
+  position: absolute;
+  z-index: 7;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #101f1df5;
+  color: var(--map-text);
+  border-top: 1px solid var(--map-border);
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -10px 28px #06100d80;
+  padding: 0 16px 12px;
+  max-height: min(62dvh, 620px);
+  overflow-y: auto;
+  scrollbar-color: #436953 #132922;
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
+}
+.sim-v2-map-sheet-risk[data-sheet-state="collapsed"] {
+  overflow: hidden;
+}
+.sim-v2-map-sheet-risk .sim-v2-sheet-toggle {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 72px;
+  gap: 11px;
+  margin: 0;
+  padding: 18px 0 7px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--map-text);
+  font: inherit;
+  text-align: left;
+  position: relative;
+  cursor: pointer;
+}
+.sim-v2-map-sheet-risk .sim-v2-sheet-handle {
+  position: absolute;
+  top: 7px;
+  left: calc(50% - 20px);
+  width: 40px;
+  height: 4px;
+  margin: 0;
+  border-radius: 8px;
+  background: #6f9080;
+}
+.sim-v2-sheet-heading {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+.sim-v2-sheet-heading strong {
+  font-size: 16px;
+  font-weight: 760;
+  line-height: 1.25;
+}
+.sim-v2-sheet-heading small {
+  color: #add5bf;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.sim-v2-sheet-status {
+  font-size: 10px;
+  color: #ffcd94;
+  border-radius: 99px;
+  padding: 6px 8px;
+  background: #473623;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.sim-v2-sheet-arrow {
+  flex: 0 0 auto;
+  font-size: 24px;
+  color: #9bdec0;
+  min-width: 14px;
+  line-height: 1;
+  text-align: right;
+}
+.sim-v2-map-sheet .sim-v2-sheet-alert {
+  color: #bbd3c3;
+  font-size: 11px;
+  line-height: 1.45;
+  padding: 0 0 4px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.sim-v2-map-sheet .sim-v2-tsunami-active {
+  color: #ffc18a;
+  font-weight: 750;
+}
+.sim-v2-sheet-details[hidden] { display: none !important; }
+.sim-v2-sheet-details {
+  border-top: 1px solid var(--map-border);
+  margin-top: 9px;
+  padding-top: 12px;
+}
+.sim-v2-map-sheet .sim-v2-sheet-footnote {
+  color: #b5ccbf;
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 9px 0;
+}
+.sim-v2-map-sheet .sim-v2-back-timeline {
+  width: 100%;
+  margin: 10px 0 0;
+  min-height: 45px;
+  border-radius: 10px;
+  border: 1px solid #3d7055;
+  background: #1b3d30;
+  color: #dbfbe8;
+  font-weight: 700;
+}
+
+/* Eliminate the previous white floating navigation and zoom cards. */
+.sim-v2-map-head > button {
+  background: #112822e8;
+  border: 1px solid #54836d;
+  color: #effff4;
+  box-shadow: 0 4px 16px #0009;
+}
+.sim-v2-map-head > div {
+  background: #112822e8;
+  border: 1px solid #4d7864;
+  color: #f0fff4;
+  box-shadow: 0 4px 16px #0009;
+}
+.sim-v2-map-head small { color: #b6d5c4; }
+.sim-map-controls button {
+  background: #112b25e8;
+  border: 1px solid #527e68;
+  color: #e9fff0;
+  box-shadow: 0 4px 14px #0008;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.sim-map-controls button:focus-visible,
+.sim-v2-sheet-toggle:focus-visible,
+.sim-v2-map-head > button:focus-visible {
+  outline: 3px solid var(--map-mint);
+  outline-offset: 2px;
+}
+.sim-map-full .sim-map-caution {
+  top: auto;
+  bottom: min(142px, 18dvh);
+  left: 12px;
+  right: 12px;
+  border-radius: 6px;
+  font-size: 10px;
+  background: #162b25ca;
+  color: #f4ddaf;
+  padding: 5px 8px;
+  pointer-events: none;
+  max-width: 360px;
+}
+.sim-map-full .sim-map-maplabel {
+  background: #112b26ea;
+  border: 1px solid #315b49;
+}
+.sim-map-full .sim-map-status {
+  background: #112c24dd;
+  color: #d6f5e4;
+}
+
+/* Expanded risk disclosure: keep all text, data labels, links and controls in
+   the same dark palette, with amber reserved for uncertainty / warnings. */
+.sim-v2-map-sheet-risk .sim-risk-panel { color: #f2fbf5; }
+.sim-risk-header h2 { color: #f3fff8; }
+.sim-risk-exercise { color: #ffae95; }
+.sim-risk-gps {
+  border-bottom: 1px solid #345547;
+}
+.sim-v2-map-sheet-risk .sim-risk-gps p,
+.sim-v2-map-sheet-risk .sim-risk-entry p,
+.sim-v2-map-sheet-risk .sim-risk-privacy,
+.sim-v2-map-sheet-risk .sim-risk-entry small { color: #bed2c6 !important; }
+.sim-v2-map-sheet-risk .sim-risk-gps-observed strong { color: #ecfff2; }
+.sim-v2-map-sheet-risk .sim-risk-gps button {
+  background: #22503a;
+  border: 1px solid #418361;
+  color: #f6fff9;
+  border-radius: 9px;
+  width: auto;
+  max-width: 155px;
+  padding: 9px 12px;
+  box-shadow: none;
+}
+.sim-v2-map-sheet-risk .sim-risk-entry {
+  border-bottom: 1px solid #355548;
+}
+.sim-v2-map-sheet-risk .sim-risk-entry h3 { color: #f2fbf5; }
+.sim-v2-map-sheet-risk .sim-risk-entry p strong { color: #b9f5d1; }
+.sim-v2-map-sheet-risk .sim-risk-unknown {
+  background: #483820;
+  border: 1px solid #88612f;
+  color: #ffd298;
+}
+.sim-v2-map-sheet-risk .sim-risk-entry a { color: #92ecc1; }
+.sim-v2-map-sheet-risk .sim-risk-tsunami-on {
+  background: #422b1c;
+  border-left-color: #f6a44d;
+}
+.sim-v2-map-sheet-risk .sim-risk-entry .sim-risk-alert,
+.sim-v2-map-sheet-risk .sim-risk-entry .sim-risk-limits,
+.sim-v2-map-sheet-risk .sim-risk-panel > p.sim-risk-alert {
+  color: #ffb485 !important;
+}
+
+/* Dark timeline: no white background surfaces or white input cards. */
+.sim-v2-timeline {
+  background: #101c19;
+  color: #ecfff5;
+}
+.sim-v2-timeline-switch { border-bottom-color: #345748; }
+.sim-v2-timeline-switch button { color: #b2cbbc; }
+.sim-v2-timeline-switch button.selected { color: #9becbe; border-bottom-color: #69dfa7; }
+.sim-v2-timeline-list li { border-left-color: #476452; }
+.sim-v2-timeline-list li:last-child { border-left-color: transparent; }
+.sim-v2-time-node { border-color: #101c19; background: #637a6a; }
+.sim-v2-next .sim-v2-time-node { background: #eaa967; }
+.sim-v2-timeline-list li > button {
+  border-bottom-color: #29483a;
+  color: #f0fff4;
+}
+.sim-v2-timeline-item small { color: #b8cfc0; }
+.sim-v2-next .sim-v2-timeline-item small { color: #ffcb92; }
+.sim-v2-timeline-chevron { color: #91ae99; }
+.sim-v2-event-detail a { color: #8eebbc; }
+.sim-v2-timeline-caption { color: #b3c9bb; }
+.sim-v2-timeline-map {
+  height: clamp(200px, 31dvh, 315px);
+  background: #16382c;
+}
+.sim-v2-timeline-map > button {
+  background: #113226ea;
+  border: 1px solid #4c876c;
+  color: #effff4;
+}
+/* Give the map appreciably more space on Home, without introducing new cards. */
+.sim-v2-map-teaser {
+  flex: 1 1 40dvh;
+  min-height: clamp(220px, 36dvh, 380px);
+}
+.sim-v2-expand-map {
+  background: #112c26ed;
+  border: 1px solid #557f6b;
+  color: #f3fff5;
+}
+@media(max-height:725px){
+  .sim-v2-map-teaser { min-height: 184px; flex-basis: 31dvh; }
+}
+@media(max-height:600px){
+  .sim-v2-map-sheet.sim-v2-map-sheet-risk { max-height: 68dvh; }
+  .sim-v2-map-teaser { min-height: 150px; }
+}
+@media(prefers-reduced-motion:reduce){
+  .sim-v2-sheet-toggle, .sim-v2-map-sheet-risk { transition: none; }
+}
+
+/* Nationwide land/sea legend; never depict official hazard risk. */
+.sim-map-landsea-legend{position:absolute;z-index:5;right:10px;bottom:62px;display:flex;align-items:center;gap:10px;background:#102c28e8;border:1px solid #4e786d;border-radius:8px;padding:6px 9px;pointer-events:none;font-size:11px;color:#f2fff9}
+.sim-map-landsea-legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.sim-map-landsea-legend i{display:inline-block;width:13px;height:13px;border-radius:3px;border:1px solid #a6b7ab77}
+.sim-map-land-color{background:#315944}.sim-map-sea-color{background:#133f56}
+.sim-map-full .sim-map-landsea-legend{bottom:222px;left:12px;right:auto}
+.sim-map-compact .sim-map-landsea-legend{bottom:64px;right:8px;padding:4px 7px;font-size:10px}
+.sim-map-full .sim-map-overview,.sim-map-full .sim-map-epicenter-jump{font-size:13px;font-weight:800}
+.sim-map-controls button{font-family:inherit}
+.sim-map-attribution{max-width:calc(100% - 16px);white-space:nowrap}
+.sim-map-attribution a{color:#f1fff6;text-decoration:underline;text-underline-offset:2px}
+.sim-map-compact .sim-map-attribution{font-size:9px;bottom:21px}
+.sim-v2-timeline-map .sim-map-landsea-legend{bottom:34px;left:7px;right:auto}
+.sim-v2-timeline-map .sim-map-attribution{display:none}
+
+.sim-map-full .sim-map-overview{font-size:24px;font-weight:500;white-space:nowrap;overflow:hidden;line-height:1}
+.sim-map-full .sim-map-attribution{bottom:182px;right:10px;z-index:6;padding:4px 7px;border-radius:6px;background:#0b2a24e3;font-size:10px;color:#f3fff7;text-shadow:none}
+.sim-map-full .sim-map-attribution a{color:#e6fff1;text-decoration:underline}
+
+/* One information flow keeps labels, attribution and legend from overlapping. */
+.sim-map-information{position:absolute;z-index:5;left:12px;right:12px;bottom:128px;display:flex;flex-wrap:wrap;align-items:center;gap:5px 10px;padding:9px 11px;background:#101923ec;border:1px solid #425361;border-radius:10px;pointer-events:none}
+.sim-map-information .sim-map-maplabel,.sim-map-information .sim-map-landsea-legend,.sim-map-information .sim-map-status,.sim-map-information .sim-map-caution,.sim-map-information .sim-map-attribution{position:static;inset:auto;max-width:100%;margin:0;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none;white-space:normal;text-shadow:none}
+.sim-map-information .sim-map-maplabel{flex:1 1 155px}
+.sim-map-information .sim-map-status,.sim-map-information .sim-map-caution{flex:1 1 100%;text-align:left;font-size:10px;line-height:1.4}
+.sim-map-information .sim-map-attribution{display:block;font-size:10px;pointer-events:auto}
+.sim-map-information .sim-map-landsea-legend{display:flex;gap:10px;font-size:11px;color:#e9eff5}
+.sim-map-land-color{background:#29343f}.sim-map-sea-color{background:#0b131e}
+.sim-map-compact .sim-map-information{bottom:52px;padding:6px 8px;gap:4px 8px}
+.sim-map-compact .sim-map-caution,.sim-map-compact .sim-map-maplabel small{display:none}
+.sim-v2-timeline-map .sim-map-information{bottom:54px}
+.sim-map-controls{top:16px;right:12px;gap:8px;z-index:6}
+.sim-map-controls button{display:grid;place-items:center;width:44px;height:44px;padding:0;background:#18232f;border:1px solid #526272;color:#e5edf5}
+.japan-region-picker{position:absolute;z-index:6;top:78px;left:12px;right:70px;display:flex;align-items:center;gap:8px;color:#d1dbe5;font-size:11px}
+.japan-region-picker>span{flex:0 0 auto;background:#101923e8;padding:6px;border-radius:5px}
+.japan-region-picker select{min-width:0;width:100%;max-width:215px;min-height:40px;background:#18232f;color:#e5edf5;border:1px solid #526272;border-radius:8px;padding:5px 8px;font:inherit}
+.sim-map-full .sim-map-geo-note{top:124px;left:12px;right:70px;width:auto;max-width:none;background:#101923df}
+.sim-map-geo-note:empty{display:none}
+.sim-geo-marker{width:24px;height:24px;box-sizing:border-box;border:2px solid #cfdae4;position:relative;font-family:Arial,sans-serif}
+.sim-geo-epicenter{background:#bf7853}
+.sim-marker-symbol{position:relative;z-index:1}
+.sim-quake-ripple{position:absolute;inset:0;pointer-events:none}
+.sim-quake-ripple i{position:absolute;inset:-3px;border:1.5px solid #e8a176;border-radius:50%;animation:japan-quake-expand 3.6s ease-out infinite;transform-origin:center}
+.sim-quake-ripple i:nth-child(2){animation-delay:1.2s}.sim-quake-ripple i:nth-child(3){animation-delay:2.4s}
+@keyframes japan-quake-expand{0%{transform:scale(1);opacity:.8}100%{transform:scale(3.5);opacity:0}}
+.sim-v2-nav .ui-icon{width:24px;height:24px;flex:0 0 24px}
+.sim-v2-settings,.sim-v2-map-head>button,.sim-v2-event-dock>button{display:grid;place-items:center;padding:0;flex:0 0 44px}
+.sim-v2-dock-mark{display:grid;place-items:center;flex:0 0 24px}
+.sim-v2-dock-copy,.sim-v2-sheet-heading{min-width:0}
+.sim-v2-event-dock>b,.sim-v2-event-dock>strong{flex:0 0 auto}
+.sim-icon-back{display:flex;transform:rotate(180deg)}
+.sim-v2-sheet-status{white-space:normal;max-width:90px;line-height:1.4;text-align:center}
+.sim-v2-map-sheet-risk .sim-v2-sheet-toggle{gap:8px}
+.japan-reference-page{margin:0!important;max-width:none!important;background:#0b131e;color:#e5edf5;height:100dvh;display:flex;flex-direction:column;padding:0!important}
+.japan-reference-page>header{display:flex;align-items:center;gap:10px;padding:8px 12px;min-height:64px;border-bottom:1px solid #344452}
+.japan-reference-page>header>a{width:44px;height:44px;display:grid;place-items:center;flex:0 0 44px;color:inherit;transform:rotate(180deg)}
+.japan-reference-page>header>strong{flex:1;min-width:0;font-size:15px;line-height:1.4}
+.japan-reference-page>header>select{width:102px;min-height:40px;background:#18232f;color:#e5edf5;border:1px solid #526272;border-radius:8px}
+.japan-reference-viewport{flex:1;min-height:0;position:relative}
+.japan-reference-page .sim-map-information{bottom:12px}
+.japan-reference-page .japan-region-picker{top:16px}
+.japan-history-picker{position:absolute;top:64px;left:12px;right:70px;z-index:6}
+.japan-history-picker select{min-height:40px;width:100%;max-width:260px;background:#18232f;color:#e5edf5;border:1px solid #526272;border-radius:8px;padding:5px 8px;font:inherit;font-size:11px}
+.japan-reference-page .sim-map-geo-note{top:112px}
+@media(prefers-reduced-motion:reduce){.sim-quake-ripple i{animation:none;transform:scale(1.5);opacity:.35}.sim-quake-ripple i:nth-child(2){transform:scale(2.4);opacity:.2}.sim-quake-ripple i:nth-child(3){transform:scale(3.3);opacity:.1}}

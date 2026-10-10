@@ -74,25 +74,27 @@ export function AdaptiveHome({ presentation, snapshot, language, networkState, p
     return <Link key={id} href="/sources">{e?.source_name ?? vt.unknown}</Link>;
   });
   return <section className={`adaptive-home presentation-${mode.toLowerCase()}`} data-presentation-mode={mode}>
-    {!urgentMode && <section className="home-location-provenance" aria-label={t.currentPlace}>
-      <strong>{t.currentPlace}: {locationPresentation.area.label}</strong>
-      <p>{areaSource} · {areaFreshness}</p>
-      <p>{t.locationCheckedAt}: {locationPresentation.area.observedAt
-        ? new Date(locationPresentation.area.observedAt).toLocaleString(language, { timeZone: 'Asia/Tokyo' }) : '—'}</p>
-      {locationPresentation.area.accuracyM !== null && <p>{t.locationAccuracy}: ±{Math.round(locationPresentation.area.accuracyM)} m</p>}
-      {locationPresentation.devicePoint && (locationPresentation.devicePoint.source === 'LAST_KNOWN'
-        || locationPresentation.devicePoint.observedAt !== locationPresentation.area.observedAt) && <small>
-          {locationPresentation.devicePoint.source === 'GPS' ? t.deviceGps : t.deviceLastKnown} · {new Date(locationPresentation.devicePoint.observedAt).toLocaleString(language, { timeZone: 'Asia/Tokyo' })}
-          {' · '}{t.locationAccuracy}: ±{Math.round(locationPresentation.devicePoint.accuracyM)} m
-        </small>}
-    </section>}
+
     <header className="situation-header">
       <div><h1>{mode === 'EMERGENCY_PROTECT' ? t.protect : mode === 'SAFETY_CHECK' ? vt.check : survival ? t.survival : mode === 'MAP_ASSISTED' ? t.movement : mode === 'TEXT_WITH_DETAILS' ? t.prepare : t.monitoring}</h1>
-        <p>{networkState === 'RECONNECTING' ? t.reconnecting : stale ? t.stale : offline ? t.cached : mode === 'MAP_ASSISTED' ? t.movementDetail : t.summary}</p></div>
+        {!offline && !stale && <p>{mode === 'MAP_ASSISTED' ? t.movementDetail : t.summary}</p>}</div>
       {!urgentMode && <Link className="notification-badge" href="/notifications" aria-label={`${t.notifications} · ${notifications}`}><UiIcon name="bell" />{presentation.showNotificationsBadge && <span>{notifications}</span>}</Link>}
     </header>
     {(offline || stale) && <p className="freshness-warning" role="status">{t.lastVerified}: {verifiedTime} · {stale ? t.stale : t.cached}</p>}
     <section className="now-card" aria-labelledby="primary-now"><small id="primary-now">NOW</small><h2>{action?.text || t.pending}</h2></section>
+    {!urgentMode && <details className="home-location-provenance" aria-label={t.currentPlace}>
+      <summary><strong>{locationPresentation.area.label}</strong><span>{areaSource} · {areaFreshness}</span></summary>
+      <div className="home-location-details">
+        <p>{t.locationCheckedAt}: {locationPresentation.area.observedAt
+          ? new Date(locationPresentation.area.observedAt).toLocaleString(language, { timeZone: 'Asia/Tokyo' }) : '—'}</p>
+        {locationPresentation.area.accuracyM !== null && <p>{t.locationAccuracy}: ±{Math.round(locationPresentation.area.accuracyM)} m</p>}
+        {locationPresentation.devicePoint && (locationPresentation.devicePoint.source === 'LAST_KNOWN'
+          || locationPresentation.devicePoint.observedAt !== locationPresentation.area.observedAt) && <small>
+            {locationPresentation.devicePoint.source === 'GPS' ? t.deviceGps : t.deviceLastKnown} · {new Date(locationPresentation.devicePoint.observedAt).toLocaleString(language, { timeZone: 'Asia/Tokyo' })}
+            {' · '}{t.locationAccuracy}: ±{Math.round(locationPresentation.devicePoint.accuracyM)} m
+          </small>}
+      </div>
+    </details>}
     {presentation.showEvidenceInline && action && <p className="inline-evidence">{evidenceLinks(action.evidence_ids)}</p>}
     {presentation.showSafetyCheck && checkControls}
     {presentation.showPowerWarning && <p className="power-warning" role="status"><UiIcon name="warning" />{powerMode === 'SURVIVAL' ? t.survival : powerMode === 'EMERGENCY_POWER' ? t.emergencyPower : t.conserve} {!urgentMode && <>· <Link href="/more">{t.power}</Link></>}</p>}

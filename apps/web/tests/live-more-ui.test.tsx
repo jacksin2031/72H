@@ -57,6 +57,47 @@ afterEach(async () => {
 });
 
 describe('mobile More and Plan navigation', () => {
+  it('keeps the disaster simulator behind a collapsed diagnostics disclosure, not a fifth primary setting', async () => {
+    const page = await mount(sceneProps());
+    expect(page.querySelectorAll('.more-destination')).toHaveLength(4);
+    const details = page.querySelector<HTMLDetailsElement>('.more-lab-entry');
+    expect(details?.open).toBe(false);
+    expect(details?.querySelector('summary')?.textContent).toBe('Testing & diagnostics');
+    expect(details?.querySelector('a')?.getAttribute('href')).toBe('/disaster-test');
+  });
+
+  it('collapses location diagnostics while keeping the accurate area and GPS action visible', async () => {
+    const page = await mount(sceneProps());
+    const details = page.querySelector<HTMLDetailsElement>('.more-location-meta');
+    expect(details).not.toBeNull();
+    expect(details?.open).toBe(false);
+    expect(details?.querySelector('summary')?.textContent).toContain('Location details');
+    expect(page.querySelector('.more-location-card button.primary')).not.toBeNull();
+    expect(page.querySelectorAll('.more-destination')).toHaveLength(4);
+  });
+
+  it('puts an empty plan into one concise state without mounting three blank category cards', async () => {
+    const props = sceneProps({ view: 'plan' });
+    props.snapshot!.plan_actions = [];
+    const page = await mount(props);
+    expect(page.querySelectorAll('.action-panel')).toHaveLength(0);
+    expect(page.querySelectorAll('.plan-empty-state')).toHaveLength(1);
+    const tools = page.querySelector<HTMLDetailsElement>('.plan-tools');
+    expect(tools).not.toBeNull();
+    expect(tools?.open).toBe(false);
+    expect(tools?.querySelector('summary')?.textContent).toBe('History and advanced options');
+  });
+
+  it('keeps language selection in the accessible Display destination', async () => {
+    const chooseLanguage = vi.fn();
+    const page = await mount(sceneProps({ chooseLanguage }));
+    await click(page.querySelector('[data-more-panel="display"]')!);
+    const selector = page.querySelector<HTMLSelectElement>('.settings-language select');
+    expect(selector?.value).toBe('en');
+    await act(async () => { selector!.value = 'zh-TW'; selector!.dispatchEvent(new Event('change', { bubbles: true })); });
+    expect(chooseLanguage).toHaveBeenCalledWith('zh-TW');
+  });
+
   it('keeps More compact, with one primary location action and four destinations', async () => {
     const page = await mount(sceneProps());
     expect(page.querySelectorAll('.more-destination')).toHaveLength(4);

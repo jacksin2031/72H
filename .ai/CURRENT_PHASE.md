@@ -1,5 +1,15 @@
 # 72H — Current Development Phase
 
+## Current authorized work — All Japan map and UI Preview (2026-10-11 JST)
+
+User authorized icon/layout polish, dark land/sea map, clear coastline,
+earthquake event expansion, all-Japan reference coverage and Preview deployment
+with acceptance. Branch `codex/ui-map-polish` integrates existing P2.2 baseline
+`b80c808`. Local implementation and validation are complete; zero-traffic cloud
+acceptance is pending. Evidence: `docs/VNEXT_JAPAN_UI_POLISH_PREVIEW.md`.
+No production traffic promotion is authorized. Historical local-only gates below
+remain historical and do not restrict this explicitly expanded Preview scope.
+
 ## Current authorized work — simplified More P1.2 (2026-10-09 JST)
 
 Scope: local implementation and validation of
