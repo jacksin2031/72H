@@ -110,9 +110,10 @@ export function VNextExperience({ snapshot, language, now, connection, verificat
 
   const presentation = derivePresentation(snapshot, now, connection, power, check, { manualMapOpen, notificationCount: notifications.length });
   const openMap = () => { setManualMapOpen(true); setMapClosed(false); };
+  const mapEvent = snapshot.events.findLast(event => snapshot.situation.active_event_ids.includes(event.id));
   const mapSurface = presentation.showMap ? <section className="conditional-map">
     <button type="button" onClick={() => { setManualMapOpen(false); setMapClosed(true); }}>{at.closeMap}</button>
-    <EmergencyMap language={language} conserve={power.mode !== 'NORMAL'} profile={snapshot.profile} location={deviceLocation} />
+    <EmergencyMap language={language} conserve={power.mode !== 'NORMAL'} profile={snapshot.profile} location={deviceLocation} earthquake={mapEvent ? { id: mapEvent.id, occurredAt: mapEvent.occurred_at, synthetic: true } : null} />
     {presentation.showLocation && <DeviceLocationControls location={deviceLocation} language={language} />}
   </section> : undefined;
   // Survival keeps NOW on every route; More remains the escape to essential settings.
