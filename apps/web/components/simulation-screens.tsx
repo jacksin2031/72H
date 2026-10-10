@@ -26,6 +26,7 @@ const ui = {
     pending:'イベント発生を待っています', processing:'模擬イベントを処理中…', completed:'完了', mapData:'道路図の範囲のみ',
     risk:'歴史の津波警報・停電は時系列のみです。危険エリア、避難所、経路を推定表示しません。',
     error:'演習エラー', mapNotice:'安全な経路・避難所の認証なし', reason:'判断根拠',
+    mapRiskTitle:'位置とリスク',mapRiskUnknown:'安全性：判定不能',mapRiskExpand:'リスク詳細とGPS',mapRiskCollapse:'地図を広く表示',tsunamiWarningSummary:'津波警報（歴史演習） · 避難安全性は未判定',
   },
   en: { home:'Home',plan:'Action plan',events:'Events',more:'More',close:'End drill',
     warning:'SIMULATION · Not a live alert',clock:'Simulation time',before:'Until the earthquake',nextEvent:'Next event',next:'NEXT · Next step',avoid:'AVOID · Avoid',now:'NOW · Immediate action',
@@ -38,6 +39,7 @@ const ui = {
     pending:'Waiting for a simulated event',processing:'Processing simulated event…',completed:'Completed',mapData:'Road reference only',
     risk:'Tsunami and outage entries are historical context only. No inferred hazards, shelters or safe routes are displayed.',
     error:'Exercise error',mapNotice:'No verified shelter or safe route',reason:'Reason',
+    mapRiskTitle:'Location & risk',mapRiskUnknown:'Safety: undetermined',mapRiskExpand:'Risk details & GPS',mapRiskCollapse:'Expand map',tsunamiWarningSummary:'Historic tsunami warning · safety not verified',
   },
   'zh-TW': { home:'首頁',plan:'行動計劃',events:'事件',more:'更多',close:'結束演習',
     warning:'模擬演習 · 並非真實警報',clock:'模擬時間',before:'距離地震發生',nextEvent:'下一事件',next:'NEXT · 接下來',avoid:'AVOID · 避免',now:'NOW · 立即行動',
@@ -50,6 +52,7 @@ const ui = {
     pending:'等待模擬事件發生',processing:'正在處理模擬事件…',completed:'已完成',mapData:'僅有參考道路',
     risk:'海嘯警報及停電只是歷史背景，不會推算危險區域、避難所或安全路線。',
     error:'演習出現錯誤',mapNotice:'沒有已核實避難所或安全路線',reason:'判斷原因',
+    mapRiskTitle:'定位與災害風險',mapRiskUnknown:'安全性：無法判定',mapRiskExpand:'查看風險詳情及 GPS',mapRiskCollapse:'收起詳情、放大地圖',tsunamiWarningSummary:'歷史海嘯警報已發生 · 尚未確認避難安全',
   },
 } as const;
 
@@ -69,6 +72,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
   const language:Language = config.language;
   const t=ui[language];
   const [eventDetail,setEventDetail]=useState<number|null>(null);
+  const [mapSheetExpanded,setMapSheetExpanded]=useState(false);
   const geo=useSimulationGeo();
   const epicenter=epicenterForPlayedMilestones(config.historicalCase,config.milestones,done);
   const warning=historicTsunamiWarningStarted(config.milestones,done);
@@ -187,15 +191,30 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
           <div><strong>{t.map}</strong><small>{t.mapData}</small></div>
         </header>
         <SimulationReferenceMap language={language} userLocation={assessment.user_location} epicenter={epicenter}/>
-        <div className="sim-v2-map-sheet sim-v2-map-sheet-risk">
-          <div className="sim-v2-sheet-handle" aria-hidden="true"/>
-          <SimulationRiskPanel language={language} assessment={assessment}
-            gpsState={geo.state} gpsError={geo.error}
-            requestLocation={geo.request} clearLocation={geo.clear}/>
-          <strong>{t.mapNotice}</strong>
-          <p>{t.note}</p>
-          <p>{t.risk}</p>
-          <button type="button" onClick={()=>setTab('events')}>{t.timeline} →</button>
+        <div className="sim-v2-map-sheet sim-v2-map-sheet-risk"
+          data-testid="simulation-map-sheet" data-sheet-state={mapSheetExpanded?'expanded':'collapsed'}>
+          <button type="button" className="sim-v2-sheet-toggle" data-testid="simulation-risk-toggle"
+            aria-controls="simulation-risk-details" aria-expanded={mapSheetExpanded}
+            onClick={()=>setMapSheetExpanded(value=>!value)}>
+            <span className="sim-v2-sheet-handle" aria-hidden="true"/>
+            <span className="sim-v2-sheet-heading"><strong>{t.mapRiskTitle}</strong>
+              <small>{mapSheetExpanded?t.mapRiskCollapse:t.mapRiskExpand}</small></span>
+            <span className="sim-v2-sheet-status">{t.mapRiskUnknown}</span>
+            <span className="sim-v2-sheet-arrow" aria-hidden="true">{mapSheetExpanded?'⌄':'⌃'}</span>
+          </button>
+          <p className={warning?'sim-v2-sheet-alert sim-v2-tsunami-active':'sim-v2-sheet-alert'} role="status">
+            {warning?t.tsunamiWarningSummary:t.mapNotice}
+          </p>
+          <div id="simulation-risk-details" className="sim-v2-sheet-details" hidden={!mapSheetExpanded}>
+            {mapSheetExpanded&&<>
+              <SimulationRiskPanel language={language} assessment={assessment}
+                gpsState={geo.state} gpsError={geo.error}
+                requestLocation={geo.request} clearLocation={geo.clear}/>
+              <p className="sim-v2-sheet-footnote">{t.note}</p>
+              <p className="sim-v2-sheet-footnote">{t.risk}</p>
+              <button type="button" className="sim-v2-back-timeline" onClick={()=>setTab('events')}>{t.timeline} →</button>
+            </>}
+          </div>
         </div>
       </section>}
       {tab==='more'&&<section className="sim-v2-more" data-testid="simulation-settings">

@@ -91,7 +91,16 @@ export function SimulationReferenceMap({ language, compact = false, epicenter=nu
           observer.observe(host.current);
         }
         map.scrollZoom.disable(); map.boxZoom.disable(); map.dragRotate.disable();
-        map.touchZoomRotate.disable();
+        // Compact maps stay inert to prevent accidental gestures while
+        // navigating. Full map supports intentional pan / pinch zoom only.
+        if (compact) {
+          map.dragPan.disable();
+          map.touchZoomRotate.disable();
+        } else {
+          map.dragPan.enable();
+          map.touchZoomRotate.enable();
+          map.touchZoomRotate.disableRotation();
+        }
         map.once('load', () => { if (!cancelled) { map.resize(); setStatus('ready'); } });
         map.on('error', () => { if (!cancelled) setStatus('unavailable'); });
       } catch { if (!cancelled) setStatus('unavailable'); }

@@ -8,6 +8,7 @@ import { useSimulationSession, type SimulationLaunch } from '@/lib/simulation-se
 import { mockLiveRequest, type MockLiveResponse } from '@/lib/mock-live-envelope';
 import { SimulationScreens, type SimulationSection } from './simulation-screens';
 import './simulation-flat-ui.css';
+import './simulation-map-ui.css';
 
 type Phase = 'waiting' | 'processing' | 'running' | 'completed' | 'failed';
 type Section = SimulationSection;
