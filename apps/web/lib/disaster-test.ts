@@ -16,7 +16,7 @@ export type DisasterTestInput = {
 
 export const defaultDisasterTest: DisasterTestInput = {
   kind: 'EARTHQUAKE', severity: 2, battery: 60,
-  network: 'ONLINE', evidence: 'UNKNOWN', mobility: 'ABLE',
+  network: 'ONLINE', evidence: 'FRESH', mobility: 'ABLE',
 };
 
 export const disasterPresets: { key: string; input: DisasterTestInput }[] = [

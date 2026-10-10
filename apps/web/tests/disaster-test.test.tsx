@@ -17,6 +17,7 @@ afterEach(async () => {
 
 describe('isolated disaster test lab', () => {
   it('keeps all synthetic scenarios fail-closed even with recent simulated evidence and network', () => {
+    expect(defaultDisasterTest.evidence).toBe('FRESH');
     for (const preset of disasterPresets) {
       const projection = projectDisasterTest(preset.input);
       expect(projection.mapEnabled).toBe(false);

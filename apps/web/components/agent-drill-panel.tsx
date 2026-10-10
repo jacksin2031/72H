@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Language } from '@/lib/contracts';
 import { snapshotSchema, type Snapshot } from '@/lib/contracts';
 import type { DisasterTestInput } from '@/lib/disaster-test';
@@ -66,6 +66,14 @@ export function AgentDrillPanel({ input, language }: { input: DisasterTestInput;
   const [error, setError] = useState('');
   const [modes, setModes] = useState<string[]>([]);
   const controller = useRef<AbortController | null>(null);
+  // Never present a previous plan as if it were generated for edited conditions.
+  // Abort an in-flight exercise and discard its UI state whenever inputs change.
+  useEffect(() => {
+    controller.current?.abort();
+    controller.current = null;
+    setBusy(false); setSnapshot(null); setModes([]); setProgress(''); setError('');
+  }, [input.kind, input.severity, input.battery, input.network, input.evidence, input.mobility, language]);
+
   const stop = () => { controller.current?.abort(); controller.current = null; setBusy(false); };
   const run = async () => {
     if (busy || input.kind !== 'EARTHQUAKE' || !key.trim()) return;
@@ -101,8 +109,10 @@ export function AgentDrillPanel({ input, language }: { input: DisasterTestInput;
   };
   const plan = snapshot?.plans.find(p => p.id === snapshot.situation.current_plan_id);
   const actions = snapshot?.plan_actions.filter(a => a.plan_id === plan?.id) ?? [];
-  const ai = modes.includes('GEMINI_ADK') ? t.actual
-    : modes.some(mode => mode.includes('FALLBACK')) ? t.fallback : t.deterministic;
+  const hadAi = modes.includes('GEMINI_ADK');
+  const hadFallback = modes.some(mode => mode.includes('FALLBACK'));
+  const ai = hadAi && hadFallback ? `${t.actual} · ${t.fallback}`
+    : hadAi ? t.actual : hadFallback ? t.fallback : t.deterministic;
   return <section className="lab-agent-drill" aria-labelledby="lab-agent-title">
     <h2 id="lab-agent-title">{t.title}</h2>
     <p>{t.notice}</p>
@@ -115,6 +125,7 @@ export function AgentDrillPanel({ input, language }: { input: DisasterTestInput;
       {busy && <button type="button" onClick={stop}>{t.stop}</button>}
     </div>
     {busy && <p role="status">{t.executing} · {t.step} {progress}</p>}
+    {!busy && snapshot?.replay.status === 'COMPLETED' && <p role="status">{t.done}</p>}
     {error && <p role="alert" className="lab-drill-warning">{error}</p>}
     {snapshot && <div className="lab-agent-results" aria-live="polite">
       <strong>{t.ai}: {ai}</strong>
