@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Language } from '@/lib/contracts';
 import { advanceVirtualClock } from '@/lib/historical-playback';
+import { seismicOriginsForMilestones, seismicWaveEndMs } from '@/lib/seismic-wavefront';
 import { useSimulationSession, type SimulationLaunch } from '@/lib/simulation-session';
 import { mockLiveRequest, type MockLiveResponse } from '@/lib/mock-live-envelope';
 import { SimulationScreens, type SimulationSection } from './simulation-screens';
@@ -37,6 +38,7 @@ function Playback({ config }: { config: SimulationLaunch }) {
   const [done, setDone] = useState(0);
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [completedClock, setCompletedClock] = useState<number|null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const clockAnchor = useRef<{ wall: number; simulated: number } | null>(null);
 
@@ -97,7 +99,14 @@ function Playback({ config }: { config: SimulationLaunch }) {
           setState(result); setDone(i+1); setProcessing(false);
           if (milestone && config.timeMode === 'FAST_RANGE') setTime(Date.parse(milestone.at_jst));
         }
-        if (!controller.signal.aborted) setPhase('completed');
+        if (!controller.signal.aborted) {
+          // Event evaluation has finished, but physical waves do not stop at
+          // the last rounded milestone or restart after AI latency.
+          const anchor=clockAnchor.current;
+          setCompletedClock(anchor ? anchor.simulated+Math.max(0,Date.now()-anchor.wall)
+            : Date.parse(result.historical?.current_milestone?.at_jst??'') || Date.now());
+          setPhase('completed');
+        }
       } catch (ex) {
         if (!controller.signal.aborted) {
           setError(ex instanceof Error ? ex.message : 'Unknown error');
@@ -114,6 +123,19 @@ function Playback({ config }: { config: SimulationLaunch }) {
   // One immutable launch configuration per mounted exercise.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(()=>{
+    if(completedClock===null)return;
+    const end=seismicWaveEndMs(seismicOriginsForMilestones(config.historicalCase,config.milestones));
+    if(end===null||end<=completedClock)return;
+    const wall=Date.now();
+    const ticker=setInterval(()=>{
+      const next=Math.min(end,completedClock+Math.max(0,Date.now()-wall));
+      setTime(next);
+      if(next>=end)clearInterval(ticker);
+    },200);
+    return()=>clearInterval(ticker);
+  },[completedClock,config.historicalCase,config.milestones]);
 
   const leave = () => {
     if (!window.confirm(confirmText)) return;

@@ -1,5 +1,17 @@
 # 72H — Current Development Phase
 
+## Time-driven seismic wavefronts (2026-10-11 JST)
+
+The user requested earthquake propagation according to historical time instead
+of repeating decorative circles. `codex/time-driven-seismic-waves` replaces the
+CSS loop with geodesic P/S fronts driven by the shared simulation clock and
+documented source time/depth, including the separate 311 Ibaraki aftershock.
+This is an explicitly labelled constant-speed estimate, not measured waveforms,
+intensity or safety assessment. Finite visual clock continuation does not create
+new evidence, plans, API events or movement permission. Local tests, typecheck,
+build and browser acceptance passed; evidence is in
+`docs/VNEXT_TIME_DRIVEN_SEISMIC_WAVES.md`. No deployment is claimed.
+
 ## All-branch source consolidation (2026-10-11 JST)
 
 User authorized integrating all branches. All 24 initial local branch tips and

@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SimulationDashboard } from '../components/simulation-dashboard';
 import { SimulationProvider, useSimulationSession, type SimulationLaunch } from '../lib/simulation-session';
 import { defaultDisasterTest } from '../lib/disaster-test';
+import * as mockEnvelope from '../lib/mock-live-envelope';
+import { seismicOriginsForMilestones, seismicWaveEndMs } from '../lib/seismic-wavefront';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => '/simulation' }));
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -22,9 +24,9 @@ const config: SimulationLaunch = {
   acceleration: 600, startJst: '2011-03-11T14:46', endJst: '2011-03-11T14:46',
 };
 
-function Bootstrap() {
+function Bootstrap({ launch=config }: { launch?:SimulationLaunch }) {
   const { startSimulation } = useSimulationSession();
-  useEffect(() => startSimulation(config), [startSimulation]);
+  useEffect(() => startSimulation(launch), [startSimulation,launch]);
   return <SimulationDashboard />;
 }
 
@@ -35,9 +37,36 @@ afterEach(async () => {
   el?.remove();
   root = null; el = null;
   vi.useRealTimers(); vi.unstubAllGlobals(); localStorage.clear();
+  vi.restoreAllMocks();
 });
 
 describe('full-app simulation clock and isolated launch', () => {
+  it('continues a finite wave clock after evaluation completes without additional API calls',async()=>{
+    vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-11T11:00:00Z'));
+    vi.stubGlobal('fetch',vi.fn(async()=>({ok:false,status:404})));
+    const launch={...config,timeMode:'FAST_RANGE' as const};
+    // Clock unit fixture: API envelope/safety validation has separate tests.
+    const snapshot={plans:[],plan_actions:[],evidence:[],situation:{current_plan_id:null}};
+    const response={total_steps:1,ai_modes:[],snapshot,historical:{milestones:config.milestones,current_milestone:config.milestones[0]}} as unknown as mockEnvelope.MockLiveResponse;
+    const request=vi.spyOn(mockEnvelope,'mockLiveRequest').mockResolvedValue(response);
+    el=document.createElement('div');document.body.append(el);root=createRoot(el);
+    await act(async()=>root!.render(<SimulationProvider><Bootstrap launch={launch}/></SimulationProvider>));
+    expect(el.querySelector('.sim-v2-complete')).not.toBeNull();
+    expect(request).toHaveBeenCalledTimes(2);
+    await act(async()=>{await vi.advanceTimersByTimeAsync(30_000);});
+    expect(el.querySelector('[data-testid=simulation-clock]')?.textContent).toContain('14:46:30');
+    expect(el.querySelector('[data-testid=seismic-wave-legend]')?.getAttribute('data-wave-count')).toBe('2');
+    const end=seismicWaveEndMs(seismicOriginsForMilestones(launch.historicalCase,launch.milestones))!;
+    const duration=end-Date.parse(launch.milestones[0].at_jst);
+    await act(async()=>{await vi.advanceTimersByTimeAsync(duration);});
+    const stopped=el.querySelector('[data-testid=simulation-clock]')?.textContent;
+    await act(async()=>{await vi.advanceTimersByTimeAsync(10_000);});
+    expect(el.querySelector('[data-testid=simulation-clock]')?.textContent).toBe(stopped);
+    expect(el.querySelector('[data-testid=seismic-wave-legend]')?.getAttribute('data-wave-count')).toBe('0');
+    expect(request).toHaveBeenCalledTimes(2);
+    await act(async()=>root!.unmount());root=null;
+    expect(vi.getTimerCount()).toBe(0);
+  });
   it('enters simulated home, counts down without API, then calls Mock Live only at disaster time', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-10-10T11:00:00Z'));

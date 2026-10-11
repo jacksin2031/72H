@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { UiIcon } from './ui-icon';
 import type { Language } from '@/lib/contracts';
 import type { Epicenter, LocationFix } from '@/lib/geospatial-exposure';
 import { validPoint } from '@/lib/geospatial-exposure';
+import { seismicWavefronts, WAVE_SPEED_SOURCE } from '@/lib/seismic-wavefront';
 import type { HazardPack, OfficialPlace } from '@/lib/official-hazards';
 import {
   GSI_ATTRIBUTION_URL, JAPAN_DEFAULT_CENTER, JAPAN_VIEW_BOUNDS,
@@ -26,7 +27,8 @@ const inCoverage=(point:{lng:number;lat:number}):boolean=>validPoint(point)
 const mapText={
   ja:{
     title:'日本全国の参考地図',note:'地理院タイル · 津波ハザードマップではありません',
-    caution:'海岸線は地理的な境界です。津波の浸水範囲・避難先・安全経路を示しません。震央の拡散は図解であり、揺れの範囲ではありません。',
+    caution:'海岸線は地理的な境界です。津波の浸水範囲・避難先・安全経路を示しません。P/S波面は発震時刻・深さと一定速度による概算です。実測波形・震度分布ではありません。',
+    waves:'P/S波面の概算',waveSource:'気象庁：地震波の速度',
     loading:'日本全国の海岸線地図を検証しています',
     unavailable:'日本全国の基礎地図が検証できません。誤った地図を表示しません。',
     ready:'全国の海陸輪郭 · 拡大して地理院の詳細地図を表示',tilesUnavailable:'詳細地図はネット接続が必要 · 海陸の輪郭のみ表示中',
@@ -37,7 +39,8 @@ const mapText={
   },
   en:{
     title:'All Japan reference map',note:'GSI official tiles · NOT a tsunami risk map',
-    caution:'Coastlines show geography, not inundation, verified shelters or safe evacuation routes. Epicenter rings illustrate the event, not shaking extent.',
+    caution:'Coastlines show geography, not inundation, verified shelters or safe evacuation routes. P/S fronts use origin time, depth and constant speeds. They are estimates, not measured waveforms or shaking intensity.',
+    waves:'Estimated P/S wavefronts',waveSource:'JMA: seismic wave speeds',
     loading:'Verifying offline coastline reference',
     unavailable:'The Japan coastline reference could not be verified. No untrusted map substituted.',
     ready:'Verified Japan outlines · zoom in for GSI detail',
@@ -49,7 +52,8 @@ const mapText={
   },
   'zh-TW':{
     title:'全日本參考地圖',note:'國土地理院地圖 · 並非海嘯風險圖',
-    caution:'海岸線只代表海陸邊界，並非浸水範圍、安全避難所或安全路線。震央擴散只作事件示意，不代表震動影響範圍。',
+    caution:'海岸線只代表海陸邊界，並非浸水範圍、安全避難所或安全路線。P／S 波前按發震時間、深度及固定波速估算，不代表實測波形、震度或震動影響範圍。',
+    waves:'P／S 波前估算',waveSource:'氣象廳：地震波速度',
     loading:'正在驗證日本全國離線海岸線',
     unavailable:'無法驗證日本全國海岸圖，不會顯示未經核實的地圖。',
     ready:'已驗證全日本海陸輪廓 · 放大查看國土地理院詳細地圖',
@@ -63,13 +67,14 @@ const mapText={
 
 /** All-Japan reference map; no inferred inundation, shelter or routes. */
 export function SimulationReferenceMap({
-  language,compact=false,epicenter=null,userLocation=null,referencePoint=null,officialPack=null,showInundation=false,showPlaces=false,focusPoint=null,onReferencePoint,onPlace,protectDeviceLocation=false,
+  language,compact=false,epicenter=null,userLocation=null,referencePoint=null,officialPack=null,showInundation=false,showPlaces=false,focusPoint=null,onReferencePoint,onPlace,protectDeviceLocation=false,seismicOrigins=[],seismicTime=null,
 }:{
   language:Language; compact?:boolean;epicenter?:Epicenter|null;userLocation?:LocationFix|null;
   referencePoint?:{lat:number;lng:number}|null;
   officialPack?:HazardPack|null;showInundation?:boolean;showPlaces?:boolean;focusPoint?:{lat:number;lng:number;zoom?:number}|null;
   onReferencePoint?:(point:{lat:number;lng:number})=>void;onPlace?:(place:OfficialPlace)=>void;
   protectDeviceLocation?:boolean;
+  seismicOrigins?:readonly Epicenter[];seismicTime?:number|null;
 }){
   const host=useRef<HTMLDivElement>(null);
   const mapRef=useRef<import('maplibre-gl').Map|null>(null);
@@ -78,6 +83,7 @@ export function SimulationReferenceMap({
   const rasterSuppressed=useRef(false);
   const [status,setStatus]=useState<'loading'|'ready'|'unavailable'>('loading');
   const [tileIssues,setTileIssues]=useState(false);
+  const waveData=useMemo(()=>seismicWavefronts(seismicOrigins,seismicTime??NaN),[seismicOrigins,seismicTime]);
   const t=mapText[language];
 
   useEffect(()=>{
@@ -210,11 +216,6 @@ export function SimulationReferenceMap({
         if(!inCoverage(point))return;
         const element=document.createElement('div');
         element.className='sim-geo-marker sim-geo-'+kind;
-        if(kind==='epicenter'){
-          const ripple=document.createElement('span');ripple.className='sim-quake-ripple';ripple.setAttribute('aria-hidden','true');
-          for(let i=0;i<3;i++)ripple.append(document.createElement('i'));
-          element.append(ripple);
-        }
         const symbol=document.createElement('span');symbol.className='sim-marker-symbol';symbol.textContent=kind==='epicenter'?'✕':'●';element.append(symbol);
         element.setAttribute('role','img');element.setAttribute('aria-label',label);
         element.title=label;
@@ -230,6 +231,20 @@ export function SimulationReferenceMap({
     });
     return()=>{cancelled=true;map.off('moveend',settleMarkers);map.off('resize',settleMarkers);pins.current.forEach(marker=>marker.remove());pins.current=[];};
   },[status,epicenter?.lat,epicenter?.lng,userLocation?.lat,userLocation?.lng,userLocation?.accuracy_m,userLocation?.source,referencePoint,language,officialPack]);
+
+  // One map source, updated from the shared simulation clock. No CSS loop,
+  // independent animation clock, or restart on tab switch / map remount.
+  useEffect(()=>{
+    const map=mapRef.current;
+    if(status!=='ready'||!map)return;
+    const data=waveData;
+    const source=map.getSource('seismic-wavefronts') as import('maplibre-gl').GeoJSONSource|undefined;
+    if(source){source.setData(data);return;}
+    if(!seismicOrigins.length||seismicTime===null)return;
+    map.addSource('seismic-wavefronts',{type:'geojson',data});
+    map.addLayer({id:'seismic-wavefront-lines',type:'line',source:'seismic-wavefronts',
+      paint:{'line-color':['match',['get','phase'],'P','#b6dae8','#f3bb85'],'line-width':2,'line-opacity':0.9}});
+  },[status,seismicTime,seismicOrigins,waveData]);
 
   useEffect(()=>{
     const map=mapRef.current;if(status!=='ready'||!map||!officialPack)return;
@@ -295,6 +310,13 @@ export function SimulationReferenceMap({
         {officialPack&&showInundation&&<span><i style={{background:'#e9ac66'}}/>{language==='ja'?'浸水想定':language==='en'?'Inundation scenario':'浸水想定'}</span>}
       </div>
       <p className="sim-map-quick-caution">{t.shortCaution}</p>
+      {seismicOrigins.length>0&&seismicTime!==null&&<p className="sim-map-wave-legend" data-testid="seismic-wave-legend"
+        data-wave-time={seismicTime} data-wave-count={waveData.features.length}
+        data-p-radius-km={waveData.features.filter(f=>f.properties.phase==='P').at(-1)?.properties.radius_km.toFixed(3)}
+        data-s-radius-km={waveData.features.filter(f=>f.properties.phase==='S').at(-1)?.properties.radius_km.toFixed(3)}>
+        <span>{t.waves} · {new Date(seismicTime+9*60*60*1000).toISOString().slice(11,19)} JST</span>
+        <span className="sim-wave-p">P ≈ 7 km/s</span><span className="sim-wave-s">S ≈ 4 km/s</span>
+      </p>}
       {(status!=='ready'||tileIssues)&&<p className="sim-map-status" role="status">
         {status==='loading'?t.loading:status==='unavailable'?t.unavailable:t.tilesUnavailable}
       </p>}
@@ -303,6 +325,7 @@ export function SimulationReferenceMap({
         <summary>{t.details}</summary>
         <p className="sim-map-caution">{t.caution}</p>
         <p className="sim-map-detail-ready">{t.ready}</p>
+        {seismicOrigins.length>0&&<a href={WAVE_SPEED_SOURCE} target="_blank" rel="noopener noreferrer">{t.waveSource} ↗</a>}
       </details>
       <div className="sim-map-attribution">
         <a href={GSI_ATTRIBUTION_URL} target="_blank" rel="noopener noreferrer">© 国土地理院</a>
@@ -317,7 +340,13 @@ export function SimulationReferenceMap({
         onClick={nationwide} disabled={status!=='ready'}><UiIcon name="overview" /></button>
       {displayedEpicenter&&<button type="button" className="sim-map-epicenter-jump"
         aria-label={t.focusEpicenter} data-testid="japan-map-epicenter"
-        onClick={()=>mapRef.current?.easeTo({center:[epicenter!.lng,epicenter!.lat],zoom:Math.max(mapRef.current?.getZoom()??6,6),duration:250})}>
+        onClick={()=>{
+          const map=mapRef.current,rect=host.current?.getBoundingClientRect();
+          const info=host.current?.parentElement?.querySelector('.sim-map-information')?.getBoundingClientRect();
+          if(!map||!rect)return;
+          map.easeTo({center:[epicenter!.lng,epicenter!.lat],zoom:Math.max(map.getZoom(),6),duration:250,
+            padding:{top:130,bottom:Math.min(rect.height*.6,Math.max(160,info?rect.bottom-info.top+24:0)),left:25,right:70}});
+        }}>
         <UiIcon name="close" />
       </button>}
       {displayedGps&&<button type="button" aria-label={t.focusGPS}

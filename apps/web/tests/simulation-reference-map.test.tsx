@@ -7,20 +7,23 @@ import { resolve } from 'node:path';
 import { webcrypto } from 'node:crypto';
 import { documentedEpicenters } from '../lib/geospatial-exposure';
 import { SimulationReferenceMap } from '../components/simulation-reference-map';
+import { tohokuWaveOrigins, type WavefrontData } from '../lib/seismic-wavefront';
 
-const mapHarness=vi.hoisted(()=>({coordinates:[] as number[][],removed:0,operations:[] as string[]}));
+const mapHarness=vi.hoisted(()=>({coordinates:[] as number[][],removed:0,operations:[] as string[],waveFrames:[] as WavefrontData[]}));
 vi.mock('maplibre-gl',()=>({
   setWorkerCount:vi.fn(),setWorkerUrl:vi.fn(),
   Map:class {
     layers=new Set(['gsi-topographic']);sources=new Set(['gsi-standard']);
+    waveSource:{setData:(data:WavefrontData)=>void}|null=null;
     scrollZoom={disable:vi.fn()};boxZoom={disable:vi.fn()};dragRotate={disable:vi.fn()};
     dragPan={disable:vi.fn(),enable:vi.fn()};touchZoomRotate={disable:vi.fn(),enable:vi.fn(),disableRotation:vi.fn()};
     once(_name:string,callback:()=>void){callback();} on(){} off(){} resize(){} fitBounds(){mapHarness.operations.push('country');} remove(){}
     getZoom(){return 9;} easeTo(){mapHarness.operations.push('center');}
-    getLayer(id:string){return this.layers.has(id);} getSource(id:string){return this.sources.has(id);}
+    getLayer(id:string){return this.layers.has(id);} getSource(id:string){return id==='seismic-wavefronts'?this.waveSource:this.sources.has(id);}
     removeLayer(id:string){this.layers.delete(id);mapHarness.operations.push('remove-layer:'+id);}
     removeSource(id:string){this.sources.delete(id);mapHarness.operations.push('remove-source:'+id);}
-    addSource(id:string){this.sources.add(id);mapHarness.operations.push('add-source:'+id);}
+    addSource(id:string,options?:{data:WavefrontData}){this.sources.add(id);mapHarness.operations.push('add-source:'+id);
+      if(id==='seismic-wavefronts'){mapHarness.waveFrames.push(options!.data);this.waveSource={setData:data=>mapHarness.waveFrames.push(data)};}}
     addLayer(layer:{id:string}){this.layers.add(layer.id);mapHarness.operations.push('add-layer:'+layer.id);}
   },
   Marker:class {
@@ -40,6 +43,28 @@ afterEach(async () => {
 });
 
 describe('isolated simulation reference map', () => {
+  it('updates one geospatial source from event time and retains elapsed distance after remount',async()=>{
+    const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
+    vi.stubGlobal('crypto',webcrypto);
+    vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)})));
+    const seismicOrigins=[tohokuWaveOrigins[0]], at=Date.parse(seismicOrigins[0].observed_at_jst);
+    mapHarness.waveFrames=[];mapHarness.operations=[];
+    container=document.createElement('div');document.body.append(container);root=createRoot(container);
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" seismicOrigins={seismicOrigins} seismicTime={at-1}/>));
+    await act(async()=>{await new Promise(resolve=>setTimeout(resolve,40));});
+    expect(mapHarness.waveFrames.at(-1)?.features).toHaveLength(0);
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" seismicOrigins={seismicOrigins} seismicTime={at+30_000}/>));
+    const initial=mapHarness.waveFrames.at(-1)!.features[0].properties.radius_km;
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" seismicOrigins={seismicOrigins} seismicTime={at+90_000}/>));
+    const later=mapHarness.waveFrames.at(-1)!;
+    expect(later.features[0].properties.radius_km).toBeGreaterThan(initial);
+    expect(mapHarness.operations.filter(x=>x==='add-source:seismic-wavefronts')).toHaveLength(1);
+    expect(container.querySelector('[data-testid=seismic-wave-legend]')?.textContent).toContain('波前估算');
+    await act(async()=>root!.unmount());root=createRoot(container);
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" seismicOrigins={seismicOrigins} seismicTime={at+90_000}/>));
+    await act(async()=>{await new Promise(resolve=>setTimeout(resolve,40));});
+    expect(mapHarness.waveFrames.at(-1)).toEqual(later);
+  });
   it('removes detailed tile requests before centering on device GPS and resets the view before restoring tiles',async()=>{
     const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
     vi.stubGlobal('crypto',webcrypto);
@@ -68,7 +93,7 @@ describe('isolated simulation reference map', () => {
     await act(async()=>{await new Promise(resolve=>setTimeout(resolve,40));});
     expect(mapHarness.coordinates).toEqual([[142.86,38.103333]]);
     expect(container.querySelector('[data-testid=japan-map-epicenter]')).not.toBeNull();
-    expect(container.textContent).toContain('不代表震動影響範圍');
+    expect(container.textContent).toContain('不代表實測波形');
     await act(async()=>root!.unmount());root=null;
     expect(mapHarness.removed).toBeGreaterThan(0);
   });
@@ -83,7 +108,7 @@ describe('isolated simulation reference map', () => {
     const details=info?.querySelector<HTMLDetailsElement>('[data-testid=japan-map-details]');
     expect(quick?.textContent).toContain('不可作避難導航');
     expect(details?.open).toBe(false);
-    expect(details?.textContent).toContain('不代表震動影響範圍');
+    expect(details?.textContent).toContain('不代表實測波形');
     expect(info?.querySelector('a[href*="maps.gsi.go.jp"]')).not.toBeNull();
     await act(async()=>{details?.querySelector('summary')?.click();});
     expect(details?.open).toBe(true);

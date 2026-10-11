@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type Dispatch, type SetStateAction } from 'react';
+import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import type { Language } from '@/lib/contracts';
 import { jstInputFromEpoch } from '@/lib/historical-playback';
 import type { SimulationLaunch } from '@/lib/simulation-session';
@@ -11,6 +11,7 @@ import { SimulationRiskPanel } from './simulation-risk-panel';
 import './simulation-geo.css';
 import { useSimulationGeo } from '@/lib/use-simulation-geo';
 import { epicenterForPlayedMilestones, historicTsunamiWarningStarted, screenGeoExposure } from '@/lib/geospatial-exposure';
+import { seismicOriginsForMilestones } from '@/lib/seismic-wavefront';
 
 export type SimulationSection = 'home' | 'plan' | 'events' | 'map' | 'more';
 type Stage = 'waiting' | 'processing' | 'running' | 'completed' | 'failed';
@@ -75,7 +76,9 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
   const [eventDetail,setEventDetail]=useState<number|null>(null);
   const [mapSheetExpanded,setMapSheetExpanded]=useState(false);
   const geo=useSimulationGeo();
-  const epicenter=epicenterForPlayedMilestones(config.historicalCase,config.milestones,done);
+  const seismicOrigins=useMemo(()=>seismicOriginsForMilestones(config.historicalCase,config.milestones),[config.historicalCase,config.milestones]);
+  const occurredOrigins=seismicOrigins.filter(origin=>Date.parse(origin.observed_at_jst)<=time);
+  const epicenter=occurredOrigins.at(-1)??epicenterForPlayedMilestones(config.historicalCase,config.milestones,done);
   const warning=historicTsunamiWarningStarted(config.milestones,done);
   const assessment=screenGeoExposure({location:geo.location,epicenter,tsunamiWarningActive:warning,now:Date.now()});
   const current=config.milestones[Math.max(0,done-1)]??null;
@@ -89,7 +92,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
     :state?.ai_modes.some(m=>m.includes('FALLBACK'))?'Safety Core fallback':t.waiting;
   const doneEvent=done>0;
   const imminent=upcoming && seconds<=60;
-  const timeText=jstInputFromEpoch(time).replace('T',' ');
+  const timeText=jstInputFromEpoch(time).replace('T',' ')+':'+new Date(time).toISOString().slice(17,19);
   const firstEpoch=Date.parse(config.milestones[0]?.at_jst??'');
   const preludeEpoch=Date.parse(config.acceleratedStart+':00+09:00');
   const preludeProgress=config.timeMode==='ACCELERATED' && Number.isFinite(firstEpoch) && Number.isFinite(preludeEpoch)
@@ -134,7 +137,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
           </div>
         </div>
         <div className="sim-v2-map-teaser">
-          <SimulationReferenceMap language={language} compact userLocation={assessment.user_location} epicenter={epicenter}/>
+          <SimulationReferenceMap language={language} compact userLocation={assessment.user_location} epicenter={epicenter} seismicOrigins={seismicOrigins} seismicTime={time}/>
           <button type="button" className="sim-v2-expand-map" onClick={()=>setTab('map')}>{t.reference} <span aria-hidden="true">↗</span></button>
         </div>
         <div className="sim-v2-event-dock">
@@ -181,7 +184,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
           </li>)}
         </ol>
         <div className="sim-v2-timeline-map">
-          <SimulationReferenceMap language={language} compact userLocation={assessment.user_location} epicenter={epicenter}/>
+          <SimulationReferenceMap language={language} compact userLocation={assessment.user_location} epicenter={epicenter} seismicOrigins={seismicOrigins} seismicTime={time}/>
           <button type="button" onClick={()=>setTab('map')}>{t.reference} ↗</button>
         </div>
         <p className="sim-v2-timeline-caption">{t.note}</p>
@@ -191,7 +194,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
           <button type="button" onClick={()=>setTab('events')} aria-label={t.mapBack}><span className="sim-icon-back"><UiIcon name="arrow" /></span></button>
           <div><strong>{t.map}</strong><small>{t.mapData}</small></div>
         </header>
-        <SimulationReferenceMap language={language} userLocation={assessment.user_location} epicenter={epicenter}/>
+        <SimulationReferenceMap language={language} userLocation={assessment.user_location} epicenter={epicenter} seismicOrigins={seismicOrigins} seismicTime={time}/>
         <div className="sim-v2-map-sheet sim-v2-map-sheet-risk"
           data-testid="simulation-map-sheet" data-sheet-state={mapSheetExpanded?'expanded':'collapsed'}>
           <button type="button" className="sim-v2-sheet-toggle" data-testid="simulation-risk-toggle"

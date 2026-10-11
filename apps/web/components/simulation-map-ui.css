@@ -321,10 +321,8 @@
 .sim-geo-marker{width:24px;height:24px;box-sizing:border-box;border:2px solid #cfdae4;position:relative;font-family:Arial,sans-serif}
 .sim-geo-epicenter{background:#bf7853}
 .sim-marker-symbol{position:relative;z-index:1}
-.sim-quake-ripple{position:absolute;inset:0;pointer-events:none}
-.sim-quake-ripple i{position:absolute;inset:-3px;border:1.5px solid #e8a176;border-radius:50%;animation:japan-quake-expand 3.6s ease-out infinite;transform-origin:center}
-.sim-quake-ripple i:nth-child(2){animation-delay:1.2s}.sim-quake-ripple i:nth-child(3){animation-delay:2.4s}
-@keyframes japan-quake-expand{0%{transform:scale(1);opacity:.8}100%{transform:scale(3.5);opacity:0}}
+.sim-map-information .sim-map-wave-legend{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:3px 10px;margin:0;font-size:10px;line-height:1.4;color:#c9ddd7}
+.sim-wave-p{color:#b6dae8}.sim-wave-s{color:#f3bb85}
 .sim-v2-nav .ui-icon{width:24px;height:24px;flex:0 0 24px}
 .sim-v2-settings,.sim-v2-map-head>button,.sim-v2-event-dock>button{display:grid;place-items:center;padding:0;flex:0 0 44px}
 .sim-v2-dock-mark{display:grid;place-items:center;flex:0 0 24px}
@@ -344,7 +342,6 @@
 .japan-history-picker{position:absolute;top:64px;left:12px;right:70px;z-index:6}
 .japan-history-picker select{min-height:40px;width:100%;max-width:260px;background:#18232f;color:#e5edf5;border:1px solid #526272;border-radius:8px;padding:5px 8px;font:inherit;font-size:11px}
 .japan-reference-page .sim-map-geo-note{top:112px}
-@media(prefers-reduced-motion:reduce){.sim-quake-ripple i{animation:none;transform:scale(1.5);opacity:.35}.sim-quake-ripple i:nth-child(2){transform:scale(2.4);opacity:.2}.sim-quake-ripple i:nth-child(3){transform:scale(3.3);opacity:.1}}
 
 /* P2.3: distinct geography and compact, readable map information */
 .sim-map-reference{background:#0c2535}
