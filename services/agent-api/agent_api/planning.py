@@ -11,7 +11,9 @@ from seventytwoh_contracts.models import (
     CandidateActionSelection,
     CandidatePlanSelection,
     DependencyExpectation,
+    DisasterEvent,
     DisasterEventType,
+    DisasterEventStatus,
     Evidence,
     EvidenceProjection,
     FreshnessStatus,
@@ -34,6 +36,7 @@ from seventytwoh_contracts.models import (
 )
 
 from .domain import append_plan
+from .live_sources import JMA_SOURCE_KEY, JMA_TSUNAMI_SOURCE_KEY
 from .safety import (
     DEFAULT_POLICY,
     SafetyPolicy,
@@ -61,8 +64,10 @@ def disaster_status_claim_keys(state: CoreState) -> tuple[str, ...]:
         for evidence in state.evidence
         for assessment in evidence.disaster_assessments
     }
-    if not event_types:
-        return ()
+    # Keep both supported official hazard claims in every plan dependency set.
+    # This lets a later live tsunami bulletin invalidate a plan that was created
+    # while tsunami status was unknown, without treating an empty poll as evidence.
+    event_types.update({DisasterEventType.EARTHQUAKE, DisasterEventType.TSUNAMI})
     return tuple(
         disaster_claim_key(area_id, event_type.value, "status")
         for event_type in sorted(event_types, key=lambda item: item.value)
@@ -117,12 +122,15 @@ def evidence_projections(
     situation: Situation,
     current_time,
     policy: SafetyPolicy = DEFAULT_POLICY,
+    *,
+    events: tuple[DisasterEvent, ...] = (),
 ) -> tuple[EvidenceProjection, ...]:
     claims, _, conflict_evidence_ids = derive_claim_states(
         situation,
         evidence,
         current_time,
         policy,
+        events=events,
     )
     del claims
     conflict_ids = set(conflict_evidence_ids)
@@ -154,6 +162,7 @@ def candidate_context_for_preview(
             preview.situation,
             preview.current_time,
             policy,
+            events=preview.events,
         )
     }
     claims = {item.key: item for item in preview.situation.claim_states}
@@ -263,6 +272,7 @@ def evaluate_and_replan(
         after.evidence,
         after.current_time,
         policy,
+        events=after.events,
     )
     conflict_ids = set(conflict_evidence_ids)
     projections = tuple(
@@ -547,6 +557,13 @@ def assess_action(
     return action.model_copy(update={"confidence_class": "LOW"})
 
 
+def _jma_tsunami_group(event_identity: str) -> str | None:
+    group, separator, _revision = event_identity.partition("--")
+    if separator and group.startswith("jma-tsunami-"):
+        return group
+    return None
+
+
 def _reconcile_network_if_ready(
     state: CoreState,
     projections: dict[str, EvidenceProjection],
@@ -563,45 +580,176 @@ def _reconcile_network_if_ready(
 
     official_keys = set(disaster_status_claim_keys(state))
     route_key = route_status_claim_key(state)
-    required_claim_keys = {
-        "OFFICIAL": official_keys,
-        "PARTNER": {route_key} if route_key else set(),
-    }
-    required_classes = set()
-    if state.situation.active_event_ids:
-        required_classes.add("OFFICIAL")
-        if route_key is not None:
-            required_classes.add("PARTNER")
-    if not required_classes:
-        return state
-    fresh_after_reconnect: dict[str, list[Evidence]] = {
-        source_class: [] for source_class in required_classes
-    }
     evidence_after_reconnect = state.evidence[
         state.reconnect_evidence_count or 0 :
     ]
-    for evidence in evidence_after_reconnect:
-        source_class = evidence.source_class.value
-        if source_class not in fresh_after_reconnect:
-            continue
-        projection = projections.get(evidence.id)
-        claim_keys = required_claim_keys.get(source_class, set())
-        if (
-            evidence.trust_status in TRUSTED_STATUSES
-            and evidence.received_at >= reconnect.timestamp
-            and evidence.published_at >= reconnect.timestamp
+
+    source_key_by_type = {
+        DisasterEventType.EARTHQUAKE: JMA_SOURCE_KEY,
+        DisasterEventType.TSUNAMI: JMA_TSUNAMI_SOURCE_KEY,
+    }
+    active_ids = set(state.situation.active_event_ids)
+    active_events = [item for item in state.events if item.id in active_ids]
+    if active_ids and not active_events:
+        # A dangling active event cannot be reconciled by unrelated source data.
+        return state
+
+    active_events_by_type: dict[DisasterEventType, list] = {}
+    for active_event in active_events:
+        active_events_by_type.setdefault(active_event.event_type, []).append(active_event)
+
+    typed_keys_by_type = {
+        event_type: {
+            key for key in official_keys
+            if key.startswith(f"disaster.{event_type.value}.")
+        }
+        for event_type in source_key_by_type
+    }
+
+    def post_restore_verified(evidence_item: Evidence) -> bool:
+        projection = projections.get(evidence_item.id)
+        return (
+            evidence_item.source_class.value == "OFFICIAL"
+            and evidence_item.trust_status in TRUSTED_STATUSES
+            and evidence_item.received_at >= reconnect.timestamp
+            and evidence_item.published_at >= reconnect.timestamp
             and projection is not None
             and projection.eligible_for_claims
-            and claim_keys
-            and any(claim.key in claim_keys for claim in evidence.claims)
+        )
+
+    # A verified post-restore cancellation is itself required source evidence,
+    # even though applying it has already removed that event from active IDs.
+    resolved_requirements: set[
+        tuple[DisasterEventType, str | None, str | None, frozenset[str]]
+    ] = set()
+    for evidence_item in evidence_after_reconnect:
+        if not post_restore_verified(evidence_item):
+            continue
+        for assessment in evidence_item.disaster_assessments:
+            if assessment.status != DisasterEventStatus.RESOLVED:
+                continue
+            expected_source_key = source_key_by_type.get(assessment.event_type)
+            if expected_source_key is None or not typed_keys_by_type.get(assessment.event_type):
+                continue
+            if not evidence_item.is_synthetic and evidence_item.source_key != expected_source_key:
+                continue
+            matching_keys = typed_keys_by_type[assessment.event_type].intersection(
+                claim.key for claim in evidence_item.claims
+            )
+            if matching_keys:
+                group = (
+                    _jma_tsunami_group(evidence_item.id.removeprefix("ev_"))
+                    if assessment.event_type == DisasterEventType.TSUNAMI
+                    and not evidence_item.is_synthetic
+                    else None
+                )
+                if assessment.event_type == DisasterEventType.TSUNAMI and not evidence_item.is_synthetic and group is None:
+                    continue
+                resolved_requirements.add((
+                    assessment.event_type,
+                    None if evidence_item.is_synthetic else expected_source_key,
+                    group,
+                    frozenset(matching_keys),
+                ))
+
+    # Real JMA tsunami requirements are grouped by EventID. A cancellation for
+    # one group cannot satisfy another group's still-active reconnect requirement.
+    required_evidence: dict[
+        tuple[str, str | None, DisasterEventType | None, str | None], set[str]
+    ] = {}
+    for event_type, matching_active in active_events_by_type.items():
+        expected_source_key = source_key_by_type.get(event_type)
+        claim_keys = typed_keys_by_type.get(event_type, set())
+        if not claim_keys or expected_source_key is None:
+            return state
+        if event_type == DisasterEventType.TSUNAMI:
+            real_groups: dict[str, DisasterEvent] = {}
+            synthetic_active = False
+            evidence_by_id = {item.id: item for item in state.evidence}
+            for active_event in matching_active:
+                if active_event.is_synthetic:
+                    synthetic_active = True
+                    continue
+                group = _jma_tsunami_group(active_event.id)
+                if group is None:
+                    return state
+                existing_event = real_groups.get(group)
+                existing_evidence = (
+                    evidence_by_id.get(f"ev_{existing_event.id}")
+                    if existing_event is not None
+                    else None
+                )
+                candidate_evidence = evidence_by_id.get(f"ev_{active_event.id}")
+                if candidate_evidence is None or candidate_evidence.source_key != expected_source_key:
+                    return state
+                if existing_event is None or existing_evidence is None or (
+                    candidate_evidence.published_at,
+                    candidate_evidence.received_at,
+                    candidate_evidence.id,
+                ) > (
+                    existing_evidence.published_at,
+                    existing_evidence.received_at,
+                    existing_evidence.id,
+                ):
+                    real_groups[group] = active_event
+            for group, active_event in real_groups.items():
+                relevant_keys = {
+                    disaster_claim_key(area_id, event_type.value, "status")
+                    for area_id in active_event.affected_area_ids
+                }.intersection(claim_keys)
+                if relevant_keys:
+                    required_evidence[("OFFICIAL", expected_source_key, event_type, group)] = relevant_keys
+            if synthetic_active:
+                required_evidence[("OFFICIAL", None, event_type, None)] = claim_keys
+        elif any(not item.is_synthetic for item in matching_active):
+            required_evidence[("OFFICIAL", expected_source_key, event_type, None)] = claim_keys
+        else:
+            required_evidence[("OFFICIAL", None, event_type, None)] = claim_keys
+
+    for event_type, source_key, group, claim_keys in resolved_requirements:
+        if not typed_keys_by_type.get(event_type):
+            continue
+        required_evidence.setdefault(
+            ("OFFICIAL", source_key, event_type, group), set()
+        ).update(claim_keys)
+
+    if not required_evidence:
+        return state
+
+    needs_partner = bool(active_ids and route_key is not None)
+    if needs_partner:
+        required_evidence[("PARTNER", None, None, None)] = {route_key}
+    fresh_after_reconnect: dict[
+        tuple[str, str | None, DisasterEventType | None, str | None], list[Evidence]
+    ] = {key: [] for key in required_evidence}
+    for evidence in evidence_after_reconnect:
+        source_class = evidence.source_class.value
+        projection = projections.get(evidence.id)
+        if (
+            evidence.trust_status not in TRUSTED_STATUSES
+            or evidence.received_at < reconnect.timestamp
+            or evidence.published_at < reconnect.timestamp
+            or projection is None
+            or not projection.eligible_for_claims
         ):
-            fresh_after_reconnect[source_class].append(evidence)
+            continue
+        claim_set = {claim.key for claim in evidence.claims}
+        for requirement, claim_keys in required_evidence.items():
+            required_class, required_source_key, _event_type, required_group = requirement
+            if source_class != required_class:
+                continue
+            if required_source_key is not None and evidence.source_key != required_source_key:
+                continue
+            if required_group is not None and _jma_tsunami_group(evidence.id.removeprefix("ev_")) != required_group:
+                continue
+            if claim_keys.intersection(claim_set):
+                fresh_after_reconnect[requirement].append(evidence)
 
     if any(not items for items in fresh_after_reconnect.values()):
         return state
     reconciled_ids = tuple(
         max(items, key=lambda item: (item.received_at, item.id)).id
-        for _, items in sorted(fresh_after_reconnect.items())
+        for _, items in sorted(fresh_after_reconnect.items(), key=lambda item: str(item[0]))
     )
     situation = state.situation.model_copy(
         update={

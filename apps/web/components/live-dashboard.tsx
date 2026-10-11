@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { UiIcon, type IconName } from './ui-icon';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, FormEvent, ReactNode, SetStateAction } from 'react';
 import { usePower } from '@/lib/use-power';
@@ -584,7 +585,13 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
     && ['SAFETY_CHECK', 'EMERGENCY_PROTECT'].includes(projection.presentation.mode);
   const locationGateOverride = !!locationSync && criticalProtection;
   if (locationSync && view !== 'more' && !criticalProtection) return <LocationSyncGate state={locationSync} messages={messages} retry={onRetryLocation} canRetry={canStart && !busy} chooseArea={onChooseArea} />;
-  if (!snapshot || !projection) return <LocationOnboarding language={language} messages={messages} location={deviceLocation} busy={busy} canStart={canStart} submit={onProfile} />;
+  if (!snapshot || !projection) return <>
+    <LocationOnboarding language={language} messages={messages} location={deviceLocation} busy={busy} canStart={canStart} submit={onProfile} />
+    {view === 'more' && <details className="more-lab-entry"><summary>{messages.testToolsLabel}</summary>
+      <Link href="/disaster-test">{messages.disasterTestDestination} →</Link>
+      <Link href="/map">{language === 'ja' ? '日本全国の参考地図' : language === 'en' ? 'All Japan reference map' : '全日本參考地圖'} →</Link>
+    </details>}
+  </>;
   const urgent = ['SAFETY_CHECK', 'EMERGENCY_PROTECT', 'SURVIVAL', 'MAP_ASSISTED'].includes(projection.presentation.mode)
     || ['SHELTER_IN_PLACE', 'EVACUATE'].includes(snapshot.spatial_guidance.current_action_kind);
   const currentPlan = projection.plan;
@@ -611,7 +618,7 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
   } : projection.presentation;
   const mapSurface: ReactNode = !locationGateOverride && projection.mapGate && view === 'dashboard' && route?.geometry
     ? <section className="verified-route-panel"><h2>{messages.map}</h2><p>{messages.mapLabel}</p>
-      <EmergencyMap language={language} conserve={power.mode !== 'NORMAL'} profile={snapshot.profile} location={deviceLocation} locationResolving={locationResolving} onHomeMapReady={onHomeMapReady} route={route}
+      <EmergencyMap language={language} conserve={power.mode !== 'NORMAL'} profile={snapshot.profile} location={deviceLocation} earthquake={(() => { const event = snapshot.events.findLast(item => snapshot.situation.active_event_ids.includes(item.id)); return event ? { id: event.id, occurredAt: event.occurred_at, synthetic: false } : null; })()} locationResolving={locationResolving} onHomeMapReady={onHomeMapReady} route={route}
         routeDestination={routeDestination ? { id: routeDestination.id, name: routeDestination.name,
           lng: routeDestination.coordinates.lng, lat: routeDestination.coordinates.lat } : null} />
     </section> : undefined;
@@ -687,9 +694,13 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
           ] as const).map(([panel, label]) => <button key={panel} type="button" className="more-destination" data-more-panel={panel} onClick={() => {
             moreTriggerPanel.current = panel; setMorePanel(panel);
           }}>
-            <span>{label}</span><span aria-hidden="true">→</span>
+            <span>{label}</span><UiIcon name="arrow" />
           </button>)}
         </nav>
+        <details className="more-lab-entry"><summary>{messages.testToolsLabel}</summary>
+      <Link href="/disaster-test">{messages.disasterTestDestination} →</Link>
+          <Link href="/map">{language === 'ja' ? '日本全国の参考地図' : language === 'en' ? 'All Japan reference map' : '全日本參考地圖'} →</Link>
+        </details>
         <footer className="more-emergency-footer">
           <p><a href="tel:119">119</a> · <a href="tel:110">110</a> · <Link href="/dashboard">72H</Link></p>
           <details><summary>{messages.emergencyBasicsTitle}</summary><p>{messages.emergencyBasicsText}</p></details>
@@ -1220,9 +1231,9 @@ export function LiveDashboard({ view }: { view: string }) {
     : connection === 'reconnecting' || projection?.networkState === 'RECONNECTING' ? messages.reconnecting
       : projection?.networkState === 'ONLINE_VERIFIED' && snapshot && isPrimarySourceCurrent(snapshot, projection) ? messages.sourceFresh : messages.sourceStale;
   const nav = [
-    { key: 'dashboard', label: messages.home, icon: '⌂' },
-    { key: 'plan', label: messages.plan, icon: '▤' },
-    { key: 'more', label: messages.more, icon: '···' },
+    { key: 'dashboard', label: messages.home, icon: 'home' as IconName },
+    { key: 'plan', label: messages.plan, icon: 'plan' as IconName },
+    { key: 'more', label: messages.more, icon: 'more' as IconName },
   ];
   const desktopNav = [
     { key: 'dashboard', label: messages.home }, { key: 'plan', label: messages.plan },
@@ -1269,7 +1280,7 @@ export function LiveDashboard({ view }: { view: string }) {
       {mainContent}
       {role === 'mobile' && !criticalMobileTakeover && <nav className="mobile-primary-nav" aria-label={language === 'ja' ? 'メイン' : language === 'zh-TW' ? '主選單' : 'Main navigation'}>
         {nav.map(item => <Link key={item.key} href={`/${item.key}`} aria-current={view === item.key ? 'page' : undefined} className={view === item.key ? 'selected' : ''}>
-          <span aria-hidden="true">{item.icon}</span><small>{item.label}</small>
+          <UiIcon name={item.icon} /><small>{item.label}</small>
         </Link>)}
       </nav>}
       {role === 'desktop' && snapshot && <div className="desktop-handoff-link"><Link href="/more">{messages.handoff} →</Link></div>}

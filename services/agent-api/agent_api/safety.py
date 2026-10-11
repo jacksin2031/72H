@@ -12,6 +12,9 @@ from seventytwoh_contracts.models import (
     Claim,
     ClaimStateStatus,
     DisasterAssessment,
+    DisasterEvent,
+    DisasterEventStatus,
+    DisasterEventType,
     Evidence,
     EvidenceProjection,
     FreshnessStatus,
@@ -19,6 +22,8 @@ from seventytwoh_contracts.models import (
     SituationClaim,
     TrustStatus,
 )
+
+from .live_sources import JMA_TSUNAMI_SOURCE_KEY
 
 TRUSTED_STATUSES = {TrustStatus.VERIFIED_OFFICIAL, TrustStatus.VERIFIED_PARTNER}
 
@@ -199,6 +204,8 @@ def derive_claim_states(
     evidence: tuple[Evidence, ...],
     current_time: datetime,
     policy: SafetyPolicy,
+    *,
+    events: tuple[DisasterEvent, ...] = (),
 ) -> tuple[tuple[SituationClaim, ...], tuple[str, ...], tuple[str, ...]]:
     """Return claim states, the keys in conflict, and evidence IDs in a conflict."""
     projections = {
@@ -264,11 +271,143 @@ def derive_claim_states(
                 )
             )
 
-    return (
-        tuple(states),
-        tuple(conflict_keys),
-        tuple(sorted(conflicting_evidence_ids)),
+    states, conflict_keys, conflicting_evidence_ids = _aggregate_active_jma_tsunami_claims(
+        previous,
+        evidence,
+        events,
+        projections,
+        current_time,
+        states,
+        conflict_keys,
     )
+    return tuple(states), tuple(sorted(set(conflict_keys))), tuple(sorted(conflicting_evidence_ids))
+
+
+def _aggregate_active_jma_tsunami_claims(
+    situation: Situation,
+    evidence: tuple[Evidence, ...],
+    events: tuple[DisasterEvent, ...],
+    projections: dict[str, EvidenceProjection],
+    current_time: datetime,
+    states: list[SituationClaim],
+    conflict_keys: list[str],
+) -> tuple[list[SituationClaim], list[str], set[str]]:
+    """Keep a cancellation for one JMA EventID from resolving another active EventID."""
+    active_ids = set(situation.active_event_ids)
+    evidence_by_id = {item.id: item for item in evidence}
+    active_by_group: dict[str, tuple[DisasterEvent, Evidence]] = {}
+    for event in events:
+        if (
+            event.id not in active_ids
+            or event.event_type != DisasterEventType.TSUNAMI
+            or event.is_synthetic
+            or event.source_class.value != "OFFICIAL"
+        ):
+            continue
+        event_group, separator, _revision = event.id.partition("--")
+        if not separator or not event_group.startswith("jma-tsunami-"):
+            continue
+        evidence_item = evidence_by_id.get(f"ev_{event.id}")
+        if evidence_item is None or evidence_item.source_key != JMA_TSUNAMI_SOURCE_KEY:
+            continue
+        previous = active_by_group.get(event_group)
+        previous_evidence = previous[1] if previous is not None else None
+        if previous_evidence is None or (
+            evidence_item.published_at,
+            evidence_item.received_at,
+            evidence_item.id,
+        ) > (
+            previous_evidence.published_at,
+            previous_evidence.received_at,
+            previous_evidence.id,
+        ):
+            active_by_group[event_group] = (event, evidence_item)
+
+    if not active_by_group:
+        state_by_key = {item.key: item for item in states}
+        conflict_ids = {
+            evidence_id
+            for key in conflict_keys
+            if key in state_by_key
+            for evidence_id in state_by_key[key].evidence_ids
+        }
+        return states, conflict_keys, conflict_ids
+
+    groups_by_area: dict[str, list[tuple[DisasterEvent, Evidence]]] = {}
+    for event, evidence_item in active_by_group.values():
+        for area_id in set(event.affected_area_ids) | set(evidence_item.affected_area_ids):
+            groups_by_area.setdefault(area_id, []).append((event, evidence_item))
+
+    state_by_key = {item.key: item for item in states}
+    for area_id, groups in groups_by_area.items():
+        key = disaster_claim_key(area_id, DisasterEventType.TSUNAMI.value, "status")
+        supporting_active: list[str] = []
+        supporting_resolved: list[str] = []
+        unresolved_support: list[str] = []
+        for _event, evidence_item in groups:
+            claim = next((item for item in evidence_item.claims if item.key == key), None)
+            assessment = next(
+                (
+                    item for item in evidence_item.disaster_assessments
+                    if item.area_id == area_id and item.event_type == DisasterEventType.TSUNAMI
+                ),
+                None,
+            )
+            projection = projections.get(evidence_item.id)
+            if (
+                claim is not None
+                and claim.value == DisasterEventStatus.ACTIVE.value
+                and assessment is not None
+                and assessment.status == DisasterEventStatus.ACTIVE
+                and projection is not None
+                and projection.eligible_for_claims
+            ):
+                supporting_active.append(evidence_item.id)
+            elif (
+                claim is not None
+                and claim.value == DisasterEventStatus.RESOLVED.value
+                and assessment is not None
+                and assessment.status == DisasterEventStatus.RESOLVED
+                and projection is not None
+                and projection.eligible_for_claims
+            ):
+                supporting_resolved.append(evidence_item.id)
+            else:
+                unresolved_support.append(evidence_item.id)
+
+        if supporting_active:
+            state_by_key[key] = SituationClaim(
+                key=key,
+                status=ClaimStateStatus.VERIFIED,
+                value=DisasterEventStatus.ACTIVE.value,
+                evidence_ids=tuple(sorted(set(supporting_active))),
+                updated_at=current_time,
+            )
+            conflict_keys[:] = [candidate for candidate in conflict_keys if candidate != key]
+        elif supporting_resolved and not unresolved_support:
+            state_by_key[key] = SituationClaim(
+                key=key,
+                status=ClaimStateStatus.VERIFIED,
+                value=DisasterEventStatus.RESOLVED.value,
+                evidence_ids=tuple(sorted(set(supporting_resolved))),
+                updated_at=current_time,
+            )
+        else:
+            state_by_key[key] = SituationClaim(
+                key=key,
+                status=ClaimStateStatus.UNKNOWN,
+                value=None,
+                evidence_ids=tuple(sorted(set(unresolved_support))),
+                updated_at=current_time,
+            )
+
+    remaining_conflict_ids = {
+        evidence_id
+        for key in conflict_keys
+        if key in state_by_key
+        for evidence_id in state_by_key[key].evidence_ids
+    }
+    return [state_by_key[key] for key in sorted(state_by_key)], conflict_keys, remaining_conflict_ids
 
 
 def current_claim_value(state: SituationClaim | None):

@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { UiIcon } from './ui-icon';
 import React, { type ReactNode, useEffect, useRef, useState } from 'react';
 import type { Action, Language, LiveSnapshot, Snapshot } from '../lib/contracts';
 import type { PresentationProjection } from '../lib/adaptive-ui';
@@ -77,7 +78,7 @@ export function AdaptiveHome({ presentation, snapshot, language, networkState, p
     <header className="situation-header">
       <div><h1>{mode === 'EMERGENCY_PROTECT' ? t.protect : mode === 'SAFETY_CHECK' ? vt.check : survival ? t.survival : mode === 'MAP_ASSISTED' ? t.movement : mode === 'TEXT_WITH_DETAILS' ? t.prepare : t.monitoring}</h1>
         {!offline && !stale && <p>{mode === 'MAP_ASSISTED' ? t.movementDetail : t.summary}</p>}</div>
-      {!urgentMode && <Link className="notification-badge" href="/notifications" aria-label={`${t.notifications} · ${notifications}`}>🔔 {presentation.showNotificationsBadge && <span>{notifications}</span>}</Link>}
+      {!urgentMode && <Link className="notification-badge" href="/notifications" aria-label={`${t.notifications} · ${notifications}`}><UiIcon name="bell" />{presentation.showNotificationsBadge && <span>{notifications}</span>}</Link>}
     </header>
     {(offline || stale) && <p className="freshness-warning" role="status">{t.lastVerified}: {verifiedTime} · {stale ? t.stale : t.cached}</p>}
     <section className="now-card" aria-labelledby="primary-now"><small id="primary-now">NOW</small><h2>{action?.text || t.pending}</h2></section>
@@ -96,7 +97,7 @@ export function AdaptiveHome({ presentation, snapshot, language, networkState, p
     </details>}
     {presentation.showEvidenceInline && action && <p className="inline-evidence">{evidenceLinks(action.evidence_ids)}</p>}
     {presentation.showSafetyCheck && checkControls}
-    {presentation.showPowerWarning && <p className="power-warning" role="status">⚠ {powerMode === 'SURVIVAL' ? t.survival : powerMode === 'EMERGENCY_POWER' ? t.emergencyPower : t.conserve} {!urgentMode && <>· <Link href="/more">{t.power}</Link></>}</p>}
+    {presentation.showPowerWarning && <p className="power-warning" role="status"><UiIcon name="warning" />{powerMode === 'SURVIVAL' ? t.survival : powerMode === 'EMERGENCY_POWER' ? t.emergencyPower : t.conserve} {!urgentMode && <>· <Link href="/more">{t.power}</Link></>}</p>}
     {presentation.showMap && <>
       {presentation.showDestination && <p>{t.destination}: {destinationLabel}</p>}
       {presentation.showRoute && <p className="route-state" role="status">{presentation.routeText === 'BLOCKED' ? t.routeBlocked : presentation.routeText === 'UNKNOWN' ? t.routeUnknown : presentation.routeText === 'VERIFIED_USABLE_CANDIDATE' ? t.routeUsable : t.routeCandidate}</p>}
@@ -109,7 +110,7 @@ export function AdaptiveHome({ presentation, snapshot, language, networkState, p
     {!urgentMode && <button ref={detailsTrigger} type="button" className="plan-sheet-trigger" onClick={() => setDetailsOpen(true)}>{t.details}</button>}
     {!urgentMode && detailsOpen && <div className="plan-sheet-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setDetailsOpen(false); }}>
       <section className="plan-sheet" role="dialog" aria-modal="true" aria-labelledby="plan-sheet-title" tabIndex={-1}>
-        <header><h2 id="plan-sheet-title">{t.details}</h2><button ref={closeButton} type="button" onClick={() => setDetailsOpen(false)} aria-label={t.closeDetails}>×</button></header>
+        <header><h2 id="plan-sheet-title">{t.details}</h2><button ref={closeButton} type="button" onClick={() => setDetailsOpen(false)} aria-label={t.closeDetails}><UiIcon name="close" /></button></header>
         {action && <><p>{action.reason}</p>{evidenceLinks(action.evidence_ids)}</>}
         {(['NEXT', 'AVOID'] as const).map(category => <section key={category}><h2>{category}</h2>{actions.filter(item => item.category === category).map(item => <article key={item.id}><h3>{item.text}</h3><p>{item.reason}</p>{evidenceLinks(item.evidence_ids)}</article>)}</section>)}
         <p>{t.lastVerified}: {verifiedTime}</p>

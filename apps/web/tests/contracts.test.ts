@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { snapshotSchema } from '../lib/contracts';
+import { disasterAssessmentSchema, snapshotSchema, tsunamiReferenceSchema } from '../lib/contracts';
 
 const fixture = () => ({
   profile: { id: 'demo-user', preferred_language: 'ja', current_location: { label: 'Shibuya' }, accommodation_location: { label: 'Asakusa' }, current_destination: { label: 'Asakusa' }, party_size: 1, self_reported_safety_status: 'SAFE', created_at: '2026-10-04T17:40:00+09:00', updated_at: '2026-10-04T17:40:00+09:00' },
@@ -27,6 +27,41 @@ describe('Snapshot boundary', () => {
   it('rejects replay positions outside the validated timeline', () => {
     const value = fixture();
     expect(snapshotSchema.safeParse({ ...value, replay: { ...value.replay, current_event_index: 10 } }).success).toBe(false);
+  });
+  it('keeps old earthquake snapshots typed as earthquakes and tsunami heights outside L0-L4', () => {
+    const value = fixture();
+    const oldSnapshot = snapshotSchema.parse({
+      ...value,
+      events: [{
+        id: 'legacy-earthquake-event', event_type: 'EARTHQUAKE', occurred_at: '2026-10-04T17:40:00+09:00',
+        affected_areas: ['東京'], source_name: 'JMA replay', raw_reference: 'replay://old-earthquake',
+      }],
+    });
+    expect(oldSnapshot.events[0].event_type).toBe('EARTHQUAKE');
+    expect(disasterAssessmentSchema.safeParse({ area_id: 'JP-04', event_type: 'TSUNAMI', level: 'L4', status: 'ACTIVE' }).success).toBe(false);
+    expect(disasterAssessmentSchema.parse({ area_id: 'JP-04', event_type: 'TSUNAMI', level: null, status: 'ACTIVE' }).level).toBeNull();
+  });
+  it('validates tsunami reference separately from historical snapshots and fails stale areas closed', () => {
+    const current = {
+      mode: 'LIVE_REFERENCE', event_type: 'TSUNAMI', status: 'ACTIVE', source_status: 'CURRENT',
+      source: {
+        source_id: 'jma-bosai-xml', product_code: 'VTSE41', name: 'JMA tsunami warnings',
+        url: 'https://www.data.jma.go.jp/developer/xml/data/current_VTSE41.xml',
+        published_at: '2026-10-06T01:00:00+00:00', fetched_at: '2026-10-06T01:00:01+00:00',
+        operation: 'ISSUE', serial: '1',
+      },
+      forecast_areas: [{
+        area_code: '220', area_name: '宮城県', status: 'ACTIVE', warning_class: 'MAJOR_WARNING',
+        max_height: { value_m: null, expression: 'HUGE', description: '巨大' }, arrival_at: null,
+      }],
+      safety_authority: 'NONE',
+    };
+    expect(tsunamiReferenceSchema.parse(current).event_type).toBe('TSUNAMI');
+    expect(tsunamiReferenceSchema.safeParse({ ...current, status: 'CANCELLED' }).success).toBe(false);
+    expect(tsunamiReferenceSchema.safeParse({ ...current, status: 'UNKNOWN' }).success).toBe(false);
+    expect(tsunamiReferenceSchema.safeParse({
+      ...current, status: 'UNKNOWN', source_status: 'STALE',
+    }).success).toBe(false);
   });
   if (process.env.CONTRACT_FIXTURE) {
     it('accepts the actual running API snapshot', () => {

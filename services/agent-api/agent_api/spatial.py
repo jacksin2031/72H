@@ -102,6 +102,7 @@ def resolve_movement_support(
         state.evidence,
         now,
         policy,
+        events=state.events,
     )
     claims = {item.key: item for item in claim_states}
     conflicts = set(conflict_keys)
@@ -269,7 +270,10 @@ def evaluated_spatial_guidance(
         if destination_record is None:
             destination_projection = None
         else:
-            checked_at = destination_record.source_published_at
+            # A missing catalog publication timestamp must not be fabricated;
+            # the projection still stays UNKNOWN/STALE and uses evaluation time
+            # only to satisfy its bounded projection interval.
+            checked_at = destination_record.source_published_at or now
             destination_projection = DestinationProjection(
                 destination_id=destination_record.id,
                 eligibility=DestinationEligibility.UNKNOWN,

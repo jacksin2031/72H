@@ -31,6 +31,8 @@ vi.mock('maplibre-gl', () => {
       return this;
     }
     on() { return this; }
+    off() { return this; }
+    resize() { return this; }
     fitBounds() { return this; }
     remove() { mapHarness.mapRemovals += 1; }
   }

@@ -411,6 +411,21 @@ Expected: old plan is not silently restored as current.
 
 ## 17. Definition of Done
 
+P2.4 regional hazard packs are lazy-cached public static assets. Each load checks
+the build-pinned manifest and asset SHA-256 before exposing the reference data.
+They use the independent `72h-hazards-v1` cache so shell upgrades do not delete
+downloaded packs. Activation migrates eligible public hazard assets from older
+shell caches before cleanup. A newer dataset still needs its matching pinned
+manifest and asset hashes; cached older data cannot satisfy a different pin.
+Offline reload retains source dates and the local review deadline; cache access
+never makes designation, inundation or opening current. A missing, corrupt or
+expired pack leaves the query UNKNOWN. Live JMA `/api/reference/tsunami` responses
+are excluded from Service Worker caches and become unavailable offline.
+GPS and map-point coordinates remain in device memory.
+On `/map`, GPS mode removes the online raster source before centering the camera;
+high-resolution tile indices must not disclose the device location indirectly.
+Clearing GPS resets the camera to Japan before restoring online detail tiles.
+
 Offline Continuity is complete when 72H can truthfully answer all three questions during a network outage:
 
 1. What was the last verified situation?

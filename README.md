@@ -112,10 +112,11 @@ repository uses `apps/web` and `services/agent-api`; no parallel `services/api` 
 pnpm backend has been imported. Hackathon skills are retained under `.codex/skills`,
 sourced from [Zenn's participant skills](https://github.com/zenn-dev/hackathon-agent-skills).
 
-Temporary P1 release exception: the immutable runtime source is local
-`codex/vnext-p1` commit `910c1d2`. The configured GitHub remote returns repository
-not found, so `main` and remote integration remain pending; do not mistake the
-older main checkout for the deployed P1 source.
+The earlier P1 release exception and repository-access failure are historical.
+The 2026-10-11 branch consolidation uses the existing repository-owner login;
+see [branch integration evidence](docs/BRANCH_INTEGRATION_2026_10_11.md).
+Git integration does not promote a Cloud Run revision or establish new live,
+GPS, nationwide hazard-coverage or movement-safety acceptance.
 
 ## Run locally
 
@@ -209,6 +210,16 @@ pre-existing repository material was product/architecture documentation. Review
 the event's eligibility and existing-project policy with that distinction.
 
 ## Documentation
+
+- [Adaptive UI specification and implementation boundary](docs/VNEXT_ADAPTIVE_UI_UPDATE_SPEC.md)
+- [Adaptive UI local validation](docs/VNEXT_ADAPTIVE_UI_VALIDATION.md)
+
+These adaptive documents retain the 2026-10-05 milestone and its local evidence.
+The current implementation carries its presentation, theme and notification
+behavior forward through later P1/P2 work. Consumer movement maps require all
+current Safety Core, destination, route and geometry gates. The standalone
+reference map and official Ishinomaki data are not movement authorization.
+See [P2.4 validation and coverage limits](docs/VNEXT_P2_4_VALIDATION.md).
 
 - [vNext product plan](docs/VNEXT_PRODUCT_PLAN.md)
 - [Authorized P0 module contracts](docs/VNEXT_P0_CONTRACTS.md)

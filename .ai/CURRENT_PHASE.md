@@ -1,5 +1,40 @@
 # 72H — Current Development Phase
 
+## All-branch source consolidation (2026-10-11 JST)
+
+User authorized integrating all branches. All 24 initial local branch tips and
+the freshly fetched remote main are represented in `codex/integrate-all-branches`.
+The obsolete adaptive policy is merged with later P1/P2.4 safety gates retained;
+application code remains identical to `4afd50f`. Evidence and branch matrix:
+`docs/BRANCH_INTEGRATION_2026_10_11.md`. Local tests/typecheck/build passed;
+GitHub CI and main merge are separate source-integration gates. This does not
+change release traffic or the P2.4 coverage/GPS/live-incident limitations below.
+
+## Next major development phase — official tsunami and shelter data (2026-10-11 JST)
+
+User selected official tsunami inundation assumptions and hazard-classified
+evacuation-place data as the next major phase. Specification prepared:
+`docs/VNEXT_P2_4_OFFICIAL_TSUNAMI_SHELTER_DATA.md`. User authorized implementation
+with “do it”. Status: PARTIAL on `codex/p2-4-official-tsunami-shelters`;
+the bounded Ishinomaki reference integration is implemented and locally validated.
+Evidence: `docs/VNEXT_P2_4_VALIDATION.md`. Nationwide hazard coverage, real-device
+GPS and live incident acceptance remain unvalidated; no new deployment was performed.
+Current maps cannot determine
+safe locations. Initial delivery adds sourced exposure screening and designation
+reference only; it does not grant safe-destination or movement authorization.
+Missing hazard coverage, current opening, authoritative movement and verified
+route dependencies remain UNKNOWN and fail closed under the existing Safety Core.
+
+## Current authorized work — All Japan map and UI Preview (2026-10-11 JST)
+
+User authorized icon/layout polish, dark land/sea map, clear coastline,
+earthquake event expansion, all-Japan reference coverage and Preview deployment
+with acceptance. Branch `codex/ui-map-polish` integrates existing P2.2 baseline
+`b80c808`. Nationwide Preview and P2.3 follow-up were verified on zero-traffic Cloud Run
+revisions, including 320px/360px responsive browser acceptance. Evidence: `docs/VNEXT_JAPAN_UI_POLISH_PREVIEW.md`.
+No production traffic promotion is authorized. Historical local-only gates below
+remain historical and do not restrict this explicitly expanded Preview scope.
+
 ## Current authorized work — simplified More P1.2 (2026-10-09 JST)
 
 Scope: local implementation and validation of

@@ -114,6 +114,28 @@ class DestinationEligibility(StrEnum):
     UNKNOWN = "UNKNOWN"
 
 
+class DestinationDesignationRole(StrEnum):
+    EMERGENCY_EVACUATION_SITE = "EMERGENCY_EVACUATION_SITE"
+    EVACUATION_SHELTER = "EVACUATION_SHELTER"
+
+
+class DestinationHazardType(StrEnum):
+    FLOOD = "FLOOD"
+    LANDSLIDE = "LANDSLIDE"
+    STORM_SURGE = "STORM_SURGE"
+    EARTHQUAKE = "EARTHQUAKE"
+    TSUNAMI = "TSUNAMI"
+    LARGE_FIRE = "LARGE_FIRE"
+    INLAND_FLOOD = "INLAND_FLOOD"
+    VOLCANIC = "VOLCANIC"
+
+
+class DestinationHazardDesignationStatus(StrEnum):
+    DESIGNATED = "DESIGNATED"
+    NOT_DESIGNATED = "NOT_DESIGNATED"
+    UNKNOWN = "UNKNOWN"
+
+
 class DestinationOpenStatus(StrEnum):
     OPEN = "OPEN"
     CLOSED = "CLOSED"
@@ -153,6 +175,7 @@ class IncidentStatus(StrEnum):
 
 class DisasterEventType(StrEnum):
     EARTHQUAKE = "EARTHQUAKE"
+    TSUNAMI = "TSUNAMI"
 
 
 class DisasterEventStatus(StrEnum):
@@ -167,6 +190,50 @@ class DisasterSeverityLevel(StrEnum):
     L2 = "L2"
     L3 = "L3"
     L4 = "L4"
+
+
+class TsunamiReferenceStatus(StrEnum):
+    ACTIVE = "ACTIVE"
+    CANCELLED = "CANCELLED"
+    UNKNOWN = "UNKNOWN"
+    CONFLICT = "CONFLICT"
+
+
+class TsunamiSourceFreshness(StrEnum):
+    CURRENT = "CURRENT"
+    STALE = "STALE"
+    UNKNOWN = "UNKNOWN"
+    CONFLICT = "CONFLICT"
+
+
+class TsunamiOperation(StrEnum):
+    ISSUE = "ISSUE"
+    UPDATE = "UPDATE"
+    CANCEL = "CANCEL"
+    CORRECTION = "CORRECTION"
+    UNKNOWN = "UNKNOWN"
+
+
+class TsunamiAreaStatus(StrEnum):
+    ACTIVE = "ACTIVE"
+    CANCELLED = "CANCELLED"
+    UNKNOWN = "UNKNOWN"
+
+
+class TsunamiWarningClass(StrEnum):
+    MAJOR_WARNING = "MAJOR_WARNING"
+    WARNING = "WARNING"
+    ADVISORY = "ADVISORY"
+    FORECAST = "FORECAST"
+    NONE = "NONE"
+    UNKNOWN = "UNKNOWN"
+
+
+class TsunamiHeightExpression(StrEnum):
+    NUMERIC = "NUMERIC"
+    HIGH = "HIGH"
+    HUGE = "HUGE"
+    UNKNOWN = "UNKNOWN"
 
 
 class PlanStatus(StrEnum):
@@ -299,6 +366,82 @@ class DisasterAssessment(ContractModel):
     event_type: DisasterEventType
     level: DisasterSeverityLevel | None = None
     status: DisasterEventStatus
+
+    @model_validator(mode="after")
+    def tsunami_does_not_use_earthquake_severity(self) -> "DisasterAssessment":
+        if self.event_type == DisasterEventType.TSUNAMI and self.level is not None:
+            raise ValueError("tsunami assessments must not use earthquake L0-L4 severity levels")
+        return self
+
+
+class DestinationHazardDesignation(ContractModel):
+    hazard_type: DestinationHazardType
+    status: DestinationHazardDesignationStatus
+
+
+class TsunamiMaxHeight(ContractModel):
+    value_m: StrictFloat | None = None
+    expression: TsunamiHeightExpression = TsunamiHeightExpression.UNKNOWN
+    description: ShortText | None = None
+
+    @model_validator(mode="after")
+    def numeric_value_matches_expression(self) -> "TsunamiMaxHeight":
+        if (self.value_m is not None) != (self.expression == TsunamiHeightExpression.NUMERIC):
+            raise ValueError("numeric tsunami heights require NUMERIC expression; symbolic heights require null")
+        if self.value_m is not None and (self.value_m < 0 or self.value_m > 100):
+            raise ValueError("tsunami height must be between 0 and 100 metres")
+        return self
+
+
+class TsunamiReferenceForecastArea(ContractModel):
+    area_code: Annotated[StrictStr, Field(pattern=r"^\d{3}$")]
+    area_name: ShortText
+    status: TsunamiAreaStatus
+    warning_class: TsunamiWarningClass
+    max_height: TsunamiMaxHeight
+    arrival_at: AwareDatetime | None = None
+
+
+class TsunamiReferenceSource(ContractModel):
+    source_id: Literal["jma-bosai-xml"]
+    product_code: Literal["VTSE41"]
+    name: ShortText
+    url: Annotated[StrictStr, Field(min_length=1, max_length=500)]
+    published_at: AwareDatetime | None = None
+    fetched_at: AwareDatetime | None = None
+    operation: TsunamiOperation = TsunamiOperation.UNKNOWN
+    serial: Annotated[StrictStr, Field(max_length=16)] | None = None
+
+
+class TsunamiReferenceResponse(ContractModel):
+    mode: Literal["LIVE_REFERENCE"]
+    event_type: Literal[DisasterEventType.TSUNAMI]
+    status: TsunamiReferenceStatus
+    source_status: TsunamiSourceFreshness
+    source: TsunamiReferenceSource
+    forecast_areas: Annotated[tuple[TsunamiReferenceForecastArea, ...], Field(max_length=128)] = ()
+    safety_authority: Literal["NONE"]
+
+    @model_validator(mode="after")
+    def reference_state_is_conservative(self) -> "TsunamiReferenceResponse":
+        codes = [item.area_code for item in self.forecast_areas]
+        if len(codes) != len(set(codes)):
+            raise ValueError("tsunami forecast area codes must be unique")
+        if self.source_status == TsunamiSourceFreshness.CONFLICT and self.status != TsunamiReferenceStatus.CONFLICT:
+            raise ValueError("conflicting source state must remain visible as CONFLICT")
+        if self.source_status != TsunamiSourceFreshness.CURRENT and any(
+            item.status != TsunamiAreaStatus.UNKNOWN for item in self.forecast_areas
+        ):
+            raise ValueError("stale, unavailable, or conflicting tsunami areas must remain UNKNOWN")
+        if self.status != TsunamiReferenceStatus.ACTIVE and any(
+            item.status == TsunamiAreaStatus.ACTIVE for item in self.forecast_areas
+        ):
+            raise ValueError("non-active tsunami reference cannot contain active forecast areas")
+        if self.status == TsunamiReferenceStatus.ACTIVE and not any(
+            item.status == TsunamiAreaStatus.ACTIVE for item in self.forecast_areas
+        ):
+            raise ValueError("ACTIVE tsunami reference requires an active forecast area")
+        return self
 
 
 class UserProfile(ContractModel):
@@ -562,11 +705,23 @@ class DestinationRecord(ContractModel):
     source_key: Identifier
     source_name: ShortText
     source_url: Annotated[StrictStr, Field(min_length=1, max_length=500)]
-    source_published_at: AwareDatetime
+    source_published_at: AwareDatetime | None = None
     designation_types: Annotated[tuple[ShortText, ...], Field(max_length=16)]
+    designation_roles: Annotated[tuple[DestinationDesignationRole, ...], Field(max_length=2)] | None = None
+    hazard_designations: Annotated[tuple[DestinationHazardDesignation, ...], Field(min_length=8, max_length=8)] | None = None
     supported_hazards: Annotated[tuple[DisasterEventType, ...], Field(max_length=8)] = ()
     open_status: DestinationOpenStatus = DestinationOpenStatus.UNKNOWN
     is_synthetic: StrictBool = False
+
+    @model_validator(mode="after")
+    def hazard_designations_are_complete_and_unique(self) -> "DestinationRecord":
+        if self.designation_roles is not None and len(set(self.designation_roles)) != len(self.designation_roles):
+            raise ValueError("destination designation roles must be unique")
+        if self.hazard_designations is not None:
+            hazard_types = [item.hazard_type for item in self.hazard_designations]
+            if len(set(hazard_types)) != 8 or set(hazard_types) != set(DestinationHazardType):
+                raise ValueError("destination hazard designations must contain each of the eight hazard types once")
+        return self
 
 
 class DestinationProjection(ContractModel):
@@ -808,6 +963,14 @@ class DisasterAlertReplayEvent(ReplayEventBase):
     affected_area_ids: StringList = ()
     severity_raw: Annotated[StrictStr, Field(min_length=1, max_length=80)]
     summary: ShortText
+
+    @model_validator(mode="after")
+    def tsunami_alert_does_not_use_earthquake_severity_scale(self) -> "DisasterAlertReplayEvent":
+        if self.disaster_type == DisasterEventType.TSUNAMI and self.severity_raw in {
+            level.value for level in DisasterSeverityLevel
+        }:
+            raise ValueError("tsunami replay alerts must not use earthquake L0-L4 severity levels")
+        return self
 
 
 class OfficialUpdateReplayEvent(ReplayEventBase):
