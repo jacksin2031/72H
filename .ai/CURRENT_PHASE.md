@@ -1,5 +1,16 @@
 # 72H — Current Development Phase
 
+## Map places and roads (2026-10-11 JST)
+
+User requested geographic places and roads. `codex/map-places-roads` adds
+restrained GSI vector roads, railways, rivers, geographic names, stations and
+facilities to the shared reference/simulation map, with scale-aware collision
+placement, local overview labels and a responsive information card. GPS tile
+protection defaults on across all shared-map views. Local tests, typecheck,
+build and browser acceptance passed; see `docs/VNEXT_MAP_PLACES_ROADS.md`.
+These geographic references do not grant passability, route safety or movement
+permission. Detailed layers need network. No deployment is claimed.
+
 ## Time-driven seismic wavefronts (2026-10-11 JST)
 
 The user requested earthquake propagation according to historical time instead

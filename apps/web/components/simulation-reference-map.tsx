@@ -6,6 +6,7 @@ import type { Language } from '@/lib/contracts';
 import type { Epicenter, LocationFix } from '@/lib/geospatial-exposure';
 import { validPoint } from '@/lib/geospatial-exposure';
 import { seismicWavefronts, WAVE_SPEED_SOURCE } from '@/lib/seismic-wavefront';
+import {REFERENCE_VECTOR_SOURCE,REFERENCE_VECTOR_LAYERS,REFERENCE_GLYPHS,REFERENCE_REGIONS,REFERENCE_REGION_LAYER} from '@/lib/reference-map-style';
 import type { HazardPack, OfficialPlace } from '@/lib/official-hazards';
 import {
   GSI_ATTRIBUTION_URL, JAPAN_DEFAULT_CENTER, JAPAN_VIEW_BOUNDS,
@@ -15,11 +16,6 @@ import {
 const LAND_ASSET='/maps/japan-land-50m.geojson';
 const LAND_BYTES=284073;
 const LAND_SHA256='32a1f99f53084df8d5aaae431d5edfbb41925248954a3836b071ec0861b29b42';
-const GSI_SOURCE:import('maplibre-gl').RasterSourceSpecification={type:'raster',tiles:['/api/reference-tiles/{z}/{x}/{y}'],tileSize:256,minzoom:3,maxzoom:17,bounds:[120,19,156,48]};
-const GSI_LAYER:import('maplibre-gl').RasterLayerSpecification={id:'gsi-topographic',type:'raster',source:'gsi-standard',paint:{
-  'raster-opacity':['interpolate',['linear'],['zoom'],6,0,9,0.38,14,0.55],
-  'raster-brightness-min':0.05,'raster-brightness-max':0.35,'raster-saturation':-1,'raster-fade-duration':0,
-}};
 const inCoverage=(point:{lng:number;lat:number}):boolean=>validPoint(point)
   &&point.lng>=JAPAN_VIEW_BOUNDS[0][0]&&point.lng<=JAPAN_VIEW_BOUNDS[1][0]
   &&point.lat>=JAPAN_VIEW_BOUNDS[0][1]&&point.lat<=JAPAN_VIEW_BOUNDS[1][1];
@@ -31,7 +27,8 @@ const mapText={
     waves:'P/S波面の概算',waveSource:'気象庁：地震波の速度',
     loading:'日本全国の海岸線地図を検証しています',
     unavailable:'日本全国の基礎地図が検証できません。誤った地図を表示しません。',
-    ready:'全国の海陸輪郭 · 拡大して地理院の詳細地図を表示',tilesUnavailable:'詳細地図はネット接続が必要 · 海陸の輪郭のみ表示中',
+    ready:'拡大して地名・道路・鉄道・駅を表示。参考道路は通行可能・安全を意味しません。',tilesUnavailable:'一部の詳細を取得できません · 海陸の輪郭は表示できます',
+    roads:'参考道路',rail:'鉄道',
     zoomIn:'拡大',zoomOut:'縮小',overview:'日本全国を表示',focusEpicenter:'震央へ',focusGPS:'取得した GPS へ',
     shortCaution:'海岸線 ≠ 津波浸水範囲 · 避難経路に使用不可',details:'地図の注意事項',
     land:'陸地',sea:'海',gps:'● GPS · 演習',epicenter:'✕ 気象庁 過去の震央',
@@ -43,8 +40,9 @@ const mapText={
     waves:'Estimated P/S wavefronts',waveSource:'JMA: seismic wave speeds',
     loading:'Verifying offline coastline reference',
     unavailable:'The Japan coastline reference could not be verified. No untrusted map substituted.',
-    ready:'Verified Japan outlines · zoom in for GSI detail',
-    tilesUnavailable:'Detail tiles need internet · offline sea/land outlines only',
+    ready:'Zoom in for places, roads, railways and stations. Reference roads do not mean open or safe routes.',
+    roads:'Reference roads',rail:'Rail',
+    tilesUnavailable:'Some map detail unavailable · sea/land outlines remain available',
     zoomIn:'Zoom in',zoomOut:'Zoom out',overview:'View all Japan',focusEpicenter:'Go to historical epicenter',focusGPS:'Go to permitted GPS',
     shortCaution:'Coastline ≠ tsunami zone · no safe routes',details:'Map details & limits',
     land:'Land',sea:'Sea',gps:'● GPS · exercise',epicenter:'✕ Archived JMA epicenter',
@@ -56,8 +54,9 @@ const mapText={
     waves:'P／S 波前估算',waveSource:'氣象廳：地震波速度',
     loading:'正在驗證日本全國離線海岸線',
     unavailable:'無法驗證日本全國海岸圖，不會顯示未經核實的地圖。',
-    ready:'已驗證全日本海陸輪廓 · 放大查看國土地理院詳細地圖',
-    tilesUnavailable:'詳細地圖需要網絡 · 現只顯示離線海陸輪廓',
+    ready:'放大查看地名、道路、鐵路及車站。參考道路不代表可通行或安全路線。',
+    roads:'參考道路',rail:'鐵路',
+    tilesUnavailable:'部分地圖詳情未能載入 · 海陸輪廓仍可查看',
     zoomIn:'放大',zoomOut:'縮小',overview:'顯示全日本',focusEpicenter:'前往歷史震央',focusGPS:'前往已授權定位',
     shortCaution:'海岸線 ≠ 海嘯浸水區 · 不可作避難導航',details:'地圖限制與資料',
     land:'陸地',sea:'海洋',gps:'● GPS · 模擬',epicenter:'✕ 氣象廳歷史震央',
@@ -67,7 +66,7 @@ const mapText={
 
 /** All-Japan reference map; no inferred inundation, shelter or routes. */
 export function SimulationReferenceMap({
-  language,compact=false,epicenter=null,userLocation=null,referencePoint=null,officialPack=null,showInundation=false,showPlaces=false,focusPoint=null,onReferencePoint,onPlace,protectDeviceLocation=false,seismicOrigins=[],seismicTime=null,
+  language,compact=false,epicenter=null,userLocation=null,referencePoint=null,officialPack=null,showInundation=false,showPlaces=false,focusPoint=null,onReferencePoint,onPlace,protectDeviceLocation=true,seismicOrigins=[],seismicTime=null,
 }:{
   language:Language; compact?:boolean;epicenter?:Epicenter|null;userLocation?:LocationFix|null;
   referencePoint?:{lat:number;lng:number}|null;
@@ -80,7 +79,7 @@ export function SimulationReferenceMap({
   const mapRef=useRef<import('maplibre-gl').Map|null>(null);
   const pins=useRef<import('maplibre-gl').Marker[]>([]);
   const fitCountry=useRef<()=>void>(()=>{});
-  const rasterSuppressed=useRef(false);
+  const detailSuppressed=useRef(false);
   const [status,setStatus]=useState<'loading'|'ready'|'unavailable'>('loading');
   const [tileIssues,setTileIssues]=useState(false);
   const waveData=useMemo(()=>seismicWavefronts(seismicOrigins,seismicTime??NaN),[seismicOrigins,seismicTime]);
@@ -111,26 +110,29 @@ export function SimulationReferenceMap({
           container:host.current,
           center:[...JAPAN_DEFAULT_CENTER],zoom:4.15,
           minZoom:2,maxZoom:17,attributionControl:false,
-          renderWorldCopies:false,fadeDuration:0,
+          renderWorldCopies:false,fadeDuration:0,localIdeographFontFamily:'sans-serif',
           // Camera padding lets a portrait viewport fit the entire country.
           // Exact tile/data coverage remains JAPAN_VIEW_BOUNDS.
           maxBounds:[[80,-50],[180,80]],
           style:{
             version:8,
+            glyphs:REFERENCE_GLYPHS,
             sources:{
               'natural-earth-land':{type:'geojson',data:land},
-              'gsi-standard':GSI_SOURCE,
+              'reference-regions':REFERENCE_REGIONS,
+              'gsi-reference':REFERENCE_VECTOR_SOURCE,
             },
             layers:[
               {id:'sea',type:'background',paint:{'background-color':'#0c2535'}},
               {id:'land-fill',type:'fill',source:'natural-earth-land',
                 paint:{'fill-color':'#35574e','fill-opacity':1}},
 
-              GSI_LAYER,
               {id:'coastline-halo',type:'line',source:'natural-earth-land',maxzoom:9,
                 paint:{'line-color':'#0c2535','line-width':4}},
               {id:'coastline',type:'line',source:'natural-earth-land',maxzoom:9,
                 paint:{'line-color':'#aad2c5','line-width':1.5,'line-opacity':1}},
+              ...REFERENCE_VECTOR_LAYERS,
+              REFERENCE_REGION_LAYER,
             ],
           },
         });
@@ -156,8 +158,9 @@ export function SimulationReferenceMap({
         map.on('error',event=>{
           if(cancelled)return;
           const message=String(event.error?.message||'');
-          if(/tile|raster|reference-tiles|source/i.test(message))setTileIssues(true);
+          if(/tile|glyph|reference-vectors|reference-glyphs|source/i.test(message))setTileIssues(true);
         });
+        map.on('movestart',()=>{if(!cancelled)setTileIssues(false);});
         map.once('load',()=>{
           if(!cancelled){
             map.resize();
@@ -171,7 +174,7 @@ export function SimulationReferenceMap({
       cancelled=true;abort.abort();observer?.disconnect();
       pins.current.forEach(marker=>marker.remove());pins.current=[];
       mapRef.current?.remove();mapRef.current=null;
-      rasterSuppressed.current=false;
+      detailSuppressed.current=false;
       fitCountry.current=()=>{};
     };
   },[compact]);
@@ -181,14 +184,14 @@ export function SimulationReferenceMap({
   useEffect(()=>{
     const map=mapRef.current;if(status!=='ready'||!map||!protectDeviceLocation)return;
     if(userLocation){
-      if(map.getLayer('gsi-topographic'))map.removeLayer('gsi-topographic');
-      if(map.getSource('gsi-standard'))map.removeSource('gsi-standard');
-      rasterSuppressed.current=true;
-    }else if(rasterSuppressed.current){
+      for(const layer of REFERENCE_VECTOR_LAYERS)if(map.getLayer(layer.id))map.removeLayer(layer.id);
+      if(map.getSource('gsi-reference'))map.removeSource('gsi-reference');
+      detailSuppressed.current=true;
+    }else if(detailSuppressed.current){
       fitCountry.current();
-      map.addSource('gsi-standard',GSI_SOURCE);
-      map.addLayer(GSI_LAYER,'coastline-halo');
-      rasterSuppressed.current=false;
+      map.addSource('gsi-reference',REFERENCE_VECTOR_SOURCE);
+      for(const layer of REFERENCE_VECTOR_LAYERS)map.addLayer(layer,'reference-region-labels');
+      detailSuppressed.current=false;
     }
   },[status,protectDeviceLocation,!!userLocation]);
 
@@ -295,7 +298,7 @@ export function SimulationReferenceMap({
         }}>
         <option value="">{t.overview}</option>
         <option value="142,43.5,6">北海道</option><option value="140,38.5,6">東北</option>
-        <option value="139.7,35.7,9">東京 / Tokyo</option><option value="137,36.5,6">中部</option>
+        <option value="139.7,35.7,11">東京 / Tokyo</option><option value="137,36.5,6">中部</option>
         <option value="135.5,34.7,7">近畿</option><option value="133,34.2,7">中國・四國</option>
         <option value="131,32.5,6">九州</option><option value="127.7,26.2,8">沖繩 / 沖縄</option>
         <option value="124.2,24.4,8">八重山</option><option value="142.2,27.1,8">小笠原</option>
@@ -307,6 +310,8 @@ export function SimulationReferenceMap({
       <div className="sim-map-landsea-legend" data-testid="japan-land-sea-legend">
         <span><i className="sim-map-land-color"/>{t.land}</span>
         <span><i className="sim-map-sea-color"/>{t.sea}</span>
+        <span><i className="sim-map-road-color"/>{t.roads}</span>
+        <span><i className="sim-map-rail-color"/>{t.rail}</span>
         {officialPack&&showInundation&&<span><i style={{background:'#e9ac66'}}/>{language==='ja'?'浸水想定':language==='en'?'Inundation scenario':'浸水想定'}</span>}
       </div>
       <p className="sim-map-quick-caution">{t.shortCaution}</p>

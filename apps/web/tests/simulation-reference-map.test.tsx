@@ -8,12 +8,16 @@ import { webcrypto } from 'node:crypto';
 import { documentedEpicenters } from '../lib/geospatial-exposure';
 import { SimulationReferenceMap } from '../components/simulation-reference-map';
 import { tohokuWaveOrigins, type WavefrontData } from '../lib/seismic-wavefront';
+import {REFERENCE_VECTOR_LAYERS} from '../lib/reference-map-style';
 
 const mapHarness=vi.hoisted(()=>({coordinates:[] as number[][],removed:0,operations:[] as string[],waveFrames:[] as WavefrontData[]}));
 vi.mock('maplibre-gl',()=>({
   setWorkerCount:vi.fn(),setWorkerUrl:vi.fn(),
   Map:class {
-    layers=new Set(['gsi-topographic']);sources=new Set(['gsi-standard']);
+    layers:Set<string>;sources:Set<string>;
+    constructor(options:{style:{layers:{id:string}[];sources:Record<string,unknown>}}){
+      this.layers=new Set(options.style.layers.map(l=>l.id));this.sources=new Set(Object.keys(options.style.sources));
+    }
     waveSource:{setData:(data:WavefrontData)=>void}|null=null;
     scrollZoom={disable:vi.fn()};boxZoom={disable:vi.fn()};dragRotate={disable:vi.fn()};
     dragPan={disable:vi.fn(),enable:vi.fn()};touchZoomRotate={disable:vi.fn(),enable:vi.fn(),disableRotation:vi.fn()};
@@ -65,23 +69,23 @@ describe('isolated simulation reference map', () => {
     await act(async()=>{await new Promise(resolve=>setTimeout(resolve,40));});
     expect(mapHarness.waveFrames.at(-1)).toEqual(later);
   });
-  it('removes detailed tile requests before centering on device GPS and resets the view before restoring tiles',async()=>{
+  it('protects GPS by default in every map, removing all online detail before centering and resetting before restoring',async()=>{
     const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
     vi.stubGlobal('crypto',webcrypto);
     vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)})));
     mapHarness.operations=[];
     container=document.createElement('div');document.body.append(container);root=createRoot(container);
-    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" protectDeviceLocation/>));
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW"/>));
     await act(async()=>{await new Promise(resolve=>setTimeout(resolve,40));});
     mapHarness.operations=[];
     const gps={lat:38.4,lng:141.3,accuracy_m:20,captured_at:Date.now(),source:'BROWSER_GEOLOCATION' as const};
-    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" protectDeviceLocation userLocation={gps}/>));
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" userLocation={gps}/>));
     await act(async()=>{await new Promise(resolve=>setTimeout(resolve,40));});
-    expect(mapHarness.operations).toEqual(['remove-layer:gsi-topographic','remove-source:gsi-standard','center']);
+    expect(mapHarness.operations).toEqual([...REFERENCE_VECTOR_LAYERS.map(l=>'remove-layer:'+l.id),'remove-source:gsi-reference','center']);
     expect(container.textContent).toContain('避免詳細圖磚洩漏位置');
     mapHarness.operations=[];
-    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" protectDeviceLocation/>));
-    expect(mapHarness.operations.slice(0,3)).toEqual(['country','add-source:gsi-standard','add-layer:gsi-topographic']);
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW"/>));
+    expect(mapHarness.operations).toEqual(['country','add-source:gsi-reference',...REFERENCE_VECTOR_LAYERS.map(l=>'add-layer:'+l.id)]);
   });
   it('anchors the historical earthquake at the documented coordinates and releases it on unmount',async()=>{
     const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
