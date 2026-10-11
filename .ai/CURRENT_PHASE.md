@@ -1,5 +1,17 @@
 # 72H — Current Development Phase
 
+## Next-phase roadmap — P2.4 to P2.7 (2026-10-11 JST)
+
+The user proposed the next development order: official disaster event engine
+(P2.4, highest priority), verified hazard map layers (P2.5), hazard-specific
+designated places (P2.6), and post-Safety-Core AI explanations (P2.7).
+The audited roadmap is `docs/VNEXT_P2_4_P2_7_ROADMAP.md`, baseline `bae1782`.
+Planning is complete; these new phases are not claimed implemented or validated.
+Existing earthquake parsing lacks correction/cancellation support, and the
+current candidate planner requires an explicit migration to explanation-only AI.
+The older P2.4 Ishinomaki pilot below remains historical PARTIAL evidence,
+reusable under the new P2.5/P2.6 definitions. No new deployment is claimed.
+
 ## Map places and roads (2026-10-11 JST)
 
 User requested geographic places and roads. `codex/map-places-roads` adds

@@ -1,5 +1,15 @@
 # 72H Implementation Plan v0.1
 
+## Next-phase roadmap — P2.4 to P2.7
+
+The user's 2026-10-11 proposed order is recorded in
+[VNEXT_P2_4_P2_7_ROADMAP.md](VNEXT_P2_4_P2_7_ROADMAP.md): prioritize the official
+event lifecycle before verified map layers, hazard-specific places and
+post-Safety-Core AI explanations. This is an audited development plan, not a
+claim that the new phases are implemented. Older P2.4 tsunami/shelter pilot
+documents retain their historical names and evidence; the new roadmap explains
+their reuse under P2.5/P2.6 and the required contract migration for P2.7.
+
 ## Authorized P1.1 local execution
 
 The 2026-10-08 approved plan adds accessible GPS-first onboarding, nationwide
