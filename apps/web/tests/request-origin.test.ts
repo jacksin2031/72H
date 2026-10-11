@@ -2,6 +2,13 @@ import { expect, it } from 'vitest';
 import { sameOrigin } from '../lib/request-origin';
 import { isAllowedApiProxyPath, isAllowedApiProxyRequest } from '../app/api/[...path]/route';
 
+it('allows only read access to the explicit official tsunami reference endpoint',()=>{
+  expect(isAllowedApiProxyRequest('reference/tsunami','GET')).toBe(true);
+  expect(isAllowedApiProxyRequest('reference/tsunami','POST')).toBe(false);
+  expect(isAllowedApiProxyPath('reference/tsunami/private')).toBe(false);
+  expect(isAllowedApiProxyPath('reference/other')).toBe(false);
+});
+
 it('accepts the public browser origin for localhost and Cloud Run', () => {
   expect(sameOrigin('http://127.0.0.1:3000', '127.0.0.1:3000', 'http')).toBe(true);
   expect(sameOrigin('https://72h.example.run.app', '72h.example.run.app', 'https')).toBe(true);

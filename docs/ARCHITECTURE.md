@@ -721,3 +721,18 @@ Git / IndexedDB / Logs
 ```
 
 All three flows are part of the architectural core of 72H.
+
+## P2.4 official tsunami and designation references
+
+`scripts/build_official_hazard_pack.py` creates a bounded, reproducible regional
+pack from official A40 inundation polygons and GSI designation CSVs. The web
+build verifies its asset hashes and pins the manifest. `/map` validates and
+queries that pack locally, preserving accuracy/boundary uncertainty and
+UNKNOWN outside independently verified survey coverage.
+
+The read-only JMA VTSE41 reference endpoint is separate from historical map
+exercises. LiveStore additionally normalizes eligible, exact prefecture-scoped
+tsunami events through the existing evidence reducer, dependency invalidation
+and Safety Core. Updates, cancellations, expiration and conflict do not grant
+movement authority. Static designation and scenario layers never feed route or
+destination approval. See the P2.4 specification for coverage limits.

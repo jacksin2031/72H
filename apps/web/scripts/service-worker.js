@@ -1,5 +1,8 @@
 /* Cache public application assets only. API/model responses never enter Cache Storage. */
 const VERSION = '72h-shell-__BUILD_ID__';
+// Public reference packs survive shell upgrades; the client still verifies every hash.
+const HAZARDS = '72h-hazards-v1';
+const isHazardPath = path => /^\/hazards\/[a-z0-9/_-]{1,140}\.(json|geojson)$/.test(path);
 const SHELL = ['/', '/dashboard', '/plan', '/more', '/notifications', '/sources', '/trace', '/demo', '/map', '/icon.svg', '/manifest.webmanifest', '/maps/catalog.json', '/maps/manifest.json', '/maps/japan-land-50m.geojson', '/maps/geography-manifest.json', '/maps/tokyo-central-geography.geojson', '/maplibre/maplibre-gl-worker.mjs', '/maplibre/maplibre-gl-shared.mjs', '/areas/catalog.json', '/areas/manifest.json', '/areas/worker.mjs', '/areas/area-geometry.mjs'];
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -18,7 +21,24 @@ self.addEventListener('install', event => {
   })());
 });
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('72h-shell-') && key !== VERSION).map(key => caches.delete(key)))).then(() => self.clients.claim()));
+  event.waitUntil((async () => {
+    const oldKeys = (await caches.keys()).filter(key => key.startsWith('72h-shell-') && key !== VERSION);
+    const hazardCache = await caches.open(HAZARDS);
+    // Migrate packs downloaded by the earlier shell-scoped implementation before deleting it.
+    for (const key of oldKeys) {
+      const oldCache = await caches.open(key);
+      for (const request of await oldCache.keys()) {
+        const url = new URL(request.url);
+        if (request.method !== 'GET' || url.origin !== self.location.origin || url.search
+          || request.headers.has('authorization') || !isHazardPath(url.pathname)) continue;
+        if (await hazardCache.match(request)) continue;
+        const response = await oldCache.match(request);
+        if (response?.ok) await hazardCache.put(request, response);
+      }
+      await caches.delete(key);
+    }
+    await self.clients.claim();
+  })());
 });
 self.addEventListener('fetch', event => {
   const request = event.request;
@@ -31,8 +51,14 @@ self.addEventListener('fetch', event => {
       if (response.ok) { const copy = response.clone(); event.waitUntil(caches.open(VERSION).then(cache => cache.put(request, copy))); }
       return response;
     }).catch(async () => (await caches.match(url.pathname)) || (await caches.match('/dashboard')) || Response.error()));
+  } else if (isHazardPath(url.pathname)) {
+    event.respondWith(caches.open(HAZARDS).then(cache => cache.match(request).then(cached => cached || fetch(request).then(response => {
+      if (response.ok) { const copy = response.clone(); event.waitUntil(cache.put(request, copy)); }
+      return response;
+    }))));
   } else if (url.pathname.startsWith('/_next/static/') || SHELL.includes(url.pathname)
-    || /^\/maps\/[a-z0-9][a-z0-9._-]{0,96}\.geojson$/.test(url.pathname)) {
+    || /^\/maps\/[a-z0-9][a-z0-9._-]{0,96}\.geojson$/.test(url.pathname)
+  ) {
     event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => {
       if (response.ok) { const copy = response.clone(); event.waitUntil(caches.open(VERSION).then(cache => cache.put(request, copy))); }
       return response;

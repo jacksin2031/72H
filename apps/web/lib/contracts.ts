@@ -11,9 +11,14 @@ const evidenceProjectionSchema = z.object({ evidence_id: id, freshness_status: z
 export const networkState = z.enum(['ONLINE_VERIFIED', 'ONLINE_DEGRADED', 'OFFLINE_RECENT', 'OFFLINE_STALE', 'RECONNECTING']);
 export const planStatus = z.enum(['DRAFT', 'ACTIVE', 'PARTIALLY_INVALID', 'INVALIDATED', 'EXPIRED', 'SUPERSEDED']);
 export const disasterSeverity = z.enum(['L0', 'L1', 'L2', 'L3', 'L4']);
+const disasterEventType = z.enum(['EARTHQUAKE', 'TSUNAMI']);
 export const disasterAssessmentSchema = z.object({
-  area_id: areaId, event_type: z.enum(['EARTHQUAKE']), level: disasterSeverity.nullable().default(null),
+  area_id: areaId, event_type: disasterEventType, level: disasterSeverity.nullable().default(null),
   status: z.enum(['ACTIVE', 'RESOLVED', 'UNKNOWN']),
+}).superRefine((assessment, ctx) => {
+  if (assessment.event_type === 'TSUNAMI' && assessment.level !== null) {
+    ctx.addIssue({ code: 'custom', message: 'Tsunami assessments cannot use earthquake L0-L4 severity levels' });
+  }
 });
 export const areaDefinitionSchema = z.object({ id: areaId, label: text, parent_id: areaId.nullable() });
 const location = z.object({
@@ -59,7 +64,7 @@ export const snapshotSchema = z.object({
   profile: z.object({ id, preferred_language: z.enum(['ja', 'en', 'zh-TW']), current_location: location, accommodation_location: location, current_destination: location.nullable(), party_size: z.number().int().positive(), self_reported_safety_status: z.enum(['SAFE', 'UNCERTAIN', 'NEEDS_ASSISTANCE', 'UNKNOWN']), current_plan_summary: text.default(''), accessibility_constraints: z.array(text).max(32).default([]), created_at: timestamp, updated_at: timestamp }),
   area_catalog: z.array(areaDefinitionSchema).max(512).default([]),
   situation: z.object({ id, user_id: id, incident_status: text, network_state: networkState, active_event_ids: ids, current_plan_id: id.nullable(), latest_evidence_at: timestamp.nullable(), uncertainty_flags: z.array(text).max(64), conflict_flags: z.array(text).max(64), created_at: timestamp, updated_at: timestamp, claim_states: z.array(z.object({ key: id, status: z.enum(['VERIFIED', 'UNKNOWN', 'CONFLICT']), value: z.union([text, z.number(), z.boolean(), z.null()]), evidence_ids: ids, updated_at: timestamp })).max(128).default([]) }),
-  events: z.array(z.object({ id, event_type: z.literal('EARTHQUAKE'), occurred_at: timestamp, affected_areas: z.array(text), affected_area_ids: areaIds.default([]), source_name: text, raw_reference: text })).max(100),
+  events: z.array(z.object({ id, event_type: disasterEventType, occurred_at: timestamp, affected_areas: z.array(text), affected_area_ids: areaIds.default([]), source_name: text, raw_reference: text })).max(100),
   evidence: z.array(evidenceSchema).max(200), plans: z.array(planSchema).max(100), plan_actions: z.array(actionSchema).max(1000),
   evidence_projections: z.array(evidenceProjectionSchema).max(200).default([]),
   trace: z.array(z.object({ id, timestamp, agent: text, event_type: text, input_refs: ids, output_refs: ids, status: text, public_summary: text })).max(1500),
@@ -110,12 +115,17 @@ export const snapshotSchema = z.object({
 
 const officialUrl = z.string().url().max(500).refine(value => value.startsWith('https://'), 'Official sources must use HTTPS');
 const liveFreshness = z.enum(['CURRENT', 'STALE', 'UNKNOWN']);
+const destinationHazardType = z.enum(['FLOOD', 'LANDSLIDE', 'STORM_SURGE', 'EARTHQUAKE', 'TSUNAMI', 'LARGE_FIRE', 'INLAND_FLOOD', 'VOLCANIC']);
+const destinationHazardDesignation = z.object({
+  hazard_type: destinationHazardType,
+  status: z.enum(['DESIGNATED', 'NOT_DESIGNATED', 'UNKNOWN']),
+});
 const coordinatePair = z.tuple([
   z.number().finite().min(-180).max(180),
   z.number().finite().min(-90).max(90),
 ]);
 const liveEventSchema = z.object({
-  id, situation_id: id, event_type: z.literal('EARTHQUAKE'), occurred_at: timestamp, received_at: timestamp,
+  id, situation_id: id, event_type: disasterEventType, occurred_at: timestamp, received_at: timestamp,
   affected_areas: z.array(text).max(20), affected_area_ids: areaIds.default([]), source_name: text,
   source_class: z.enum(['OFFICIAL', 'PARTNER', 'USER_REPORT', 'SOCIAL_MEDIA', 'OTHER']),
   severity_raw: text.min(1).max(80), status: z.enum(['ACTIVE', 'RESOLVED', 'UNKNOWN']), raw_reference: text.min(1).max(300),
@@ -131,16 +141,71 @@ export const liveSourceSchema = z.object({
   retrieved_at: timestamp.nullable(), last_published_at: timestamp.nullable(), next_retry_at: timestamp.nullable(),
   record_count: z.number().int().nonnegative().max(4096), detail: text,
 });
+const tsunamiOperation = z.enum(['ISSUE', 'UPDATE', 'CANCEL', 'CORRECTION', 'UNKNOWN']);
+const tsunamiAreaStatus = z.enum(['ACTIVE', 'CANCELLED', 'UNKNOWN']);
+const tsunamiReferenceStatus = z.enum(['ACTIVE', 'CANCELLED', 'UNKNOWN', 'CONFLICT']);
+const tsunamiSourceStatus = z.enum(['CURRENT', 'STALE', 'UNKNOWN', 'CONFLICT']);
+const tsunamiMaxHeightSchema = z.object({
+  value_m: z.number().finite().min(0).max(100).nullable(),
+  expression: z.enum(['NUMERIC', 'HIGH', 'HUGE', 'UNKNOWN']),
+  description: text.nullable(),
+}).superRefine((height, ctx) => {
+  if ((height.value_m !== null) !== (height.expression === 'NUMERIC')) {
+    ctx.addIssue({ code: 'custom', message: 'Numeric tsunami heights require NUMERIC expression; symbolic heights require null' });
+  }
+});
+export const tsunamiReferenceSchema = z.object({
+  mode: z.literal('LIVE_REFERENCE'),
+  event_type: z.literal('TSUNAMI'),
+  status: tsunamiReferenceStatus,
+  source_status: tsunamiSourceStatus,
+  source: z.object({
+    source_id: z.literal('jma-bosai-xml'), product_code: z.literal('VTSE41'),
+    name: text.min(1).max(240), url: officialUrl,
+    published_at: timestamp.nullable(), fetched_at: timestamp.nullable(),
+    operation: tsunamiOperation, serial: z.string().max(16).nullable(),
+  }),
+  forecast_areas: z.array(z.object({
+    area_code: z.string().regex(/^\d{3}$/), area_name: text.min(1).max(240),
+    status: tsunamiAreaStatus,
+    warning_class: z.enum(['MAJOR_WARNING', 'WARNING', 'ADVISORY', 'FORECAST', 'NONE', 'UNKNOWN']),
+    max_height: tsunamiMaxHeightSchema, arrival_at: timestamp.nullable(),
+  })).max(128),
+  safety_authority: z.literal('NONE'),
+}).superRefine((reference, ctx) => {
+  const codes = reference.forecast_areas.map(area => area.area_code);
+  if (new Set(codes).size !== codes.length) ctx.addIssue({ code: 'custom', message: 'Tsunami forecast area codes must be unique' });
+  if (reference.source_status === 'CONFLICT' && reference.status !== 'CONFLICT') {
+    ctx.addIssue({ code: 'custom', message: 'Conflicting source state must remain visible as CONFLICT' });
+  }
+  if (reference.source_status !== 'CURRENT' && reference.forecast_areas.some(area => area.status !== 'UNKNOWN')) {
+    ctx.addIssue({ code: 'custom', message: 'Stale, unavailable, or conflicting tsunami areas must remain UNKNOWN' });
+  }
+  if (reference.status !== 'ACTIVE' && reference.forecast_areas.some(area => area.status === 'ACTIVE')) {
+    ctx.addIssue({ code: 'custom', message: 'Non-active tsunami reference cannot contain active forecast areas' });
+  }
+  if (reference.status === 'ACTIVE' && !reference.forecast_areas.some(area => area.status === 'ACTIVE')) {
+    ctx.addIssue({ code: 'custom', message: 'ACTIVE tsunami reference requires an active forecast area' });
+  }
+});
+const destinationHazardDesignations = z.array(destinationHazardDesignation).length(8).nullable().optional().default(null).superRefine((items, ctx) => {
+  if (items !== null && new Set(items.map(item => item.hazard_type)).size !== 8) {
+    ctx.addIssue({ code: 'custom', message: 'Destination hazard designations must contain each hazard type once' });
+  }
+});
 export const destinationRecordSchema = z.object({
   id, name: text, address: text.nullable(), area_id: areaId,
   coordinates: z.object({ lng: z.number().finite().min(-180).max(180), lat: z.number().finite().min(-90).max(90) }),
-  source_key: id, source_name: text, source_url: officialUrl, source_published_at: timestamp,
-  designation_types: z.array(text).max(16), supported_hazards: z.array(z.literal('EARTHQUAKE')).max(8),
+  source_key: id, source_name: text, source_url: officialUrl, source_published_at: timestamp.nullable().optional().default(null),
+  designation_types: z.array(text).max(16),
+  designation_roles: z.array(z.enum(['EMERGENCY_EVACUATION_SITE', 'EVACUATION_SHELTER'])).max(2).nullable().optional().default(null),
+  hazard_designations: destinationHazardDesignations,
+  supported_hazards: z.array(disasterEventType).max(8),
   open_status: z.enum(['OPEN', 'CLOSED', 'UNKNOWN']), is_synthetic: z.literal(false),
 });
 export const destinationProjectionSchema = z.object({
   destination_id: id, eligibility: z.enum(['ELIGIBLE', 'INELIGIBLE', 'UNKNOWN']),
-  hazard_type: z.literal('EARTHQUAKE').nullable(), hazard_suitability: z.enum(['ELIGIBLE', 'INELIGIBLE', 'UNKNOWN']),
+  hazard_type: disasterEventType.nullable(), hazard_suitability: z.enum(['ELIGIBLE', 'INELIGIBLE', 'UNKNOWN']),
   freshness_status: liveFreshness, conflict: z.boolean(), evidence_ids: ids,
   current_open_status: z.enum(['OPEN', 'CLOSED', 'UNKNOWN']), checked_at: timestamp, expires_at: timestamp,
 }).superRefine((destination, ctx) => {
@@ -358,6 +423,7 @@ export type Evidence = z.infer<typeof evidenceSchema>;
 export type Plan = z.infer<typeof planSchema>;
 export type Action = z.infer<typeof actionSchema>;
 export type LiveSource = z.infer<typeof liveSourceSchema>;
+export type TsunamiReferenceResponse = z.infer<typeof tsunamiReferenceSchema>;
 export type DestinationRecord = z.infer<typeof destinationRecordSchema>;
 export type DestinationProjection = z.infer<typeof destinationProjectionSchema>;
 export type RoutePresentation = z.infer<typeof routePresentationSchema>;

@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
 from threading import RLock
 from time import monotonic
 from types import SimpleNamespace
@@ -45,6 +46,9 @@ from seventytwoh_contracts.models import (
     SpatialGuidanceProjection,
     SourceClass,
     StartLiveRequest,
+    TsunamiAreaStatus,
+    TsunamiOperation,
+    TsunamiReferenceResponse,
     TraceEvent,
     TraceStatus,
     TrustStatus,
@@ -59,6 +63,12 @@ from .live_sources import (
     JMA_FEED_URL,
     JMA_SOURCE_KEY,
     JMA_SOURCE_NAME,
+    JMA_PREFECTURES,
+    JMA_TSUNAMI_SOURCE_KEY,
+    JMA_TSUNAMI_SOURCE_NAME,
+    JmaTsunamiBulletin,
+    JmaTsunamiSource,
+    JmaTsunamiFetchResult,
     TOKYO_SHELTER_PUBLISHED_AT,
     TOKYO_SHELTER_SOURCE_KEY,
     TOKYO_SHELTER_SOURCE_NAME,
@@ -66,6 +76,7 @@ from .live_sources import (
     JmaEarthquakeReport,
     JmaEarthquakeSource,
     jma_status_at_publication_deadline,
+    tsunami_reference_from_result,
     TokyoShelterSource,
 )
 from .planning import evidence_projections
@@ -106,6 +117,27 @@ class InvalidLiveProfileUpdate(ValueError):
     pass
 
 
+class _UnsupportedTsunamiSource:
+    """Avoid external tsunami HTTP when a synthetic/test earthquake source is injected."""
+
+    def __init__(self, now) -> None:
+        self._now = now
+
+    def fetch_latest(self) -> JmaTsunamiFetchResult:
+        return JmaTsunamiFetchResult(
+            status=LiveSourceStatus.UNSUPPORTED,
+            retrieved_at=self._now(),
+            last_published_at=None,
+            next_retry_at=None,
+            operation=TsunamiOperation.UNKNOWN,
+            serial=None,
+            bulletins=(),
+            forecast_areas=(),
+            conflict=False,
+            detail="Tsunami source is not configured for an injected earthquake source.",
+        )
+
+
 @dataclass(slots=True)
 class LiveAggregate:
     session_id: UUID
@@ -129,6 +161,7 @@ class LiveStore:
         self,
         *,
         jma_source: JmaEarthquakeSource | None = None,
+        tsunami_source: JmaTsunamiSource | None = None,
         destination_source: TokyoShelterSource | None = None,
         route_source: EkispertRouteSource | None = None,
         planner: CandidatePlanner | None = None,
@@ -137,14 +170,20 @@ class LiveStore:
         ttl_seconds: int = SESSION_TTL_SECONDS,
         now=None,
     ) -> None:
+        self._now = now or (lambda: datetime.now(timezone.utc))
         self._jma = jma_source or JmaEarthquakeSource()
+        if tsunami_source is not None:
+            self._tsunami = tsunami_source
+        elif jma_source is None:
+            self._tsunami = JmaTsunamiSource()
+        else:
+            self._tsunami = _UnsupportedTsunamiSource(self._now)
         self._destinations = destination_source or TokyoShelterSource()
         self._routes = route_source or EkispertRouteSource()
         self._planner = planner or CandidatePlanner()
         self._policy = policy or SafetyPolicy.from_env()
         self._max_sessions = max_sessions
         self._ttl_seconds = ttl_seconds
-        self._now = now or (lambda: datetime.now(timezone.utc))
         self._sessions: dict[UUID, LiveAggregate] = {}
         self._lock = RLock()
         self._area_registry = load_japan_area_registry()
@@ -614,9 +653,10 @@ class LiveStore:
         aggregate = self._get_aggregate(session_id)
         with aggregate.lock:
             source_result = self._jma.fetch_latest()
+            tsunami_result = self._tsunami.fetch_latest()
             destinations_payload = self._destinations.fetch_latest()
             now = self._now()
-            pairs = self._apply_source_results_locked(aggregate, source_result, destinations_payload, now)
+            pairs = self._apply_source_results_locked(aggregate, source_result, tsunami_result, destinations_payload, now)
             aggregate.state = apply_live_evidence_batch(aggregate.state, pairs, now, self._policy, synthetic_mode=getattr(self, "_synthetic_source_mode", False))
             self._touch(aggregate)
             return self._snapshot(aggregate)
@@ -624,13 +664,16 @@ class LiveStore:
     async def refresh_async(self, session_id: UUID) -> LiveSnapshot:
         aggregate = self._get_aggregate(session_id)
         async with aggregate.operation_lock:
-            source_result, destinations_payload = await asyncio.gather(
+            source_result, tsunami_result, destinations_payload = await asyncio.gather(
                 asyncio.to_thread(self._jma.fetch_latest),
+                asyncio.to_thread(self._tsunami.fetch_latest),
                 asyncio.to_thread(self._destinations.fetch_latest),
             )
             with aggregate.lock:
                 now = self._now()
-                pairs = self._apply_source_results_locked(aggregate, source_result, destinations_payload, now)
+                pairs = self._apply_source_results_locked(
+                    aggregate, source_result, tsunami_result, destinations_payload, now
+                )
                 prepared = aggregate.state
             after, _planning_mode = await apply_live_evidence_batch_with_planner(
                 prepared,
@@ -663,7 +706,11 @@ class LiveStore:
                 self._touch(aggregate)
                 return self._snapshot(aggregate)
 
-    def _apply_source_results_locked(self, aggregate, source_result, destinations_payload, now):
+    def get_tsunami_reference(self) -> TsunamiReferenceResponse:
+        """Fetch the latest read-only JMA reference without mutating live sessions."""
+        return tsunami_reference_from_result(self._tsunami.fetch_latest())
+
+    def _apply_source_results_locked(self, aggregate, source_result, tsunami_result, destinations_payload, now):
         projected_status = jma_status_at_publication_deadline(
             source_result.status,
             source_result.last_published_at,
@@ -717,8 +764,18 @@ class LiveStore:
             LiveSourceStatus.UNAVAILABLE,
         }:
             self._mark_jma_evidence_stale(aggregate, now)
+        # The reconnect evidence watermark is the pending barrier. It remains
+        # present until Safety Core emits RECONCILIATION_COMPLETED, including
+        # while a hazard is conflicting or a verified cancellation removes all
+        # currently active event IDs.
+        reconnect_pending = (
+            aggregate.state.reconnect_evidence_count is not None
+            or aggregate.state.situation.network_state == NetworkState.RECONNECTING
+        )
         network_state = (
-            NetworkState.ONLINE_VERIFIED
+            NetworkState.RECONNECTING
+            if reconnect_pending
+            else NetworkState.ONLINE_VERIFIED
             if source_result.status == LiveSourceStatus.FRESH
             else NetworkState.ONLINE_DEGRADED
         )
@@ -727,11 +784,79 @@ class LiveStore:
             situation=aggregate.state.situation.model_copy(update={"network_state": network_state}),
         )
         if source_result.status not in {LiveSourceStatus.FRESH, LiveSourceStatus.STALE}:
-            return ()
-        return tuple(
+            earthquake_pairs = ()
+        else:
+            earthquake_pairs = tuple(
             pair for report in source_result.reports
             if (pair := self._event_evidence_pair(aggregate.state, report, now)) is not None
+            )
+
+        active_tsunami_event_ids = {
+            item.id for item in aggregate.state.events
+            if item.source_name == JMA_TSUNAMI_SOURCE_NAME
+            and item.event_type == DisasterEventType.TSUNAMI
+            and item.status in {DisasterEventStatus.ACTIVE, DisasterEventStatus.UNKNOWN}
+        }
+        active_tsunami = bool(active_tsunami_event_ids & set(aggregate.state.situation.active_event_ids))
+        if tsunami_result.conflict:
+            self._mark_tsunami_evidence_stale(aggregate, conflict=True)
+            if active_tsunami and not reconnect_pending:
+                aggregate.state = replace(
+                    aggregate.state,
+                    situation=aggregate.state.situation.model_copy(
+                        update={"network_state": NetworkState.ONLINE_DEGRADED}
+                    ),
+                )
+            tsunami_pairs = ()
+        elif tsunami_result.status == LiveSourceStatus.FRESH:
+            tsunami_pairs = tuple(
+                pair
+                for bulletin in tsunami_result.bulletins
+                if now < bulletin.published_at + timedelta(seconds=JMA_EVIDENCE_TTL_SECONDS)
+                and (pair := self._tsunami_event_evidence_pair(aggregate.state, bulletin, now)) is not None
+            )
+        elif tsunami_result.status in {
+            LiveSourceStatus.STALE,
+            LiveSourceStatus.BACKOFF,
+            LiveSourceStatus.CIRCUIT_OPEN,
+            LiveSourceStatus.INVALID_RESPONSE,
+            LiveSourceStatus.UNAVAILABLE,
+        } or (tsunami_result.status == LiveSourceStatus.UNSUPPORTED and active_tsunami):
+            self._mark_tsunami_evidence_stale(aggregate)
+            if active_tsunami and not reconnect_pending:
+                aggregate.state = replace(
+                    aggregate.state,
+                    situation=aggregate.state.situation.model_copy(
+                        update={"network_state": NetworkState.ONLINE_DEGRADED}
+                    ),
+                )
+            tsunami_pairs = ()
+        else:
+            tsunami_pairs = ()
+        return (*earthquake_pairs, *tsunami_pairs)
+
+    def _mark_tsunami_evidence_stale(self, aggregate, *, conflict: bool = False) -> None:
+        evidence = tuple(
+            item.model_copy(update={
+                "trust_status": TrustStatus.CONFLICTING if conflict else TrustStatus.STALE,
+                "freshness_status": FreshnessStatus.UNKNOWN if conflict else FreshnessStatus.STALE,
+                "conflict": conflict,
+            })
+            if item.source_key == JMA_TSUNAMI_SOURCE_KEY
+            else item
+            for item in aggregate.state.evidence
         )
+        tsunami_event_ids = {
+            item.id for item in aggregate.state.events
+            if item.source_name == JMA_TSUNAMI_SOURCE_NAME and item.status == DisasterEventStatus.ACTIVE
+        }
+        events = tuple(
+            item.model_copy(update={"status": DisasterEventStatus.UNKNOWN})
+            if item.id in tsunami_event_ids
+            else item
+            for item in aggregate.state.events
+        )
+        aggregate.state = replace(aggregate.state, evidence=evidence, events=events)
 
     def _mark_jma_evidence_stale(self, aggregate, now) -> None:
         evidence = tuple(
@@ -848,6 +973,106 @@ class LiveStore:
         )
         return event, evidence
 
+    def _tsunami_event_evidence_pair(
+        self,
+        state: CoreState,
+        bulletin: JmaTsunamiBulletin,
+        now: datetime,
+    ) -> tuple[DisasterEvent, Evidence] | None:
+        """Create SafetyCore evidence only for exact prefecture-level JMA areas."""
+        if bulletin.occurred_at is None:
+            # A cancellation without the prior event cached cannot be attached to
+            # a safety scope; it remains visible only in the reference response.
+            return None
+        assessments = []
+        names = []
+        for area in bulletin.forecast_areas:
+            prefecture = next(
+                (code for code, name in JMA_PREFECTURES.items() if area.name == name),
+                None,
+            )
+            if prefecture is None:
+                continue
+            assessment_status = {
+                TsunamiAreaStatus.ACTIVE: DisasterEventStatus.ACTIVE,
+                TsunamiAreaStatus.CANCELLED: DisasterEventStatus.RESOLVED,
+                TsunamiAreaStatus.UNKNOWN: DisasterEventStatus.UNKNOWN,
+            }[area.status]
+            assessment = DisasterAssessment(
+                area_id=f"JP-{prefecture}",
+                event_type=DisasterEventType.TSUNAMI,
+                level=None,
+                status=assessment_status,
+            )
+            if all(item.area_id != assessment.area_id for item in assessments):
+                assessments.append(assessment)
+            names.append(area.name)
+        if not assessments:
+            return None
+
+        assessment_statuses = {item.status for item in assessments}
+        if DisasterEventStatus.ACTIVE in assessment_statuses:
+            event_status = DisasterEventStatus.ACTIVE
+        elif assessment_statuses == {DisasterEventStatus.RESOLVED}:
+            event_status = DisasterEventStatus.RESOLVED
+        else:
+            event_status = DisasterEventStatus.UNKNOWN
+        assessment_tuple = tuple(assessments)
+        claims = claims_from_disaster_assessments(assessment_tuple)
+        area_ids = tuple(item.area_id for item in assessments)
+        group = sha256(bulletin.event_id.encode("utf-8")).hexdigest()[:16]
+        revision = bulletin.serial or "none"
+        event_id = f"jma-tsunami-{group}--{revision}-{int(bulletin.published_at.timestamp())}"
+        evidence_id = f"ev_{event_id}"
+        if any(item.id == event_id for item in state.events) or any(item.id == evidence_id for item in state.evidence):
+            return None
+        expires_at = bulletin.published_at + timedelta(seconds=JMA_EVIDENCE_TTL_SECONDS)
+        freshness = FreshnessStatus.CURRENT if now < expires_at else FreshnessStatus.STALE
+        if freshness == FreshnessStatus.STALE and event_status == DisasterEventStatus.ACTIVE:
+            event_status = DisasterEventStatus.UNKNOWN
+        event = DisasterEvent(
+            id=event_id,
+            situation_id=state.situation.id,
+            event_type=DisasterEventType.TSUNAMI,
+            occurred_at=bulletin.occurred_at,
+            received_at=now,
+            affected_areas=tuple(dict.fromkeys(names))[:20],
+            affected_area_ids=area_ids,
+            source_name=JMA_TSUNAMI_SOURCE_NAME,
+            source_class=SourceClass.OFFICIAL,
+            severity_raw=(
+                "JMA VTSE41 tsunami warning classes: "
+                + ",".join(sorted({item.warning_class.value for item in bulletin.forecast_areas}))[:42]
+            ),
+            status=event_status,
+            raw_reference=bulletin.reference_url,
+            is_synthetic=False,
+        )
+        evidence = Evidence(
+            id=evidence_id,
+            situation_id=state.situation.id,
+            source_key=JMA_TSUNAMI_SOURCE_KEY,
+            source_name=JMA_TSUNAMI_SOURCE_NAME,
+            source_class=SourceClass.OFFICIAL,
+            trust_status=TrustStatus.VERIFIED_OFFICIAL,
+            freshness_status=freshness,
+            published_at=bulletin.published_at,
+            received_at=now,
+            expires_at=expires_at,
+            relevant_areas=tuple(dict.fromkeys(names))[:20],
+            affected_area_ids=area_ids,
+            disaster_assessments=assessment_tuple,
+            claim_type=ClaimType.DISASTER_STATUS,
+            claims=claims,
+            summary=(
+                "JMA VTSE41 tsunami forecast area/status was normalized only for exact prefecture-name matches. "
+                "Tsunami height is not converted to earthquake L0-L4; area reference does not authorize movement."
+            ),
+            raw_reference=bulletin.reference_url,
+            is_synthetic=False,
+        )
+        return event, evidence
+
     def _advance_time_locked(
         self,
         aggregate: LiveAggregate,
@@ -877,7 +1102,13 @@ class LiveStore:
 
     def _snapshot(self, aggregate: LiveAggregate) -> LiveSnapshot:
         state = aggregate.state
-        projections = evidence_projections(state.evidence, state.situation, state.current_time, self._policy)
+        projections = evidence_projections(
+            state.evidence,
+            state.situation,
+            state.current_time,
+            self._policy,
+            events=state.events,
+        )
         spatial = evaluated_spatial_guidance(state, state.current_time, self._policy)
         source = aggregate.source
         projected_source_status = jma_status_at_publication_deadline(

@@ -48,6 +48,7 @@ from .scenario import (
     source_authorizes_disaster_assessments,
     source_authorizes_transport,
 )
+from .live_sources import JMA_TSUNAMI_SOURCE_KEY
 from .safety import (
     DEFAULT_POLICY,
     SafetyPolicy,
@@ -63,6 +64,46 @@ MAX_TRACE = 512
 MAX_MOBILITY = 128
 MAX_PLANS = 128
 MAX_ACTIONS = 512
+
+
+def _supersede_tsunami_revision(state: CoreState, event: DisasterEvent, evidence: Evidence) -> CoreState:
+    """Retire older serials for one JMA tsunami event before evaluating the new revision."""
+    if evidence.source_key != JMA_TSUNAMI_SOURCE_KEY or event.event_type != DisasterEventType.TSUNAMI:
+        return state
+    group, separator, _revision = event.id.partition("--")
+    if not separator or not group.startswith("jma-tsunami-"):
+        return state
+    retired_ids = {
+        item.id
+        for item in state.events
+        if item.event_type == DisasterEventType.TSUNAMI
+        and item.id.startswith(f"{group}--")
+        and item.id != event.id
+    }
+    if not retired_ids:
+        return state
+    events = tuple(
+        item.model_copy(update={"status": DisasterEventStatus.RESOLVED})
+        if item.id in retired_ids
+        else item
+        for item in state.events
+    )
+    evidence_items = tuple(
+        item.model_copy(update={
+            "trust_status": TrustStatus.STALE,
+            "freshness_status": FreshnessStatus.STALE,
+        })
+        if item.source_key == JMA_TSUNAMI_SOURCE_KEY and item.id.removeprefix("ev_") in retired_ids
+        else item
+        for item in state.evidence
+    )
+    active_ids = tuple(item for item in state.situation.active_event_ids if item not in retired_ids)
+    return replace(
+        state,
+        events=events,
+        evidence=evidence_items,
+        situation=state.situation.model_copy(update={"active_event_ids": active_ids}),
+    )
 
 
 def parse_replay_event(raw: Any) -> ReplayEvent:
@@ -116,10 +157,22 @@ def apply_live_evidence_batch(
             raise ValueError("live records must belong to the current situation")
         if any(item.id == event.id for item in reduced.events):
             continue
+        reduced = _supersede_tsunami_revision(reduced, event, evidence)
+        active_event_ids = reduced.situation.active_event_ids
+        if event.event_type == DisasterEventType.TSUNAMI:
+            active_event_ids = tuple(item for item in active_event_ids if item != event.id)
+            if event.status in {DisasterEventStatus.ACTIVE, DisasterEventStatus.UNKNOWN}:
+                active_event_ids = (*active_event_ids, event.id)
+        else:
+            active_event_ids = (*active_event_ids, event.id)
         situation = reduced.situation.model_copy(
             update={
-                "incident_status": IncidentStatus.EVENT_DETECTED,
-                "active_event_ids": (*reduced.situation.active_event_ids, event.id),
+                "incident_status": (
+                    IncidentStatus.EVENT_DETECTED
+                    if event.status in {DisasterEventStatus.ACTIVE, DisasterEventStatus.UNKNOWN}
+                    else reduced.situation.incident_status
+                ),
+                "active_event_ids": tuple(dict.fromkeys(active_event_ids)),
                 "updated_at": current_time,
             }
         )
@@ -134,7 +187,7 @@ def apply_live_evidence_batch(
             status=TraceStatus.SUCCESS,
             public_summary=(
                 "MOCK LIVE: synthetic earthquake input exercised the Live reducer; not a JMA bulletin."
-                if synthetic_mode else "An official JMA earthquake report entered the live evidence pipeline."
+                if synthetic_mode else f"An official JMA {event.event_type.value.lower()} report entered the live evidence pipeline."
             ),
         )
         reduced = replace(
@@ -228,10 +281,22 @@ async def apply_live_evidence_batch_with_planner(
             raise ValueError("live records must belong to the current situation")
         if any(item.id == event.id for item in reduced.events):
             continue
+        reduced = _supersede_tsunami_revision(reduced, event, evidence)
+        active_event_ids = reduced.situation.active_event_ids
+        if event.event_type == DisasterEventType.TSUNAMI:
+            active_event_ids = tuple(item for item in active_event_ids if item != event.id)
+            if event.status in {DisasterEventStatus.ACTIVE, DisasterEventStatus.UNKNOWN}:
+                active_event_ids = (*active_event_ids, event.id)
+        else:
+            active_event_ids = (*active_event_ids, event.id)
         situation = reduced.situation.model_copy(
             update={
-                "incident_status": IncidentStatus.EVENT_DETECTED,
-                "active_event_ids": (*reduced.situation.active_event_ids, event.id),
+                "incident_status": (
+                    IncidentStatus.EVENT_DETECTED
+                    if event.status in {DisasterEventStatus.ACTIVE, DisasterEventStatus.UNKNOWN}
+                    else reduced.situation.incident_status
+                ),
+                "active_event_ids": tuple(dict.fromkeys(active_event_ids)),
                 "updated_at": current_time,
             }
         )
@@ -246,7 +311,7 @@ async def apply_live_evidence_batch_with_planner(
             status=TraceStatus.SUCCESS,
             public_summary=(
                 "MOCK LIVE: synthetic earthquake input exercised the Live reducer; not a JMA bulletin."
-                if synthetic_mode else "An official JMA earthquake report entered the live evidence pipeline."
+                if synthetic_mode else f"An official JMA {event.event_type.value.lower()} report entered the live evidence pipeline."
             ),
         )
         reduced = replace(

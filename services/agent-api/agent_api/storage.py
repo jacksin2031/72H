@@ -345,6 +345,7 @@ class ReplayStore:
                 aggregate.state.situation,
                 aggregate.state.current_time,
                 self._policy,
+                events=aggregate.state.events,
             ),
             plans=aggregate.state.plans,
             plan_actions=aggregate.state.plan_actions,

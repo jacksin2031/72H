@@ -16,12 +16,13 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, model_validator
 from seventytwoh_contracts.models import (
     LiveSnapshot, LiveSourceStatus, NetworkState, SelfReportedSafetyStatus, StartLiveRequest,
+    TsunamiOperation,
 )
 from .drill import DrillRequest
 from .historical_cases import CASES, HistoricalId, HistoricCase, list_historical_cases
 from .drill_store import _DrillCandidatePlanner
 from .live import LiveSessionNotFound, LiveStore
-from .live_sources import JmaEarthquakeReport, JmaPrefObservation, JmaFetchResult
+from .live_sources import JmaEarthquakeReport, JmaPrefObservation, JmaFetchResult, JmaTsunamiFetchResult
 from .planner import CandidatePlanner
 from .scenario import load_scenario
 
@@ -150,6 +151,25 @@ class MockDestinationSource:
         return (LiveSourceStatus.UNAVAILABLE, (), None, None)
 
 
+class MockTsunamiSource:
+    """Keep Mock Live isolated from the real JMA tsunami adapter and network."""
+
+    def fetch_latest(self) -> JmaTsunamiFetchResult:
+        now = datetime.now(timezone.utc)
+        return JmaTsunamiFetchResult(
+            status=LiveSourceStatus.UNSUPPORTED,
+            retrieved_at=now,
+            last_published_at=None,
+            next_retry_at=None,
+            operation=TsunamiOperation.UNKNOWN,
+            serial=None,
+            bulletins=(),
+            forecast_areas=(),
+            conflict=False,
+            detail="MOCK LIVE: no official tsunami data is requested or simulated.",
+        )
+
+
 class MockRouteSource:
     async def search(self, **_kwargs):
         from .live_routes import RouteFetchResult
@@ -182,6 +202,7 @@ class MockLiveStore(LiveStore):
         self.mock_request = request
         super().__init__(
             jma_source=self.mock_source,
+            tsunami_source=MockTsunamiSource(),
             destination_source=MockDestinationSource(),
             route_source=MockRouteSource(),
             planner=planner,
@@ -212,8 +233,10 @@ class MockLiveStore(LiveStore):
         })
         return event, evidence
 
-    def _apply_source_results_locked(self, aggregate, source_result, destinations_payload, now):
-        pairs = super()._apply_source_results_locked(aggregate, source_result, destinations_payload, now)
+    def _apply_source_results_locked(self, aggregate, source_result, tsunami_result, destinations_payload, now):
+        pairs = super()._apply_source_results_locked(
+            aggregate, source_result, tsunami_result, destinations_payload, now
+        )
         if self.mock_source.stage == 2 and self.mock_request.network != "ONLINE":
             aggregate.state = replace(
                 aggregate.state,

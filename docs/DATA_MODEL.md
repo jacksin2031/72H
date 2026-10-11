@@ -619,6 +619,20 @@ The implementation is ready only if it can prove:
 
 ## Definition of Done
 
+### P2.4 official reference data
+
+`TSUNAMI` is a distinct event type. Its assessment `level` stays null;
+JMA warning class, height expression and forecast-area status are preserved
+in a separate validated reference response, never converted to earthquake L0–L4.
+Destination designation roles and all eight hazard classifications are optional
+additions to older snapshots. Designation does not establish current opening.
+
+Static regional packs preserve raw-source hashes, source/basis/retrieval dates,
+geometry processing records and an independently stated coverage status.
+Client query outcomes are scenario intersections, with both
+`safe_location_verified=false` and `route_authorized=false`.
+See `VNEXT_P2_4_OFFICIAL_TSUNAMI_SHELTER_DATA.md` for the bounded pilot.
+
 The data model is complete when the following chain is representable without implicit state:
 
 ```text

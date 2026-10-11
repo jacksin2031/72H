@@ -1,5 +1,20 @@
 # 72H — Current Development Phase
 
+## Next major development phase — official tsunami and shelter data (2026-10-11 JST)
+
+User selected official tsunami inundation assumptions and hazard-classified
+evacuation-place data as the next major phase. Specification prepared:
+`docs/VNEXT_P2_4_OFFICIAL_TSUNAMI_SHELTER_DATA.md`. User authorized implementation
+with “do it”. Status: PARTIAL on `codex/p2-4-official-tsunami-shelters`;
+the bounded Ishinomaki reference integration is implemented and locally validated.
+Evidence: `docs/VNEXT_P2_4_VALIDATION.md`. Nationwide hazard coverage, real-device
+GPS and live incident acceptance remain unvalidated; no new deployment was performed.
+Current maps cannot determine
+safe locations. Initial delivery adds sourced exposure screening and designation
+reference only; it does not grant safe-destination or movement authorization.
+Missing hazard coverage, current opening, authoritative movement and verified
+route dependencies remain UNKNOWN and fail closed under the existing Safety Core.
+
 ## Current authorized work — All Japan map and UI Preview (2026-10-11 JST)
 
 User authorized icon/layout polish, dark land/sea map, clear coastline,

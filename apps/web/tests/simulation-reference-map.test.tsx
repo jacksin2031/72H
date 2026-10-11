@@ -8,13 +8,20 @@ import { webcrypto } from 'node:crypto';
 import { documentedEpicenters } from '../lib/geospatial-exposure';
 import { SimulationReferenceMap } from '../components/simulation-reference-map';
 
-const mapHarness=vi.hoisted(()=>({coordinates:[] as number[][],removed:0}));
+const mapHarness=vi.hoisted(()=>({coordinates:[] as number[][],removed:0,operations:[] as string[]}));
 vi.mock('maplibre-gl',()=>({
   setWorkerCount:vi.fn(),setWorkerUrl:vi.fn(),
   Map:class {
+    layers=new Set(['gsi-topographic']);sources=new Set(['gsi-standard']);
     scrollZoom={disable:vi.fn()};boxZoom={disable:vi.fn()};dragRotate={disable:vi.fn()};
     dragPan={disable:vi.fn(),enable:vi.fn()};touchZoomRotate={disable:vi.fn(),enable:vi.fn(),disableRotation:vi.fn()};
-    once(_name:string,callback:()=>void){callback();} on(){} off(){} resize(){} fitBounds(){} remove(){}
+    once(_name:string,callback:()=>void){callback();} on(){} off(){} resize(){} fitBounds(){mapHarness.operations.push('country');} remove(){}
+    getZoom(){return 9;} easeTo(){mapHarness.operations.push('center');}
+    getLayer(id:string){return this.layers.has(id);} getSource(id:string){return this.sources.has(id);}
+    removeLayer(id:string){this.layers.delete(id);mapHarness.operations.push('remove-layer:'+id);}
+    removeSource(id:string){this.sources.delete(id);mapHarness.operations.push('remove-source:'+id);}
+    addSource(id:string){this.sources.add(id);mapHarness.operations.push('add-source:'+id);}
+    addLayer(layer:{id:string}){this.layers.add(layer.id);mapHarness.operations.push('add-layer:'+layer.id);}
   },
   Marker:class {
     element:HTMLElement;constructor({element}:{element:HTMLElement}){this.element=element;}
@@ -33,6 +40,24 @@ afterEach(async () => {
 });
 
 describe('isolated simulation reference map', () => {
+  it('removes detailed tile requests before centering on device GPS and resets the view before restoring tiles',async()=>{
+    const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
+    vi.stubGlobal('crypto',webcrypto);
+    vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)})));
+    mapHarness.operations=[];
+    container=document.createElement('div');document.body.append(container);root=createRoot(container);
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" protectDeviceLocation/>));
+    await act(async()=>{await new Promise(resolve=>setTimeout(resolve,40));});
+    mapHarness.operations=[];
+    const gps={lat:38.4,lng:141.3,accuracy_m:20,captured_at:Date.now(),source:'BROWSER_GEOLOCATION' as const};
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" protectDeviceLocation userLocation={gps}/>));
+    await act(async()=>{await new Promise(resolve=>setTimeout(resolve,40));});
+    expect(mapHarness.operations).toEqual(['remove-layer:gsi-topographic','remove-source:gsi-standard','center']);
+    expect(container.textContent).toContain('避免詳細圖磚洩漏位置');
+    mapHarness.operations=[];
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" protectDeviceLocation/>));
+    expect(mapHarness.operations.slice(0,3)).toEqual(['country','add-source:gsi-standard','add-layer:gsi-topographic']);
+  });
   it('anchors the historical earthquake at the documented coordinates and releases it on unmount',async()=>{
     const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
     vi.stubGlobal('crypto',webcrypto);

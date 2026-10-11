@@ -4,6 +4,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import './prepare-map-worker.mjs';
 import './prepare-area-worker.mjs';
+import './prepare-hazard-pack.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const result = spawnSync(process.execPath, [join(root, 'node_modules/next/dist/bin/next'), 'build'], { cwd: root, stdio: 'inherit' });

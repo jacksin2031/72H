@@ -5,6 +5,7 @@ import { UiIcon } from './ui-icon';
 import type { Language } from '@/lib/contracts';
 import type { Epicenter, LocationFix } from '@/lib/geospatial-exposure';
 import { validPoint } from '@/lib/geospatial-exposure';
+import type { HazardPack, OfficialPlace } from '@/lib/official-hazards';
 import {
   GSI_ATTRIBUTION_URL, JAPAN_DEFAULT_CENTER, JAPAN_VIEW_BOUNDS,
   NATURAL_EARTH_LICENSE_URL,
@@ -13,6 +14,11 @@ import {
 const LAND_ASSET='/maps/japan-land-50m.geojson';
 const LAND_BYTES=284073;
 const LAND_SHA256='32a1f99f53084df8d5aaae431d5edfbb41925248954a3836b071ec0861b29b42';
+const GSI_SOURCE:import('maplibre-gl').RasterSourceSpecification={type:'raster',tiles:['/api/reference-tiles/{z}/{x}/{y}'],tileSize:256,minzoom:3,maxzoom:17,bounds:[120,19,156,48]};
+const GSI_LAYER:import('maplibre-gl').RasterLayerSpecification={id:'gsi-topographic',type:'raster',source:'gsi-standard',paint:{
+  'raster-opacity':['interpolate',['linear'],['zoom'],6,0,9,0.38,14,0.55],
+  'raster-brightness-min':0.05,'raster-brightness-max':0.35,'raster-saturation':-1,'raster-fade-duration':0,
+}};
 const inCoverage=(point:{lng:number;lat:number}):boolean=>validPoint(point)
   &&point.lng>=JAPAN_VIEW_BOUNDS[0][0]&&point.lng<=JAPAN_VIEW_BOUNDS[1][0]
   &&point.lat>=JAPAN_VIEW_BOUNDS[0][1]&&point.lat<=JAPAN_VIEW_BOUNDS[1][1];
@@ -57,14 +63,19 @@ const mapText={
 
 /** All-Japan reference map; no inferred inundation, shelter or routes. */
 export function SimulationReferenceMap({
-  language,compact=false,epicenter=null,userLocation=null,
+  language,compact=false,epicenter=null,userLocation=null,referencePoint=null,officialPack=null,showInundation=false,showPlaces=false,focusPoint=null,onReferencePoint,onPlace,protectDeviceLocation=false,
 }:{
   language:Language; compact?:boolean;epicenter?:Epicenter|null;userLocation?:LocationFix|null;
+  referencePoint?:{lat:number;lng:number}|null;
+  officialPack?:HazardPack|null;showInundation?:boolean;showPlaces?:boolean;focusPoint?:{lat:number;lng:number;zoom?:number}|null;
+  onReferencePoint?:(point:{lat:number;lng:number})=>void;onPlace?:(place:OfficialPlace)=>void;
+  protectDeviceLocation?:boolean;
 }){
   const host=useRef<HTMLDivElement>(null);
   const mapRef=useRef<import('maplibre-gl').Map|null>(null);
   const pins=useRef<import('maplibre-gl').Marker[]>([]);
   const fitCountry=useRef<()=>void>(()=>{});
+  const rasterSuppressed=useRef(false);
   const [status,setStatus]=useState<'loading'|'ready'|'unavailable'>('loading');
   const [tileIssues,setTileIssues]=useState(false);
   const t=mapText[language];
@@ -102,25 +113,14 @@ export function SimulationReferenceMap({
             version:8,
             sources:{
               'natural-earth-land':{type:'geojson',data:land},
-              'gsi-standard':{
-                type:'raster',tiles:['/api/reference-tiles/{z}/{x}/{y}'],
-                tileSize:256,minzoom:3,maxzoom:17,
-                bounds:[120,19,156,48],
-              },
+              'gsi-standard':GSI_SOURCE,
             },
             layers:[
               {id:'sea',type:'background',paint:{'background-color':'#0c2535'}},
               {id:'land-fill',type:'fill',source:'natural-earth-land',
                 paint:{'fill-color':'#35574e','fill-opacity':1}},
 
-              {id:'gsi-topographic',type:'raster',source:'gsi-standard',
-                paint:{
-                  'raster-opacity':['interpolate',['linear'],['zoom'],6,0,9,0.38,14,0.55],
-                  'raster-brightness-min':0.05,
-                  'raster-brightness-max':0.35,
-                  'raster-saturation':-1,
-                  'raster-fade-duration':0,
-                }},
+              GSI_LAYER,
               {id:'coastline-halo',type:'line',source:'natural-earth-land',maxzoom:9,
                 paint:{'line-color':'#0c2535','line-width':4}},
               {id:'coastline',type:'line',source:'natural-earth-land',maxzoom:9,
@@ -165,9 +165,26 @@ export function SimulationReferenceMap({
       cancelled=true;abort.abort();observer?.disconnect();
       pins.current.forEach(marker=>marker.remove());pins.current=[];
       mapRef.current?.remove();mapRef.current=null;
+      rasterSuppressed.current=false;
       fitCountry.current=()=>{};
     };
   },[compact]);
+
+  // Remove tile requests before centering on GPS: z/x/y can reveal location
+  // even without sending literal latitude/longitude. Local vectors remain.
+  useEffect(()=>{
+    const map=mapRef.current;if(status!=='ready'||!map||!protectDeviceLocation)return;
+    if(userLocation){
+      if(map.getLayer('gsi-topographic'))map.removeLayer('gsi-topographic');
+      if(map.getSource('gsi-standard'))map.removeSource('gsi-standard');
+      rasterSuppressed.current=true;
+    }else if(rasterSuppressed.current){
+      fitCountry.current();
+      map.addSource('gsi-standard',GSI_SOURCE);
+      map.addLayer(GSI_LAYER,'coastline-halo');
+      rasterSuppressed.current=false;
+    }
+  },[status,protectDeviceLocation,!!userLocation]);
 
   useEffect(()=>{
     let cancelled=false;
@@ -198,20 +215,52 @@ export function SimulationReferenceMap({
           for(let i=0;i<3;i++)ripple.append(document.createElement('i'));
           element.append(ripple);
         }
-        const symbol=document.createElement('span');symbol.className='sim-marker-symbol';symbol.textContent=kind==='gps'?'●':'✕';element.append(symbol);
+        const symbol=document.createElement('span');symbol.className='sim-marker-symbol';symbol.textContent=kind==='epicenter'?'✕':'●';element.append(symbol);
         element.setAttribute('role','img');element.setAttribute('aria-label',label);
         element.title=label;
         pins.current.push(new Marker({element}).setLngLat([point.lng,point.lat]).addTo(map));
       };
       if(userLocation?.source==='BROWSER_GEOLOCATION'&&userLocation.accuracy_m<=1000&&inCoverage(userLocation)){
-        attach(userLocation,t.gps,'gps');
+        attach(userLocation,officialPack?'GPS':t.gps,'gps');
         map.easeTo({center:[userLocation.lng,userLocation.lat],zoom:Math.max(map.getZoom(),9),duration:0});
       }
       if(epicenter)attach(epicenter,t.epicenter,'epicenter');
+      if(referencePoint)attach(referencePoint,language==='ja'?'地図選択点':language==='en'?'Selected reference point':'地圖選點','reference');
       settleMarkers();
     });
     return()=>{cancelled=true;map.off('moveend',settleMarkers);map.off('resize',settleMarkers);pins.current.forEach(marker=>marker.remove());pins.current=[];};
-  },[status,epicenter?.lat,epicenter?.lng,userLocation?.lat,userLocation?.lng,userLocation?.accuracy_m,userLocation?.source,language]);
+  },[status,epicenter?.lat,epicenter?.lng,userLocation?.lat,userLocation?.lng,userLocation?.accuracy_m,userLocation?.source,referencePoint,language,officialPack]);
+
+  useEffect(()=>{
+    const map=mapRef.current;if(status!=='ready'||!map||!officialPack)return;
+    if(showInundation){
+      map.addSource('official-inundation',{type:'geojson',data:officialPack.inundation});
+      map.addLayer({id:'official-inundation-fill',type:'fill',source:'official-inundation',paint:{'fill-color':'#e9ac66','fill-opacity':0.38}});
+      map.addLayer({id:'official-inundation-edge',type:'line',source:'official-inundation',paint:{'line-color':'#ffd19a','line-width':1}});
+    }
+    if(showPlaces){
+      map.addSource('official-places',{type:'geojson',data:{type:'FeatureCollection',features:officialPack.places.map(p=>({
+        type:'Feature',geometry:{type:'Point',coordinates:[p.lng,p.lat]},properties:{id:p.id,kind:p.kind},
+      }))}});
+      map.addLayer({id:'official-places-points',type:'circle',source:'official-places',paint:{'circle-radius':5,
+        'circle-color':['match',['get','kind'],'EMERGENCY_SITE','#afcbed','#aeb4bd'],'circle-stroke-color':'#122230','circle-stroke-width':1.5}});
+    }
+    const choose=(event:import('maplibre-gl').MapMouseEvent)=>{
+      const hit=showPlaces?map.queryRenderedFeatures(event.point,{layers:['official-places-points']})[0]:null;
+      const place=hit?officialPack.places.find(p=>p.id===hit.properties.id):null;
+      if(place)onPlace?.(place);else onReferencePoint?.({lat:event.lngLat.lat,lng:event.lngLat.lng});
+    };
+    map.on('click',choose);
+    return()=>{
+      map.off('click',choose);
+      for(const id of ['official-places-points','official-inundation-edge','official-inundation-fill'])if(map.getLayer(id))map.removeLayer(id);
+      for(const id of ['official-places','official-inundation'])if(map.getSource(id))map.removeSource(id);
+    };
+  },[status,officialPack,showInundation,showPlaces,onReferencePoint,onPlace]);
+
+  useEffect(()=>{
+    if(status==='ready'&&focusPoint&&validPoint(focusPoint))mapRef.current?.easeTo({center:[focusPoint.lng,focusPoint.lat],zoom:focusPoint.zoom??13,duration:0});
+  },[status,focusPoint]);
 
   const displayedEpicenter=!!epicenter&&inCoverage(epicenter);
   const displayedGps=!!userLocation&&userLocation.source==='BROWSER_GEOLOCATION'&&userLocation.accuracy_m<=1000&&inCoverage(userLocation);
@@ -239,15 +288,17 @@ export function SimulationReferenceMap({
       </select>
     </label>}
     <div className="sim-map-information">
-      <div className="sim-map-maplabel"><strong>{t.title}</strong><small>{t.note}</small></div>
+      <div className="sim-map-maplabel"><strong>{t.title}</strong><small>{officialPack?(language==='ja'?'公式想定データ · 安全性未判定':language==='en'?'Official scenario data · safety undetermined':'官方想定資料 · 安全性未判定'):t.note}</small></div>
       <div className="sim-map-landsea-legend" data-testid="japan-land-sea-legend">
         <span><i className="sim-map-land-color"/>{t.land}</span>
         <span><i className="sim-map-sea-color"/>{t.sea}</span>
+        {officialPack&&showInundation&&<span><i style={{background:'#e9ac66'}}/>{language==='ja'?'浸水想定':language==='en'?'Inundation scenario':'浸水想定'}</span>}
       </div>
       <p className="sim-map-quick-caution">{t.shortCaution}</p>
       {(status!=='ready'||tileIssues)&&<p className="sim-map-status" role="status">
         {status==='loading'?t.loading:status==='unavailable'?t.unavailable:t.tilesUnavailable}
       </p>}
+      {protectDeviceLocation&&userLocation&&<p className="sim-map-status">{language==='ja'?'GPS使用中は位置を守るため端末内の輪郭・想定データのみ表示':language==='en'?'GPS view uses device-local outlines and scenario data to protect location':'GPS 查詢只顯示裝置內輪廓及想定資料，避免詳細圖磚洩漏位置'}</p>}
       <details className="sim-map-details" data-testid="japan-map-details">
         <summary>{t.details}</summary>
         <p className="sim-map-caution">{t.caution}</p>
@@ -273,7 +324,7 @@ export function SimulationReferenceMap({
         onClick={()=>mapRef.current?.easeTo({center:[userLocation!.lng,userLocation!.lat],zoom:11,duration:250})}><UiIcon name="location" /></button>}
     </div>}
     {status==='ready'&&(userLocation||epicenter)&&<div className="sim-map-geo-note" data-testid="simulation-geo-markers">
-      {displayedGps?t.gps:userLocation?t.gpsOut:''}
+      {displayedGps?(officialPack?'GPS':t.gps):userLocation?t.gpsOut:''}
       {displayedEpicenter?' '+t.epicenter:epicenter?' '+t.epicenterOut:''}
     </div>}
   </section>;
