@@ -48,7 +48,7 @@ from .scenario import (
     source_authorizes_disaster_assessments,
     source_authorizes_transport,
 )
-from .live_sources import JMA_TSUNAMI_SOURCE_KEY
+from .live_sources import JMA_SOURCE_KEY, JMA_TSUNAMI_SOURCE_KEY
 from .safety import (
     DEFAULT_POLICY,
     SafetyPolicy,
@@ -66,24 +66,37 @@ MAX_PLANS = 128
 MAX_ACTIONS = 512
 
 
-def _supersede_tsunami_revision(state: CoreState, event: DisasterEvent, evidence: Evidence) -> CoreState:
-    """Retire older serials for one JMA tsunami event before evaluating the new revision."""
-    if evidence.source_key != JMA_TSUNAMI_SOURCE_KEY or event.event_type != DisasterEventType.TSUNAMI:
+def _supersede_official_revision(
+    state: CoreState, event: DisasterEvent, evidence: Evidence, aliases: tuple[str, ...] = (),
+) -> CoreState:
+    """Withdraw prior evidence for exactly one normalized JMA information unit."""
+    source_key = {DisasterEventType.EARTHQUAKE: JMA_SOURCE_KEY, DisasterEventType.TSUNAMI: JMA_TSUNAMI_SOURCE_KEY}.get(event.event_type)
+    if evidence.source_key != source_key:
         return state
     group, separator, _revision = event.id.partition("--")
-    if not separator or not group.startswith("jma-tsunami-"):
+    if not separator or not group.startswith(("jma-tsunami-", "jma-earthquake-")):
         return state
     retired_ids = {
         item.id
         for item in state.events
-        if item.event_type == DisasterEventType.TSUNAMI
-        and item.id.startswith(f"{group}--")
+        if item.event_type == event.event_type
+        and (item.id.startswith(f"{group}--") or item.id in aliases)
         and item.id != event.id
+        and any(
+            proof.id == f"ev_{item.id}" and proof.source_key == source_key
+            and not proof.is_synthetic and proof.source_class == SourceClass.OFFICIAL
+            and (
+                proof.published_at <= evidence.published_at
+                if item.id.startswith(f"{group}--")
+                else item.id in aliases  # Alias ordering was verified from original official XML.
+            )
+            for proof in state.evidence
+        )
     }
     if not retired_ids:
         return state
     events = tuple(
-        item.model_copy(update={"status": DisasterEventStatus.RESOLVED})
+        item.model_copy(update={"status": DisasterEventStatus.UNKNOWN})
         if item.id in retired_ids
         else item
         for item in state.events
@@ -93,7 +106,7 @@ def _supersede_tsunami_revision(state: CoreState, event: DisasterEvent, evidence
             "trust_status": TrustStatus.STALE,
             "freshness_status": FreshnessStatus.STALE,
         })
-        if item.source_key == JMA_TSUNAMI_SOURCE_KEY and item.id.removeprefix("ev_") in retired_ids
+        if item.source_key == source_key and item.id.removeprefix("ev_") in retired_ids
         else item
         for item in state.evidence
     )
@@ -103,6 +116,18 @@ def _supersede_tsunami_revision(state: CoreState, event: DisasterEvent, evidence
         events=events,
         evidence=evidence_items,
         situation=state.situation.model_copy(update={"active_event_ids": active_ids}),
+    )
+
+
+def _outdated_official_revision(state: CoreState, event: DisasterEvent, evidence: Evidence) -> bool:
+    group, separator, _ = event.id.partition("--")
+    if not separator or not group.startswith(("jma-tsunami-", "jma-earthquake-")):
+        return False
+    return any(
+        item.source_key == evidence.source_key
+        and item.id.removeprefix("ev_").startswith(f"{group}--")
+        and item.published_at >= evidence.published_at
+        for item in state.evidence
     )
 
 
@@ -137,6 +162,7 @@ def apply_live_evidence_batch(
     policy: SafetyPolicy = DEFAULT_POLICY,
     *,
     synthetic_mode: bool = False,
+    official_aliases: dict[str, tuple[str, ...]] | None = None,
 ) -> CoreState:
     """Append server-normalized evidence; only an internal mock adapter may enable synthetic mode."""
     if current_time.tzinfo is None or current_time.utcoffset() is None:
@@ -157,7 +183,11 @@ def apply_live_evidence_batch(
             raise ValueError("live records must belong to the current situation")
         if any(item.id == event.id for item in reduced.events):
             continue
-        reduced = _supersede_tsunami_revision(reduced, event, evidence)
+        if _outdated_official_revision(reduced, event, evidence):
+            continue
+        reduced = _supersede_official_revision(
+            reduced, event, evidence, (official_aliases or {}).get(event.id, ()),
+        )
         active_event_ids = reduced.situation.active_event_ids
         if event.event_type == DisasterEventType.TSUNAMI:
             active_event_ids = tuple(item for item in active_event_ids if item != event.id)
@@ -261,6 +291,7 @@ async def apply_live_evidence_batch_with_planner(
     policy: SafetyPolicy = DEFAULT_POLICY,
     *,
     synthetic_mode: bool = False,
+    official_aliases: dict[str, tuple[str, ...]] | None = None,
 ):
     """Publish official Live or isolated synthetic Mock Live evidence through identical planning."""
     if current_time.tzinfo is None or current_time.utcoffset() is None:
@@ -281,7 +312,11 @@ async def apply_live_evidence_batch_with_planner(
             raise ValueError("live records must belong to the current situation")
         if any(item.id == event.id for item in reduced.events):
             continue
-        reduced = _supersede_tsunami_revision(reduced, event, evidence)
+        if _outdated_official_revision(reduced, event, evidence):
+            continue
+        reduced = _supersede_official_revision(
+            reduced, event, evidence, (official_aliases or {}).get(event.id, ()),
+        )
         active_event_ids = reduced.situation.active_event_ids
         if event.event_type == DisasterEventType.TSUNAMI:
             active_event_ids = tuple(item for item in active_event_ids if item != event.id)

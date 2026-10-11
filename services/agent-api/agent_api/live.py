@@ -6,6 +6,7 @@ import asyncio
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
+import re
 from threading import RLock
 from time import monotonic
 from types import SimpleNamespace
@@ -83,6 +84,7 @@ from .planning import evidence_projections
 from .location_freshness import gps_observation_is_fresh
 from .safety import DEFAULT_POLICY, SafetyPolicy, claims_from_disaster_assessments, derive_claim_states
 from .state import CoreState
+from .official_events import OfficialBulletin
 from .live_routes import EKISPERT_MCP_ENDPOINT, EKISPERT_ROUTE_SOURCE_KEY, EKISPERT_ROUTE_SOURCE_NAME, EkispertRouteSource
 from .planner import CandidatePlanner
 from .spatial import evaluated_spatial_guidance
@@ -652,18 +654,28 @@ class LiveStore:
     def refresh(self, session_id: UUID) -> LiveSnapshot:
         aggregate = self._get_aggregate(session_id)
         with aggregate.lock:
+            legacy_metadata = self._resolve_snapshot_metadata(aggregate.state)
             source_result = self._jma.fetch_latest()
             tsunami_result = self._tsunami.fetch_latest()
             destinations_payload = self._destinations.fetch_latest()
             now = self._now()
-            pairs = self._apply_source_results_locked(aggregate, source_result, tsunami_result, destinations_payload, now)
-            aggregate.state = apply_live_evidence_batch(aggregate.state, pairs, now, self._policy, synthetic_mode=getattr(self, "_synthetic_source_mode", False))
+            pairs, aliases = self._apply_source_results_locked(
+                aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata,
+            )
+            aggregate.state = apply_live_evidence_batch(
+                aggregate.state, pairs, now, self._policy,
+                synthetic_mode=getattr(self, "_synthetic_source_mode", False),
+                official_aliases=aliases,
+            )
             self._touch(aggregate)
             return self._snapshot(aggregate)
 
     async def refresh_async(self, session_id: UUID) -> LiveSnapshot:
         aggregate = self._get_aggregate(session_id)
         async with aggregate.operation_lock:
+            with aggregate.lock:
+                legacy_state = aggregate.state
+            legacy_metadata = await asyncio.to_thread(self._resolve_snapshot_metadata, legacy_state)
             source_result, tsunami_result, destinations_payload = await asyncio.gather(
                 asyncio.to_thread(self._jma.fetch_latest),
                 asyncio.to_thread(self._tsunami.fetch_latest),
@@ -671,8 +683,8 @@ class LiveStore:
             )
             with aggregate.lock:
                 now = self._now()
-                pairs = self._apply_source_results_locked(
-                    aggregate, source_result, tsunami_result, destinations_payload, now
+                pairs, aliases = self._apply_source_results_locked(
+                    aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata
                 )
                 prepared = aggregate.state
             after, _planning_mode = await apply_live_evidence_batch_with_planner(
@@ -683,6 +695,7 @@ class LiveStore:
                 f"live-{aggregate.session_id}",
                 self._policy,
                 synthetic_mode=getattr(self, "_synthetic_source_mode", False),
+                official_aliases=aliases,
             )
             with aggregate.lock:
                 if aggregate.state is not prepared:
@@ -693,6 +706,7 @@ class LiveStore:
                         max(now, aggregate.state.current_time),
                         self._policy,
                         synthetic_mode=getattr(self, "_synthetic_source_mode", False),
+                        official_aliases=aliases,
                     )
                     after = aggregate.state
                 aggregate.state = after
@@ -710,7 +724,21 @@ class LiveStore:
         """Fetch the latest read-only JMA reference without mutating live sessions."""
         return tsunami_reference_from_result(self._tsunami.fetch_latest())
 
-    def _apply_source_results_locked(self, aggregate, source_result, tsunami_result, destinations_payload, now):
+    def _apply_source_results_locked(self, aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata):
+        # Old snapshots lack Control.DateTime; use recovered original official
+        # XML only. Business/receipt clocks never substitute for system ordering.
+        if source_result.status in {LiveSourceStatus.FRESH, LiveSourceStatus.STALE} and any(
+            item.bulletin is not None and self._legacy_ordering_unknown(aggregate.state, item.bulletin, legacy_metadata)
+            for item in source_result.reports
+        ):
+            source_result = replace(source_result, status=LiveSourceStatus.INVALID_RESPONSE,
+                detail="Legacy official XML identity/ordering could not be verified; prior evidence is unavailable for current claims.")
+        if tsunami_result.status in {LiveSourceStatus.FRESH, LiveSourceStatus.STALE} and any(
+            item.bulletin is not None and self._legacy_ordering_unknown(aggregate.state, item.bulletin, legacy_metadata)
+            for item in tsunami_result.bulletins
+        ):
+            tsunami_result = replace(tsunami_result, status=LiveSourceStatus.INVALID_RESPONSE,
+                detail="Legacy official XML identity/ordering could not be verified; current tsunami status is UNKNOWN.")
         projected_status = jma_status_at_publication_deadline(
             source_result.status,
             source_result.last_published_at,
@@ -788,7 +816,7 @@ class LiveStore:
         else:
             earthquake_pairs = tuple(
             pair for report in source_result.reports
-            if (pair := self._event_evidence_pair(aggregate.state, report, now)) is not None
+            if (pair := self._event_evidence_pair(aggregate.state, report, now, legacy_metadata)) is not None
             )
 
         active_tsunami_event_ids = {
@@ -813,7 +841,7 @@ class LiveStore:
                 pair
                 for bulletin in tsunami_result.bulletins
                 if now < bulletin.published_at + timedelta(seconds=JMA_EVIDENCE_TTL_SECONDS)
-                and (pair := self._tsunami_event_evidence_pair(aggregate.state, bulletin, now)) is not None
+                and (pair := self._tsunami_event_evidence_pair(aggregate.state, bulletin, now, legacy_metadata)) is not None
             )
         elif tsunami_result.status in {
             LiveSourceStatus.STALE,
@@ -833,7 +861,20 @@ class LiveStore:
             tsunami_pairs = ()
         else:
             tsunami_pairs = ()
-        return (*earthquake_pairs, *tsunami_pairs)
+        pairs = (*earthquake_pairs, *tsunami_pairs)
+        metadata = {
+            f"jma-earthquake-{item.bulletin.report_id}": item.bulletin
+            for item in source_result.reports if item.bulletin is not None
+        }
+        metadata.update({
+            f"jma-tsunami-{item.bulletin.report_id}": item.bulletin
+            for item in tsunami_result.bulletins if item.bulletin is not None
+        })
+        aliases = {
+            event.id: tuple(previous.id for previous, _ in self._prior_official_records(aggregate.state, metadata[event.id]))
+            for event, _ in pairs if event.id in metadata
+        }
+        return pairs, aliases
 
     def _mark_tsunami_evidence_stale(self, aggregate, *, conflict: bool = False) -> None:
         evidence = tuple(
@@ -891,25 +932,142 @@ class LiveStore:
             self._touch(aggregate)
             return self._snapshot(aggregate)
 
+    @staticmethod
+    def _prior_official_records(
+        state: CoreState, metadata: OfficialBulletin,
+    ) -> tuple[tuple[DisasterEvent, Evidence], ...]:
+        """Match canonical units and pre-lifecycle IDs using verified provenance.
+
+        Legacy parsers accepted one EventID only and normal product status.
+        Omitted title/clock provenance must be recovered from the original
+        official XML before a legacy alias can be retired.
+        Never partially match compound tsunami EventID combinations.
+        """
+        earthquake = metadata.product == "VXSE53"
+        event_type = DisasterEventType.EARTHQUAKE if earthquake else DisasterEventType.TSUNAMI
+        source_key = JMA_SOURCE_KEY if earthquake else JMA_TSUNAMI_SOURCE_KEY
+        source_name = JMA_SOURCE_NAME if earthquake else JMA_TSUNAMI_SOURCE_NAME
+        prefix = "jma-earthquake-" if earthquake else "jma-tsunami-"
+        canonical = f"{prefix}{metadata.group_id}--"
+        tokens = metadata.event_id.split()
+        legacy = None
+        if len(tokens) == 1:
+            legacy = (
+                rf"jma-{re.escape(tokens[0])}-[A-Za-z0-9_-]+" if earthquake else
+                rf"jma-tsunami-{sha256(tokens[0].encode()).hexdigest()[:16]}--[A-Za-z0-9_-]+"
+            )
+        proofs = {item.id: item for item in state.evidence}
+        records = []
+        for event in state.events:
+            proof = proofs.get(f"ev_{event.id}")
+            if (
+                event.event_type == event_type and event.source_name == source_name
+                and event.source_class == SourceClass.OFFICIAL and not event.is_synthetic
+                and proof is not None and proof.source_key == source_key
+                and proof.source_class == SourceClass.OFFICIAL and not proof.is_synthetic
+                and (event.id.startswith(canonical) or (legacy is not None and event.id in state.situation.active_event_ids and re.fullmatch(legacy, event.id)))
+            ):
+                records.append((event, proof))
+        return tuple(records)
+
+    def _resolve_snapshot_metadata(self, state: CoreState) -> dict[str, OfficialBulletin]:
+        recovered: dict[str, OfficialBulletin] = {}
+        proofs = {item.id: item for item in state.evidence}
+        active = set(state.situation.active_event_ids)
+        for event_type, source, source_key, source_name in (
+            (DisasterEventType.EARTHQUAKE, self._jma, JMA_SOURCE_KEY, JMA_SOURCE_NAME),
+            (DisasterEventType.TSUNAMI, self._tsunami, JMA_TSUNAMI_SOURCE_KEY, JMA_TSUNAMI_SOURCE_NAME),
+        ):
+            events = []
+            pattern = (
+                r"jma-\d{14}-[A-Za-z0-9_-]+" if event_type == DisasterEventType.EARTHQUAKE else
+                r"jma-tsunami-[a-f0-9]{16}--[A-Za-z0-9_-]+"
+            )
+            for event in state.events:
+                proof = proofs.get(f"ev_{event.id}")
+                if (
+                    event.id in active and event.event_type == event_type and event.source_name == source_name
+                    and not event.is_synthetic and event.source_class == SourceClass.OFFICIAL
+                    and proof is not None and proof.source_key == source_key
+                    and proof.source_class == SourceClass.OFFICIAL and not proof.is_synthetic
+                    and event.raw_reference == proof.raw_reference and re.fullmatch(pattern, event.id)
+                ):
+                    events.append(event)
+            resolver = getattr(source, "fetch_snapshot_metadata", None)
+            if not events or resolver is None:
+                continue
+            by_url = resolver(tuple(event.raw_reference for event in events))
+            for event in events:
+                metadata = by_url.get(event.raw_reference)
+                proof = proofs[f"ev_{event.id}"]
+                if metadata is None or len(metadata.event_id.split()) != 1:
+                    continue
+                legacy_id = (
+                    f"jma-{metadata.event_id}-{metadata.serial}" if event_type == DisasterEventType.EARTHQUAKE else
+                    f"jma-tsunami-{sha256(metadata.event_id.encode()).hexdigest()[:16]}--{metadata.serial or 'none'}-{int(metadata.reported_at.timestamp())}"
+                )
+                if (metadata.product == ("VXSE53" if event_type == DisasterEventType.EARTHQUAKE else "VTSE41")
+                    and metadata.reference_url == event.raw_reference and metadata.reported_at == proof.published_at
+                    and legacy_id == event.id):
+                    recovered[event.id] = metadata
+        return recovered
+
+    @classmethod
+    def _legacy_ordering_unknown(cls, state: CoreState, metadata: OfficialBulletin, recovered) -> bool:
+        canonical = f"jma-{'earthquake' if metadata.product == 'VXSE53' else 'tsunami'}-{metadata.group_id}--"
+        for event, _ in cls._prior_official_records(state, metadata):
+            if event.id.startswith(canonical):
+                continue
+            prior = recovered.get(event.id)
+            if (prior is None or prior.group_id != metadata.group_id
+                or (prior.issued_at == metadata.issued_at and prior.raw_sha256 != metadata.raw_sha256)):
+                return True
+        return False
+
+    @classmethod
+    def _prior_official_is_newer_or_unordered(cls, state: CoreState, metadata: OfficialBulletin, recovered) -> bool:
+        canonical = f"jma-{'earthquake' if metadata.product == 'VXSE53' else 'tsunami'}-{metadata.group_id}--"
+        return cls._legacy_ordering_unknown(state, metadata, recovered) or any(
+            (proof.published_at if event.id.startswith(canonical) else recovered[event.id].issued_at) > metadata.issued_at
+            for event, proof in cls._prior_official_records(state, metadata)
+        )
+
     def _event_evidence_pair(
         self,
         state: CoreState,
         report: JmaEarthquakeReport,
         now: datetime,
+        legacy_metadata: dict[str, OfficialBulletin] | None = None,
     ) -> tuple[DisasterEvent, Evidence] | None:
-        event_id = f"jma-{report.report_id}"
+        event_id = f"jma-earthquake-{report.report_id}" if report.bulletin else f"jma-{report.report_id}"
         evidence_id = f"ev_{event_id}"
         if any(item.id == event_id for item in state.events) or any(item.id == evidence_id for item in state.evidence):
             return None
+        previous = self._prior_official_records(state, report.bulletin) if report.bulletin else ()
+        if report.bulletin and self._prior_official_is_newer_or_unordered(state, report.bulletin, legacy_metadata or {}):
+            return None  # A cold adapter must not resurrect an older snapshot revision.
         observations = report.observations
-        area_ids = tuple(dict.fromkeys(item.area_id for item in observations if item.area_id is not None))
-        names = tuple(dict.fromkeys(item.name for item in observations))
+        scoped_observations = (*observations, *report.withdrawn_observations)
+        area_ids = tuple(dict.fromkeys(item.area_id for item in scoped_observations if item.area_id is not None))
+        names = tuple(dict.fromkeys(item.name for item in scoped_observations))
+        cancelled = report.bulletin is not None and report.bulletin.operation.value == "CANCEL"
+        current_area_ids = {item.area_id for item in observations} if not cancelled else set()
+        occurred_at = report.occurred_at
+        if previous:
+            area_ids = tuple(dict.fromkeys((*area_ids, *(area for event, _ in previous for area in event.affected_area_ids))))
+            names = tuple(dict.fromkeys((*names, *(name for event, _ in previous for name in event.affected_areas))))
+            if occurred_at is None and cancelled:
+                occurred_at = max(previous, key=lambda item: item[1].published_at)[0].occurred_at
+        if occurred_at is None or not area_ids:
+            # A bodyless cancellation with no earlier official scope is retained
+            # by the source ledger, never turned into fabricated event data.
+            return None
         assessments = tuple(
             DisasterAssessment(
                 area_id=area_id,
                 event_type=DisasterEventType.EARTHQUAKE,
                 level=None,
-                status=DisasterEventStatus.ACTIVE,
+                status=DisasterEventStatus.ACTIVE if area_id in current_area_ids else DisasterEventStatus.UNKNOWN,
             )
             for area_id in area_ids
         )
@@ -936,14 +1094,14 @@ class LiveStore:
             id=event_id,
             situation_id=state.situation.id,
             event_type=DisasterEventType.EARTHQUAKE,
-            occurred_at=report.occurred_at,
+            occurred_at=occurred_at,
             received_at=now,
             affected_areas=names[:20],
             affected_area_ids=area_ids,
             source_name=JMA_SOURCE_NAME,
             source_class=SourceClass.OFFICIAL,
             severity_raw="JMA earthquake intensity observations; no 72H severity mapping",
-            status=DisasterEventStatus.ACTIVE,
+            status=DisasterEventStatus.UNKNOWN if cancelled else DisasterEventStatus.ACTIVE,
             raw_reference=report.reference_url,
             is_synthetic=False,
         )
@@ -964,7 +1122,8 @@ class LiveStore:
             claim_type=ClaimType.DISASTER_STATUS,
             claims=tuple(claims),
             summary=(
-                "JMA reported earthquake intensity by prefecture. All reported disaster assessments are retained; "
+                ("JMA withdrew an information unit; current earthquake status remains UNKNOWN. " if cancelled else
+                 "JMA reported earthquake intensity by prefecture. Withdrawn scopes remain UNKNOWN; ") +
                 f"exact intensity claims are retained only for profile areas {sorted(retained_intensity_area_ids) or 'none'}. "
                 "72H severity is not inferred."
             ),
@@ -978,9 +1137,16 @@ class LiveStore:
         state: CoreState,
         bulletin: JmaTsunamiBulletin,
         now: datetime,
+        legacy_metadata: dict[str, OfficialBulletin] | None = None,
     ) -> tuple[DisasterEvent, Evidence] | None:
         """Create SafetyCore evidence only for exact prefecture-level JMA areas."""
-        if bulletin.occurred_at is None:
+        previous = self._prior_official_records(state, bulletin.bulletin) if bulletin.bulletin else ()
+        if bulletin.bulletin and self._prior_official_is_newer_or_unordered(state, bulletin.bulletin, legacy_metadata or {}):
+            return None
+        occurred_at = bulletin.occurred_at
+        if occurred_at is None and bulletin.info_type == "取消" and previous:
+            occurred_at = max(previous, key=lambda item: item[1].published_at)[0].occurred_at
+        if occurred_at is None:
             # A cancellation without the prior event cached cannot be attached to
             # a safety scope; it remains visible only in the reference response.
             return None
@@ -993,7 +1159,7 @@ class LiveStore:
             )
             if prefecture is None:
                 continue
-            assessment_status = {
+            assessment_status = DisasterEventStatus.UNKNOWN if bulletin.info_type == "取消" else {
                 TsunamiAreaStatus.ACTIVE: DisasterEventStatus.ACTIVE,
                 TsunamiAreaStatus.CANCELLED: DisasterEventStatus.RESOLVED,
                 TsunamiAreaStatus.UNKNOWN: DisasterEventStatus.UNKNOWN,
@@ -1007,6 +1173,12 @@ class LiveStore:
             if all(item.area_id != assessment.area_id for item in assessments):
                 assessments.append(assessment)
             names.append(area.name)
+        # Preserve withdrawn verified scope directly; never invent a forecast code.
+        for previous_event, proof in previous:
+            for assessment in proof.disaster_assessments:
+                if assessment.event_type == DisasterEventType.TSUNAMI and all(item.area_id != assessment.area_id for item in assessments):
+                    assessments.append(assessment.model_copy(update={"status": DisasterEventStatus.UNKNOWN, "level": None}))
+            names.extend(previous_event.affected_areas)
         if not assessments:
             return None
 
@@ -1020,9 +1192,12 @@ class LiveStore:
         assessment_tuple = tuple(assessments)
         claims = claims_from_disaster_assessments(assessment_tuple)
         area_ids = tuple(item.area_id for item in assessments)
-        group = sha256(bulletin.event_id.encode("utf-8")).hexdigest()[:16]
+        group = bulletin.bulletin.group_id if bulletin.bulletin else sha256(bulletin.event_id.encode("utf-8")).hexdigest()[:16]
         revision = bulletin.serial or "none"
-        event_id = f"jma-tsunami-{group}--{revision}-{int(bulletin.published_at.timestamp())}"
+        event_id = (
+            f"jma-tsunami-{bulletin.bulletin.report_id}" if bulletin.bulletin else
+            f"jma-tsunami-{group}--{revision}-{int(bulletin.published_at.timestamp())}"
+        )
         evidence_id = f"ev_{event_id}"
         if any(item.id == event_id for item in state.events) or any(item.id == evidence_id for item in state.evidence):
             return None
@@ -1034,7 +1209,7 @@ class LiveStore:
             id=event_id,
             situation_id=state.situation.id,
             event_type=DisasterEventType.TSUNAMI,
-            occurred_at=bulletin.occurred_at,
+            occurred_at=occurred_at,
             received_at=now,
             affected_areas=tuple(dict.fromkeys(names))[:20],
             affected_area_ids=area_ids,

@@ -210,8 +210,8 @@ class MockLiveStore(LiveStore):
             ttl_seconds=MOCK_TTL,
         )
 
-    def _event_evidence_pair(self, state, report, now):
-        pair = super()._event_evidence_pair(state, report, now)
+    def _event_evidence_pair(self, state, report, now, legacy_metadata=None):
+        pair = super()._event_evidence_pair(state, report, now, legacy_metadata)
         if pair is None:
             return None
         event, evidence = pair
@@ -233,9 +233,9 @@ class MockLiveStore(LiveStore):
         })
         return event, evidence
 
-    def _apply_source_results_locked(self, aggregate, source_result, tsunami_result, destinations_payload, now):
-        pairs = super()._apply_source_results_locked(
-            aggregate, source_result, tsunami_result, destinations_payload, now
+    def _apply_source_results_locked(self, aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata):
+        pairs, aliases = super()._apply_source_results_locked(
+            aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata
         )
         if self.mock_source.stage == 2 and self.mock_request.network != "ONLINE":
             aggregate.state = replace(
@@ -251,7 +251,7 @@ class MockLiveStore(LiveStore):
                     update={"network_state": NetworkState.RECONNECTING}
                 ),
             )
-        return pairs
+        return pairs, aliases
 
     def _snapshot(self, aggregate):
         snapshot = super()._snapshot(aggregate)

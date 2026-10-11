@@ -100,7 +100,9 @@ def _tsunami_result(now, *, operation=TsunamiOperation.ISSUE, serial="1", status
             TsunamiOperation.ISSUE: "発表",
             TsunamiOperation.UPDATE: "発表",
             TsunamiOperation.CORRECTION: "訂正",
-            TsunamiOperation.CANCEL: "取消",
+            # These fixtures model official area warning解除, not withdrawal of
+            # an erroneous information unit (InfoType取消).
+            TsunamiOperation.CANCEL: "発表",
             TsunamiOperation.UNKNOWN: "発表",
         }[operation],
         operation=operation,
@@ -311,7 +313,7 @@ def test_live_tsunami_update_uses_existing_dependency_evaluation_and_cancel_reti
     corrected = store.refresh(started.session_id)
     current_tsunami_events = [event for event in corrected.events if event.event_type == DisasterEventType.TSUNAMI]
     assert len(current_tsunami_events) == 2
-    assert next(item for item in current_tsunami_events if item.id == old_tsunami_id).status == DisasterEventStatus.RESOLVED
+    assert next(item for item in current_tsunami_events if item.id == old_tsunami_id).status == DisasterEventStatus.UNKNOWN
     assert next(item for item in current_tsunami_events if item.id != old_tsunami_id).status == DisasterEventStatus.ACTIVE
     assert len(corrected.plans) >= len(issued.plans)
 

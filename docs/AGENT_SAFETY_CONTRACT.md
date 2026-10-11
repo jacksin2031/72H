@@ -1,5 +1,16 @@
 # 72H Agent & Safety Contract v0.1
 
+## Official lifecycle extension — P2.4 A+B (2026-10-12)
+
+JMA product identity, ordering, deduplication, withdrawal, conflict and TTL
+remain deterministic. VXSE53/VTSE41 use Control.DateTime and the full
+Title/Status/EventID unit; withdrawal retires evidence to UNKNOWN, never
+RESOLVED. Legacy ID migration also preserves UNKNOWN and immutable plan
+history. The evidence TTL is application policy, not an official warning expiry.
+There is no expansion of AI or movement authorization. Bounded in-memory
+history is not durable feed recovery. See
+[local package evidence](VNEXT_P2_4_EVENT_LIFECYCLE_VALIDATION.md).
+
 ## 1. Purpose
 
 This document defines which decisions may be delegated to Gemini / ADK agents and which decisions must remain deterministic.

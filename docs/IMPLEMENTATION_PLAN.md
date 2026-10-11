@@ -1,5 +1,14 @@
 # 72H Implementation Plan v0.1
 
+## Authorized P2.4 A+B package — 2026-10-12
+
+The first bounded official-event contract/lifecycle package is implemented and
+locally validated on `codex/p2-4-event-lifecycle`. Evidence and exact scope are in
+[VNEXT_P2_4_EVENT_LIFECYCLE_VALIDATION.md](VNEXT_P2_4_EVENT_LIFECYCLE_VALIDATION.md).
+This does not complete P2.4 C/D or P2.5–P2.7, nor update deployed environments.
+The current JMA product table defines revision as new 発表; unsupported 訂正 is
+rejected, and information withdrawal never means the disaster is resolved.
+
 ## Next-phase roadmap — P2.4 to P2.7
 
 The user's 2026-10-11 proposed order is recorded in

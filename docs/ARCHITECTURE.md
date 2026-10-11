@@ -1,5 +1,18 @@
 # 72H Architecture v0.2
 
+## Official lifecycle source boundary — P2.4 A+B
+
+Strict internal OfficialBulletin envelopes retain JMA provenance, raw hashes,
+official clocks and product versions independently of public DisasterEvent.
+A pure reducer updates bounded per-unit source ledgers atomically. Live converts
+verified heads into the existing evidence pipeline, retiring previous revisions
+and legacy aliases before deterministic plan evaluation. Sync and async paths
+share these rules. Cancellation without scope/origin uses prior verified records
+for UNKNOWN projections or remains unprojected; no receipt-time fabrication.
+Durable restoration and feed-gap recovery remain P2.4 C, and full external
+metadata projection remains D. See
+[local package evidence](VNEXT_P2_4_EVENT_LIFECYCLE_VALIDATION.md).
+
 ## Authorized P1.2 presentation scope
 
 Simplified mobile More reuses the existing device-location hook, P1.1 location

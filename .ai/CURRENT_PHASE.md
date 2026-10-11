@@ -1,14 +1,28 @@
 # 72H — Current Development Phase
 
+## Authorized P2.4 A+B local implementation (2026-10-12 JST)
+
+User authorized the first official-event lifecycle package. On
+`codex/p2-4-event-lifecycle`, strict internal JMA envelopes and a pure lifecycle
+reducer are connected to sync/async Live evidence, revision retirement and
+per-unit reconnect gates. VXSE53/VTSE41 support official republication and
+withdrawal; unsupported InfoType訂正 is rejected according to the current
+product table. Withdrawal remains UNKNOWN, never a hazard-lifting verdict.
+Legacy snapshot IDs migrate conservatively without rewriting plan history.
+Evidence: `docs/VNEXT_P2_4_EVENT_LIFECYCLE_VALIDATION.md`.
+This is the A+B bounded package; P2.4 C/D persistence, gap recovery and full
+API/UI projection, plus P2.5–P2.7, remain pending. Overall roadmap: PARTIAL.
+No deployment or current-incident acceptance is claimed.
+
 ## Next-phase roadmap — P2.4 to P2.7 (2026-10-11 JST)
 
 The user proposed the next development order: official disaster event engine
 (P2.4, highest priority), verified hazard map layers (P2.5), hazard-specific
 designated places (P2.6), and post-Safety-Core AI explanations (P2.7).
 The audited roadmap is `docs/VNEXT_P2_4_P2_7_ROADMAP.md`, baseline `bae1782`.
-Planning is complete; these new phases are not claimed implemented or validated.
-Existing earthquake parsing lacks correction/cancellation support, and the
-current candidate planner requires an explicit migration to explanation-only AI.
+Planning was completed on 2026-10-11. The A+B implementation update above
+supersedes the historical parser finding; the overall phases remain incomplete.
+The current candidate planner still requires migration to explanation-only AI.
 The older P2.4 Ishinomaki pilot below remains historical PARTIAL evidence,
 reusable under the new P2.5/P2.6 definitions. No new deployment is claimed.
 

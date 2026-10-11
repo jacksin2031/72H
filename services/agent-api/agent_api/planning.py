@@ -48,6 +48,7 @@ from .safety import (
     route_claim_key,
 )
 from .state import CoreState
+from .official_events import official_event_group
 from .spatial import MovementSupport, resolve_movement_support
 
 TRUSTED_STATUSES = {TrustStatus.VERIFIED_OFFICIAL, TrustStatus.VERIFIED_PARTNER}
@@ -557,11 +558,8 @@ def assess_action(
     return action.model_copy(update={"confidence_class": "LOW"})
 
 
-def _jma_tsunami_group(event_identity: str) -> str | None:
-    group, separator, _revision = event_identity.partition("--")
-    if separator and group.startswith("jma-tsunami-"):
-        return group
-    return None
+def _jma_official_group(event_identity: str) -> str | None:
+    return official_event_group(event_identity)
 
 
 def _reconcile_network_if_ready(
@@ -638,7 +636,7 @@ def _reconcile_network_if_ready(
             )
             if matching_keys:
                 group = (
-                    _jma_tsunami_group(evidence_item.id.removeprefix("ev_"))
+                    _jma_official_group(evidence_item.id.removeprefix("ev_"))
                     if assessment.event_type == DisasterEventType.TSUNAMI
                     and not evidence_item.is_synthetic
                     else None
@@ -652,7 +650,7 @@ def _reconcile_network_if_ready(
                     frozenset(matching_keys),
                 ))
 
-    # Real JMA tsunami requirements are grouped by EventID. A cancellation for
+    # Real JMA requirements are grouped by information unit. A cancellation for
     # one group cannot satisfy another group's still-active reconnect requirement.
     required_evidence: dict[
         tuple[str, str | None, DisasterEventType | None, str | None], set[str]
@@ -662,7 +660,10 @@ def _reconcile_network_if_ready(
         claim_keys = typed_keys_by_type.get(event_type, set())
         if not claim_keys or expected_source_key is None:
             return state
-        if event_type == DisasterEventType.TSUNAMI:
+        if event_type == DisasterEventType.TSUNAMI or (
+            event_type == DisasterEventType.EARTHQUAKE
+            and all(item.is_synthetic or _jma_official_group(item.id) is not None for item in matching_active)
+        ):
             real_groups: dict[str, DisasterEvent] = {}
             synthetic_active = False
             evidence_by_id = {item.id: item for item in state.evidence}
@@ -670,7 +671,7 @@ def _reconcile_network_if_ready(
                 if active_event.is_synthetic:
                     synthetic_active = True
                     continue
-                group = _jma_tsunami_group(active_event.id)
+                group = _jma_official_group(active_event.id)
                 if group is None:
                     return state
                 existing_event = real_groups.get(group)
@@ -740,7 +741,7 @@ def _reconcile_network_if_ready(
                 continue
             if required_source_key is not None and evidence.source_key != required_source_key:
                 continue
-            if required_group is not None and _jma_tsunami_group(evidence.id.removeprefix("ev_")) != required_group:
+            if required_group is not None and _jma_official_group(evidence.id.removeprefix("ev_")) != required_group:
                 continue
             if claim_keys.intersection(claim_set):
                 fresh_after_reconnect[requirement].append(evidence)
