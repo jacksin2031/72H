@@ -1,5 +1,15 @@
 # 72H — Current Development Phase
 
+## All-branch source consolidation (2026-10-11 JST)
+
+User authorized integrating all branches. All 24 initial local branch tips and
+the freshly fetched remote main are represented in `codex/integrate-all-branches`.
+The obsolete adaptive policy is merged with later P1/P2.4 safety gates retained;
+application code remains identical to `4afd50f`. Evidence and branch matrix:
+`docs/BRANCH_INTEGRATION_2026_10_11.md`. Local tests/typecheck/build passed;
+GitHub CI and main merge are separate source-integration gates. This does not
+change release traffic or the P2.4 coverage/GPS/live-incident limitations below.
+
 ## Next major development phase — official tsunami and shelter data (2026-10-11 JST)
 
 User selected official tsunami inundation assumptions and hazard-classified
