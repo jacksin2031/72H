@@ -567,7 +567,7 @@ def _reconcile_network_if_ready(
     projections: dict[str, EvidenceProjection],
     event,
 ) -> CoreState:
-    if state.situation.network_state != NetworkState.RECONNECTING:
+    if state.situation.network_state != NetworkState.RECONNECTING or not state.official_recovery_ready:
         return state
     reconnect = next(
         (item for item in reversed(state.trace) if item.event_type == "NETWORK_RESTORED"),

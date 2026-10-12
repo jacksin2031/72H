@@ -29,7 +29,9 @@ P2.4 C／D（持久化、缺口補齊及完整投影）與 P2.5–P2.7 尚未完
 
 - `official_events.py`：不可變、嚴格驗證的 envelope，保留產品、官署、版本、來源 URL、原始 hash、
   系統發表／業務發表／目標／發生／接收時間、EventID、Serial 及目標代碼。
-  這兩產品不提供 ValidDateTime，保留空值；15 分鐘 TTL 仍是應用證據政策，不是警報結束時間。
+  首包當時排除了兩產品的 ValidDateTime；**此限制中的 VTSE41 部分有誤**，
+  已由 [C／D 真實來源覆核](VNEXT_P2_4_RECOVERY_PROJECTION_VALIDATION.md) 修正為
+  支援若干海面變動預報的官方失效時間。VXSE53 仍保留空值；15 分鐘 TTL 不會被延長。
 - 純函式 reducer：只按官方系統時間前移；重送不刷新時間；同時戳不同原文保持衝突；
   只有嚴格較新電文能取代衝突。保留有界歷史及取消 tombstone，較舊電文不能恢復舊狀態。
 - 兩個來源 adapter 採原子批次更新。取消無事件 Body 資料時，envelope 不虛構發生時間。

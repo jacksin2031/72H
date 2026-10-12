@@ -7,6 +7,7 @@ dependencies = [
   "fastapi>=0.133,<1.0",
   "uvicorn==0.34.2",
   "google-adk==1.39.1",
+  "google-cloud-storage==3.16.0",
   "mcp==1.30.0",
   "httpx==0.28.1",
   "72h-contracts",

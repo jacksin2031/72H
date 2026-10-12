@@ -1,5 +1,20 @@
 # 72H — Current Development Phase
 
+## P2.4 C/D local recovery and projection (2026-10-12 JST)
+
+On `codex/p2-4-recovery-projection`, recoverable SQLite/raw-byte/CAS journals,
+bounded GCS byte-budget adapter, resumable long-feed queues and interruption
+gates are connected to the actual Live pipeline. EQ and tsunami recovery must
+both be ready before reconnect reconciliation can complete. API and three-language
+source UI expose separate official/receipt/verification clocks and reference-only
+lifecycles. Real JMA acceptance corrected remote-quake missing-observation handling
+and VTSE41 forecast ValidDateTime support; expiry never lifts a hazard or extends TTL.
+Evidence: `docs/VNEXT_P2_4_RECOVERY_PROJECTION_VALIDATION.md`.
+P2.4 local A/B/C/D gates passed; the whole P2.4–P2.7 roadmap remains PARTIAL.
+P2.5–P2.7, actual GCS credentials, deployment and physical-device gates remain
+outstanding. Live session persistence/restart UX is a separate recorded limitation.
+The older A/B-only status below is historical and superseded by this entry.
+
 ## Authorized P2.4 A+B local implementation (2026-10-12 JST)
 
 User authorized the first official-event lifecycle package. On

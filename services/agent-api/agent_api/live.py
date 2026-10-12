@@ -33,6 +33,7 @@ from seventytwoh_contracts.models import (
     LiveProfileUpdateRequest,
     LiveSnapshot,
     LiveSourceProjection,
+    OfficialReportReference,
     LiveSourceStatus,
     NetworkState,
     Location,
@@ -77,6 +78,7 @@ from .live_sources import (
     JmaEarthquakeReport,
     JmaEarthquakeSource,
     jma_status_at_publication_deadline,
+    jma_report_deadline,
     tsunami_reference_from_result,
     TokyoShelterSource,
 )
@@ -148,6 +150,9 @@ class LiveAggregate:
     destination_source: LiveSourceProjection
     route_source: LiveSourceProjection
     expires_at: float
+    official_reports: tuple[OfficialReportReference, ...] = ()
+    tsunami_source: LiveSourceProjection | None = None
+    tsunami_deadlines: tuple[datetime, ...] = ()
     lock: RLock = field(default_factory=RLock)
     operation_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
@@ -658,7 +663,7 @@ class LiveStore:
             source_result = self._jma.fetch_latest()
             tsunami_result = self._tsunami.fetch_latest()
             destinations_payload = self._destinations.fetch_latest()
-            now = self._now()
+            now = max(self._now(), aggregate.state.current_time)
             pairs, aliases = self._apply_source_results_locked(
                 aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata,
             )
@@ -761,7 +766,18 @@ class LiveStore:
             next_retry_at=source_result.next_retry_at,
             record_count=len(source_result.reports),
             detail=source_result.detail,
+            recovery=source_result.recovery,
         )
+        aggregate.tsunami_source = LiveSourceProjection(
+            source_key=JMA_TSUNAMI_SOURCE_KEY, source_name=JMA_TSUNAMI_SOURCE_NAME, source_url=JMA_FEED_URL,
+            status=tsunami_result.status, retrieved_at=tsunami_result.retrieved_at,
+            last_published_at=tsunami_result.last_published_at, next_retry_at=tsunami_result.next_retry_at,
+            record_count=len(tsunami_result.bulletins), detail=tsunami_result.detail, recovery=tsunami_result.recovery)
+        aggregate.tsunami_deadlines = tuple(jma_report_deadline(item) for item in tsunami_result.bulletins)
+        aggregate.official_reports = tuple(
+            item.model_copy(update={"lifecycle": "UNKNOWN"})
+            if item.lifecycle == "CURRENT" and result.status != LiveSourceStatus.FRESH else item
+            for result in (source_result, tsunami_result) for item in result.references[:64])
         if destination_status == LiveSourceStatus.FRESH:
             destination_status = LiveSourceStatus.STALE
         area_scope = set(aggregate.state.profile.current_location.area_ids)
@@ -800,15 +816,18 @@ class LiveStore:
             aggregate.state.reconnect_evidence_count is not None
             or aggregate.state.situation.network_state == NetworkState.RECONNECTING
         )
+        recovery_ready = all(result.recovery is None or result.recovery.scan_status == "WINDOW_VERIFIED"
+                             for result in (source_result, tsunami_result))
         network_state = (
             NetworkState.RECONNECTING
             if reconnect_pending
             else NetworkState.ONLINE_VERIFIED
-            if source_result.status == LiveSourceStatus.FRESH
+            if source_result.status == LiveSourceStatus.FRESH and recovery_ready
             else NetworkState.ONLINE_DEGRADED
         )
         aggregate.state = replace(
             aggregate.state,
+            official_recovery_ready=recovery_ready,
             situation=aggregate.state.situation.model_copy(update={"network_state": network_state}),
         )
         if source_result.status not in {LiveSourceStatus.FRESH, LiveSourceStatus.STALE}:
@@ -840,7 +859,7 @@ class LiveStore:
             tsunami_pairs = tuple(
                 pair
                 for bulletin in tsunami_result.bulletins
-                if now < bulletin.published_at + timedelta(seconds=JMA_EVIDENCE_TTL_SECONDS)
+                if now < jma_report_deadline(bulletin)
                 and (pair := self._tsunami_event_evidence_pair(aggregate.state, bulletin, now, legacy_metadata)) is not None
             )
         elif tsunami_result.status in {
@@ -1201,7 +1220,7 @@ class LiveStore:
         evidence_id = f"ev_{event_id}"
         if any(item.id == event_id for item in state.events) or any(item.id == evidence_id for item in state.evidence):
             return None
-        expires_at = bulletin.published_at + timedelta(seconds=JMA_EVIDENCE_TTL_SECONDS)
+        expires_at = jma_report_deadline(bulletin)
         freshness = FreshnessStatus.CURRENT if now < expires_at else FreshnessStatus.STALE
         if freshness == FreshnessStatus.STALE and event_status == DisasterEventStatus.ACTIVE:
             event_status = DisasterEventStatus.UNKNOWN
@@ -1298,6 +1317,22 @@ class LiveStore:
                     "detail": "JMA publication freshness deadline elapsed; publication and retrieval timestamps are unchanged.",
                 }
             )
+        tsunami_source = aggregate.tsunami_source
+        if tsunami_source:
+            tsunami_status = jma_status_at_publication_deadline(tsunami_source.status, tsunami_source.last_published_at, state.current_time)
+            if tsunami_status == LiveSourceStatus.FRESH and aggregate.tsunami_deadlines and not any(state.current_time < deadline for deadline in aggregate.tsunami_deadlines):
+                tsunami_status = LiveSourceStatus.STALE
+            tsunami_source = tsunami_source.model_copy(update={"status": tsunami_status})
+        freshness_by_id = {item.evidence_id: item.freshness_status for item in projections}
+        expired_event_ids = {item.id.removeprefix("ev_") for item in state.evidence
+                            if freshness_by_id.get(item.id) == FreshnessStatus.STALE}
+        # Project observation validity at read time, without rewriting stored
+        # evidence, event history or prior plan versions.
+        public_evidence = tuple(item.model_copy(update={"freshness_status": freshness_by_id[item.id]})
+            if item.freshness_status == FreshnessStatus.CURRENT and freshness_by_id.get(item.id) in {FreshnessStatus.STALE, FreshnessStatus.UNKNOWN}
+            else item for item in state.evidence)
+        public_events = tuple(item.model_copy(update={"status": DisasterEventStatus.UNKNOWN})
+            if item.id in expired_event_ids else item for item in state.events)
         return LiveSnapshot(
             session_id=aggregate.session_id,
             mode="LIVE",
@@ -1307,8 +1342,8 @@ class LiveStore:
             profile=state.profile,
             area_catalog=catalog_for_state(state, self._area_registry),
             situation=state.situation,
-            events=state.events,
-            evidence=state.evidence,
+            events=public_events,
+            evidence=public_evidence,
             evidence_projections=projections,
             plans=state.plans,
             plan_actions=state.plan_actions,
@@ -1317,6 +1352,10 @@ class LiveStore:
             destinations=state.destinations,
             routes=state.routes,
             spatial_guidance=spatial,
+            official_reports=tuple(item.model_copy(update={"lifecycle": "STALE"})
+                if item.lifecycle == "CURRENT" and state.current_time >= item.evidence_expires_at else item
+                for item in aggregate.official_reports),
+            official_sources=(source, *((tsunami_source,) if tsunami_source else ())),
         )
 
     def _empty_jma_projection(self) -> LiveSourceProjection:

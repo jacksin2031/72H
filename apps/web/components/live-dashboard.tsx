@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { UiIcon, type IconName } from './ui-icon';
+import { OfficialSourceReview } from './official-source-review';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, FormEvent, ReactNode, SetStateAction } from 'react';
 import { usePower } from '@/lib/use-power';
@@ -381,9 +382,10 @@ function SourceSummary({ snapshot, language, messages, projection, compact = fal
   </section>;
 }
 
-function SourceReview({ snapshot, language, messages, projection, refresh, busy = false, canRefresh = false }: {
+function SourceReview({ snapshot, language, messages, projection, now, connection, refresh, busy = false, canRefresh = false }: {
   snapshot: LiveSnapshot; language: Language; messages: Record<string, string>; projection: ReturnType<typeof projectLiveSnapshot>;
   refresh?: () => void; busy?: boolean; canRefresh?: boolean;
+  now: number; connection: Connection;
 }) {
   const evidence = [...projection.evidence].sort((left, right) => Date.parse(right.published_at) - Date.parse(left.published_at));
   const route = projection.route;
@@ -394,6 +396,7 @@ function SourceReview({ snapshot, language, messages, projection, refresh, busy 
       : route?.status === 'BLOCKED' || route?.status === 'AFFECTED' ? messages.mapGateClosed : messages.gateRoute;
   return <div className="live-review-list">
     <SourceSummary snapshot={snapshot} language={language} messages={messages} projection={projection} />
+    <OfficialSourceReview snapshot={snapshot} language={language} now={now} connected={connection !== 'offline'} />
     {refresh && canRefresh && <button type="button" disabled={busy} onClick={refresh}>{busy ? messages.refreshing : messages.retry}</button>}
     <section className="record-list"><h2>{language === 'ja' ? '確認済み情報' : language === 'zh-TW' ? '已核對資訊' : 'Reviewed information'}</h2>
       {evidence.map(item => {
@@ -664,7 +667,7 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
     </section>}
     {view === 'notifications' && <NotificationsScene notifications={notifications} messages={messages} dismiss={dismissNotification} />}
     {view === 'sources' && <SourceReview snapshot={snapshot} language={language} messages={messages} projection={projection}
-      refresh={onRefresh} busy={busy} canRefresh={canStart && !sessionLost} />}
+      now={now} connection={connection} refresh={onRefresh} busy={busy} canRefresh={canStart && !sessionLost} />}
     {view === 'more' && <section className="live-more-scene"><h1>{messages.more}</h1>
       {morePanel === 'home' && <>
         <section className="more-location-card" aria-labelledby="more-location-title">
@@ -786,7 +789,7 @@ function DesktopPreparedness({ view, snapshot, language, messages, projection, l
         <p>{messages.preparedness}</p>
       </section>}
       {view === 'sources' && <SourceReview snapshot={snapshot} language={language} messages={messages} projection={projection}
-        refresh={refresh} busy={busy} canRefresh={canUpdateLocation && !sessionLost} />}
+        now={now} connection={connection} refresh={refresh} busy={busy} canRefresh={canUpdateLocation && !sessionLost} />}
       {view === 'notifications' && <NotificationsScene notifications={notifications} messages={messages} dismiss={dismissNotification} />}
       {view === 'more' && <section className="desktop-settings"><h2>{messages.settings}</h2><ProfileForm language={language} busy={busy} submit={onProfileUpdate} initial={snapshot.profile}
         startLabel={messages.saveProfile} title={messages.setup} copy={messages.profileUpdated} messages={messages} preserveCurrentArea />

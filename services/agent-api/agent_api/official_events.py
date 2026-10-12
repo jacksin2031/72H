@@ -50,7 +50,7 @@ class OfficialBulletin(ContractModel):
     received_at: AwareDatetime
     reference_url: Annotated[StrictStr, Field(min_length=1, max_length=300)]
     raw_sha256: Annotated[StrictStr, Field(pattern=r"^[0-9a-f]{64}$")]
-    target_codes: Annotated[tuple[StrictStr, ...], Field(max_length=128)] = ()
+    target_codes: Annotated[tuple[Annotated[StrictStr, Field(min_length=1, max_length=32)], ...], Field(max_length=128)] = ()
 
     @model_validator(mode="after")
     def validate_source_times_and_url(self):
@@ -72,8 +72,8 @@ class OfficialBulletin(ContractModel):
             raise ValueError("official occurrence follows announcement")
         if self.valid_until is not None and self.valid_until <= self.reported_at:
             raise ValueError("invalid official validity interval")
-        if self.valid_until is not None:
-            raise ValueError("these JMA products do not provide ValidDateTime")
+        if self.valid_until is not None and self.product == "VXSE53":
+            raise ValueError("VXSE53 does not provide ValidDateTime")
         import re
         event_ids = self.event_id.split()
         if not 1 <= len(event_ids) <= 8 or len(set(event_ids)) != len(event_ids) or any(not re.fullmatch(r"\d{14}", item) for item in event_ids):

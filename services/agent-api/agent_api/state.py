@@ -30,6 +30,7 @@ class CoreState:
     area_catalog: tuple[AreaDefinition, ...] = ()
     reconnect_evidence_count: int | None = None
     last_reconnect_at: datetime | None = None
+    official_recovery_ready: bool = True
     events: tuple[DisasterEvent, ...] = ()
     evidence: tuple[Evidence, ...] = ()
     plans: tuple[Plan, ...] = ()

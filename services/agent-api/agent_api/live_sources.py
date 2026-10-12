@@ -35,6 +35,8 @@ from seventytwoh_contracts.models import (
     DestinationOpenStatus,
     DisasterEventType,
     LiveSourceStatus,
+    OfficialSourceRecovery,
+    OfficialReportReference,
     TsunamiAreaStatus,
     TsunamiHeightExpression,
     TsunamiMaxHeight,
@@ -133,6 +135,8 @@ class JmaFetchResult:
     next_retry_at: datetime | None
     reports: tuple[JmaEarthquakeReport, ...]
     detail: str
+    recovery: OfficialSourceRecovery | None = None
+    references: tuple[OfficialReportReference, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,6 +174,8 @@ class JmaTsunamiFetchResult:
     forecast_areas: tuple[TsunamiReferenceForecastArea, ...]
     conflict: bool
     detail: str
+    recovery: OfficialSourceRecovery | None = None
+    references: tuple[OfficialReportReference, ...] = ()
 
 
 def jma_status_at_publication_deadline(
@@ -203,7 +209,8 @@ def _http_get(url: str, headers: dict[str, str]) -> HttpPayload:
     }:
         raise ValueError("source host not allowlisted")
     if parsed.netloc == "www.data.jma.go.jp":
-        limit = JMA_FEED_MAX_BYTES if parsed.path.endswith("/feed/eqvol.xml") else JMA_DETAIL_MAX_BYTES
+        limit = (1_000_000 if parsed.path.endswith("/feed/eqvol_l.xml") else
+                 JMA_FEED_MAX_BYTES if parsed.path.endswith("/feed/eqvol.xml") else JMA_DETAIL_MAX_BYTES)
     else:
         limit = TOKYO_SHELTER_MAX_BYTES
     chunks: list[bytes] = []
@@ -231,6 +238,7 @@ class JmaEarthquakeSource:
         clock: Callable[[], float] = monotonic,
         poll_interval: int = JMA_POLL_INTERVAL_SECONDS,
         detail_limit: int = JMA_DETAIL_LIMIT,
+        journal=None,
     ) -> None:
         if not 60 <= poll_interval <= 3600:
             raise ValueError("JMA poll interval must be between 60 seconds and one hour")
@@ -254,11 +262,18 @@ class JmaEarthquakeSource:
         self._failures = 0
         self._next_retry_monotonic = 0.0
         self._next_retry_at: datetime | None = None
+        self._recovery_engine = None
+        if journal is not None or fetch is _http_get:
+            from .official_journal import configured_official_journal
+            from .official_recovery import OfficialRecoveryEngine
+            self._recovery_engine = OfficialRecoveryEngine(self, "VXSE53", journal or configured_official_journal())
 
     def fetch_snapshot_metadata(self, references: tuple[str, ...]) -> dict[str, OfficialBulletin]:
         return _snapshot_metadata_from_source(self, references, _parse_jma_detail)
 
     def fetch_latest(self, *, force: bool = False) -> JmaFetchResult:
+        if self._recovery_engine is not None:
+            return self._recovery_engine.fetch_latest(force=force)
         with self._lock:
             mono_now = self._clock()
             if mono_now < self._next_retry_monotonic:
@@ -428,6 +443,7 @@ class JmaTsunamiSource:
         clock: Callable[[], float] = monotonic,
         poll_interval: int = JMA_POLL_INTERVAL_SECONDS,
         detail_limit: int = JMA_TSUNAMI_DETAIL_LIMIT,
+        journal=None,
     ) -> None:
         if not 60 <= poll_interval <= 3600:
             raise ValueError("JMA tsunami poll interval must be between 60 seconds and one hour")
@@ -450,11 +466,18 @@ class JmaTsunamiSource:
         self._failures = 0
         self._next_retry_monotonic = 0.0
         self._next_retry_at: datetime | None = None
+        self._recovery_engine = None
+        if journal is not None or fetch is _http_get:
+            from .official_journal import configured_official_journal
+            from .official_recovery import OfficialRecoveryEngine
+            self._recovery_engine = OfficialRecoveryEngine(self, "VTSE41", journal or configured_official_journal())
 
     def fetch_snapshot_metadata(self, references: tuple[str, ...]) -> dict[str, OfficialBulletin]:
         return _snapshot_metadata_from_source(self, references, _parse_jma_tsunami_detail)
 
     def fetch_latest(self, *, force: bool = False) -> JmaTsunamiFetchResult:
+        if self._recovery_engine is not None:
+            return self._recovery_engine.fetch_latest(force=force)
         with self._lock:
             mono_now = self._clock()
             if mono_now < self._next_retry_monotonic:
@@ -566,8 +589,7 @@ class JmaTsunamiSource:
             LiveSourceStatus.UNSUPPORTED
             if not bulletins
             else LiveSourceStatus.STALE
-            if last_published_at is not None
-            and retrieved_at >= last_published_at + timedelta(seconds=JMA_EVIDENCE_TTL_SECONDS)
+            if not any(retrieved_at < jma_report_deadline(item) for item in bulletins)
             else LiveSourceStatus.FRESH
         )
         self._cached = JmaTsunamiFetchResult(
@@ -587,8 +609,7 @@ class JmaTsunamiSource:
     def _project_freshness(self, result: JmaTsunamiFetchResult, now: datetime) -> JmaTsunamiFetchResult:
         if (
             result.status == LiveSourceStatus.FRESH
-            and result.last_published_at is not None
-            and now >= result.last_published_at + timedelta(seconds=JMA_EVIDENCE_TTL_SECONDS)
+            and not any(now < jma_report_deadline(item) for item in result.bulletins)
         ):
             areas = tuple(
                 area.model_copy(update={"status": TsunamiAreaStatus.UNKNOWN})
@@ -602,6 +623,9 @@ class JmaTsunamiSource:
             )
             self._cached = stale
             return stale
+        if result.status == LiveSourceStatus.FRESH:
+            areas, conflict = _aggregate_tsunami_forecast_areas(result.bulletins, now)
+            return replace(result, forecast_areas=areas, conflict=result.conflict or conflict)
         return result
 
     def _with_failure_status(self, status: LiveSourceStatus) -> JmaTsunamiFetchResult:
@@ -708,6 +732,7 @@ def _parse_jma_tsunami_detail(
     forecast = _path_node(root, ("Body", "Tsunami", "Forecast"))
     areas: list[JmaTsunamiArea] = []
     seen_area_codes: set[str] = set()
+    kind_codes = []
     if info_type != "取消":
         if forecast is None:
             raise ValueError("JMA tsunami bulletin has no forecast area section")
@@ -726,6 +751,7 @@ def _parse_jma_tsunami_detail(
             seen_area_codes.add(code)
             kind = _path_node(item, ("Category", "Kind"))
             kind_code = _child_text(kind, "Code") if kind is not None else None
+            kind_codes.append(kind_code)
             warning_class = {
                 "53": TsunamiWarningClass.MAJOR_WARNING,
                 "51": TsunamiWarningClass.WARNING,
@@ -800,6 +826,8 @@ def _parse_jma_tsunami_detail(
         if occurred_at is None:
             raise ValueError("JMA tsunami bulletin has no source-provided earthquake origin time")
 
+    if _path_text(root, ("Head", "ValidDateTime")) and (info_type != "発表" or not kind_codes or any(code != "71" for code in kind_codes)):
+        raise ValueError("VTSE41 validity is supported only for slight sea-level-change forecasts")
     bulletin = _official_bulletin(root, url, body, "VTSE41", reference_now, tuple(area.code for area in areas))
     return JmaTsunamiBulletin(
         event_id=event_id,
@@ -812,6 +840,14 @@ def _parse_jma_tsunami_detail(
         forecast_areas=tuple(areas),
         bulletin=bulletin,
     )
+
+
+def jma_report_deadline(report):
+    """An official forecast deadline may shorten, never extend, evidence TTL."""
+    deadline = report.published_at + timedelta(seconds=JMA_EVIDENCE_TTL_SECONDS)
+    if report.bulletin is not None and report.bulletin.valid_until is not None:
+        deadline = min(deadline, report.bulletin.valid_until)
+    return deadline
 
 
 def _aggregate_tsunami_forecast_areas(
@@ -848,7 +884,7 @@ def _aggregate_tsunami_forecast_areas(
             else:
                 chosen_bulletin, chosen_area = latest[-1]
                 area_status = chosen_area.status
-        if now >= chosen_bulletin.published_at + timedelta(seconds=JMA_EVIDENCE_TTL_SECONDS):
+        if now >= jma_report_deadline(chosen_bulletin):
             area_status = TsunamiAreaStatus.UNKNOWN
         result.append(
             TsunamiReferenceForecastArea(
@@ -905,9 +941,11 @@ def tsunami_reference_from_result(result: JmaTsunamiFetchResult) -> TsunamiRefer
             fetched_at=result.retrieved_at,
             operation=latest.operation if latest is not None else TsunamiOperation.UNKNOWN,
             serial=latest.serial if latest is not None else result.serial,
+            recovery=result.recovery,
         ),
         forecast_areas=areas,
         safety_authority="NONE",
+        official_reports=result.references,
     )
 
 
@@ -946,7 +984,9 @@ def _parse_jma_detail(
     if (occurred is not None and occurred > published) or published > reference_now:
         raise ValueError("JMA report publication time is outside the accepted window")
     pref_container = _path_node(root, ("Body", "Intensity", "Observation"))
-    if pref_container is None and info_type != "取消":
+    distant_without_observation = (pref_container is None
+        and _path_text(root, ("Head", "Title")) == "遠地地震に関する情報")
+    if pref_container is None and info_type != "取消" and not distant_without_observation:
         raise ValueError("JMA earthquake detail has no observed intensity section")
     observations: list[JmaPrefObservation] = []
     for pref in pref_container.iter() if pref_container is not None and info_type != "取消" else ():
@@ -963,7 +1003,7 @@ def _parse_jma_detail(
         observations.append(JmaPrefObservation(code, name, intensity))
     if len(observations) > 64:
         raise ValueError("JMA report has too many prefecture observations")
-    if info_type != "取消" and not observations:
+    if info_type != "取消" and not observations and not distant_without_observation:
         raise ValueError("JMA earthquake detail has no observed prefecture")
     bulletin = _official_bulletin(root, url, body, "VXSE53", reference_now, tuple(item.code for item in observations if item.code))
     return JmaEarthquakeReport(bulletin.report_id, title, bulletin.issued_at, occurred, url, tuple(observations), bulletin)

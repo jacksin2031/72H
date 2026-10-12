@@ -411,6 +411,7 @@ class TsunamiReferenceSource(ContractModel):
     fetched_at: AwareDatetime | None = None
     operation: TsunamiOperation = TsunamiOperation.UNKNOWN
     serial: Annotated[StrictStr, Field(max_length=16)] | None = None
+    recovery: OfficialSourceRecovery | None = None
 
 
 class TsunamiReferenceResponse(ContractModel):
@@ -421,6 +422,7 @@ class TsunamiReferenceResponse(ContractModel):
     source: TsunamiReferenceSource
     forecast_areas: Annotated[tuple[TsunamiReferenceForecastArea, ...], Field(max_length=128)] = ()
     safety_authority: Literal["NONE"]
+    official_reports: Annotated[tuple[OfficialReportReference, ...], Field(max_length=128)] = ()
 
     @model_validator(mode="after")
     def reference_state_is_conservative(self) -> "TsunamiReferenceResponse":
@@ -778,6 +780,35 @@ class RoutePresentation(ContractModel):
         return self
 
 
+class OfficialSourceRecovery(ContractModel):
+    persistence: Literal["MEMORY", "SQLITE", "GCS"]
+    storage_status: Literal["HEALTHY", "UNCONFIGURED", "FAILED"]
+    scan_status: Literal["NOT_STARTED", "SCANNING", "WINDOW_VERIFIED", "GAP", "UNKNOWN"]
+    connection_status: Literal["REACHABLE", "UNAVAILABLE", "UNKNOWN"] = "UNKNOWN"
+    last_successful_fetch_at: AwareDatetime | None = None
+    pending_details: Annotated[StrictInt, Field(ge=0, le=1024)] = 0
+    archived_reports: Annotated[StrictInt, Field(ge=0, le=4096)] = 0
+    checkpoint_version: Annotated[StrictInt, Field(ge=0)] = 0
+    last_checked_at: AwareDatetime | None = None
+    last_verified_at: AwareDatetime | None = None
+    window_start_at: AwareDatetime | None = None
+    coverage_origin_at: AwareDatetime | None = None
+    reconciliation_required_since: AwareDatetime | None = None
+    restored: StrictBool = False
+    limitations: Annotated[tuple[ShortText, ...], Field(max_length=8)] = ()
+
+    @model_validator(mode="after")
+    def verified_scan_is_consistent(self) -> "OfficialSourceRecovery":
+        if self.scan_status == "WINDOW_VERIFIED" and (self.pending_details or self.last_verified_at is None or self.reconciliation_required_since is not None):
+            raise ValueError("a verified window requires no pending details and a verification time")
+        if self.storage_status == "FAILED" and self.scan_status != "UNKNOWN":
+            raise ValueError("failed persistence cannot support a verified recovery state")
+        if (self.last_verified_at is not None and self.coverage_origin_at is not None
+            and self.last_verified_at < self.coverage_origin_at):
+            raise ValueError("verification cannot precede observed coverage")
+        return self
+
+
 class LiveSourceProjection(ContractModel):
     source_key: Identifier
     source_name: ShortText
@@ -788,6 +819,58 @@ class LiveSourceProjection(ContractModel):
     next_retry_at: AwareDatetime | None = None
     record_count: Annotated[StrictInt, Field(ge=0, le=4096)] = 0
     detail: ShortText
+    recovery: OfficialSourceRecovery | None = None
+
+    @model_validator(mode="after")
+    def fresh_source_has_completed_recovery(self) -> "LiveSourceProjection":
+        if self.status == LiveSourceStatus.FRESH and self.recovery is not None and self.recovery.scan_status != "WINDOW_VERIFIED":
+            raise ValueError("an incomplete recovery cannot be presented as a fresh official source")
+        return self
+
+
+class OfficialReportReference(ContractModel):
+    """Official lifecycle metadata; deliberately not movement/evidence authority."""
+    report_id: Annotated[StrictStr, Field(pattern=r"^[a-f0-9]{24}--[a-f0-9]{24}$")]
+    group_id: Annotated[StrictStr, Field(pattern=r"^[a-f0-9]{24}$")]
+    product: Literal["VXSE53", "VTSE41"]
+    title: Annotated[StrictStr, Field(min_length=1, max_length=80)]
+    source_name: ShortText
+    reference_url: Annotated[StrictStr, Field(min_length=1, max_length=300)]
+    event_ids: Annotated[tuple[Annotated[StrictStr, Field(pattern=r"^\d{14}$")], ...], Field(min_length=1, max_length=8)]
+    serial: Annotated[StrictStr, Field(max_length=16)] | None = None
+    operation: Literal["ISSUE", "CANCEL"]
+    lifecycle: Literal["CURRENT", "STALE", "WITHDRAWN", "SUPERSEDED", "CONFLICT", "UNKNOWN"]
+    issued_at: AwareDatetime
+    reported_at: AwareDatetime
+    received_at: AwareDatetime
+    target_at: AwareDatetime | None = None
+    occurred_at: AwareDatetime | None = None
+    official_valid_until: AwareDatetime | None = None
+    evidence_expires_at: AwareDatetime
+    target_codes: Annotated[tuple[Annotated[StrictStr, Field(min_length=1, max_length=32)], ...], Field(max_length=128)] = ()
+    is_head: StrictBool
+    superseded_by: Identifier | None = None
+    raw_sha256: Annotated[StrictStr, Field(pattern=r"^[a-f0-9]{64}$")]
+    parser_version: ShortText
+    information_version: ShortText
+    code_mapping_version: ShortText
+    authority: Literal["REFERENCE_ONLY"] = "REFERENCE_ONLY"
+    eligible_for_action: Literal[False] = False
+
+    @model_validator(mode="after")
+    def reference_clock_and_identity_are_consistent(self) -> "OfficialReportReference":
+        from urllib.parse import urlparse
+        url = urlparse(self.reference_url)
+        if (url.scheme != "https" or url.netloc != "www.data.jma.go.jp"
+            or not url.path.startswith("/developer/xml/data/") or url.query or url.fragment):
+            raise ValueError("official reference URL outside allowlist")
+        if self.report_id != f"{self.group_id}--{self.raw_sha256[:24]}":
+            raise ValueError("official reference identity/hash mismatch")
+        if self.reported_at > self.issued_at or self.issued_at > self.received_at:
+            raise ValueError("official reference clocks inconsistent")
+        if self.lifecycle == "CURRENT" and not self.is_head:
+            raise ValueError("superseded information cannot be current")
+        return self
 
 
 class SpatialGuidanceProjection(ContractModel):
@@ -862,9 +945,16 @@ class LiveSnapshot(ContractModel):
     destinations: Annotated[tuple[DestinationRecord, ...], Field(max_length=512)] = ()
     routes: Annotated[tuple[RoutePresentation, ...], Field(max_length=128)] = ()
     spatial_guidance: SpatialGuidanceProjection
+    official_reports: Annotated[tuple[OfficialReportReference, ...], Field(max_length=128)] = ()
+    official_sources: Annotated[tuple[LiveSourceProjection, ...], Field(max_length=2)] = ()
 
     @model_validator(mode="after")
     def movement_projection_matches_active_safety_core_action(self) -> "LiveSnapshot":
+        if self.situation.network_state == NetworkState.ONLINE_VERIFIED and any(
+            source.recovery is not None and source.recovery.scan_status != "WINDOW_VERIFIED"
+            for source in (self.source, *self.official_sources)
+        ):
+            raise ValueError("incomplete official recovery cannot support ONLINE_VERIFIED")
         spatial = self.spatial_guidance
         if not spatial.movement_authorized:
             return self
