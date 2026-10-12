@@ -125,6 +125,7 @@ class JmaEarthquakeReport:
     observations: tuple[JmaPrefObservation, ...]
     bulletin: OfficialBulletin | None = None
     withdrawn_observations: tuple[JmaPrefObservation, ...] = ()
+    map_observations: tuple = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -1006,7 +1007,48 @@ def _parse_jma_detail(
     if info_type != "取消" and not observations and not distant_without_observation:
         raise ValueError("JMA earthquake detail has no observed prefecture")
     bulletin = _official_bulletin(root, url, body, "VXSE53", reference_now, tuple(item.code for item in observations if item.code))
-    return JmaEarthquakeReport(bulletin.report_id, title, bulletin.issued_at, occurred, url, tuple(observations), bulletin)
+    return JmaEarthquakeReport(bulletin.report_id, title, bulletin.issued_at, occurred, url, tuple(observations), bulletin,
+                              map_observations=_intensity_observations(pref_container) if info_type != "取消" else ())
+
+
+def _intensity_observations(container):
+    """Keep the XML observation hierarchy; maxima are never measured points."""
+    from seventytwoh_contracts.models import OfficialIntensityObservation
+    if container is None:
+        return ()
+    values, seen = [], set()
+    def append(node, granularity, prefecture):
+        code = _child_text(node, "Code")
+        name = _child_text(node, "Name")
+        if not name:
+            raise ValueError("official intensity observation lacks a name")
+        intensity = _child_text(node, "Int" if granularity == "STATION" else "MaxInt")
+        if intensity not in {"0", "1", "2", "3", "4", "5-", "5+", "6-", "6+", "7", "不明"}:
+            intensity = None
+        item = OfficialIntensityObservation(granularity=granularity,
+            measurement="MEASURED" if granularity == "STATION" else "MAXIMUM",
+            code=code, name=name, intensity=intensity, prefecture_code=prefecture)
+        identity = (granularity, code, name)
+        if identity in seen:
+            raise ValueError("duplicate official intensity observation identity")
+        seen.add(identity); values.append(item)
+        if len(values) > 6000:
+            raise ValueError("official intensity observation capacity exceeded")
+    for pref in container:
+        if _local_name(pref.tag) != "Pref":
+            continue
+        raw_code = _child_text(pref, "Code")
+        prefecture = raw_code.zfill(2) if raw_code and re.fullmatch(r"\d{1,2}", raw_code) else None
+        append(pref, "PREFECTURE", prefecture)
+        for area in pref:
+            if _local_name(area.tag) != "Area": continue
+            append(area, "REGION", prefecture)
+            for city in area:
+                if _local_name(city.tag) != "City": continue
+                append(city, "CITY", prefecture)
+                for station in city:
+                    if _local_name(station.tag) == "IntensityStation": append(station, "STATION", prefecture)
+    return tuple(values)
 
 
 def _official_bulletin(root, url, body, product, received_at, target_codes):

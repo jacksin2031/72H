@@ -729,6 +729,10 @@ class LiveStore:
         """Fetch the latest read-only JMA reference without mutating live sessions."""
         return tsunami_reference_from_result(self._tsunami.fetch_latest())
 
+    def get_disaster_map_reference(self):
+        from .disaster_map import project_disaster_map
+        return project_disaster_map(self._jma.fetch_latest(), self._tsunami.fetch_latest(), self._now())
+
     def _apply_source_results_locked(self, aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata):
         # Old snapshots lack Control.DateTime; use recovered original official
         # XML only. Business/receipt clocks never substitute for system ordering.

@@ -1,5 +1,28 @@
 # 72H — Current Development Phase
 
+## P2.5 local official reference layers (2026-10-12 JST)
+
+On `codex/p2-5-disaster-layers`, the read-only disaster-map API preserves
+actual observation hierarchy, source hashes/lifecycles and separate clocks.
+Versioned JMA coastal lines join 66 base forecast codes and official composite
+members. Regional maximum labels use 181 validated regional geometries from
+188 matching official codes; invalid/unassigned geometries and unlocated
+stations remain unknown. No intensity fill, invented station location,
+point safety verdict or movement authority is added.
+
+Public reference caches retain ages offline, block old/future responses and
+require post-interruption source fetches on reconnect. Hazard assets revalidate
+on pin upgrades; API/private requests remain outside Service Worker caches.
+Local gates: 351 frontend passed / 3 existing skips, 276 backend passed,
+typecheck/build/secret/diff checks and 390/1280 browser acceptance.
+Build `a9srLFKOTJlmF6W7CAbr3`; evidence
+`docs/VNEXT_P2_5_DISASTER_LAYER_VALIDATION.md`.
+
+P2.5 local reference-layer package COMPLETE; coverage and the entire P2.4–P2.7
+roadmap remain PARTIAL. Next: P2.6 GSI GeoJSON, catalog roles/updates and
+authoritative opening evidence, then P2.7 deterministic-plan explanation.
+No deployment, real-device or current-incident safety acceptance is claimed.
+
 ## P2.4 C/D local recovery and projection (2026-10-12 JST)
 
 On `codex/p2-4-recovery-projection`, recoverable SQLite/raw-byte/CAS journals,

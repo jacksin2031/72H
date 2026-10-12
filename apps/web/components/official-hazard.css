@@ -18,7 +18,12 @@
 .hazard-place-list>li>button{font-weight:650;text-align:left;width:100%}.hazard-place-list p{font-size:12px}
 .hazard-place-list dl>div{display:flex;gap:8px;justify-content:space-between}.hazard-place-list dt,.hazard-place-list dd{margin:0}
 .hazard-live ul{padding-left:18px}.hazard-live li{margin:8px 0}
-.japan-official-page .sim-map-information .sim-map-landsea-legend{flex-wrap:wrap;justify-content:flex-end}
+.hazard-observation-list{max-height:320px;overflow:auto;border:1px solid #405565;padding-right:8px}
+.hazard-warning-key{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px}.hazard-warning-key>span{display:inline-flex;align-items:center;gap:5px}
+.hazard-warning-key i{display:inline-block;width:10px;height:10px;border-radius:2px;flex:0 0 10px}
+.japan-official-page .sim-map-information{grid-template-columns:minmax(0,1fr)}
+.japan-official-page .sim-map-information .sim-map-landsea-legend{grid-column:1;flex-wrap:wrap;justify-content:flex-start}
+.japan-official-page .sim-map-information .sim-map-details,.japan-official-page .sim-map-information .sim-map-attribution{grid-column:1;justify-self:start}
 .sim-geo-reference{background:#477593;color:#fff}
 @media(max-width:760px){
   .official-hazard-layout{display:flex;flex-direction:column}

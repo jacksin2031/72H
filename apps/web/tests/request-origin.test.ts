@@ -5,6 +5,8 @@ import { isAllowedApiProxyPath, isAllowedApiProxyRequest } from '../app/api/[...
 it('allows only read access to the explicit official tsunami reference endpoint',()=>{
   expect(isAllowedApiProxyRequest('reference/tsunami','GET')).toBe(true);
   expect(isAllowedApiProxyRequest('reference/tsunami','POST')).toBe(false);
+  expect(isAllowedApiProxyRequest('reference/disaster-map','GET')).toBe(true);
+  expect(isAllowedApiProxyRequest('reference/disaster-map','POST')).toBe(false);
   expect(isAllowedApiProxyPath('reference/tsunami/private')).toBe(false);
   expect(isAllowedApiProxyPath('reference/other')).toBe(false);
 });

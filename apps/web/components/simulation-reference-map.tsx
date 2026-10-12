@@ -8,6 +8,8 @@ import { validPoint } from '@/lib/geospatial-exposure';
 import { seismicWavefronts, WAVE_SPEED_SOURCE } from '@/lib/seismic-wavefront';
 import {REFERENCE_VECTOR_SOURCE,REFERENCE_VECTOR_LAYERS,REFERENCE_GLYPHS,REFERENCE_REGIONS,REFERENCE_REGION_LAYER} from '@/lib/reference-map-style';
 import type { HazardPack, OfficialPlace } from '@/lib/official-hazards';
+import {forecastLines,type DisasterMapReference,type ForecastLinePack} from '@/lib/disaster-map';
+import {regionalMaxima,type IntensityRegionPack} from '@/lib/intensity-regions';
 import {
   GSI_ATTRIBUTION_URL, JAPAN_DEFAULT_CENTER, JAPAN_VIEW_BOUNDS,
   NATURAL_EARTH_LICENSE_URL,
@@ -67,6 +69,8 @@ const mapText={
 /** All-Japan reference map; no inferred inundation, shelter or routes. */
 export function SimulationReferenceMap({
   language,compact=false,epicenter=null,userLocation=null,referencePoint=null,officialPack=null,showInundation=false,showPlaces=false,focusPoint=null,onReferencePoint,onPlace,protectDeviceLocation=true,seismicOrigins=[],seismicTime=null,
+  disasterReference=null,forecastLinePack=null,referenceConnected=false,referenceNow=0,showForecastLines=false,
+  intensityRegionPack=null,showIntensityRegions=false,
 }:{
   language:Language; compact?:boolean;epicenter?:Epicenter|null;userLocation?:LocationFix|null;
   referencePoint?:{lat:number;lng:number}|null;
@@ -74,6 +78,9 @@ export function SimulationReferenceMap({
   onReferencePoint?:(point:{lat:number;lng:number})=>void;onPlace?:(place:OfficialPlace)=>void;
   protectDeviceLocation?:boolean;
   seismicOrigins?:readonly Epicenter[];seismicTime?:number|null;
+  disasterReference?:DisasterMapReference|null;forecastLinePack?:ForecastLinePack|null;
+  referenceConnected?:boolean;referenceNow?:number;showForecastLines?:boolean;
+  intensityRegionPack?:IntensityRegionPack|null;showIntensityRegions?:boolean;
 }){
   const host=useRef<HTMLDivElement>(null);
   const mapRef=useRef<import('maplibre-gl').Map|null>(null);
@@ -84,6 +91,62 @@ export function SimulationReferenceMap({
   const [tileIssues,setTileIssues]=useState(false);
   const waveData=useMemo(()=>seismicWavefronts(seismicOrigins,seismicTime??NaN),[seismicOrigins,seismicTime]);
   const t=mapText[language];
+  const forecast=forecastLines(forecastLinePack,disasterReference,referenceConnected,referenceNow);
+  // Geometry is immutable per verified pack. Only state / class changes need
+  // to replace MapLibre data; the age clock must not serialize coastlines.
+  const forecastStates=JSON.stringify(forecast.features.map(f=>f.properties));
+  const forecastGeometry=forecastLinePack?.geometry;
+  const forecastData=useMemo(()=>{
+    const states=JSON.parse(forecastStates) as Array<{code:string;name:string;state:string;warning_class:string}>;
+    return {type:'FeatureCollection' as const,features:(forecastGeometry?.features??[]).flatMap(f=>{
+      const state=states.find(p=>p.code===f.properties.code);return state?[{...f,properties:state}]:[];
+    })};
+  },[forecastGeometry,forecastStates]);
+  const maxima=regionalMaxima(intensityRegionPack,disasterReference,referenceConnected,referenceNow);
+  const regionalStates=JSON.stringify(maxima),regionGeometry=intensityRegionPack&&referenceNow>=Date.parse(intensityRegionPack.manifest.reviewed_at)
+    &&referenceNow<Date.parse(intensityRegionPack.manifest.review_due_at)?intensityRegionPack.features:undefined;
+  const regionalData=useMemo(()=>{
+    const values=JSON.parse(regionalStates) as typeof maxima;
+    const valueFor=(f:NonNullable<typeof regionGeometry>[number])=>values.find(v=>v.code===f.properties.code)??{
+      code:f.properties.code,name:f.properties.name,intensity:null,state:'NO_OBSERVATION',report_ids:[],issued_at:[],scope:'REGION_UNDETERMINED_NOT_POINT_MEASUREMENT',
+    };
+    const polygons=(regionGeometry??[]).map(f=>({...f,properties:valueFor(f)}));
+    const label=language==='ja'?'地域最大':language==='en'?'Region maximum':'地域最大';
+    const past=language==='ja'?'過去':language==='en'?'Archived':'過去';
+    const unknown=language==='ja'?'未判定':language==='en'?'Undetermined':'未判定';
+    return {polygons:{type:'FeatureCollection' as const,features:polygons},labels:{type:'FeatureCollection' as const,features:(regionGeometry??[]).flatMap(f=>{
+      const value=valueFor(f);return [{type:'Feature' as const,geometry:{type:'Point' as const,coordinates:f.properties.anchor},properties:{...value,
+        label:`${value.state==='RECENT_REFERENCE'?'':(value.state==='UNKNOWN'||value.state==='NO_OBSERVATION'?unknown:past)+' · '}${value.name} · ${label} ${value.intensity??'UNKNOWN'}`}}];
+    })}};
+  },[regionGeometry,regionalStates,language]);
+
+  useEffect(()=>{
+    const map=mapRef.current;if(status!=='ready'||!map||!showIntensityRegions)return;
+    map.addSource('official-intensity-regions',{type:'geojson',data:regionalData.polygons});
+    map.addSource('official-intensity-scope-labels',{type:'geojson',data:regionalData.labels});
+    map.addLayer({id:'official-intensity-boundaries',type:'line',source:'official-intensity-regions',paint:{'line-color':'#a9bac8','line-width':1.5,'line-dasharray':[3,2]}});
+    map.addLayer({id:'official-intensity-labels',type:'symbol',source:'official-intensity-scope-labels',layout:{'text-field':['get','label'],'text-font':['NotoSansCJKjp-Regular'],'text-size':12,'text-max-width':14,
+      'symbol-sort-key':['match',['get','state'],'RECENT_REFERENCE',0,'ARCHIVED_REFERENCE',1,2]},
+      paint:{'text-color':['case',['==',['get','state'],'RECENT_REFERENCE'],'#d3e7fa','#a6adb5'],'text-halo-color':'#07121d','text-halo-width':2}});
+    return()=>{
+      for(const id of ['official-intensity-labels','official-intensity-boundaries'])if(map.getLayer(id))map.removeLayer(id);
+      for(const id of ['official-intensity-scope-labels','official-intensity-regions'])if(map.getSource(id))map.removeSource(id);
+    };
+  },[status,showIntensityRegions,regionalData]);
+
+  useEffect(()=>{
+    const map=mapRef.current;if(status!=='ready'||!map||!showForecastLines)return;
+    map.addSource('official-forecast-lines',{type:'geojson',data:forecastData});
+    map.addLayer({id:'official-forecast-halo',type:'line',source:'official-forecast-lines',paint:{'line-color':'#07121d','line-width':7}});
+    map.addLayer({id:'official-forecast-current',type:'line',source:'official-forecast-lines',filter:['==',['get','state'],'ACTIVE'],paint:{
+      'line-width':4,'line-color':['match',['get','warning_class'],'MAJOR_WARNING','#ef8cb5','WARNING','#ed9b7d','ADVISORY','#efc979','#adcadd'],
+    }});
+    map.addLayer({id:'official-forecast-old',type:'line',source:'official-forecast-lines',filter:['!=',['get','state'],'ACTIVE'],paint:{'line-color':'#a6adb5','line-width':3,'line-dasharray':[2,2]}});
+    return()=>{
+      for(const id of ['official-forecast-old','official-forecast-current','official-forecast-halo'])if(map.getLayer(id))map.removeLayer(id);
+      if(map.getSource('official-forecast-lines'))map.removeSource('official-forecast-lines');
+    };
+  },[status,showForecastLines,forecastData]);
 
   useEffect(()=>{
     const abort=new AbortController();
@@ -313,6 +376,9 @@ export function SimulationReferenceMap({
         <span><i className="sim-map-road-color"/>{t.roads}</span>
         <span><i className="sim-map-rail-color"/>{t.rail}</span>
         {officialPack&&showInundation&&<span><i style={{background:'#e9ac66'}}/>{language==='ja'?'浸水想定':language==='en'?'Inundation scenario':'浸水想定'}</span>}
+        {showIntensityRegions&&<span><i style={{background:'none',width:16,height:0,borderBottom:'1px dashed #a9bac8'}}/>{language==='ja'?'地域最大観測 · 各地点の実測ではない':language==='en'?'Region maximum · not point measurements':'地域最大觀測 · 非逐點實測'}</span>}
+        {disasterReference&&showForecastLines&&<><span><i style={{background:'none',width:16,height:0,borderBottom:'3px solid #ed9b7d'}}/>{language==='ja'?'津波電文 · 予報区海岸線':language==='en'?'Tsunami bulletin · coastal line':'海嘯電文 · 預報區海岸線'}</span>
+          <span><i style={{background:'none',width:16,height:0,borderBottom:'3px dashed #a6adb5'}}/>{language==='ja'?'過去／未確認／取消':language==='en'?'Old / unverified / cancelled':'舊資料／未核實／取消'}</span></>}
       </div>
       <p className="sim-map-quick-caution">{t.shortCaution}</p>
       {seismicOrigins.length>0&&seismicTime!==null&&<p className="sim-map-wave-legend" data-testid="seismic-wave-legend"

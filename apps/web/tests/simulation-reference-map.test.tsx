@@ -9,8 +9,10 @@ import { documentedEpicenters } from '../lib/geospatial-exposure';
 import { SimulationReferenceMap } from '../components/simulation-reference-map';
 import { tohokuWaveOrigins, type WavefrontData } from '../lib/seismic-wavefront';
 import {REFERENCE_VECTOR_LAYERS} from '../lib/reference-map-style';
+import {mapFixture,linePack,now} from './fixtures/disaster-map';
+import type {IntensityRegionPack} from '../lib/intensity-regions';
 
-const mapHarness=vi.hoisted(()=>({coordinates:[] as number[][],removed:0,operations:[] as string[],waveFrames:[] as WavefrontData[]}));
+const mapHarness=vi.hoisted(()=>({coordinates:[] as number[][],removed:0,operations:[] as string[],waveFrames:[] as WavefrontData[],referenceFrames:[] as Array<{id:string;data:unknown}>}));
 vi.mock('maplibre-gl',()=>({
   setWorkerCount:vi.fn(),setWorkerUrl:vi.fn(),
   Map:class {
@@ -27,6 +29,7 @@ vi.mock('maplibre-gl',()=>({
     removeLayer(id:string){this.layers.delete(id);mapHarness.operations.push('remove-layer:'+id);}
     removeSource(id:string){this.sources.delete(id);mapHarness.operations.push('remove-source:'+id);}
     addSource(id:string,options?:{data:WavefrontData}){this.sources.add(id);mapHarness.operations.push('add-source:'+id);
+      if(id.startsWith('official-'))mapHarness.referenceFrames.push({id,data:options?.data});
       if(id==='seismic-wavefronts'){mapHarness.waveFrames.push(options!.data);this.waveSource={setData:data=>mapHarness.waveFrames.push(data)};}}
     addLayer(layer:{id:string}){this.layers.add(layer.id);mapHarness.operations.push('add-layer:'+layer.id);}
   },
@@ -47,6 +50,33 @@ afterEach(async () => {
 });
 
 describe('isolated simulation reference map', () => {
+  it('keeps regional maxima as scope labels and changes warning styling once on expiry/offline, not every age tick',async()=>{
+    const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
+    vi.stubGlobal('crypto',webcrypto);vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)})));
+    const data=mapFixture(),eq=structuredClone(data.reports[0]);eq.bulletin.product='VXSE53';eq.bulletin.group_id='c'.repeat(24);eq.bulletin.report_id=`${'c'.repeat(24)}--${'b'.repeat(24)}`;eq.forecast_areas=[];
+    eq.observations=[{granularity:'REGION',measurement:'MAXIMUM',code:'100',name:'石狩地方北部',intensity:'5+',prefecture_code:'01'}];data.reports.push(eq);
+    const regions:IntensityRegionPack={manifest:{...linePack.manifest,codes:{'100':'石狩地方北部','101':'石狩地方中部'}},features:[{type:'Feature',properties:{code:'100',name:'石狩地方北部',anchor:[141,43]},
+      geometry:{type:'Polygon',coordinates:[[[141,43],[142,43],[142,44],[141,43]]]}},
+      {type:'Feature',properties:{code:'101',name:'石狩地方中部',anchor:[141,42]},geometry:{type:'Polygon',coordinates:[[[141,42],[142,42],[142,43],[141,42]]]}}]};
+    mapHarness.referenceFrames=[];mapHarness.operations=[];
+    container=document.createElement('div');document.body.append(container);root=createRoot(container);
+    const render=(time:number,connected=true)=><SimulationReferenceMap language="zh-TW" disasterReference={data} forecastLinePack={linePack} intensityRegionPack={regions}
+      referenceConnected={connected} referenceNow={time} showForecastLines showIntensityRegions/>;
+    await act(async()=>root!.render(render(now)));await act(async()=>{await new Promise(resolve=>setTimeout(resolve,40));});
+    const current=mapHarness.referenceFrames.find(f=>f.id==='official-intensity-scope-labels')!.data as {features:Array<{geometry:{type:string};properties:{scope:string;label:string}}>};
+    expect(current.features[0].geometry.type).toBe('Point');expect(current.features[0].properties.scope).toBe('REGION_MAXIMUM_NOT_POINT_MEASUREMENT');
+    expect(current.features[0].properties.label).toContain('地域最大 5+');
+    expect(current.features[1].properties.label).toContain('未判定');expect(current.features[1].properties.scope).toBe('REGION_UNDETERMINED_NOT_POINT_MEASUREMENT');
+    await act(async()=>root!.render(render(now+1000)));
+    expect(mapHarness.operations.filter(o=>o==='add-source:official-forecast-lines')).toHaveLength(1);
+    expect(mapHarness.operations.filter(o=>o==='add-source:official-intensity-regions')).toHaveLength(1);
+    await act(async()=>root!.render(render(now+2000,false)));
+    const old=mapHarness.referenceFrames.filter(f=>f.id==='official-forecast-lines').at(-1)!.data as {features:Array<{properties:{state:string}}>};
+    expect(old.features[0].properties.state).toBe('STALE');
+    const archived=mapHarness.referenceFrames.filter(f=>f.id==='official-intensity-scope-labels').at(-1)!.data as typeof current;
+    expect(archived.features[0].properties.label).toContain('過去');
+    expect(container.querySelector('[data-testid=japan-land-sea-legend]')?.textContent).toContain('非逐點實測');
+  });
   it('updates one geospatial source from event time and retains elapsed distance after remount',async()=>{
     const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
     vi.stubGlobal('crypto',webcrypto);

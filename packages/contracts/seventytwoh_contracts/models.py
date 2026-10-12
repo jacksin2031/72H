@@ -873,6 +873,59 @@ class OfficialReportReference(ContractModel):
         return self
 
 
+class OfficialIntensityObservation(ContractModel):
+    granularity: Literal["PREFECTURE", "REGION", "CITY", "STATION"]
+    measurement: Literal["MAXIMUM", "MEASURED"]
+    code: Annotated[StrictStr, Field(min_length=1, max_length=16)] | None
+    name: Annotated[StrictStr, Field(min_length=1, max_length=160)]
+    intensity: Literal["0", "1", "2", "3", "4", "5-", "5+", "6-", "6+", "7", "不明"] | None
+    prefecture_code: Annotated[StrictStr, Field(pattern=r"^\d{2}$")] | None
+    @model_validator(mode="after")
+    def station_is_observation_not_area_maximum(self):
+        if (self.granularity == "STATION") != (self.measurement == "MEASURED"):
+            raise ValueError("only station Int is a measured point; other levels are maxima")
+        return self
+
+
+class OfficialMapReport(ContractModel):
+    bulletin: OfficialReportReference
+    observations: Annotated[tuple[OfficialIntensityObservation, ...], Field(max_length=6000)] = ()
+    forecast_areas: Annotated[tuple[TsunamiReferenceForecastArea, ...], Field(max_length=128)] = ()
+    @model_validator(mode="after")
+    def data_matches_product(self):
+        if not self.bulletin.is_head or (self.bulletin.product == "VXSE53" and self.forecast_areas) or (self.bulletin.product == "VTSE41" and self.observations):
+            raise ValueError("map data must match the current information-unit head/product")
+        if len({area.area_code for area in self.forecast_areas}) != len(self.forecast_areas):
+            raise ValueError("duplicate forecast codes within a map information unit")
+        return self
+
+
+class DisasterMapReferenceResponse(ContractModel):
+    mode: Literal["LIVE_REFERENCE"] = "LIVE_REFERENCE"
+    generated_at: AwareDatetime
+    sources: Annotated[tuple[LiveSourceProjection, ...], Field(min_length=2, max_length=2)]
+    reports: Annotated[tuple[OfficialMapReport, ...], Field(max_length=128)] = ()
+    observation_mapping_version: Literal["jma-xml-observation-v1"] = "jma-xml-observation-v1"
+    earthquake_code_table_version: Literal["20261007"] = "20261007"
+    tsunami_code_table_version: Literal["20261007"] = "20261007"
+    coverage: Literal["PARTIAL"] = "PARTIAL"
+    capacity_exceeded: StrictBool = False
+    authority: Literal["REFERENCE_ONLY"] = "REFERENCE_ONLY"
+    safe_location_verified: Literal[False] = False
+    route_authorized: Literal[False] = False
+    @model_validator(mode="after")
+    def bounded_observations(self):
+        if len({report.bulletin.report_id for report in self.reports}) != len(self.reports):
+            raise ValueError("duplicate map information unit")
+        if {source.source_key for source in self.sources} != {"jma-live-eqvol", "jma-live-tsunami"}:
+            raise ValueError("map reference requires the two official source projections")
+        if sum(len(report.observations) for report in self.reports) > 12000:
+            raise ValueError("map observation response capacity exceeded")
+        if self.capacity_exceeded and self.reports:
+            raise ValueError("over-capacity reference cannot show a silently truncated observation map")
+        return self
+
+
 class SpatialGuidanceProjection(ContractModel):
     """Server-computed presentation gate; no request model accepts these values."""
 

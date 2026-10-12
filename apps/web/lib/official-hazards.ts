@@ -33,11 +33,15 @@ export const hazardManifestSchema=z.object({schema_version:z.literal(1),dataset_
   bbox:z.tuple([z.number(),z.number(),z.number(),z.number()]).optional(),
   positional_accuracy_m:z.number().finite().min(0).max(1000),
   positional_accuracy_kind:z.enum(['MAX_BOUND','STANDARD_DEVIATION','UNKNOWN']),
+  scenario:z.object({source_id:z.string().min(1),announced_on:z.iso.date(),source_crs:z.string().min(1),output_crs:z.literal('EPSG:4326'),
+    terrain_basis:z.string().min(1).max(100),conditions:z.array(z.enum(['MAXIMUM_CLASS_ADVERSE','LARGER_OR_OUTSIDE_POSSIBLE','LATER_WAVE_MAXIMUM','RIVER_LAKE_CHANGES_NOT_SHOWN'])).min(1).max(4),
+  }).optional(),
   sources:z.array(sourceSchema).min(1).max(10),assets:z.array(assetSchema).min(2).max(20),
 }).superRefine((value,ctx)=>{
   if(Date.parse(value.review_due_at)<=Date.parse(value.reviewed_at))ctx.addIssue({code:'custom',message:'Invalid review period'});
   if(new Set(value.sources.map(x=>x.id)).size!==value.sources.length||new Set(value.assets.map(x=>x.path)).size!==value.assets.length)
     ctx.addIssue({code:'custom',message:'Duplicate pack identity'});
+  if(value.scenario&&!value.sources.some(s=>s.id===value.scenario!.source_id))ctx.addIssue({code:'custom',message:'Unknown scenario source'});
 });
 export type OfficialPlace=z.infer<typeof officialPlaceSchema>;
 export type HazardFeature=z.infer<typeof feature>;

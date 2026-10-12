@@ -19,6 +19,7 @@ from seventytwoh_contracts.models import (
     StartLiveRequest,
     LiveRouteSearchRequest,
     TsunamiReferenceResponse,
+    DisasterMapReferenceResponse,
 )
 
 from . import __version__
@@ -135,6 +136,10 @@ def create_app(store: ReplayStore | None = None, live_store: LiveStore | None = 
         # This endpoint is intentionally read-only with respect to live sessions;
         # only refresh/start run the Safety Core evidence and dependency pipeline.
         return live_session_store.get_tsunami_reference()
+
+    @application.get("/api/reference/disaster-map", response_model=DisasterMapReferenceResponse)
+    def get_disaster_map_reference() -> DisasterMapReferenceResponse:
+        return live_session_store.get_disaster_map_reference()
 
     @application.post("/api/live/{session_id}/location", response_model=LiveSnapshot)
     async def update_live_location(
