@@ -19,7 +19,7 @@ const coverageCollection=z.object({type:z.literal('FeatureCollection'),features:
 export const hazardKeys=['flood','landslide','storm_surge','earthquake','tsunami','large_fire','inland_flood','volcano'] as const;
 const classification=z.enum(['DESIGNATED','NOT_DESIGNATED','UNKNOWN']);
 export const officialPlaceSchema=z.object({
-  id:z.string().min(1).max(160),common_id:z.string().min(1).max(160).optional(),name:z.string().min(1).max(240),address:z.string().max(1000).nullable(),
+  id:z.string().min(1).max(160),common_id:z.string().min(1).max(160).nullable().optional(),name:z.string().min(1).max(240),address:z.string().max(1000).nullable(),
   lat:z.number().finite().min(-90).max(90),lng:z.number().finite().min(-180).max(180),
   kind:z.enum(['EMERGENCY_SITE','SHELTER']),hazards:z.object(Object.fromEntries(hazardKeys.map(key=>[key,classification])) as Record<typeof hazardKeys[number],typeof classification>),
   notes:z.string().max(4000),source_id:z.string().min(1).max(100),open_status:z.literal('UNKNOWN'),
@@ -47,7 +47,11 @@ export type OfficialPlace=z.infer<typeof officialPlaceSchema>;
 export type HazardFeature=z.infer<typeof feature>;
 export type HazardManifest=z.infer<typeof hazardManifestSchema>;
 export type HazardPack={manifest:HazardManifest;inundation:z.infer<typeof collection>;places:OfficialPlace[];coverage:z.infer<typeof coverageCollection>|null};
-export type HazardLocation={lat:number;lng:number;accuracy_m:number;captured_at:number;source:'GPS'|'MAP_POINT'};
+export type HazardLocation={lat:number;lng:number;captured_at:number}&(
+  {source:'GPS'|'MAP_POINT';accuracy_m:number}|{source:'OFFICIAL_PLACE';accuracy_m:null});
+export function officialPlaceLocation(place:Pick<OfficialPlace,'lat'|'lng'>,selectedAt=Date.now()):HazardLocation{
+  return {lat:place.lat,lng:place.lng,captured_at:selectedAt,source:'OFFICIAL_PLACE',accuracy_m:null};
+}
 export type HazardAssessment={status:'INSIDE_KNOWN'|'OUTSIDE_KNOWN'|'BOUNDARY_UNCERTAIN'|'UNKNOWN';reason:string;
   depth_labels:string[];safe_location_verified:false;route_authorized:false};
 
@@ -108,6 +112,7 @@ const polygons=(g:z.infer<typeof geometry>)=>g.type==='Polygon'?[g.coordinates]:
 export function assessOfficialHazards(pack:HazardPack,fix:HazardLocation|null,now=Date.now()):HazardAssessment{
   const result=(status:HazardAssessment['status'],reason:string,depth_labels:string[]=[]):HazardAssessment=>({status,reason,depth_labels,safe_location_verified:false,route_authorized:false});
   if(!fix)return result('UNKNOWN','NO_LOCATION');
+  if(fix.source==='OFFICIAL_PLACE')return result('UNKNOWN','SOURCE_LOCATION_ACCURACY_UNKNOWN');
   if(![fix.lat,fix.lng,fix.accuracy_m,fix.captured_at,now].every(Number.isFinite)||Math.abs(fix.lat)>90||Math.abs(fix.lng)>180
     ||fix.accuracy_m<0||fix.accuracy_m>1000||fix.captured_at>now+5000||(fix.source==='GPS'&&now-fix.captured_at>120000))return result('UNKNOWN','INVALID_OR_EXPIRED_LOCATION');
   if(now<Date.parse(pack.manifest.reviewed_at)||now>=Date.parse(pack.manifest.review_due_at))return result('UNKNOWN','DATA_REVIEW_EXPIRED');

@@ -45,9 +45,10 @@ from .drill import DrillRequest
 from .drill_store import DrillStore
 from .mock_live import MockLiveDrillStore, MockLiveResponse, MockLiveRequest
 from .historical_cases import list_historical_cases
+from .place_opening import PlaceOpeningStore, PlaceOpeningResponse
 
 
-def create_app(store: ReplayStore | None = None, live_store: LiveStore | None = None, drill_store: DrillStore | None = None, mock_live_store: MockLiveDrillStore | None = None) -> FastAPI:
+def create_app(store: ReplayStore | None = None, live_store: LiveStore | None = None, drill_store: DrillStore | None = None, mock_live_store: MockLiveDrillStore | None = None, place_opening_store: PlaceOpeningStore | None = None) -> FastAPI:
     if store is None and live_store is None:
         # Preserve one process-wide Gemini/ADK call budget across replay and live.
         planner = CandidatePlanner()
@@ -68,6 +69,14 @@ def create_app(store: ReplayStore | None = None, live_store: LiveStore | None = 
     application.state.live_store = live_session_store
     application.state.drill_store = isolated_drills
     application.state.mock_live_store = isolated_mock_live
+    opening_store = place_opening_store or PlaceOpeningStore()
+
+    @application.get('/api/reference/place-opening/{partition}', response_model=PlaceOpeningResponse)
+    def place_opening(partition: str) -> PlaceOpeningResponse:
+        try:
+            return opening_store.get(partition)
+        except KeyError as exc:
+            raise HTTPException(status_code=404,detail='Opening partition unsupported') from exc
 
     @application.get("/health")
     def health() -> dict[str, str]:

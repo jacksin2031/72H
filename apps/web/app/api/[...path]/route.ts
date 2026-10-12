@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { sameOrigin } from '@/lib/request-origin';
 
 export const dynamic = 'force-dynamic';
-const allowed = /^(health|version|reference\/(tsunami|disaster-map)|replay\/(start|[a-zA-Z0-9_-]{1,80}(\/(pause|resume|next|reset|speed))?)|mock-live\/(start|cases|[a-zA-Z0-9_-]{1,80}(\/next)?)|drill\/(start|[a-zA-Z0-9_-]{1,80}(\/next)?)|live\/(start|[a-zA-Z0-9_-]{1,80}(\/(refresh|routes\/search|location|profile))?))$/;
+const allowed = /^(health|version|reference\/(tsunami|disaster-map|place-opening\/\d{5})|replay\/(start|[a-zA-Z0-9_-]{1,80}(\/(pause|resume|next|reset|speed))?)|mock-live\/(start|cases|[a-zA-Z0-9_-]{1,80}(\/next)?)|drill\/(start|[a-zA-Z0-9_-]{1,80}(\/next)?)|live\/(start|[a-zA-Z0-9_-]{1,80}(\/(refresh|routes\/search|location|profile))?))$/;
 export function isAllowedApiProxyPath(path: string) { return allowed.test(path); }
 export function isAllowedApiProxyRequest(path: string, method: string) {
   if (!isAllowedApiProxyPath(path) || !['GET', 'POST'].includes(method)) return false;

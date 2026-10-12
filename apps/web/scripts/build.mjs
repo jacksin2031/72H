@@ -7,6 +7,7 @@ import './prepare-area-worker.mjs';
 import './prepare-hazard-pack.mjs';
 import './prepare-forecast-lines.mjs';
 import './prepare-intensity-regions.mjs';
+import './prepare-designated-places.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const result = spawnSync(process.execPath, [join(root, 'node_modules/next/dist/bin/next'), 'build'], { cwd: root, stdio: 'inherit' });

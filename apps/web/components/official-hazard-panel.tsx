@@ -57,11 +57,12 @@ function LiveTsunamiReference({language}:{language:Language}){
   </section>;
 }
 
-export function OfficialHazardPanel({language,pack,loading,error,point,showInundation,showPlaces,onInundation,onPlaces,onRetry,onGPS,onClear,onFocus,onPlace,gpsState,liveReference}:{
+export function OfficialHazardPanel({language,pack,loading,error,point,showInundation,showPlaces,onInundation,onPlaces,onRetry,onGPS,onClear,onFocus,onPlace,gpsState,liveReference,placesReference}:{
   language:Language;pack:HazardPack|null;loading:boolean;error:boolean;point:HazardLocation|null;
   showInundation:boolean;showPlaces:boolean;onInundation:(v:boolean)=>void;onPlaces:(v:boolean)=>void;
   onRetry:()=>void;onGPS:()=>void;onClear:()=>void;onFocus:()=>void;onPlace:(p:OfficialPlace)=>void;gpsState:string;
   liveReference?:ReactNode;
+  placesReference?:ReactNode;
 }){
   const t=hazardText[language];const [filter,setFilter]=useState(false),[search,setSearch]=useState(''),[limit,setLimit]=useState(12),[now,setNow]=useState(()=>Date.now());
   useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),15000);return()=>clearInterval(timer);},[]);
@@ -82,9 +83,10 @@ export function OfficialHazardPanel({language,pack,loading,error,point,showInund
       <section className="hazard-query" aria-live="polite" data-testid="official-hazard-assessment">
         <h2>{assessment?t.statuses[assessment.status]:t.statuses.UNKNOWN}</h2>
         <p>{point?point.source==='GPS'?t.gpsPoint:t.point:t.choose}</p>
-        {point&&<p>{point.lat.toFixed(5)}, {point.lng.toFixed(5)} · ±{Math.round(point.accuracy_m)} m</p>}
+        {point&&<p>{point.lat.toFixed(5)}, {point.lng.toFixed(5)}{point.source==='GPS'?` · ±${Math.round(point.accuracy_m!)} m`:
+          point.source==='OFFICIAL_PLACE'?` · ${language==='ja'?'施設位置精度：不明':language==='en'?'Facility position accuracy: unknown':'場所座標精度：未提供'}`:''}</p>}
         {point?.source==='GPS'&&Number.isFinite(new Date(point.captured_at).getTime())&&<p>{t.retrieved}: {new Date(point.captured_at).toISOString()}</p>}
-        <p>{assessment?t.reasons[assessment.reason as keyof typeof t.reasons]:t.choose}</p>
+        <p>{assessment?.reason==='SOURCE_LOCATION_ACCURACY_UNKNOWN'?(language==='ja'?'施設座標の精度が不明で、地点の浸水を判定できません。':language==='en'?'Facility coordinate accuracy is unknown; point inundation cannot be determined.':'場所座標精度未提供，不能判定此點的浸水情況。'):assessment?t.reasons[assessment.reason as keyof typeof t.reasons]:t.choose}</p>
         {!!assessment?.depth_labels.length&&<p>{t.depth}: {assessment.depth_labels.join(' / ')}</p>}
       </section>
       <p className="hazard-muted">{t.summary}</p>{pack.manifest.coverage_status==='PARTIAL'&&<p>{t.partial}</p>}
@@ -92,7 +94,7 @@ export function OfficialHazardPanel({language,pack,loading,error,point,showInund
         {pack.manifest.scenario&&<ScenarioDetails language={language} manifest={pack.manifest}/>}
         {pack.manifest.sources.map(source=><div key={source.id}><a href={source.url} target="_blank" rel="noopener noreferrer">{source.title}</a><p>{t.basis}: {source.basis_date??'—'} · {t.retrieved}: {source.retrieved_at}</p><p>{source.notes}</p></div>)}
       </details>
-      <section><h2>{t.list} · {places.length}</h2><label className="hazard-filter"><input type="checkbox" checked={filter} onChange={e=>{setFilter(e.target.checked);setLimit(12);}}/>{t.filter}</label>
+      {!placesReference&&<section><h2>{t.list} · {places.length}</h2><label className="hazard-filter"><input type="checkbox" checked={filter} onChange={e=>{setFilter(e.target.checked);setLimit(12);}}/>{t.filter}</label>
         <input className="hazard-search" type="search" aria-label={t.search} placeholder={t.search} value={search} maxLength={80} onChange={e=>{setSearch(e.target.value);setLimit(12);}}/>
         <ul className="hazard-place-list">{places.slice(0,limit).map(place=><li key={place.id}>
           <button onClick={()=>onPlace(place)}>{place.name}</button><p>{place.kind==='EMERGENCY_SITE'?t.emergency:t.shelter} · {place.address}</p>
@@ -102,8 +104,9 @@ export function OfficialHazardPanel({language,pack,loading,error,point,showInund
             <p>{place.notes}</p><p>ID: {place.common_id??place.id}</p><a href={pack.manifest.sources.find(s=>s.id===place.source_id)?.url}>{pack.manifest.sources.find(s=>s.id===place.source_id)?.title}</a>
           </details>
         </li>)}</ul>{places.length>limit&&<button onClick={()=>setLimit(x=>x+12)}>{t.more}</button>}
-      </section>
+      </section>}
     </>}
+    {placesReference}
   </aside>;
 }
 

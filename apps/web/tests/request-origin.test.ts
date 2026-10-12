@@ -7,6 +7,9 @@ it('allows only read access to the explicit official tsunami reference endpoint'
   expect(isAllowedApiProxyRequest('reference/tsunami','POST')).toBe(false);
   expect(isAllowedApiProxyRequest('reference/disaster-map','GET')).toBe(true);
   expect(isAllowedApiProxyRequest('reference/disaster-map','POST')).toBe(false);
+  expect(isAllowedApiProxyRequest('reference/place-opening/04202','GET')).toBe(true);
+  expect(isAllowedApiProxyRequest('reference/place-opening/04202','POST')).toBe(false);
+  expect(isAllowedApiProxyPath('reference/place-opening/04202/extra')).toBe(false);
   expect(isAllowedApiProxyPath('reference/tsunami/private')).toBe(false);
   expect(isAllowedApiProxyPath('reference/other')).toBe(false);
 });

@@ -1,5 +1,26 @@
 # 72H — Current Development Phase
 
+## P2.6 local designated-place partition / opening boundary (2026-10-12 JST)
+
+On `codex/p2-6-designated-places`, the pinned Ishinomaki partition retains 395
+CSV role records and separate 85 tsunami / 74 shelter GeoJSON snapshot points.
+CSV common IDs never join unkeyed GeoJSON by fuzzy name/address/coordinates.
+Eight hazard classes, role distinctions and raw states are preserved; the
+earthquake tile's actual 404 stays unavailable. Map and list share filters.
+Public place coordinates have UNKNOWN accuracy, never a fabricated +/-0m.
+
+The replaceable municipal opening adapter and read-only API enforce reviewed
+exact identity/scope, publication TTL, revisions/conflict and UNKNOWN failure.
+Default opening source is UNCONFIGURED. No actual municipal opening feed or
+GSI-ID crosswalk is verified; no Safety Core / movement permission is added.
+Local gates: 361 frontend passed / 3 existing skips, 297 backend passed,
+typecheck/build/secret/diff checks and mobile/desktop/offline browser acceptance.
+Build `ynrieZx3OUSAsN-SGbU4q`; evidence
+`docs/VNEXT_P2_6_DESIGNATED_PLACES_VALIDATION.md`.
+Local reference package COMPLETE; nationwide / opening coverage and the full
+P2.4-P2.7 roadmap remain PARTIAL. Next: P2.7 post-Core constrained explanations.
+No deployment, real-device or current-incident safety acceptance is claimed.
+
 ## P2.5 local official reference layers (2026-10-12 JST)
 
 On `codex/p2-5-disaster-layers`, the read-only disaster-map API preserves

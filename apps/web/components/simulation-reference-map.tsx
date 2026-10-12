@@ -70,7 +70,7 @@ const mapText={
 export function SimulationReferenceMap({
   language,compact=false,epicenter=null,userLocation=null,referencePoint=null,officialPack=null,showInundation=false,showPlaces=false,focusPoint=null,onReferencePoint,onPlace,protectDeviceLocation=true,seismicOrigins=[],seismicTime=null,
   disasterReference=null,forecastLinePack=null,referenceConnected=false,referenceNow=0,showForecastLines=false,
-  intensityRegionPack=null,showIntensityRegions=false,
+  intensityRegionPack=null,showIntensityRegions=false,referencePlaces,
 }:{
   language:Language; compact?:boolean;epicenter?:Epicenter|null;userLocation?:LocationFix|null;
   referencePoint?:{lat:number;lng:number}|null;
@@ -81,6 +81,7 @@ export function SimulationReferenceMap({
   disasterReference?:DisasterMapReference|null;forecastLinePack?:ForecastLinePack|null;
   referenceConnected?:boolean;referenceNow?:number;showForecastLines?:boolean;
   intensityRegionPack?:IntensityRegionPack|null;showIntensityRegions?:boolean;
+  referencePlaces?:OfficialPlace[];
 }){
   const host=useRef<HTMLDivElement>(null);
   const mapRef=useRef<import('maplibre-gl').Map|null>(null);
@@ -313,14 +314,15 @@ export function SimulationReferenceMap({
   },[status,seismicTime,seismicOrigins,waveData]);
 
   useEffect(()=>{
-    const map=mapRef.current;if(status!=='ready'||!map||!officialPack)return;
-    if(showInundation){
+    const map=mapRef.current;if(status!=='ready'||!map||(!officialPack&&!referencePlaces))return;
+    const places=referencePlaces??officialPack?.places??[];
+    if(showInundation&&officialPack){
       map.addSource('official-inundation',{type:'geojson',data:officialPack.inundation});
       map.addLayer({id:'official-inundation-fill',type:'fill',source:'official-inundation',paint:{'fill-color':'#e9ac66','fill-opacity':0.38}});
       map.addLayer({id:'official-inundation-edge',type:'line',source:'official-inundation',paint:{'line-color':'#ffd19a','line-width':1}});
     }
     if(showPlaces){
-      map.addSource('official-places',{type:'geojson',data:{type:'FeatureCollection',features:officialPack.places.map(p=>({
+      map.addSource('official-places',{type:'geojson',data:{type:'FeatureCollection',features:places.map(p=>({
         type:'Feature',geometry:{type:'Point',coordinates:[p.lng,p.lat]},properties:{id:p.id,kind:p.kind},
       }))}});
       map.addLayer({id:'official-places-points',type:'circle',source:'official-places',paint:{'circle-radius':5,
@@ -328,7 +330,7 @@ export function SimulationReferenceMap({
     }
     const choose=(event:import('maplibre-gl').MapMouseEvent)=>{
       const hit=showPlaces?map.queryRenderedFeatures(event.point,{layers:['official-places-points']})[0]:null;
-      const place=hit?officialPack.places.find(p=>p.id===hit.properties.id):null;
+      const place=hit?places.find(p=>p.id===hit.properties.id):null;
       if(place)onPlace?.(place);else onReferencePoint?.({lat:event.lngLat.lat,lng:event.lngLat.lng});
     };
     map.on('click',choose);
@@ -337,7 +339,7 @@ export function SimulationReferenceMap({
       for(const id of ['official-places-points','official-inundation-edge','official-inundation-fill'])if(map.getLayer(id))map.removeLayer(id);
       for(const id of ['official-places','official-inundation'])if(map.getSource(id))map.removeSource(id);
     };
-  },[status,officialPack,showInundation,showPlaces,onReferencePoint,onPlace]);
+  },[status,officialPack,referencePlaces,showInundation,showPlaces,onReferencePoint,onPlace]);
 
   useEffect(()=>{
     if(status==='ready'&&focusPoint&&validPoint(focusPoint))mapRef.current?.easeTo({center:[focusPoint.lng,focusPoint.lat],zoom:focusPoint.zoom??13,duration:0});

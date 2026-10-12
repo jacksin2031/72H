@@ -50,6 +50,21 @@ afterEach(async () => {
 });
 
 describe('isolated simulation reference map', () => {
+  it('uses the same filtered designation subset on the map and removes previous-format markers',async()=>{
+    const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
+    vi.stubGlobal('crypto',webcrypto);vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)})));
+    const place={id:'TEST-csv',name:'TEST',address:'TEST',lat:38,lng:141,kind:'EMERGENCY_SITE' as const,
+      hazards:{flood:'UNKNOWN',landslide:'UNKNOWN',storm_surge:'UNKNOWN',earthquake:'UNKNOWN',tsunami:'DESIGNATED',large_fire:'UNKNOWN',inland_flood:'UNKNOWN',volcano:'UNKNOWN'} as const,
+      notes:'TEST',source_id:'TEST',open_status:'UNKNOWN' as const};
+    mapHarness.referenceFrames=[];container=document.createElement('div');document.body.append(container);root=createRoot(container);
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" referencePlaces={[place]} showPlaces/>));
+    await act(async()=>{await new Promise(resolve=>setTimeout(resolve,40));});
+    const frame=mapHarness.referenceFrames.find(f=>f.id==='official-places')?.data as {features:{properties:{id:string}}[]}|undefined;
+    expect(frame?.features.map(f=>f.properties.id)).toEqual(['TEST-csv']);
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" referencePlaces={[]} showPlaces/>));
+    const latest=mapHarness.referenceFrames.filter(f=>f.id==='official-places').at(-1)!.data as {features:unknown[]};
+    expect(latest.features).toEqual([]);
+  });
   it('keeps regional maxima as scope labels and changes warning styling once on expiry/offline, not every age tick',async()=>{
     const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
     vi.stubGlobal('crypto',webcrypto);vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)})));
