@@ -15,7 +15,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, StrictBool, model_validator
 from seventytwoh_contracts.models import (
-    LiveSnapshot, LiveSourceStatus, NetworkState, SelfReportedSafetyStatus, StartLiveRequest,
+    DistressRequest, LiveSnapshot, LiveSourceStatus, NetworkState, SelfReportedSafetyStatus, StartLiveRequest,
     TsunamiOperation,LocationSource,
 )
 from .drill import DrillRequest
@@ -388,6 +388,12 @@ class MockLiveDrillStore:
     def get(self, id: UUID) -> MockLiveResponse:
         session = self._lookup(id)
         return self._response(session, session.store.get(id))
+
+    async def record_distress(self, id: UUID, request: DistressRequest) -> MockLiveResponse:
+        session = self._lookup(id)
+        async with session.lock:
+            snap = await session.store.record_distress(id, request)
+            return self._response(session, snap)
 
     async def next(self, id: UUID) -> MockLiveResponse:
         session = self._lookup(id)

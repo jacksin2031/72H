@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from types import SimpleNamespace
 from threading import RLock
 from time import monotonic
 from uuid import UUID, uuid4
 
 from seventytwoh_contracts.models import (
+    AgentName,
+    DistressRequest,
+    TraceEvent,
+    TraceStatus,
     IncidentStatus,
     Language,
     NetworkState,
@@ -25,6 +30,7 @@ from seventytwoh_contracts.models import (
 
 from .domain import CoreState, reduce_event
 from .planning import evidence_projections
+from .distress import record_distress_report, resolve_distress
 from .planner import CandidatePlanner
 from .scenario import (
     DEFAULT_SCENARIO_KEY,
@@ -272,6 +278,27 @@ class ReplayStore:
             self._touch(aggregate)
             return aggregate
 
+    def record_distress(self, session_id: UUID, request: DistressRequest) -> ReplaySnapshot:
+        from .planning import evaluate_and_replan
+
+        aggregate = self._get_aggregate(session_id)
+        with aggregate.lock:
+            before = aggregate.state
+            now = before.current_time
+            reported = record_distress_report(before, request.tags, request.input_mode, now)
+            report_id = reported.distress_reports[-1].id
+            trace = TraceEvent(
+                id=f"trace_{len(reported.trace) + 1:03d}", situation_id=reported.situation.id, timestamp=now,
+                agent=AgentName.SITUATION_AGENT, event_type="DISTRESS_REPORTED",
+                input_refs=(report_id,), output_refs=tuple(t.value for t in request.tags),
+                status=TraceStatus.SUCCESS,
+                public_summary="The user reported distress. It can only make guidance more protective.",
+            )
+            reported = replace(reported, trace=(*reported.trace, trace))
+            aggregate.state = evaluate_and_replan(before, reported, SimpleNamespace(id=report_id), self._policy)
+            self._touch(aggregate)
+            return self._snapshot(aggregate)
+
     def _touch(self, aggregate: SessionAggregate) -> None:
         aggregate.expires_at = monotonic() + self._ttl_seconds
 
@@ -317,6 +344,7 @@ class ReplayStore:
             scenario_events=tuple(timeline_event(event) for event in aggregate.scenario.events),
             mobility=aggregate.state.mobility,
             plan_evaluations=aggregate.state.plan_evaluations,
+            distress=resolve_distress(aggregate.state, aggregate.state.current_time, self._policy),
         )
 
     def _initial_state(

@@ -13,6 +13,7 @@ from types import SimpleNamespace
 from uuid import UUID, uuid4
 
 from seventytwoh_contracts.models import (
+    DistressRequest,
     AgentName,
     AreaDefinition,
     Claim,
@@ -84,6 +85,7 @@ from .live_sources import (
     TokyoShelterSource,
 )
 from .planning import evidence_projections
+from .distress import resolve_distress
 from .location_freshness import gps_observation_is_fresh
 from .safety import DEFAULT_POLICY, SafetyPolicy, claims_from_disaster_assessments, derive_claim_states
 from .state import CoreState
@@ -564,6 +566,69 @@ class LiveStore:
                         latest,
                         latest_after,
                         event,
+                        self._policy,
+                        allow_network_reconciliation=False,
+                    )
+                self._touch(aggregate)
+                return self._snapshot(aggregate)
+
+    async def record_distress(self, session_id: UUID, request: DistressRequest) -> LiveSnapshot:
+        """Record a user-reported distress signal and re-plan; it can only make guidance more protective."""
+        from .distress import record_distress_report
+        from .planning import evaluate_and_replan
+
+        aggregate = self._get_aggregate(session_id)
+
+        def reported_state(base, at):
+            reported = record_distress_report(base, request.tags, request.input_mode, at)
+            report_id = reported.distress_reports[-1].id
+            trace = TraceEvent(
+                id=f"trace_{len(reported.trace) + 1:03d}",
+                situation_id=reported.situation.id,
+                timestamp=at,
+                agent=AgentName.SITUATION_AGENT,
+                event_type="DISTRESS_REPORTED",
+                input_refs=(report_id,),
+                output_refs=tuple(tag.value for tag in request.tags),
+                status=TraceStatus.SUCCESS,
+                public_summary="The user reported distress. It can only make guidance more protective.",
+            )
+            return replace(
+                reported,
+                situation=reported.situation.model_copy(update={"updated_at": at}),
+                current_time=at,
+                trace=(*reported.trace, trace),
+            ), report_id
+
+        async with aggregate.operation_lock:
+            with aggregate.lock:
+                before = aggregate.state
+                if len(before.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
+                    raise InvalidLiveProfileUpdate("live trace capacity reached")
+                transition_time = max(self._now(), before.current_time)
+                after, report_id = reported_state(before, transition_time)
+
+            planned = replan_live_transition(
+                before,
+                after,
+                self._policy,
+                event_id=report_id,
+                allow_network_reconciliation=False,
+            )
+
+            with aggregate.lock:
+                if aggregate.state is before:
+                    aggregate.state = planned
+                else:
+                    latest = aggregate.state
+                    if len(latest.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
+                        raise InvalidLiveProfileUpdate("live trace capacity reached")
+                    latest_time = max(transition_time, latest.current_time)
+                    latest_after, latest_report_id = reported_state(latest, latest_time)
+                    aggregate.state = evaluate_and_replan(
+                        latest,
+                        latest_after,
+                        SimpleNamespace(id=latest_report_id),
                         self._policy,
                         allow_network_reconciliation=False,
                     )
@@ -1375,6 +1440,7 @@ class LiveStore:
             plan_actions=state.plan_actions,
             trace=state.trace,
             plan_evaluations=state.plan_evaluations,
+            distress=resolve_distress(state, state.current_time, self._policy),
             destinations=state.destinations,
             routes=state.routes,
             spatial_guidance=spatial,

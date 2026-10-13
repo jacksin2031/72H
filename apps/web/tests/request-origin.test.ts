@@ -16,7 +16,12 @@ it('allows only read access to the explicit official tsunami reference endpoint'
     expect(isAllowedApiProxyRequest(`${scope}/abc-123/explanation`,'POST')).toBe(true);
     expect(isAllowedApiProxyRequest(`${scope}/abc-123/explanation`,'GET')).toBe(false);
     expect(isAllowedApiProxyPath(`${scope}/abc-123/explanation/extra`)).toBe(false);
+    expect(isAllowedApiProxyRequest(`${scope}/abc-123/distress`,'POST')).toBe(true);
+    expect(isAllowedApiProxyRequest(`${scope}/abc-123/distress`,'GET')).toBe(false);
+    expect(isAllowedApiProxyRequest(`${scope}/abc-123/distress/advice`,'POST')).toBe(true);
   }
+  expect(isAllowedApiProxyRequest('distress/extract','POST')).toBe(true);
+  expect(isAllowedApiProxyRequest('distress/extract','GET')).toBe(false);
 });
 
 it('accepts the public browser origin for localhost and Cloud Run', () => {

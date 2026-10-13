@@ -9,6 +9,7 @@ import secrets
 from fastapi import Body, Depends, FastAPI, HTTPException, Header, status
 from seventytwoh_contracts.models import (
     ApiVersion,
+    DistressRequest,
     LiveLocationUpdateRequest,
     LiveProfileUpdateRequest,
     LiveSnapshot,
@@ -210,6 +211,19 @@ def create_app(
         except InvalidLiveProfileUpdate as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
+    @application.post("/api/replay/{session_id}/distress", response_model=ReplaySnapshot)
+    def replay_distress(session_id: UUID, request: DistressRequest) -> ReplaySnapshot:
+        return _run(lambda: replay_store.record_distress(session_id, request))
+
+    @application.post("/api/live/{session_id}/distress", response_model=LiveSnapshot)
+    async def live_distress(session_id: UUID, request: DistressRequest) -> LiveSnapshot:
+        try:
+            return await live_session_store.record_distress(session_id, request)
+        except LiveSessionNotFound as exc:
+            raise HTTPException(status_code=404, detail="live session not found") from exc
+        except InvalidLiveProfileUpdate as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
     @application.post("/api/live/{session_id}/refresh", response_model=LiveSnapshot)
     async def refresh_live(session_id: UUID) -> LiveSnapshot:
         return await _run_live_async(lambda: live_session_store.refresh_async(session_id))
@@ -285,6 +299,13 @@ def create_app(
             raise HTTPException(status_code=404, detail="mock live session not found") from exc
         except InvalidReplayTransition as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    @application.post("/api/mock-live/{session_id}/distress", response_model=MockLiveResponse)
+    async def mock_live_distress(session_id: UUID, request: DistressRequest, _: None = Depends(authenticate_drill)) -> MockLiveResponse:
+        try:
+            return await isolated_mock_live.record_distress(session_id, request)
+        except LiveSessionNotFound as exc:
+            raise HTTPException(status_code=404, detail="mock live session not found") from exc
 
     return application
 
