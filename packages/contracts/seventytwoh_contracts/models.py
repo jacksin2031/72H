@@ -220,15 +220,6 @@ class TsunamiAreaStatus(StrEnum):
     UNKNOWN = "UNKNOWN"
 
 
-class TsunamiWarningClass(StrEnum):
-    MAJOR_WARNING = "MAJOR_WARNING"
-    WARNING = "WARNING"
-    ADVISORY = "ADVISORY"
-    FORECAST = "FORECAST"
-    NONE = "NONE"
-    UNKNOWN = "UNKNOWN"
-
-
 class TsunamiHeightExpression(StrEnum):
     NUMERIC = "NUMERIC"
     HIGH = "HIGH"
@@ -261,6 +252,8 @@ class SafeIntentId(StrEnum):
     AVOID_DISRUPTED_ROUTE = "avoid_disrupted_route"
     DO_NOT_ASSUME_ROUTE_SAFETY = "do_not_assume_route_safety"
     EVACUATE_TO_DESIGNATED_SHELTER = "evacuate_to_designated_shelter"
+    SHELTER_IN_PLACE_VERTICAL = "shelter_in_place_vertical"
+    TSUNAMI_EVACUATE_NOW = "tsunami_evacuate_now"
 
 
 class RiskLevel(StrEnum):
@@ -361,16 +354,31 @@ class ProfileSeed(ContractModel):
     accessibility_constraints: Annotated[tuple[ShortText, ...], Field(max_length=32)] = ()
 
 
+class TsunamiWarningClass(StrEnum):
+    MAJOR_WARNING = "MAJOR_WARNING"
+    WARNING = "WARNING"
+    ADVISORY = "ADVISORY"
+    FORECAST = "FORECAST"
+    NONE = "NONE"
+    UNKNOWN = "UNKNOWN"
+
+
 class DisasterAssessment(ContractModel):
     area_id: Identifier
     event_type: DisasterEventType
     level: DisasterSeverityLevel | None = None
     status: DisasterEventStatus
+    tsunami_warning_class: TsunamiWarningClass | None = None
+    arrival_at: AwareDatetime | None = None
 
     @model_validator(mode="after")
     def tsunami_does_not_use_earthquake_severity(self) -> "DisasterAssessment":
         if self.event_type == DisasterEventType.TSUNAMI and self.level is not None:
             raise ValueError("tsunami assessments must not use earthquake L0-L4 severity levels")
+        if self.event_type != DisasterEventType.TSUNAMI and (
+            self.tsunami_warning_class is not None or self.arrival_at is not None
+        ):
+            raise ValueError("tsunami warning class and arrival time apply only to tsunami assessments")
         return self
 
 
@@ -595,6 +603,65 @@ class Plan(ContractModel):
         if self.expires_at <= self.created_at:
             raise ValueError("expires_at must be later than created_at")
         return self
+
+
+class DistressTag(StrEnum):
+    WATER_RISING = "WATER_RISING"
+    TRAPPED = "TRAPPED"
+    INJURED = "INJURED"
+    MOBILITY_LIMITED = "MOBILITY_LIMITED"
+    WITH_DEPENDENTS = "WITH_DEPENDENTS"
+    LOST_NO_DESTINATION = "LOST_NO_DESTINATION"
+    ROUTE_BLOCKED_REPORTED = "ROUTE_BLOCKED_REPORTED"
+
+
+DistressInputMode = Literal["BUTTON", "VOICE", "TEXT"]
+DistressTags = Annotated[tuple[DistressTag, ...], Field(min_length=1, max_length=7)]
+
+
+def _unique_tags(tags: tuple[DistressTag, ...]) -> None:
+    if len(tags) != len(set(tags)):
+        raise ValueError("distress tags must be unique")
+
+
+class DistressRequest(ContractModel):
+    tags: DistressTags
+    input_mode: DistressInputMode
+
+    @model_validator(mode="after")
+    def tags_are_unique(self) -> "DistressRequest":
+        _unique_tags(self.tags)
+        return self
+
+
+class DistressReport(ContractModel):
+    """A user's own report. It can make guidance more protective, never authorize movement."""
+
+    id: Identifier
+    tags: DistressTags
+    input_mode: DistressInputMode
+    reported_at: AwareDatetime
+    source: Literal["USER_REPORTED"] = "USER_REPORTED"
+
+    @model_validator(mode="after")
+    def tags_are_unique(self) -> "DistressReport":
+        _unique_tags(self.tags)
+        return self
+
+
+class DistressLevel(StrEnum):
+    NONE = "NONE"
+    USER_REPORTED = "USER_REPORTED"
+    OFFICIAL_TSUNAMI = "OFFICIAL_TSUNAMI"
+
+
+class DistressStatus(ContractModel):
+    level: DistressLevel = DistressLevel.NONE
+    reports: Annotated[tuple[DistressReport, ...], Field(max_length=16)] = ()
+    trigger_evidence_ids: StringList = ()
+    deadline_at: AwareDatetime | None = None
+    ai_escalated: StrictBool = False
+    synthetic: StrictBool = False
 
 
 class PlanAction(ContractModel):
@@ -1000,6 +1067,7 @@ class LiveSnapshot(ContractModel):
     spatial_guidance: SpatialGuidanceProjection
     official_reports: Annotated[tuple[OfficialReportReference, ...], Field(max_length=128)] = ()
     official_sources: Annotated[tuple[LiveSourceProjection, ...], Field(max_length=2)] = ()
+    distress: DistressStatus = DistressStatus()
 
     @model_validator(mode="after")
     def movement_projection_matches_active_safety_core_action(self) -> "LiveSnapshot":
@@ -1362,6 +1430,7 @@ class ReplaySnapshot(ContractModel):
     evidence_projections: Annotated[tuple[EvidenceProjection, ...], Field(max_length=128)]
     mobility: Annotated[tuple[MobilitySnapshot, ...], Field(max_length=128)]
     plan_evaluations: Annotated[tuple[PlanEvaluation, ...], Field(max_length=512)]
+    distress: DistressStatus = DistressStatus()
 
 
 class ReplayScenarioOption(ContractModel):

@@ -53,13 +53,26 @@ export const planSchema = z.object({
 });
 export const actionSchema = z.object({
   id, plan_id: id, category: z.enum(['NOW', 'NEXT', 'AVOID']), text, reason: text,
-  intent_id: z.enum(['protect_and_monitor', 'review_official_guidance', 'wait_for_transport_update', 'recheck_transport_status', 'avoid_disrupted_route', 'do_not_assume_route_safety', 'evacuate_to_designated_shelter']).nullable().optional(),
+  intent_id: z.enum(['protect_and_monitor', 'review_official_guidance', 'wait_for_transport_update', 'recheck_transport_status', 'avoid_disrupted_route', 'do_not_assume_route_safety', 'evacuate_to_designated_shelter', 'shelter_in_place_vertical', 'tsunami_evacuate_now']).nullable().optional(),
   risk_level: z.enum(['LOW', 'MEDIUM', 'HIGH']), evidence_ids: ids, dependency_keys: ids,
   dependency_values: z.record(id, z.union([text, z.number().finite(), z.boolean(), z.null()])).default({}),
   status: z.enum(['ACTIVE', 'INVALID', 'EXPIRED', 'BLOCKED', 'SUPERSEDED']),
   safety_decision: z.enum(['ALLOW', 'MODIFY', 'BLOCK', 'WAIT_FOR_EVIDENCE']),
 });
 export const replayScenarioOptionSchema = z.object({ key: id, name: text });
+export const distressTagSchema = z.enum(['WATER_RISING','TRAPPED','INJURED','MOBILITY_LIMITED','WITH_DEPENDENTS','LOST_NO_DESTINATION','ROUTE_BLOCKED_REPORTED']);
+export type DistressTag = z.infer<typeof distressTagSchema>;
+const distressReportSchema = z.object({ id, tags: z.array(distressTagSchema).min(1).max(7), input_mode: z.enum(['BUTTON','VOICE','TEXT']), reported_at: timestamp, source: z.literal('USER_REPORTED') });
+export const distressStatusSchema = z.object({
+  level: z.enum(['NONE','USER_REPORTED','OFFICIAL_TSUNAMI']),
+  reports: z.array(distressReportSchema).max(16),
+  trigger_evidence_ids: ids,
+  deadline_at: timestamp.nullable(),
+  ai_escalated: z.boolean(),
+  synthetic: z.boolean(),
+});
+export type DistressStatus = z.infer<typeof distressStatusSchema>;
+const defaultDistress: DistressStatus = { level: 'NONE', reports: [], trigger_evidence_ids: [], deadline_at: null, ai_escalated: false, synthetic: false };
 export const snapshotSchema = z.object({
   profile: z.object({ id, preferred_language: z.enum(['ja', 'en', 'zh-TW']), current_location: location, accommodation_location: location, current_destination: location.nullable(), party_size: z.number().int().positive(), self_reported_safety_status: z.enum(['SAFE', 'UNCERTAIN', 'NEEDS_ASSISTANCE', 'UNKNOWN']), current_plan_summary: text.default(''), accessibility_constraints: z.array(text).max(32).default([]), created_at: timestamp, updated_at: timestamp }),
   area_catalog: z.array(areaDefinitionSchema).max(512).default([]),
@@ -72,6 +85,7 @@ export const snapshotSchema = z.object({
   scenario_events: z.array(z.object({ id, event_type: text, occurred_at: timestamp, offset_seconds: z.number().nonnegative(), label: text })).max(100),
   mobility: z.array(z.object({ id, status: z.enum(['AVAILABLE', 'DISRUPTED', 'UNKNOWN']), evidence_ids: ids })).max(128),
   plan_evaluations: z.array(z.object({ plan_id: id, status: z.enum(['KEEP', 'PARTIAL_INVALIDATION', 'INVALIDATED', 'EXPIRED']), evaluated_at: timestamp, reason: text.nullable(), invalid_action_ids: ids })).max(512),
+  distress: distressStatusSchema.default(defaultDistress),
 }).superRefine((state, ctx) => {
   const evidenceIds = new Set(state.evidence.map(e => e.id));
   const planIds = new Set(state.plans.map(p => p.id));
@@ -320,6 +334,7 @@ export const liveSnapshotSchema = z.object({
   spatial_guidance: spatialGuidanceSchema,
   official_reports: z.array(officialReportSchema).max(128).default([]),
   official_sources: z.array(liveSourceSchema).max(2).default([]),
+  distress: distressStatusSchema.default(defaultDistress),
 }).superRefine((snapshot, ctx) => {
   if (snapshot.situation.network_state === 'ONLINE_VERIFIED'
     && [snapshot.source, ...snapshot.official_sources].some(source => source.recovery && source.recovery.scan_status !== 'WINDOW_VERIFIED')) {

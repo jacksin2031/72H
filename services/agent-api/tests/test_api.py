@@ -22,6 +22,7 @@ def test_health_version_and_start_without_body():
     assert response.status_code == 201
     snapshot = response.json()
     assert set(snapshot) == {
+        "distress",
         "profile",
         "area_catalog",
         "situation",
