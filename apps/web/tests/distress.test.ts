@@ -24,3 +24,14 @@ it('distressText has the same keys in every language and never promises safety',
   expect(JSON.stringify(distressText)).not.toMatch(/保證安全|安全を保証|guaranteed safe/i);
   expect(distressText.en.goTo).toContain('{name}');
 });
+it('puts the action first and the reason after in verticalNow',()=>{
+  expect(distressText['zh-TW'].verticalNow).toBe('立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）');
+  expect(distressText.ja.verticalNow.startsWith('今すぐ')).toBe(true);
+  expect(distressText.en.verticalNow.startsWith('Move now')).toBe(true);
+});
+it('stamps the SOS message with device-local time, a timezone label and no milliseconds',()=>{
+  const at=Date.parse('2026-10-13T08:00:00.123Z'),d=new Date(at),p=(n:number)=>String(n).padStart(2,'0');
+  const m=buildSosMessage({language:'en',tags:['TRAPPED'],lat:null,lng:null,accuracy_m:null,at});
+  expect(m).toContain(`Time: ${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())} (UTC`);
+  expect(m).toMatch(/\(UTC[+-]\d{2}:\d{2}\)/);expect(m).not.toContain('.123');expect(m).not.toContain('Z\n');
+});

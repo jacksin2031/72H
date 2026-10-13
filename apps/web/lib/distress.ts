@@ -27,26 +27,49 @@ const msg={
  ja:{head:'【救助要請】助けが必要です。',where:'位置',none:'位置情報なし',time:'時刻',sent:'このメッセージは本人が送信したもので、公式情報ではありません。'},
  en:{head:'[SOS] I need help.',where:'Location',none:'Location unavailable',time:'Time',sent:'Sent by the user; not an official message.'},
 } as const;
+/** Device-local wall time with an explicit UTC offset; seconds precision only. */
+function localTime(at:number):string{
+ const d=new Date(at),p=(n:number)=>String(n).padStart(2,'0'),off=-d.getTimezoneOffset(),a=Math.abs(off);
+ return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())} (UTC${off>=0?'+':'-'}${p(Math.floor(a/60))}:${p(a%60)})`;
+}
 export function buildSosMessage(i:{language:Language;tags:readonly DistressTag[];lat:number|null;lng:number|null;accuracy_m:number|null;at:number}):string{
  const t=msg[i.language],tags=i.tags.map(x=>tagText[i.language][x]).join('、');
  const loc=i.lat!==null&&i.lng!==null&&Number.isFinite(i.lat)&&Number.isFinite(i.lng)
   ?`${t.where}: ${i.lat.toFixed(5)},${i.lng.toFixed(5)}${i.accuracy_m!==null&&Number.isFinite(i.accuracy_m)?` (±${Math.round(i.accuracy_m)} m)`:''} https://maps.google.com/?q=${i.lat.toFixed(5)},${i.lng.toFixed(5)}`
   :t.none;
- return [t.head,tags,loc,`${t.time}: ${new Date(i.at).toISOString()}`,t.sent].filter(Boolean).join('\n');
+ return [t.head,tags,loc,`${t.time}: ${localTime(i.at)}`,t.sent].filter(Boolean).join('\n');
 }
 export function smsHref(phones:string[],body:string):string{return `sms:${phones.map(p=>encodeURIComponent(p).replace(/%2B/g,'+')).join(',')}?body=${encodeURIComponent(body)}`;}
 /** Copy for primary distress instructions. Never promises safety; route text is a candidate, not a verdict. */
 export const distressText={
- 'zh-TW':{vertical:'現在往上走／往高處去，遠離水。',verticalNow:'來不及到達指定地點：現在就到堅固建築的 3 樓以上或高處。',goTo:'現在前往 {name}',
+ 'zh-TW':{vertical:'現在往上走／往高處去，遠離水。',verticalNow:'立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）',goTo:'立刻前往 {name}',
   roadCandidateNotice:'這是道路候選路線，沿途狀況未經確認。',exercise:'演練／模擬',aiSuggestion:'AI 建議',aiUnavailable:'AI 暫時無法使用，以下為內建指引。',
   countdown:'剩餘時間',speak:'朗讀',mute:'靜音',replay:'重播',chooseSituation:'請選擇你現在的狀況',confirm:'確認',record:'錄音',stopRecording:'停止錄音',typeInstead:'改用文字輸入',
-  offlineReason:'目前離線，顯示的是上次確認的資訊。'},
- ja:{vertical:'今すぐ上の階・高い場所へ。水から離れてください。',verticalNow:'指定の場所に間に合いません：今すぐ頑丈な建物の3階以上または高台へ。',goTo:'今すぐ {name} へ',
+  offlineReason:'目前離線，顯示的是上次確認的資訊。',
+  send:'送出',voiceNeedsNetwork:'語音與文字判讀需要網路連線，請改用上方按鈕。',youSaid:'你說：',extractFailed:'AI 無法判讀，請用按鈕選擇狀況。',sendFailed:'未能送出，已在這支手機上顯示指引。',
+  notGuaranteed:'這是建議，不代表地點或路線一定沒有危險。請依現場狀況與官方指示判斷。',walkMeta:'步行約 {min} 分鐘 · {m} m',computing:'正在計算可到達的場所…',
+  reasonNoTime:'海嘯預估抵達時間已到或已過。',reasonNoLocation:'沒有可靠的目前位置。',reasonNoReachable:'在預估抵達時間前走不到任何指定場所。',reasonNoSites:'這個範圍沒有指定緊急避難場所資料。',
+  officialSites:'查看官方指定避難場所',pendingTags:'AI 判讀的狀況（請勾選正確的項目）',analyze:'讓 AI 判讀',moreDetails:'更多細節',otherCandidates:'其他候選場所',sosSuggested:'建議求救',lastReport:'已回報'},
+ ja:{vertical:'今すぐ上の階・高い場所へ。水から離れてください。',verticalNow:'今すぐ頑丈な建物の3階以上か高台へ移動（指定の場所には間に合いません）',goTo:'今すぐ {name} へ',
   roadCandidateNotice:'道路の候補です。途中の状況は未確認です。',exercise:'訓練／模擬',aiSuggestion:'AIの提案',aiUnavailable:'AIを利用できません。内蔵の案内を表示しています。',
   countdown:'残り時間',speak:'読み上げ',mute:'消音',replay:'もう一度',chooseSituation:'今の状況を選んでください',confirm:'確認',record:'録音',stopRecording:'録音を停止',typeInstead:'文字で入力',
-  offlineReason:'オフラインです。最後に確認した情報を表示しています。'},
- en:{vertical:'Move up / to high ground now, away from water.',verticalNow:'You cannot reach a designated site in time: go to the 3rd floor or higher of a solid building, or to high ground, now.',goTo:'Go now to {name}',
+  offlineReason:'オフラインです。最後に確認した情報を表示しています。',
+  send:'送信',voiceNeedsNetwork:'音声・文字の判定にはネット接続が必要です。上のボタンを使ってください。',youSaid:'あなたの言葉：',extractFailed:'AIが判定できませんでした。ボタンで状況を選んでください。',sendFailed:'送信できませんでした。この端末で案内を表示しています。',
+  notGuaranteed:'これは提案です。場所や道に危険がないという意味ではありません。現地の状況と公式の指示で判断してください。',walkMeta:'徒歩 約{min}分 · {m} m',computing:'到達できる場所を計算中…',
+  reasonNoTime:'津波の到達予想時刻になった、または過ぎました。',reasonNoLocation:'信頼できる現在地がありません。',reasonNoReachable:'到達予想時刻までに歩いて行ける指定場所がありません。',reasonNoSites:'この範囲の指定緊急避難場所データがありません。',
+  officialSites:'公式の指定避難場所を見る',pendingTags:'AIが判定した状況（正しいものにチェック）',analyze:'AIで判定',moreDetails:'詳細',otherCandidates:'ほかの候補',sosSuggested:'救助要請をおすすめ',lastReport:'報告済み'},
+ en:{vertical:'Move up / to high ground now, away from water.',verticalNow:'Move now to the 3rd floor or higher of a solid building, or to high ground (you cannot reach a designated site in time).',goTo:'Go now to {name}',
   roadCandidateNotice:'Road candidate; conditions along the way are unverified.',exercise:'Exercise / simulated',aiSuggestion:'AI suggestion',aiUnavailable:'AI is unavailable. Showing built-in guidance.',
   countdown:'Time left',speak:'Read aloud',mute:'Mute',replay:'Replay',chooseSituation:'Choose your situation',confirm:'Confirm',record:'Record',stopRecording:'Stop recording',typeInstead:'Type instead',
-  offlineReason:'You are offline. Showing the last verified information.'},
+  offlineReason:'You are offline. Showing the last verified information.',
+  send:'Send',voiceNeedsNetwork:'Voice and text reading need a network connection. Use the buttons above.',youSaid:'You said: ',extractFailed:'AI could not read that. Choose your situation with the buttons.',sendFailed:'Could not send. Showing guidance on this phone.',
+  notGuaranteed:'This is a suggestion. It does not mean the place or road is free of danger. Follow local conditions and official instructions.',walkMeta:'About {min} min walk · {m} m',computing:'Working out which sites you can reach…',
+  reasonNoTime:'The estimated tsunami arrival time has come or passed.',reasonNoLocation:'No reliable current location.',reasonNoReachable:'No designated site can be reached on foot before the estimated arrival.',reasonNoSites:'No designated emergency site data for this area.',
+  officialSites:'See official designated evacuation sites',pendingTags:'Situation read by AI (tick the ones that are right)',analyze:'Let AI read it',moreDetails:'More details',otherCandidates:'Other candidates',sosSuggested:'Calling for help is suggested',lastReport:'Reported'},
 } as const;
+/** AI emphasis clauses (fixed wording; the model only picks ids). */
+export const emphasisText:Record<Language,Record<'MOVE_UP_NOW'|'AVOID_WATER'|'STAY_TOGETHER'|'CALL_FOR_HELP'|'KEEP_PHONE_POWER',string>>={
+ 'zh-TW':{MOVE_UP_NOW:'現在就往高處移動。',AVOID_WATER:'遠離水邊與河川。',STAY_TOGETHER:'和同行的人待在一起。',CALL_FOR_HELP:'需要時撥打 119 求救。',KEEP_PHONE_POWER:'節省手機電量。'},
+ ja:{MOVE_UP_NOW:'今すぐ高い所へ。',AVOID_WATER:'水辺や川から離れてください。',STAY_TOGETHER:'一緒にいる人と離れないでください。',CALL_FOR_HELP:'必要なら119に助けを求めてください。',KEEP_PHONE_POWER:'スマホの電池を節約してください。'},
+ en:{MOVE_UP_NOW:'Move to higher ground now.',AVOID_WATER:'Stay away from the shore and rivers.',STAY_TOGETHER:'Stay together with the people you are with.',CALL_FOR_HELP:'Call 119 for help if you need it.',KEEP_PHONE_POWER:'Save your phone battery.'},
+};
