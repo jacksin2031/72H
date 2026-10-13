@@ -316,3 +316,48 @@ def test_location_stale_plan_is_low_risk_vertical_shelter():
     assert action.intent_id == SafeIntentId.SHELTER_IN_PLACE_VERTICAL
     assert action.risk_level == RiskLevel.LOW
     assert "位置" in action.reason or "location" in action.reason.casefold() or "位置情報" in action.reason
+
+
+# --- F4: OFFICIAL_STALE / USER_REPORTED plans must not expire every 5 minutes ---
+
+def _tick(state, until, step=timedelta(seconds=90)):
+    while state.current_time + step <= until:
+        state = evaluate_and_replan(state, replace(state, current_time=state.current_time + step), Clock(), DEFAULT_POLICY)
+    return state
+
+
+def test_three_hours_of_90s_ticks_at_official_stale_create_at_most_7_plan_versions():
+    warned = evaluate_and_replan(base_state(NOW, source=LocationSource.USER_SELECTED),
+                                 _warned(source=LocationSource.USER_SELECTED), Clock(), DEFAULT_POLICY)
+    stale = evaluate_and_replan(warned, replace(warned, current_time=EXPIRES), Clock(), DEFAULT_POLICY)
+    assert resolve_distress(stale, stale.current_time, DEFAULT_POLICY).level == DistressLevel.OFFICIAL_STALE
+    start = len(stale.plans)
+    ticked = _tick(stale, EXPIRES + timedelta(hours=3))
+    assert resolve_distress(ticked, ticked.current_time, DEFAULT_POLICY).level == DistressLevel.OFFICIAL_STALE
+    assert len(ticked.plans) - start + 1 <= 7
+    current = ticked.plans[-1]
+    assert current.expires_at - current.created_at <= timedelta(minutes=30)
+
+
+def test_stale_plan_expiry_honours_the_30_minute_gps_horizon():
+    at = EXPIRES + timedelta(minutes=1)
+    state = _gps_at(_warned(), at - timedelta(minutes=20))
+    planned = evaluate_and_replan(base_state(NOW), replace(state, current_time=at), Clock(), DEFAULT_POLICY)
+    assert resolve_distress(planned, at, DEFAULT_POLICY).level == DistressLevel.OFFICIAL_STALE
+    assert planned.plans[-1].expires_at == at - timedelta(minutes=20) + timedelta(minutes=30)
+
+
+def test_user_reported_plan_expires_at_report_end_or_30_minutes_not_5():
+    from agent_api.distress import record_distress_report
+    from seventytwoh_contracts.models import DistressTag
+    before = base_state(NOW, source=LocationSource.USER_SELECTED)
+    reported = evaluate_and_replan(before, record_distress_report(before, (DistressTag.TRAPPED,), "BUTTON", NOW),
+                                   Clock(), DEFAULT_POLICY)
+    assert resolve_distress(reported, NOW, DEFAULT_POLICY).level == DistressLevel.USER_REPORTED
+    assert reported.plans[-1].expires_at == NOW + timedelta(minutes=30)
+    start = len(reported.plans)
+    ticked = _tick(reported, NOW + timedelta(minutes=59))
+    assert len(ticked.plans) - start <= 1
+    water = evaluate_and_replan(before, record_distress_report(before, (DistressTag.WATER_RISING,), "BUTTON", NOW),
+                                Clock(), DEFAULT_POLICY)
+    assert water.plans[-1].expires_at == NOW + timedelta(seconds=DEFAULT_POLICY.user_report_ttl_seconds)

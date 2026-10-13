@@ -208,6 +208,25 @@ def official_stale_trigger(state: CoreState, now: datetime, policy: SafetyPolicy
     return best
 
 
+# F4: OFFICIAL_STALE / USER_REPORTED plans carry no current evidence; without a horizon they
+# would expire every transport_ttl (5 min) and append a plan version each time.
+DISTRESS_PLAN_MAX_AGE = timedelta(minutes=30)
+
+
+def distress_plan_horizon(state: CoreState, now: datetime, policy: SafetyPolicy) -> datetime:
+    """Earliest of: an active report / AI escalation TTL end, the 30-minute GPS usability
+    horizon, and a fixed 30-minute cap. Level changes still re-plan through the signature."""
+    ends = [now + DISTRESS_PLAN_MAX_AGE]
+    ends.extend(r.reported_at + report_ttl(r, policy) for r in active_distress_reports(state, now, policy))
+    escalation_ttl = timedelta(seconds=policy.user_report_ttl_seconds)
+    ends.extend(at + escalation_ttl for at in state.ai_escalations if at <= now < at + escalation_ttl)
+    location = state.profile.current_location
+    if location.source == LocationSource.GPS and location.observed_at is not None:
+        ends.append(location.observed_at + STALE_LOCATION_MAX_AGE)
+    future = [end for end in ends if end > now]
+    return min(future) if future else now + DISTRESS_PLAN_MAX_AGE
+
+
 def resolve_distress(state: CoreState, now: datetime, policy: SafetyPolicy) -> DistressStatus:
     reports = active_distress_reports(state, now, policy)
     trigger = official_tsunami_trigger(state, now, policy)

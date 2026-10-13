@@ -38,7 +38,7 @@ from seventytwoh_contracts.models import (
     TrustStatus,
 )
 
-from .distress import distress_signature, official_tsunami_trigger, resolve_distress
+from .distress import distress_plan_horizon, distress_signature, official_tsunami_trigger, resolve_distress
 from .domain import append_plan
 from .live_sources import JMA_SOURCE_KEY, JMA_TSUNAMI_SOURCE_KEY
 from .safety import (
@@ -969,6 +969,9 @@ def _generate_plan(
         )
     else:
         expires_at = state.current_time + timedelta(seconds=policy.transport_ttl_seconds)
+    if distress.level in {DistressLevel.USER_REPORTED, DistressLevel.OFFICIAL_STALE}:
+        horizon = distress_plan_horizon(state, state.current_time, policy)
+        expires_at = min(expires_at, horizon) if future_expiries else horizon
     if expires_at <= state.current_time:
         expires_at = state.current_time + timedelta(seconds=min(policy.transport_ttl_seconds, 60))
 
