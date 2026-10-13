@@ -154,7 +154,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
           </div>
         </div>
         <div className="sim-v2-map-teaser">
-          <SimulationReferenceMap language={language} compact userLocation={assessment.user_location} epicenter={epicenter} seismicOrigins={seismicOrigins} seismicTime={time}/>
+          <SimulationReferenceMap language={language} compact showInformation={false} userLocation={assessment.user_location} epicenter={epicenter} seismicOrigins={seismicOrigins} seismicTime={time}/>
           <button type="button" className="sim-v2-expand-map" onClick={()=>setTab('map')}>{t.reference} <span aria-hidden="true">↗</span></button>
         </div>
         <div className="sim-v2-event-dock">
@@ -202,7 +202,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
           </li>)}
         </ol>
         <div className="sim-v2-timeline-map">
-          <SimulationReferenceMap language={language} compact userLocation={assessment.user_location} epicenter={epicenter} seismicOrigins={seismicOrigins} seismicTime={time}/>
+          <SimulationReferenceMap language={language} compact showInformation={false} userLocation={assessment.user_location} epicenter={epicenter} seismicOrigins={seismicOrigins} seismicTime={time}/>
           <button type="button" onClick={()=>setTab('map')}>{t.reference} ↗</button>
         </div>
         <p className="sim-v2-timeline-caption">{t.note}</p>
@@ -212,7 +212,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
           <button type="button" onClick={()=>setTab('events')} aria-label={t.mapBack}><span className="sim-icon-back"><UiIcon name="arrow" /></span></button>
           <div><strong>{t.map}</strong><small>{t.mapData}</small></div>
         </header>
-        <SimulationReferenceMap language={language} userLocation={assessment.user_location} epicenter={epicenter} seismicOrigins={seismicOrigins} seismicTime={time}/>
+        <SimulationReferenceMap language={language} showInformation={false} userLocation={assessment.user_location} epicenter={epicenter} seismicOrigins={seismicOrigins} seismicTime={time}/>
         <div className="sim-v2-map-sheet sim-v2-map-sheet-risk"
           data-testid="simulation-map-sheet" data-sheet-state={mapSheetExpanded?'expanded':'collapsed'}>
           <button type="button" className="sim-v2-sheet-toggle" data-testid="simulation-risk-toggle"

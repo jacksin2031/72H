@@ -12,7 +12,7 @@ import {REFERENCE_VECTOR_LAYERS} from '../lib/reference-map-style';
 import {mapFixture,linePack,now} from './fixtures/disaster-map';
 import type {IntensityRegionPack} from '../lib/intensity-regions';
 
-const mapHarness=vi.hoisted(()=>({coordinates:[] as number[][],removed:0,operations:[] as string[],waveFrames:[] as WavefrontData[],referenceFrames:[] as Array<{id:string;data:unknown}>}));
+const mapHarness=vi.hoisted(()=>({coordinates:[] as number[][],removed:0,operations:[] as string[],waveFrames:[] as WavefrontData[],referenceFrames:[] as Array<{id:string;data:unknown}>,gestures:[] as string[]}));
 vi.mock('maplibre-gl',()=>({
   setWorkerCount:vi.fn(),setWorkerUrl:vi.fn(),
   Map:class {
@@ -21,8 +21,8 @@ vi.mock('maplibre-gl',()=>({
       this.layers=new Set(options.style.layers.map(l=>l.id));this.sources=new Set(Object.keys(options.style.sources));
     }
     waveSource:{setData:(data:WavefrontData)=>void}|null=null;
-    scrollZoom={disable:vi.fn()};boxZoom={disable:vi.fn()};dragRotate={disable:vi.fn()};
-    dragPan={disable:vi.fn(),enable:vi.fn()};touchZoomRotate={disable:vi.fn(),enable:vi.fn(),disableRotation:vi.fn()};
+    scrollZoom={disable:vi.fn(),enable:()=>mapHarness.gestures.push('wheel')};boxZoom={disable:vi.fn()};dragRotate={disable:vi.fn()};
+    dragPan={disable:vi.fn(),enable:()=>mapHarness.gestures.push('pan')};touchZoomRotate={disable:vi.fn(),enable:()=>mapHarness.gestures.push('touch'),disableRotation:vi.fn()};
     once(_name:string,callback:()=>void){callback();} on(){} off(){} resize(){} fitBounds(){mapHarness.operations.push('country');} remove(){}
     getZoom(){return 9;} easeTo(){mapHarness.operations.push('center');}
     getLayer(id:string){return this.layers.has(id);} getSource(id:string){return id==='seismic-wavefronts'?this.waveSource:this.sources.has(id);}
@@ -50,6 +50,18 @@ afterEach(async () => {
 });
 
 describe('isolated simulation reference map', () => {
+  it('allows compact map panning and pinch/wheel zoom without a blocking information card',async()=>{
+    const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
+    vi.stubGlobal('crypto',webcrypto);vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)})));
+    mapHarness.gestures=[];container=document.createElement('div');document.body.append(container);root=createRoot(container);
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" compact showInformation={false}/>));
+    await act(async()=>{await new Promise(resolve=>setTimeout(resolve,40));});
+    expect(mapHarness.gestures).toEqual(['wheel','pan','touch']);
+    expect(container.querySelector('.sim-map-information')).toBeNull();
+    expect(container.querySelector('.sim-map-maplabel')).toBeNull();
+    expect(container.querySelector('a[href*="maps.gsi.go.jp"]')).not.toBeNull();
+    expect(container.textContent).toContain('不可作避難導航');
+  });
   it('uses the same filtered designation subset on the map and removes previous-format markers',async()=>{
     const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
     vi.stubGlobal('crypto',webcrypto);vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)})));

@@ -1,6 +1,16 @@
 /* P2.1: Map-first, dark-only surface and progressively disclosed risk details.
    Safety assessment is informational and NEVER implies an authorised route. */
 
+/* Bare source/limits text leaves the map draggable; only actual links take input. */
+.sim-map-footnote{position:absolute;z-index:5;left:10px;right:10px;bottom:128px;pointer-events:none;color:#d9e7e7;font-size:10px;line-height:1.4;text-shadow:0 1px 3px #000}
+.sim-map-footnote p{margin:3px 0;font-size:10px}
+.sim-map-footnote .sim-map-attribution{position:static;display:block;background:none;border:0;padding:0;max-width:100%;white-space:normal;font-size:9px;pointer-events:none}
+.sim-map-footnote a{pointer-events:auto}
+.sim-map-footnote .sim-map-wave-legend{display:flex;flex-wrap:wrap;gap:3px 8px}
+.sim-map-footnote .sim-map-status{position:static;inset:auto;padding:0;background:none}
+.sim-map-compact .sim-map-footnote{bottom:8px}
+.sim-v2-timeline-map .sim-map-footnote{bottom:54px}
+
 .sim-v2-shell {
   --map-surface: #101f1d;
   --map-surface-raised: #18312a;

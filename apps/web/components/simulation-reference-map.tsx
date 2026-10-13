@@ -68,11 +68,11 @@ const mapText={
 
 /** All-Japan reference map; no inferred inundation, shelter or routes. */
 export function SimulationReferenceMap({
-  language,compact=false,epicenter=null,userLocation=null,referencePoint=null,officialPack=null,showInundation=false,showPlaces=false,focusPoint=null,onReferencePoint,onPlace,protectDeviceLocation=true,seismicOrigins=[],seismicTime=null,
+  language,compact=false,showInformation=true,epicenter=null,userLocation=null,referencePoint=null,officialPack=null,showInundation=false,showPlaces=false,focusPoint=null,onReferencePoint,onPlace,protectDeviceLocation=true,seismicOrigins=[],seismicTime=null,
   disasterReference=null,forecastLinePack=null,referenceConnected=false,referenceNow=0,showForecastLines=false,
   intensityRegionPack=null,showIntensityRegions=false,referencePlaces,
 }:{
-  language:Language; compact?:boolean;epicenter?:Epicenter|null;userLocation?:LocationFix|null;
+  language:Language; compact?:boolean;showInformation?:boolean;epicenter?:Epicenter|null;userLocation?:LocationFix|null;
   referencePoint?:{lat:number;lng:number}|null;
   officialPack?:HazardPack|null;showInundation?:boolean;showPlaces?:boolean;focusPoint?:{lat:number;lng:number;zoom?:number}|null;
   onReferencePoint?:(point:{lat:number;lng:number})=>void;onPlace?:(place:OfficialPlace)=>void;
@@ -216,9 +216,8 @@ export function SimulationReferenceMap({
           observer=new ResizeObserver(()=>{if(!cancelled)map.resize();});
           observer.observe(host.current);
         }
-        map.scrollZoom.disable();map.boxZoom.disable();map.dragRotate.disable();
-        if(compact){map.dragPan.disable();map.touchZoomRotate.disable();}
-        else{map.dragPan.enable();map.touchZoomRotate.enable();map.touchZoomRotate.disableRotation();}
+        map.scrollZoom.enable();map.boxZoom.disable();map.dragRotate.disable();
+        map.dragPan.enable();map.touchZoomRotate.enable();map.touchZoomRotate.disableRotation();
         map.on('error',event=>{
           if(cancelled)return;
           const message=String(event.error?.message||'');
@@ -370,7 +369,8 @@ export function SimulationReferenceMap({
         <option value="153.98,24.28,10">南鳥島</option>
       </select>
     </label>}
-    <div className="sim-map-information">
+    <div className={showInformation?'sim-map-information':'sim-map-footnote'}>
+      {showInformation&&<>
       <div className="sim-map-maplabel"><strong>{t.title}</strong><small>{officialPack?(language==='ja'?'公式想定データ · 安全性未判定':language==='en'?'Official scenario data · safety undetermined':'官方想定資料 · 安全性未判定'):t.note}</small></div>
       <div className="sim-map-landsea-legend" data-testid="japan-land-sea-legend">
         <span><i className="sim-map-land-color"/>{t.land}</span>
@@ -382,6 +382,7 @@ export function SimulationReferenceMap({
         {disasterReference&&showForecastLines&&<><span><i style={{background:'none',width:16,height:0,borderBottom:'3px solid #ed9b7d'}}/>{language==='ja'?'津波電文 · 予報区海岸線':language==='en'?'Tsunami bulletin · coastal line':'海嘯電文 · 預報區海岸線'}</span>
           <span><i style={{background:'none',width:16,height:0,borderBottom:'3px dashed #a6adb5'}}/>{language==='ja'?'過去／未確認／取消':language==='en'?'Old / unverified / cancelled':'舊資料／未核實／取消'}</span></>}
       </div>
+      </>}
       <p className="sim-map-quick-caution">{t.shortCaution}</p>
       {seismicOrigins.length>0&&seismicTime!==null&&<p className="sim-map-wave-legend" data-testid="seismic-wave-legend"
         data-wave-time={seismicTime} data-wave-count={waveData.features.length}
@@ -394,12 +395,12 @@ export function SimulationReferenceMap({
         {status==='loading'?t.loading:status==='unavailable'?t.unavailable:t.tilesUnavailable}
       </p>}
       {protectDeviceLocation&&userLocation&&<p className="sim-map-status">{language==='ja'?'GPS使用中は位置を守るため端末内の輪郭・想定データのみ表示':language==='en'?'GPS view uses device-local outlines and scenario data to protect location':'GPS 查詢只顯示裝置內輪廓及想定資料，避免詳細圖磚洩漏位置'}</p>}
-      <details className="sim-map-details" data-testid="japan-map-details">
+      {showInformation&&<details className="sim-map-details" data-testid="japan-map-details">
         <summary>{t.details}</summary>
         <p className="sim-map-caution">{t.caution}</p>
         <p className="sim-map-detail-ready">{t.ready}</p>
         {seismicOrigins.length>0&&<a href={WAVE_SPEED_SOURCE} target="_blank" rel="noopener noreferrer">{t.waveSource} ↗</a>}
-      </details>
+      </details>}
       <div className="sim-map-attribution">
         <a href={GSI_ATTRIBUTION_URL} target="_blank" rel="noopener noreferrer">© 国土地理院</a>
         <span> · </span>
