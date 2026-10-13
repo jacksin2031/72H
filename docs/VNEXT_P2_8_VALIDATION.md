@@ -1,14 +1,14 @@
 # VNEXT P2.8 求助輔助驗收紀錄
 
-日期：2026-10-14 JST。分支：`codex/p2-8-distress-assist`。狀態：PARTIAL。
+日期：2026-10-14 JST（最終審查修正後更新）。分支：`codex/p2-8-distress-assist`。狀態：PARTIAL。
 設計文件：[VNEXT_P2_8_DISTRESS_ASSIST.md](VNEXT_P2_8_DISTRESS_ASSIST.md)。
 
 ## 本機檢查結果
 
 | 檢查 | 結果 |
 | --- | --- |
-| 後端 pytest（services/agent-api/tests） | 383 passed |
-| 前端 vitest（apps/web） | 73 個測試檔 passed、1 skipped；463 tests passed、3 skipped |
+| 後端 pytest（services/agent-api/tests） | 407 passed |
+| 前端 vitest（apps/web） | 74 個測試檔 passed、1 skipped；483 tests passed、3 skipped |
 | typecheck（tsc --noEmit） | 無錯誤，exit 0 |
 | production build（node scripts/build.mjs） | 成功，exit 0；Prepared 40 static assets for offline shell |
 | scripts/check_secrets.py | PASS: repository secret-pattern and credential-file checks |
@@ -34,6 +34,17 @@
 | 6 | 推進到解除 → 指示消失，計畫版本增加 | PENDING |
 | 7 | SOS：`tel:` 開啟撥號畫面（不撥出）、`sms:` 開啟簡訊畫面（不送出）、警報聲、手電筒 | PENDING |
 | 8 | 離線（須先取得使用者同意才關閉 Wi-Fi 與行動數據）：按鈕、等級 1、SOS 皆可用 | PENDING |
+
+## 最終審查修正（C1、C2、I1–I6、M1–M8）
+
+- C1：同地區 GPS 更新（只改 observed_at／座標）不再使 HIGH 行動失效或新增計劃版本；200 次更新後計劃數不變（live 與 mock-live）。
+- C2：新增 `OFFICIAL_STALE` 等級（見設計文件 §5.4）；前端在 `trigger_expires_at` 後不再顯示「前往某地」。
+- I1／I2：AI 排除只在使用者回報 `ROUTE_BLOCKED_REPORTED` 或提供封路描述時接受；主要指示的場所永遠是確定性的最短步行候選。
+- I3：等級 2 主要指示下方顯示「依據：氣象廳 〇〇警報 · 發布 HH:MM」。
+- I4：TRAPPED／INJURED／MOBILITY_LIMITED 回報有效 60 分鐘，SOS 置頂在本機保存同樣時間。
+- I5：replay 求助路徑加入 trace 容量檢查（409）；沒有套用任何內容的 fallback 建議不寫 trace。
+- I6：`/api/distress/extract` 需要存在的 session（mock-live 另需 drill key）；全域上限改為每小時滾動 100 次。
+- M8 已知限制：JMA 預報區被拆分的都道府縣（北海道、東京、鹿兒島、沖繩等）到不了等級 2（設計文件 §12）。
 
 ## 未執行項目
 

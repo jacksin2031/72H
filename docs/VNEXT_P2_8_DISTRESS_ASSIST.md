@@ -128,6 +128,8 @@ Plan 新版本（保留歷史）→ P2.7 解釋 → 畫面：一次只顯示一�
 
 官方證據過期、發生衝突、計劃過期或 binding 改變時，等級 2 的指示會被標成 `INVALID`，並觸發重新規劃。離線時顯示最後驗證的計劃和資料時間，不會產生新的官方資訊。
 
+**`OFFICIAL_STALE`（最終審查修正 C2）**：沒有現行官方觸發，但使用者所在地區最近一筆官方 JMA 海嘯資料仍是 ACTIVE 的大津波警報或津波警報、其 TTL 已過（或來源已標為 STALE），而且之後沒有更新的解除（RESOLVED）時，等級為 `OFFICIAL_STALE`：NOW 是 LOW 風險的 `SHELTER_IN_PLACE_VERTICAL`（往上層、高處），絕不指示「前往某地」；畫面顯示「官方資料已超過有效時間，最後確認 HH:MM」。此判定可使用 30 分鐘內的 GPS 或使用者選擇的地區。`DistressStatus` 另帶 `warning_class`、`last_official_at`、`trigger_expires_at`；裝置時間（含既有的時鐘下限）到達 `trigger_expires_at` 時，快取的 `OFFICIAL_TSUNAMI` 也在裝置上降為 `OFFICIAL_STALE`。等級為 `OFFICIAL_TSUNAMI` 或 `OFFICIAL_STALE` 時，裝置持續每 90 秒更新位置（含省電模式下的同地區上傳）。
+
 ## 6. AI 情境建議（不對稱授權）
 
 Gemini 的輸入是：已確認的標籤、使用者原話的抽取摘要（不是原始音檔）、Core 核准的候選地點與屬性、目前等級。輸出必須符合以下結構：
@@ -221,6 +223,9 @@ Gemini 的輸入是：已確認的標籤、使用者原話的抽取摘要（不�
 - 「3 樓以上」是通用的垂直避難建議，不代表某棟特定建築物安全。
 - 網頁 App 無法在背景定位或背景發送訊息；SOS 需要 App 在前景運作。
 - 使用者自報的 `ROUTE_BLOCKED_REPORTED` 只用來排除，不會被當成事實分享給其他人。
+- JMA 海嘯預報區被拆分的都道府縣（例如北海道、東京、鹿兒島、沖繩）永遠到不了等級 2：live 證據以完整都道府縣名稱比對，比不到時一律 fail closed，所以不會產生官方觸發（M8）。
+- 同地區 GPS 更新不再新增計劃版本，但每次仍寫一筆 `PROFILE_LOCATION_REFRESHED` trace；以 90 秒更新計，live session 約 12 小時後會達到 trace 上限（回傳 409）。
+- 官方警報仍在 TTL 內、但 GPS 超過 2 分鐘時，不會是 `OFFICIAL_TSUNAMI` 也不會是 `OFFICIAL_STALE`（`OFFICIAL_STALE` 只在 TTL 過期後成立）；目前靠裝置持續 90 秒更新位置來避免。
 
 ## 13. 實作前發現與調整（2026-10-13，寫計劃時讀程式碼發現）
 
