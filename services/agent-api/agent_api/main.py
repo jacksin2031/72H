@@ -52,9 +52,8 @@ from .mock_live import MockLiveDrillStore, MockLiveResponse, MockLiveRequest
 from .historical_cases import list_historical_cases
 from .place_opening import PlaceOpeningStore, PlaceOpeningResponse
 from .explanation import ExplanationRequest, ExplanationResponse, ExplanationService
-from .distress_extract import DistressExtractor, ExtractRequest, ExtractResponse
+from .distress_extract import DistressCallBudget, DistressExtractor, ExtractRequest, ExtractResponse
 from .distress_advice import AdviceRequest, DistressAdvisor, escalation_skipped
-from .planner import _CallBudget
 
 
 def create_app(
@@ -94,7 +93,7 @@ def create_app(
     distress_budget = (
         distress_extractor._budget if distress_extractor is not None
         else distress_advisor._budget if distress_advisor is not None
-        else _CallBudget()
+        else DistressCallBudget()
     )
     extractor = distress_extractor or DistressExtractor(budget=distress_budget)
     advisor = distress_advisor or DistressAdvisor(budget=distress_budget)
@@ -127,8 +126,32 @@ def create_app(
         detail = [{"loc": list(e.get("loc", ())), "msg": str(e.get("msg", "invalid")), "type": str(e.get("type", "invalid"))} for e in exc.errors()]
         return JSONResponse(status_code=422, content={"detail": detail})
 
+    def _extract_session_exists(session_id: str, drill_key: str | None) -> bool:
+        """Extraction spends the shared Gemini budget, so it needs a real replay or live session;
+        mock-live sessions additionally need the drill key."""
+        try:
+            sid = UUID(session_id)
+        except ValueError:
+            return False
+        for lookup in (replay_store.get, live_session_store.get):
+            try:
+                lookup(sid)
+                return True
+            except (SessionNotFound, LiveSessionNotFound):
+                pass
+        secret = os.environ.get("DRILL_ACCESS_KEY", "")
+        if len(secret) < 32 or not drill_key or len(drill_key) > 256 or not secrets.compare_digest(secret, drill_key):
+            return False
+        try:
+            isolated_mock_live.get(sid)
+            return True
+        except LiveSessionNotFound:
+            return False
+
     @application.post("/api/distress/extract", response_model=ExtractResponse)
-    async def distress_extract(request: ExtractRequest) -> ExtractResponse:
+    async def distress_extract(request: ExtractRequest, x_drill_key: str | None = Header(default=None)) -> ExtractResponse:
+        if not _extract_session_exists(request.session_id, x_drill_key):
+            raise HTTPException(status_code=404, detail="session not found")
         return await extractor.extract(request)
 
     @application.get('/api/reference/place-opening/{partition}', response_model=PlaceOpeningResponse)

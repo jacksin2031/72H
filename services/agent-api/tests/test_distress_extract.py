@@ -74,7 +74,8 @@ def test_budget_limits_calls_per_session():
 
 def test_endpoint_validates_payload():
     with TestClient(create_app(distress_extractor=_extractor({"tags": ["TRAPPED"], "route_blocked_hint": None})[0])) as client:
-        ok = client.post("/api/distress/extract", json={"session_id": "s1", "language": "en", "text": "stuck"})
+        sid = client.post("/api/replay/start").json()["replay"]["id"]
+        ok = client.post("/api/distress/extract", json={"session_id": sid, "language": "en", "text": "stuck"})
         assert ok.status_code == 200 and ok.json()["tags"] == ["TRAPPED"]
         assert client.post("/api/distress/extract", json={"session_id": "s1", "language": "en"}).status_code == 422
 
@@ -95,3 +96,62 @@ def test_422_never_echoes_input():
     assert big[:100] not in r1.text and secret_text not in r2.text
     for r in (r1, r2):
         assert all(set(e) <= {"loc", "msg", "type"} for e in r.json()["detail"])
+
+
+def test_extract_requires_an_existing_session_and_drill_key_for_mock_live(monkeypatch):
+    from uuid import uuid4
+
+    from agent_api.mock_live import MockLiveDrillStore
+    from agent_api.planner import PlannerOutcome
+    from test_live_location import _store_and_client, _start
+
+    class Fallback:
+        async def select(self, session_id, context):
+            return PlannerOutcome(mode="GEMINI_ADK_FALLBACK", reason_code="EXTRACT_TEST")
+
+        def release_session(self, session_id):
+            pass
+
+    key = "this-is-a-test-only-extract-drill-key-with-adequate-length"
+    monkeypatch.setenv("DRILL_ACCESS_KEY", key)
+    extractor, model = _extractor({"tags": ["TRAPPED"], "route_blocked_hint": None})
+    live_store, _ = _store_and_client()
+    app = create_app(live_store=live_store, mock_live_store=MockLiveDrillStore(planner=Fallback()), distress_extractor=extractor)
+    body = lambda sid: {"session_id": sid, "language": "en", "text": "stuck"}
+    with TestClient(app) as client:
+        for unknown in ("s1", str(uuid4())):
+            assert client.post("/api/distress/extract", json=body(unknown)).status_code == 404
+        assert model.calls == []
+        replay_id = client.post("/api/replay/start").json()["replay"]["id"]
+        live_id = _start(client)["session_id"]
+        mock_id = client.post("/api/mock-live/start", json={}, headers={"X-Drill-Key": key}).json()["snapshot"]["session_id"]
+        assert client.post("/api/distress/extract", json=body(replay_id)).status_code == 200
+        assert client.post("/api/distress/extract", json=body(live_id)).status_code == 200
+        assert client.post("/api/distress/extract", json=body(mock_id)).status_code == 404
+        assert client.post("/api/distress/extract", json=body(mock_id), headers={"X-Drill-Key": "wrong" * 8}).status_code == 404
+        assert client.post("/api/distress/extract", json=body(mock_id), headers={"X-Drill-Key": key}).status_code == 200
+        assert len(model.calls) == 3
+
+
+def test_global_distress_cap_is_a_rolling_one_hour_window(monkeypatch):
+    import agent_api.distress_extract as module
+    from agent_api.distress_extract import DistressCallBudget
+    from agent_api.planner import PlannerConfig
+
+    clock = [1000.0]
+    monkeypatch.setattr(module, "monotonic", lambda: clock[0])
+    config = PlannerConfig(mode="gemini", max_calls_per_session=8, global_calls_per_minute=30, global_max_calls=100)
+    budget = DistressCallBudget()
+    for i in range(100):
+        clock[0] += 60 / 25  # stay under the per-minute rate
+        assert budget.reserve(f"s{i}", config) is None
+    assert budget.reserve("late", config) == "GLOBAL_CALL_LIMIT"
+    clock[0] += 3600
+    assert budget.reserve("next-hour", config) is None
+
+
+def test_create_app_uses_the_rolling_distress_budget():
+    from agent_api.distress_extract import DistressCallBudget
+
+    app = create_app()
+    assert isinstance(app.state.distress_extractor._budget, DistressCallBudget)

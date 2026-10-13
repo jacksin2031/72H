@@ -27,7 +27,7 @@ const headers=(scope:DistressScope,accessKey?:string):Record<string,string>=>({'
 const path=(scope:DistressScope,sessionId:string,suffix:string)=>`/api/${scope}/${encodeURIComponent(sessionId)}/${suffix}`;
 
 /** AI tag extraction. Any failure, refusal or invalid payload yields null; the person then uses the buttons. */
-export async function extractDistress(i:{sessionId:string;language:Language;text?:string;audio?:Blob}):Promise<{tags:DistressTag[];hint:string|null}|null>{
+export async function extractDistress(i:{sessionId:string;language:Language;text?:string;audio?:Blob;scope?:DistressScope;accessKey?:string}):Promise<{tags:DistressTag[];hint:string|null}|null>{
  try{
   let body:Record<string,string>={session_id:i.sessionId,language:i.language};
   if(i.audio){
@@ -36,7 +36,8 @@ export async function extractDistress(i:{sessionId:string;language:Language;text
    body={...body,audio_base64:await toBase64(i.audio),audio_mime:mime};
   }else if(i.text&&i.text.trim()&&i.text.trim().length<=500)body={...body,text:i.text.trim()};
   else return null;
-  const r=await fetch('/api/distress/extract',{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});
+  // The server only extracts for an existing session; mock-live sessions also need the drill key.
+  const r=await fetch('/api/distress/extract',{method:'POST',cache:'no-store',headers:headers(i.scope??'live',i.accessKey),body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});
   if(!r.ok)return null;
   const p=extractSchema.safeParse(JSON.parse((await boundedText(r,16_000)).text));
   return p.success&&p.data.mode==='GEMINI'?{tags:[...new Set(p.data.tags)],hint:p.data.route_blocked_hint}:null;

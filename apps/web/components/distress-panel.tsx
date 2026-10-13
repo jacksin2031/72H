@@ -155,7 +155,7 @@ export function DistressPanel(p:DistressPanelProps){
  };
  const analyze=async(input:{text?:string;audio?:Blob},mode:'VOICE'|'TEXT')=>{
   if(!canAi||!sessionId)return;
-  setBusy(true);setAnalyzing(true);setNotice(null);const r=await extractDistress({sessionId,language:p.language,...input});
+  setBusy(true);setAnalyzing(true);setNotice(null);const r=await extractDistress({sessionId,language:p.language,scope:p.scope,accessKey:p.accessKey,...input});
   if(!alive.current)return;setBusy(false);setAnalyzing(false);
   if(!r||(!r.tags.length&&!r.hint)){setNotice(t.extractFailed);return;}
   setPending({tags:r.tags,checked:[],mode});setHint(r.hint);

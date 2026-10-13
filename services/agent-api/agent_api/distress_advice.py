@@ -19,7 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, Strict
 from seventytwoh_contracts.models import AgentName, DistressLevel, Language, TraceEvent, TraceStatus
 
 from .distress import record_ai_escalation
-from .distress_extract import ExtractionModel, VertexExtractionModel, extract_config_from_env
+from .distress_extract import DistressCallBudget, ExtractionModel, VertexExtractionModel, extract_config_from_env
 from .planner import PlannerConfig, _CallBudget, _safe_provider_reason
 
 PlaceId = Annotated[StrictStr, Field(pattern=r"^[a-z_]+:[A-Za-z0-9]{1,40}$")]
@@ -196,7 +196,7 @@ class DistressAdvisor:
                  budget: _CallBudget | None = None) -> None:
         self.config = config or extract_config_from_env()
         self.model = model or VertexExtractionModel()
-        self._budget = budget if budget is not None else _CallBudget()
+        self._budget = budget if budget is not None else DistressCallBudget()
 
     async def advise(self, session_id: str, request: AdviceRequest, *, level: DistressLevel,
                      tags: tuple[str, ...], user_signal: bool, exclusion_signal: bool = False) -> AppliedAdvice:

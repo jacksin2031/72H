@@ -6,6 +6,9 @@ import asyncio
 import base64
 import binascii
 import os
+from collections import deque
+from dataclasses import dataclass, field
+from time import monotonic
 from typing import Annotated, Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError, model_validator
@@ -107,6 +110,34 @@ class VertexExtractionModel:
         return json.loads(response.text or "{}")
 
 
+@dataclass
+class DistressCallBudget(_CallBudget):
+    """Distress-only budget: per session, per minute, and a rolling one-hour global cap
+    (DISTRESS_GLOBAL_MAX_CALLS per hour) instead of a process-lifetime cap, so a burst can
+    never disable the feature for the rest of the process. The explanation budget is separate."""
+
+    hour_starts: deque[float] = field(default_factory=deque)
+
+    def reserve(self, session_id: str, config: PlannerConfig) -> str | None:
+        with self.lock:
+            if self.session_calls.get(session_id, 0) >= config.max_calls_per_session:
+                return "SESSION_CALL_LIMIT"
+            now = monotonic()
+            while self.call_starts and now - self.call_starts[0] >= 60:
+                self.call_starts.popleft()
+            while self.hour_starts and now - self.hour_starts[0] >= 3600:
+                self.hour_starts.popleft()
+            if len(self.call_starts) >= config.global_calls_per_minute:
+                return "GLOBAL_RATE_LIMIT"
+            if len(self.hour_starts) >= config.global_max_calls:
+                return "GLOBAL_CALL_LIMIT"
+            self.session_calls[session_id] = self.session_calls.get(session_id, 0) + 1
+            self.call_starts.append(now)
+            self.hour_starts.append(now)
+            self.lifetime_calls += 1
+            return None
+
+
 def extract_config_from_env(environ: dict[str, str] | None = None) -> PlannerConfig:
     source = dict(environ if environ is not None else os.environ)
     source["PLANNER_MODE"] = source.get("DISTRESS_MODE", "gemini")
@@ -123,7 +154,7 @@ class DistressExtractor:
         self.config = config or extract_config_from_env()
         self.model = model or VertexExtractionModel()
         # Share one budget with DistressAdvisor so the distress feature stays within one limit.
-        self._budget = budget if budget is not None else _CallBudget()
+        self._budget = budget if budget is not None else DistressCallBudget()
 
     async def extract(self, request: ExtractRequest) -> ExtractResponse:
         if self.config.mode != "gemini":

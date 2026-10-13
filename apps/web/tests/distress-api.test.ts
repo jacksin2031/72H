@@ -57,3 +57,11 @@ it('validates advice strictly and passes the snapshot through raw',async()=>{
   vi.stubGlobal('fetch',vi.fn(async()=>json({advice:{...advice,extra:1},snapshot:{}})));
   expect(await requestAdvice('live','l1',body)).toBeNull();
 });
+it('sends the drill key with mock-live extraction only',async()=>{
+  const f=vi.fn(async(_u:string,_i?:RequestInit)=>new Response(JSON.stringify({tags:[],route_blocked_hint:'x',mode:'GEMINI',reason_code:null}),{status:200}));
+  vi.stubGlobal('fetch',f);
+  await extractDistress({sessionId:'m1',language:'ja',text:'x',scope:'mock-live',accessKey:'k'.repeat(40)});
+  await extractDistress({sessionId:'r1',language:'ja',text:'x',scope:'replay',accessKey:'k'.repeat(40)});
+  expect((f.mock.calls[0][1]!.headers as Record<string,string>)['X-Drill-Key']).toBe('k'.repeat(40));
+  expect((f.mock.calls[1][1]!.headers as Record<string,string>)['X-Drill-Key']).toBeUndefined();
+});
