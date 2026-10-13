@@ -1,5 +1,17 @@
 # 72H Agent & Safety Contract v0.1
 
+## Authorized simulation location assessment (2026-10-13)
+
+The simulation-only extension uses device-local GPS area resolution or manual
+canonical area selection. Deterministic code binds scenario facts, expiry,
+limitations and permitted reference choices before Gemini/ADK selects a choice.
+The response must match the exact version, all fact IDs and restrictions.
+Scenario assumptions are never official evidence or real destination, route or
+movement authorization. Failure, stale GPS, offline and reconnect without a new
+assessment remain UNKNOWN. Existing Live Safety Core and plan history remain
+authoritative; this extension does not complete the full P2.7 migration. See
+[simulation contract](VNEXT_SIMULATION_GEMINI_LOCATION.md).
+
 ## Official lifecycle extension — P2.4 A+B (2026-10-12)
 
 JMA product identity, ordering, deduplication, withdrawal, conflict and TTL

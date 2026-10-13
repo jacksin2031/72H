@@ -535,3 +535,12 @@ and perform deployed clean-browser/offline acceptance before configuring judging
 access. Model credentials, project IAM/billing and Docker/cloud build are still
 unverified. No live-feed, persistence or broad feature expansion is authorized
 by completing the local gate alone.
+
+## Authorized local simulation extension — 2026-10-13
+
+The user separately authorized location-aware Gemini earthquake simulation.
+This branch implements and locally validates that bounded reference-only path;
+actual ADC-backed Gemini/ADK execution is verified for this local environment.
+It does not establish cloud/runtime deployment or complete the full P2.7 migration.
+See [scope](../docs/VNEXT_SIMULATION_GEMINI_LOCATION.md) and
+[validation](../docs/VNEXT_SIMULATION_GEMINI_LOCATION_VALIDATION.md).

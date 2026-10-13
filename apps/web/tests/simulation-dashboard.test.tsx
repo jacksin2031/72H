@@ -84,6 +84,8 @@ describe('full-app simulation clock and isolated launch', () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(1010); });
     expect(requests.mock.calls.filter(([path]) => String(path).includes('/api/mock-live/'))).toHaveLength(1);
     expect(requests.mock.calls.some(([path]) => path === '/api/mock-live/start')).toBe(true);
+    const request=requests.mock.calls.find(([path])=>path==='/api/mock-live/start')!;
+    expect(JSON.parse(request[1]?.body as string)).toMatchObject({use_gemini:true,location_context:null,conditions:{}});
     expect(el.querySelector('[data-testid="simulation-clock"]')?.textContent).toContain('14:46');
     expect(localStorage.getItem('72h-live-session')).toBeNull();
   });

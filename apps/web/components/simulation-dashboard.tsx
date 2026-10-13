@@ -73,6 +73,9 @@ function Playback({ config }: { config: SimulationLaunch }) {
         setPhase('running'); setProcessing(true);
         let result = await mockLiveRequest('start', config.accessKey, {
           ...config.input, language,
+          use_gemini: true,
+          location_context: config.locationContext ?? null,
+          conditions: config.conditions ?? {},
           historical_case: config.historicalCase,
           historical_start_jst: config.historicalCase && config.timeMode === 'FAST_RANGE' ? config.startJst+':00+09:00' : null,
           historical_end_jst: config.historicalCase && config.timeMode === 'FAST_RANGE' ? config.endJst+':00+09:00' : null,

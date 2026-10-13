@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import type { Language } from './contracts';
 import type { DisasterTestInput } from './disaster-test';
 import type { Acceleration, TimeMode } from './historical-playback';
+import type { SimulationLocation, SimulationConditions } from './simulation-advice';
 
 export type SimulationMilestone = {
   at_jst: string;
@@ -27,6 +28,8 @@ export type SimulationLaunch = {
   acceleration: Acceleration;
   startJst: string;
   endJst: string;
+  locationContext?: SimulationLocation | null;
+  conditions?: SimulationConditions;
 };
 
 type SimulationContext = {

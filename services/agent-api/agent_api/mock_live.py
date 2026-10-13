@@ -6,17 +6,17 @@ remains synthetic through normalization, planning, evidence and UI projection.
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, replace, field
 from datetime import datetime, timedelta, timezone
 from threading import RLock
 from time import monotonic
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, StrictBool, model_validator
 from seventytwoh_contracts.models import (
     LiveSnapshot, LiveSourceStatus, NetworkState, SelfReportedSafetyStatus, StartLiveRequest,
-    TsunamiOperation,
+    TsunamiOperation,LocationSource,
 )
 from .drill import DrillRequest
 from .historical_cases import CASES, HistoricalId, HistoricCase, list_historical_cases
@@ -25,6 +25,8 @@ from .live import LiveSessionNotFound, LiveStore
 from .live_sources import JmaEarthquakeReport, JmaPrefObservation, JmaFetchResult, JmaTsunamiFetchResult
 from .planner import CandidatePlanner
 from .scenario import load_scenario
+from .simulation_advice import SimulationLocation,SimulationConditions,SimulationAdvisor,SimulationAssessment,build_advice_envelope
+from .area_registry import load_japan_area_registry
 
 MOCK_MODE = "MOCK_LIVE"
 MOCK_JMA_NAME = "SIMULATED JMA provider (NOT official)"
@@ -33,6 +35,9 @@ MOCK_TTL = 30 * 60
 
 
 class MockLiveRequest(DrillRequest):
+    use_gemini: StrictBool = False
+    location_context: SimulationLocation | None = None
+    conditions: SimulationConditions = SimulationConditions()
     historical_case: HistoricalId | None = None
     historical_start_jst: datetime | None = None
     historical_end_jst: datetime | None = None
@@ -89,6 +94,8 @@ class MockLiveResponse(BaseModel):
     battery: int | None = None
     snapshot: LiveSnapshot
     historical: HistoricalView | None = None
+    movement_assessment: SimulationAssessment | None = None
+    movement_assessment_history: tuple[SimulationAssessment,...] = ()
 
 
 class MockJmaSource:
@@ -289,20 +296,23 @@ class _MockSession:
     request: MockLiveRequest
     expires: float
     lock: asyncio.Lock
+    assessments: list[SimulationAssessment] = field(default_factory=list)
 
 
 class MockLiveDrillStore:
-    def __init__(self, *, planner: CandidatePlanner | None = None, max_sessions: int = MAX_MOCK_SESSIONS):
+    def __init__(self, *, planner: CandidatePlanner | None = None, max_sessions: int = MAX_MOCK_SESSIONS, advisor: SimulationAdvisor | None = None):
         self._planner = planner or CandidatePlanner()
         self._max = max_sessions
         self._sessions: dict[UUID, _MockSession] = {}
         self._lock = RLock()
+        self._advisor = advisor or SimulationAdvisor()
 
     def _purge(self) -> None:
         expired = [k for k, s in self._sessions.items() if s.expires <= monotonic()]
         for k in expired:
             s = self._sessions.pop(k)
             s.planner.release_session(f"live-{k}")
+            self._advisor.release_session(str(k))
 
     def _lookup(self, id: UUID) -> _MockSession:
         with self._lock:
@@ -323,6 +333,8 @@ class MockLiveDrillStore:
             battery=session.request.battery,
             snapshot=snapshot,
             historical=self._historical_view(session),
+            movement_assessment=session.assessments[-1] if session.assessments else None,
+            movement_assessment_history=tuple(session.assessments),
         )
 
     @staticmethod
@@ -363,9 +375,18 @@ class MockLiveDrillStore:
             "lat": None, "lng": None,
             "area_ids": (area, "JP"), "observed_at": None, "source": None,
         })
+        if request.use_gemini:
+            mock_location=mock_location.model_copy(update={'label':'所在地未設定 (MOCK)','area_ids':()})
+        if request.location_context and (request.location_context.source!='GPS'
+                or datetime.now(timezone.utc)-request.location_context.observed_at<timedelta(seconds=120)):
+            location=request.location_context
+            label=next(a.label for a in load_japan_area_registry() if a.id==location.area_ids[0])
+            mock_location=mock_location.model_copy(update={'label':label,'area_ids':location.area_ids,
+                'source':LocationSource(location.source),'observed_at':location.observed_at})
         seed = base.model_copy(update={
             "current_location": mock_location,
-            "accommodation_location": mock_location,
+            "accommodation_location": (base.accommodation_location.model_copy(update={'label':'未設定 (MOCK)',
+                'lat':None,'lng':None,'area_ids':(),'observed_at':None,'source':None}) if request.use_gemini else mock_location),
             "current_destination": None,
             "self_reported_safety_status": (SelfReportedSafetyStatus.NEEDS_ASSISTANCE if request.mobility == "CANNOT_MOVE" else SelfReportedSafetyStatus.UNCERTAIN),
             "accessibility_constraints": ("MOBILITY_SUPPORT",) if request.mobility == "CANNOT_MOVE" else (),
@@ -410,4 +431,12 @@ class MockLiveDrillStore:
             except Exception:
                 session.store.mock_source.stage = stage
                 raise
+            if session.request.use_gemini:
+                kind=(session.store.mock_source.milestones[stage].kind if session.request.historical_case else 'EARTHQUAKE')
+                envelope=build_advice_envelope(session.request.location_context,session.request.conditions,
+                    event_kind=kind,mobility=session.request.mobility,network=session.request.network,evidence=session.request.evidence,
+                    step=stage+1,session_id=str(id),plan_id=str(snap.situation.current_plan_id) if snap.situation.current_plan_id else None,
+                    tsunami_active=any(m.kind in ('TSUNAMI_WARNING','TSUNAMI_UPGRADE') for m in session.store.mock_source.milestones[:stage+1]),
+                    now=datetime.now(timezone.utc))
+                session.assessments.append(await self._advisor.assess(envelope))
             return self._response(session, snap)
