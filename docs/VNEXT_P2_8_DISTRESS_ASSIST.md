@@ -128,7 +128,7 @@ Plan 新版本（保留歷史）→ P2.7 解釋 → 畫面：一次只顯示一�
 
 官方證據過期、發生衝突、計劃過期或 binding 改變時，等級 2 的指示會被標成 `INVALID`，並觸發重新規劃。離線時顯示最後驗證的計劃和資料時間，不會產生新的官方資訊。
 
-**`OFFICIAL_STALE`（最終審查修正 C2）**：沒有現行官方觸發，但使用者所在地區最近一筆官方 JMA 海嘯資料仍是 ACTIVE 的大津波警報或津波警報、其 TTL 已過（或來源已標為 STALE），而且之後沒有更新的解除（RESOLVED）時，等級為 `OFFICIAL_STALE`：NOW 是 LOW 風險的 `SHELTER_IN_PLACE_VERTICAL`（往上層、高處），絕不指示「前往某地」；畫面顯示「官方資料已超過有效時間，最後確認 HH:MM」。此判定可使用 30 分鐘內的 GPS 或使用者選擇的地區。`DistressStatus` 另帶 `warning_class`、`last_official_at`、`trigger_expires_at`；裝置時間（含既有的時鐘下限）到達 `trigger_expires_at` 時，快取的 `OFFICIAL_TSUNAMI` 也在裝置上降為 `OFFICIAL_STALE`。等級為 `OFFICIAL_TSUNAMI` 或 `OFFICIAL_STALE` 時，裝置持續每 90 秒更新位置（含省電模式下的同地區上傳）。
+**`OFFICIAL_STALE`（最終審查修正 C2）**：沒有現行官方觸發，但使用者所在地區最近一筆官方 JMA 海嘯資料仍是 ACTIVE 的大津波警報或津波警報、其 TTL 已過（或來源已標為 STALE），而且之後沒有更新的解除（RESOLVED）時，等級為 `OFFICIAL_STALE`：NOW 是 LOW 風險的 `SHELTER_IN_PLACE_VERTICAL`（往上層、高處），絕不指示「前往某地」；畫面顯示「官方資料已超過有效時間，最後確認 HH:MM」。此判定可使用 30 分鐘內的 GPS 或使用者選擇的地區。官方證據仍在 TTL 內、但 GPS 超過 2 分鐘（30 分鐘內）時，同樣是 `OFFICIAL_STALE`（修正 F2）。`DistressStatus.stale_reason` 區分兩種原因：`EVIDENCE_EXPIRED`（官方資料過期）與 `LOCATION_STALE`（位置過舊，畫面顯示「位置資料過舊，最後定位 HH:MM」，三種語言）。較新的官方資料若對該地區是 RESOLVED，或是因 JMA「取消」或同一資訊單元的較新電文不再列出該地區而成為 UNKNOWN（`DisasterAssessment.withdrawn`），就取代舊警報，等級回到 NONE；一般的 UNKNOWN（例如無法辨識的種別代碼）不會取代（修正 F1）。`OFFICIAL_STALE` 與 `USER_REPORTED` 的計劃在回報有效期限、30 分鐘 GPS 可用期限與固定 30 分鐘上限三者中最早的時間到期，不再每 5 分鐘新增一個版本（修正 F4）。`DistressStatus` 另帶 `warning_class`、`last_official_at`、`trigger_expires_at`；裝置時間（含既有的時鐘下限）到達 `trigger_expires_at` 時，快取的 `OFFICIAL_TSUNAMI` 也在裝置上降為 `OFFICIAL_STALE`。等級為 `OFFICIAL_TSUNAMI` 或 `OFFICIAL_STALE` 時，裝置持續每 90 秒更新位置；位置上傳本身也不受 SURVIVAL／EMERGENCY_POWER 省電模式阻擋（修正 F2）。
 
 ## 6. AI 情境建議（不對稱授權）
 
@@ -224,8 +224,10 @@ Gemini 的輸入是：已確認的標籤、使用者原話的抽取摘要（不�
 - 網頁 App 無法在背景定位或背景發送訊息；SOS 需要 App 在前景運作。
 - 使用者自報的 `ROUTE_BLOCKED_REPORTED` 只用來排除，不會被當成事實分享給其他人。
 - JMA 海嘯預報區被拆分的都道府縣（例如北海道、東京、鹿兒島、沖繩）永遠到不了等級 2：live 證據以完整都道府縣名稱比對，比不到時一律 fail closed，所以不會產生官方觸發（M8）。
-- 同地區 GPS 更新不再新增計劃版本，但每次仍寫一筆 `PROFILE_LOCATION_REFRESHED` trace；以 90 秒更新計，live session 約 12 小時後會達到 trace 上限（回傳 409）。
-- 官方警報仍在 TTL 內、但 GPS 超過 2 分鐘時，不會是 `OFFICIAL_TSUNAMI` 也不會是 `OFFICIAL_STALE`（`OFFICIAL_STALE` 只在 TTL 過期後成立）；目前靠裝置持續 90 秒更新位置來避免。
+- 同地區 GPS 更新若沒有觸發計劃評估，會原地取代上一筆 `PROFILE_LOCATION_REFRESHED` trace，不再增加 trace 數（修正 F3）。但 live session 的其他來源（例如一般計劃依證據 TTL 到期後的重新評估）仍會持續增加 trace，長時間 session 仍可能達到上限；這不在 F3 的範圍內。
+- GPS 超過 30 分鐘（且不是使用者選擇的地區）時，即使官方警報仍有效，等級也是 NONE：無法確認使用者仍在該地區。
+- 已不再讀取舊的、全裝置共用的 SOS 置頂鍵 `72h-sos-pinned-until`；置頂改依 live／replay／mock-live 分開保存（修正 F5）。升級當下若舊鍵仍在有效期內，該置頂不會延續。
+- 建議端點在 trace 容量不足時，會在呼叫模型之前降為確定性 fallback（`TRACE_CAPACITY`），不消耗 Gemini 額度（修正 F6）。
 
 ## 13. 實作前發現與調整（2026-10-13，寫計劃時讀程式碼發現）
 
