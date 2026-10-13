@@ -11,7 +11,7 @@ const {DistressEntry,LOCATION_REFRESH_MS}=await import('../components/distress-e
 
 (globalThis as {IS_REACT_ACT_ENVIRONMENT?:boolean}).IS_REACT_ACT_ENVIRONMENT=true;
 afterEach(()=>{vi.useRealTimers();vi.unstubAllGlobals();});
-const status=(level:DistressStatus['level']):DistressStatus=>({level,reports:[],trigger_evidence_ids:[],deadline_at:level==='OFFICIAL_TSUNAMI'?new Date(Date.now()+30*60_000).toISOString():null,ai_escalated:false,synthetic:false});
+const status=(level:DistressStatus['level']):DistressStatus=>({level,reports:[],trigger_evidence_ids:[],deadline_at:level==='OFFICIAL_TSUNAMI'?new Date(Date.now()+30*60_000).toISOString():null,ai_escalated:false,synthetic:false,warning_class:null,last_official_at:null,trigger_expires_at:null});
 
 it('refreshes the location before it expires while a tsunami level is shown, and stops afterwards',async()=>{
   vi.useFakeTimers({toFake:['setInterval','clearInterval','setTimeout','clearTimeout','Date']});
@@ -43,5 +43,21 @@ it('asks once for a fix when none is usable',async()=>{
   await act(async()=>root.render(<DistressEntry snapshot={null} language="en" scope="live" fix={null} onSnapshot={vi.fn()} refreshLocation={refresh}/>));
   await act(async()=>root.render(<DistressEntry snapshot={null} language="en" scope="live" fix={null} onSnapshot={vi.fn()} refreshLocation={refresh}/>));
   expect(refresh).toHaveBeenCalledTimes(1);
+  await act(async()=>root.unmount());
+});
+
+it('keeps the 90 s location refresh going while the level is OFFICIAL_STALE',async()=>{
+  vi.useFakeTimers({toFake:['setInterval','clearInterval','setTimeout','clearTimeout','Date']});
+  vi.stubGlobal('fetch',vi.fn(async()=>new Response('{}',{status:503})));
+  const o=Object.create(navigator);Object.defineProperty(o,'onLine',{value:false,configurable:true});vi.stubGlobal('navigator',o);
+  const refresh=vi.fn(),host=document.createElement('div'),root=createRoot(host);
+  const render=()=>act(async()=>root.render(<DistressEntry snapshot={{distress:status('OFFICIAL_STALE'),replay:{id:'r1'}}} language="ja" scope="replay"
+    fix={{lat:38.43,lng:141.3,accuracy_m:10,captured_at:Date.now()}} onSnapshot={vi.fn()} refreshLocation={refresh}/>));
+  await render();
+  await act(async()=>{vi.advanceTimersByTime(LOCATION_REFRESH_MS);});
+  expect(refresh).toHaveBeenCalledTimes(1);
+  await render();
+  await act(async()=>{vi.advanceTimersByTime(LOCATION_REFRESH_MS);});
+  expect(refresh).toHaveBeenCalledTimes(2);
   await act(async()=>root.unmount());
 });

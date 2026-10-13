@@ -64,15 +64,19 @@ export const distressTagSchema = z.enum(['WATER_RISING','TRAPPED','INJURED','MOB
 export type DistressTag = z.infer<typeof distressTagSchema>;
 const distressReportSchema = z.object({ id, tags: z.array(distressTagSchema).min(1).max(7), input_mode: z.enum(['BUTTON','VOICE','TEXT']), reported_at: timestamp, source: z.literal('USER_REPORTED') });
 export const distressStatusSchema = z.object({
-  level: z.enum(['NONE','USER_REPORTED','OFFICIAL_TSUNAMI']),
+  level: z.enum(['NONE','USER_REPORTED','OFFICIAL_TSUNAMI','OFFICIAL_STALE']),
   reports: z.array(distressReportSchema).max(16),
   trigger_evidence_ids: ids,
   deadline_at: timestamp.nullable(),
   ai_escalated: z.boolean(),
   synthetic: z.boolean(),
+  // Official basis for OFFICIAL_TSUNAMI / OFFICIAL_STALE; older snapshots omit them.
+  warning_class: z.enum(['MAJOR_WARNING','WARNING','ADVISORY','FORECAST','NONE','UNKNOWN']).nullable().default(null),
+  last_official_at: timestamp.nullable().default(null),
+  trigger_expires_at: timestamp.nullable().default(null),
 });
 export type DistressStatus = z.infer<typeof distressStatusSchema>;
-const defaultDistress: DistressStatus = { level: 'NONE', reports: [], trigger_evidence_ids: [], deadline_at: null, ai_escalated: false, synthetic: false };
+const defaultDistress: DistressStatus = { level: 'NONE', reports: [], trigger_evidence_ids: [], deadline_at: null, ai_escalated: false, synthetic: false, warning_class: null, last_official_at: null, trigger_expires_at: null };
 export const snapshotSchema = z.object({
   profile: z.object({ id, preferred_language: z.enum(['ja', 'en', 'zh-TW']), current_location: location, accommodation_location: location, current_destination: location.nullable(), party_size: z.number().int().positive(), self_reported_safety_status: z.enum(['SAFE', 'UNCERTAIN', 'NEEDS_ASSISTANCE', 'UNKNOWN']), current_plan_summary: text.default(''), accessibility_constraints: z.array(text).max(32).default([]), created_at: timestamp, updated_at: timestamp }),
   area_catalog: z.array(areaDefinitionSchema).max(512).default([]),

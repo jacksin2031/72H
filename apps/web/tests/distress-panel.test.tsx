@@ -14,7 +14,7 @@ const site=(id:string,lat:number)=>({id:`emergency_site:${id}`,kind:'EMERGENCY_S
 const places=[site('NEAR',38.4330),site('NEXT',38.4345)];
 const origin={lat:38.43,lng:141.3,accuracy_m:10};
 const empty={contacts:[],needsAssistance:false,mobilityLimited:false};
-const status=(over:Partial<DistressStatus>={}):DistressStatus=>({level:'NONE',reports:[],trigger_evidence_ids:[],deadline_at:null,ai_escalated:false,synthetic:false,...over});
+const status=(over:Partial<DistressStatus>={}):DistressStatus=>({level:'NONE',reports:[],trigger_evidence_ids:[],deadline_at:null,ai_escalated:false,synthetic:false,warning_class:null,last_official_at:null,trigger_expires_at:null,...over});
 const tsunami=(minutes:number,over:Partial<DistressStatus>={})=>status({level:'OFFICIAL_TSUNAMI',trigger_evidence_ids:['ev-1'],deadline_at:new Date(NOW+minutes*60_000).toISOString(),...over});
 const mounted:{root:ReturnType<typeof createRoot>;host:HTMLDivElement}[]=[];
 const json=(body:unknown,code=200)=>new Response(JSON.stringify(body),{status:code,headers:{'Content-Type':'application/json'}});
@@ -237,4 +237,33 @@ it('gives the right reason when online without a session, shows analyzing, AI-he
   nav({onLine:false});
   ({host}=await mount(props({snapshot:{distress:status(),replay:{id:'r1'},situation:{updated_at:new Date(NOW).toISOString(),latest_evidence_at:new Date(NOW-60_000).toISOString()}}})));
   expect(host.querySelector('[data-testid="distress-last-verified"]')?.textContent).toContain(t.lastVerified);
+});
+
+import {formatClock} from '../lib/distress';
+const official={warning_class:'MAJOR_WARNING' as const,last_official_at:new Date(NOW-10*60_000).toISOString(),trigger_expires_at:new Date(NOW+5*60_000).toISOString()};
+it('shows the official basis and issue time under the primary instruction while online',async()=>{
+  nav({});vi.stubGlobal('fetch',vi.fn(async()=>json({},503)));
+  const {host}=await mount(props({snapshot:{distress:tsunami(15,official),replay:{id:'r1'}}}));
+  await vi.waitFor(()=>expect(primary(host).textContent).toContain('測試場所NEAR'));
+  const basis=primary(host).querySelector('[data-testid="distress-basis"]')!;
+  expect(basis.textContent).toBe(t.basis.replace('{warning}',t.warningMajor).replace('{time}',formatClock(NOW-10*60_000)));
+  expect(basis.textContent).toContain('依據：氣象廳 大津波警報 · 發布 ');
+});
+it('OFFICIAL_STALE: vertical evacuation plus a data-expired notice with the last confirmed time, never a site',async()=>{
+  nav({});vi.stubGlobal('fetch',vi.fn(async()=>json({},503)));
+  const {host}=await mount(props({snapshot:{distress:status({level:'OFFICIAL_STALE',trigger_evidence_ids:['ev-1'],...official}),replay:{id:'r1'}}}));
+  await settle();
+  const text=primary(host).textContent!;
+  expect(text).toContain(t.vertical);expect(text).not.toContain('測試場所');expect(text).not.toContain(t.countdown);
+  expect(primary(host).querySelector('[data-testid="distress-stale"]')!.textContent).toBe(t.staleNotice.replace('{time}',formatClock(NOW-10*60_000)));
+  expect(t.staleNotice).toContain('官方資料已超過有效時間，最後確認');
+});
+it('never shows a site past trigger_expires_at, even from a cached OFFICIAL_TSUNAMI snapshot',async()=>{
+  nav({onLine:false});vi.stubGlobal('fetch',vi.fn());
+  const {host}=await mount(props({now:NOW+5*60_000,snapshot:{distress:tsunami(15,official),replay:{id:'r1'}}}));
+  await settle();
+  const text=primary(host).textContent!;
+  expect(text).not.toContain('測試場所');expect(text).not.toContain(t.countdown);
+  expect(text).toContain(t.vertical);
+  expect(primary(host).querySelector('[data-testid="distress-stale"]')).toBeTruthy();
 });

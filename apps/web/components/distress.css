@@ -2,6 +2,8 @@
 .distress-panel a{color:#ffe866}
 .distress-exercise{display:inline-block;margin:0 0 .8rem;padding:.35rem .8rem;border-radius:999px;background:#ffd400;color:#000;font-weight:800;font-size:1.1rem}
 .distress-offline{margin:0 0 .6rem;color:#ffe866}
+.distress-stale{margin:.4rem 0;color:#ffe866;font-weight:700}
+.distress-basis{margin:.3rem 0;font-size:.95rem;opacity:.9}
 .distress-primary{padding:1rem;border-radius:12px;background:#111;border:3px solid #fff}
 .distress-primary-text{margin:0 0 .6rem;font-size:clamp(1.6rem,6vw,2.4rem);line-height:1.3;font-weight:900;color:#fff}
 .distress-primary p{margin:.4rem 0;font-size:1.1rem;line-height:1.5}

@@ -33,7 +33,7 @@ import { EmergencyContactsSetup } from './emergency-contacts-setup';
 import { SOS_ONBOARDED_KEY, shouldShowSosSetup } from '@/lib/emergency-contacts';
 import { EmergencyMap } from './emergency-map';
 import { DistressEntry } from './distress-entry';
-import { fixFromDevicePosition } from '@/lib/distress-guidance';
+import { fixFromDevicePosition, locationRefreshNetworkAllowed } from '@/lib/distress-guidance';
 import { sosText } from '@/lib/distress';
 import { PowerControls } from './power-controls';
 import { DeviceLocationControls } from './device-location';
@@ -1186,7 +1186,8 @@ export function LiveDashboard({ view }: { view: string }) {
         }
         if (shouldRefreshGpsAreaTimestamp({ source: currentLocation.source, areaUnchanged: true,
           observedAt: currentLocation.observed_at, fixCapturedAt: fix.captured_at })
-          && navigator.onLine && connectionRef.current !== 'offline' && power.power.allowNonCriticalNetwork && !requestPending.current) {
+          && navigator.onLine && connectionRef.current !== 'offline'
+          && locationRefreshNetworkAllowed(power.power.allowNonCriticalNetwork, current.distress.level) && !requestPending.current) {
           await postLocationUpdate(sameAreaUpdate);
         }
         return;

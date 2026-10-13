@@ -61,3 +61,26 @@ it('drops excluded sites from a reused result and falls back to vertical when no
   expect(dropExcluded(g,['a'])).toEqual({...g,candidates:[c('b')]});
   expect(dropExcluded(g,['a','b'])).toEqual({kind:'VERTICAL_NOW',reason:'NO_REACHABLE_SITE',deadlineAt:1});
 });
+import {degradeExpiredOfficial,keepsLocationFresh} from '../lib/distress-guidance';
+it('downgrades a cached OFFICIAL_TSUNAMI to OFFICIAL_STALE once the device clock reaches trigger_expires_at',()=>{
+  const base={level:'OFFICIAL_TSUNAMI' as const,reports:[],trigger_evidence_ids:['ev-1'],deadline_at:new Date(NOW+20*60_000).toISOString(),ai_escalated:false,synthetic:false,
+    warning_class:'MAJOR_WARNING' as const,last_official_at:new Date(NOW-60_000).toISOString(),trigger_expires_at:new Date(NOW+5*60_000).toISOString()};
+  expect(degradeExpiredOfficial(base,NOW+5*60_000-1)).toBe(base);
+  const stale=degradeExpiredOfficial(base,NOW+5*60_000);
+  expect(stale).toMatchObject({level:'OFFICIAL_STALE',deadline_at:null,last_official_at:base.last_official_at,warning_class:'MAJOR_WARNING'});
+  expect(degradeExpiredOfficial({...base,trigger_expires_at:null},NOW+3_600_000)).toMatchObject({level:'OFFICIAL_TSUNAMI'});
+  const reported={...base,level:'USER_REPORTED' as const};
+  expect(degradeExpiredOfficial(reported,NOW+3_600_000)).toBe(reported);
+});
+it('keeps the device location fresh only for official tsunami levels',()=>{
+  expect(keepsLocationFresh('OFFICIAL_TSUNAMI')).toBe(true);expect(keepsLocationFresh('OFFICIAL_STALE')).toBe(true);
+  expect(keepsLocationFresh('USER_REPORTED')).toBe(false);expect(keepsLocationFresh('NONE')).toBe(false);
+});
+import {locationRefreshNetworkAllowed} from '../lib/distress-guidance';
+it('lets the same-area location refresh through power-saving modes only during official tsunami levels',()=>{
+  expect(locationRefreshNetworkAllowed(true,'NONE')).toBe(true);
+  expect(locationRefreshNetworkAllowed(false,'NONE')).toBe(false);
+  expect(locationRefreshNetworkAllowed(false,'USER_REPORTED')).toBe(false);
+  expect(locationRefreshNetworkAllowed(false,'OFFICIAL_TSUNAMI')).toBe(true);
+  expect(locationRefreshNetworkAllowed(false,'OFFICIAL_STALE')).toBe(true);
+});

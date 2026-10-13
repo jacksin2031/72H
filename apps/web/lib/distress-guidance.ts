@@ -61,6 +61,21 @@ export function formatCountdown(ms:number):string{
  const s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),sec=s%60,p=(n:number)=>String(n).padStart(2,'0');
  return h?`${h}:${p(m)}:${p(sec)}`:`${p(m)}:${p(sec)}`;
 }
+/** Never show OFFICIAL_TSUNAMI (and its "go to a site") past the evidence expiry, e.g. from a cached offline snapshot:
+ * at or after trigger_expires_at on the (skew-floored) device clock it becomes OFFICIAL_STALE, as the server would. */
+export function degradeExpiredOfficial(distress:DistressStatus,now:number):DistressStatus{
+ if(distress.level!=='OFFICIAL_TSUNAMI'||!distress.trigger_expires_at)return distress;
+ const expires=Date.parse(distress.trigger_expires_at);
+ return Number.isFinite(expires)&&now>=expires?{...distress,level:'OFFICIAL_STALE',deadline_at:null}:distress;
+}
+/** Official tsunami levels keep the device location fresh (even in power-saving modes) so the area check stays valid. */
+export function keepsLocationFresh(level:DistressStatus['level']):boolean{
+ return level==='OFFICIAL_TSUNAMI'||level==='OFFICIAL_STALE';
+}
+/** SURVIVAL / EMERGENCY_POWER block non-critical network; the same-area location refresh is critical during an official tsunami level. */
+export function locationRefreshNetworkAllowed(allowNonCriticalNetwork:boolean,level:DistressStatus['level']):boolean{
+ return allowNonCriticalNetwork||keepsLocationFresh(level);
+}
 /** A person's own report raises the floor to level 1 locally (offline too); only the server can set OFFICIAL_TSUNAMI. */
 export function effectiveDistressLevel(level:DistressStatus['level'],localTags:readonly DistressTag[]):DistressStatus['level']{
  return level==='NONE'&&localTags.length?'USER_REPORTED':level;

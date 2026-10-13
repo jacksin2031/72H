@@ -40,6 +40,11 @@ export function buildSosMessage(i:{language:Language;tags:readonly DistressTag[]
  return [t.head,tags,loc,`${t.time}: ${localTime(i.at)}`,t.sent].filter(Boolean).join('\n');
 }
 export function smsHref(phones:string[],body:string):string{return `sms:${phones.map(p=>encodeURIComponent(p).replace(/%2B/g,'+')).join(',')}?body=${encodeURIComponent(body)}`;}
+/** Device-local HH:MM (24 h) for basis / last-confirmed lines. */
+export function formatClock(at:number):string{
+ const d=new Date(at),p=(n:number)=>String(n).padStart(2,'0');
+ return `${p(d.getHours())}:${p(d.getMinutes())}`;
+}
 /** Copy for primary distress instructions. Never promises safety; route text is a candidate, not a verdict. */
 export const distressText={
  'zh-TW':{vertical:'現在往上走／往高處去，遠離水。',verticalNow:'立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）',goTo:'立刻前往 {name}',
@@ -49,7 +54,8 @@ export const distressText={
   send:'送出',voiceNeedsNetwork:'語音與文字判讀需要網路連線，請改用上方按鈕。',aiHeard:'AI 聽到：',micUnavailable:'無法使用麥克風，請改用上方按鈕。',noSession:'目前沒有連線中的工作階段，無法使用語音或文字判讀，請改用上方按鈕。',analyzing:'AI 判讀中…',lastVerified:'最後確認時間',extractFailed:'AI 無法判讀，請用按鈕選擇狀況。',sendFailed:'未能送出，已在這支手機上顯示指引。',
   notGuaranteed:'這是建議，不代表地點或路線一定沒有危險。請依現場狀況與官方指示判斷。',walkMeta:'步行約 {min} 分鐘 · {m} m',computing:'正在計算可到達的場所…',
   reasonNoTime:'海嘯預估抵達時間已到或已過。',reasonNoLocation:'沒有可靠的目前位置。',reasonNoReachable:'在預估抵達時間前走不到任何指定場所。',reasonNoSites:'這個範圍沒有指定緊急避難場所資料。',
-  officialSites:'查看官方指定避難場所',pendingTags:'AI 判讀的狀況（請勾選正確的項目）',analyze:'讓 AI 判讀',moreDetails:'更多細節',otherCandidates:'其他候選場所',sosSuggested:'建議求救',lastReport:'已回報'},
+  officialSites:'查看官方指定避難場所',pendingTags:'AI 判讀的狀況（請勾選正確的項目）',analyze:'讓 AI 判讀',moreDetails:'更多細節',otherCandidates:'其他候選場所',sosSuggested:'建議求救',lastReport:'已回報',
+  basis:'依據：氣象廳 {warning} · 發布 {time}',warningMajor:'大津波警報',warningWarning:'津波警報',staleNotice:'官方資料已超過有效時間，最後確認 {time}'},
  ja:{vertical:'今すぐ上の階・高い場所へ。水から離れてください。',verticalNow:'今すぐ頑丈な建物の3階以上か高台へ移動（指定の場所には間に合いません）',goTo:'今すぐ {name} へ',
   roadCandidateNotice:'道路の候補です。途中の状況は未確認です。',exercise:'訓練／模擬',aiSuggestion:'AIの提案',aiUnavailable:'AIを利用できません。内蔵の案内を表示しています。',
   countdown:'残り時間',speak:'読み上げ',mute:'消音',replay:'もう一度',chooseSituation:'今の状況を選んでください',confirm:'確認',record:'録音',stopRecording:'録音を停止',typeInstead:'文字で入力',
@@ -57,7 +63,8 @@ export const distressText={
   send:'送信',voiceNeedsNetwork:'音声・文字の判定にはネット接続が必要です。上のボタンを使ってください。',aiHeard:'AIが聞き取った内容：',micUnavailable:'マイクを使えません。上のボタンを使ってください。',noSession:'接続中のセッションがないため、音声・文字の判定は使えません。上のボタンを使ってください。',analyzing:'AIが判定中…',lastVerified:'最終確認時刻',extractFailed:'AIが判定できませんでした。ボタンで状況を選んでください。',sendFailed:'送信できませんでした。この端末で案内を表示しています。',
   notGuaranteed:'これは提案です。場所や道に危険がないという意味ではありません。現地の状況と公式の指示で判断してください。',walkMeta:'徒歩 約{min}分 · {m} m',computing:'到達できる場所を計算中…',
   reasonNoTime:'津波の到達予想時刻になった、または過ぎました。',reasonNoLocation:'信頼できる現在地がありません。',reasonNoReachable:'到達予想時刻までに歩いて行ける指定場所がありません。',reasonNoSites:'この範囲の指定緊急避難場所データがありません。',
-  officialSites:'公式の指定避難場所を見る',pendingTags:'AIが判定した状況（正しいものにチェック）',analyze:'AIで判定',moreDetails:'詳細',otherCandidates:'ほかの候補',sosSuggested:'救助要請をおすすめ',lastReport:'報告済み'},
+  officialSites:'公式の指定避難場所を見る',pendingTags:'AIが判定した状況（正しいものにチェック）',analyze:'AIで判定',moreDetails:'詳細',otherCandidates:'ほかの候補',sosSuggested:'救助要請をおすすめ',lastReport:'報告済み',
+  basis:'根拠：気象庁 {warning} · 発表 {time}',warningMajor:'大津波警報',warningWarning:'津波警報',staleNotice:'公式情報の有効時間を過ぎています。最終確認 {time}'},
  en:{vertical:'Move up / to high ground now, away from water.',verticalNow:'Move now to the 3rd floor or higher of a solid building, or to high ground (you cannot reach a designated site in time).',goTo:'Go now to {name}',
   roadCandidateNotice:'Road candidate; conditions along the way are unverified.',exercise:'Exercise / simulated',aiSuggestion:'AI suggestion',aiUnavailable:'AI is unavailable. Showing built-in guidance.',
   countdown:'Time left',speak:'Read aloud',mute:'Mute',replay:'Replay',chooseSituation:'Choose your situation',confirm:'Confirm',record:'Record',stopRecording:'Stop recording',typeInstead:'Type instead',
@@ -65,7 +72,8 @@ export const distressText={
   send:'Send',voiceNeedsNetwork:'Voice and text reading need a network connection. Use the buttons above.',aiHeard:'AI heard: ',micUnavailable:'Microphone unavailable. Use the buttons above.',noSession:'No active session, so voice and text reading are unavailable. Use the buttons above.',analyzing:'AI is reading…',lastVerified:'Last verified',extractFailed:'AI could not read that. Choose your situation with the buttons.',sendFailed:'Could not send. Showing guidance on this phone.',
   notGuaranteed:'This is a suggestion. It does not mean the place or road is free of danger. Follow local conditions and official instructions.',walkMeta:'About {min} min walk · {m} m',computing:'Working out which sites you can reach…',
   reasonNoTime:'The estimated tsunami arrival time has come or passed.',reasonNoLocation:'No reliable current location.',reasonNoReachable:'No designated site can be reached on foot before the estimated arrival.',reasonNoSites:'No designated emergency site data for this area.',
-  officialSites:'See official designated evacuation sites',pendingTags:'Situation read by AI (tick the ones that are right)',analyze:'Let AI read it',moreDetails:'More details',otherCandidates:'Other candidates',sosSuggested:'Calling for help is suggested',lastReport:'Reported'},
+  officialSites:'See official designated evacuation sites',pendingTags:'Situation read by AI (tick the ones that are right)',analyze:'Let AI read it',moreDetails:'More details',otherCandidates:'Other candidates',sosSuggested:'Calling for help is suggested',lastReport:'Reported',
+  basis:'Basis: JMA {warning} · issued {time}',warningMajor:'Major Tsunami Warning',warningWarning:'Tsunami Warning',staleNotice:'Official data has expired. Last confirmed {time}'},
 } as const;
 /** AI emphasis clauses (fixed wording; the model only picks ids). */
 export const emphasisText:Record<Language,Record<'MOVE_UP_NOW'|'AVOID_WATER'|'STAY_TOGETHER'|'CALL_FOR_HELP'|'KEEP_PHONE_POWER',string>>={

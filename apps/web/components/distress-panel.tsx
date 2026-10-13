@@ -3,9 +3,9 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import Link from 'next/link';
 import type {DistressStatus,DistressTag,Language} from '../lib/contracts';
 import type {DesignatedPlace} from '../lib/designated-places';
-import {distressText,emphasisText,shouldPinSos,tagText} from '../lib/distress';
+import {distressText,emphasisText,formatClock,shouldPinSos,tagText} from '../lib/distress';
 import {extractDistress,reportDistress,requestAdvice,type AppliedAdvice,type DistressInputMode,type DistressScope} from '../lib/distress-api';
-import {applyDeadline,dropExcluded,effectiveDistressLevel,formatCountdown,orderCandidates,reachFor,reachKey,roundOrigin,skewedNow,speechLang,type DistressOrigin} from '../lib/distress-guidance';
+import {applyDeadline,degradeExpiredOfficial,dropExcluded,effectiveDistressLevel,formatCountdown,orderCandidates,reachFor,reachKey,roundOrigin,skewedNow,speechLang,type DistressOrigin} from '../lib/distress-guidance';
 import {adviceCandidates,DISTRESS_PARAMS,type TsunamiGuidance} from '../lib/distress-reachability';
 import type {SosProfile} from '../lib/emergency-contacts';
 import type {RoadGraphPack} from '../lib/evacuation-road-graph';
@@ -27,7 +27,7 @@ export type DistressPanelProps={snapshot:DistressSnapshot;language:Language;scop
  /** Logical clock (replay). Otherwise the device clock, floored by the snapshot's server time. */
  now?:number};
 const TAGS:readonly DistressTag[]=['WATER_RISING','TRAPPED','INJURED','MOBILITY_LIMITED','WITH_DEPENDENTS','LOST_NO_DESTINATION','ROUTE_BLOCKED_REPORTED'];
-const NONE:DistressStatus={level:'NONE',reports:[],trigger_evidence_ids:[],deadline_at:null,ai_escalated:false,synthetic:false};
+const NONE:DistressStatus={level:'NONE',reports:[],trigger_evidence_ids:[],deadline_at:null,ai_escalated:false,synthetic:false,warning_class:null,last_official_at:null,trigger_expires_at:null};
 const SPEECH_KEY='72h-distress-speech';
 const unique=<T,>(xs:readonly T[])=>[...new Set(xs)];
 function readSpeech(){try{return localStorage.getItem(SPEECH_KEY)!=='0';}catch{return true;}}
@@ -46,7 +46,7 @@ function defer(run:()=>void){
 /** One primary instruction at a time. Level and instruction come only from snapshot.distress and deterministic reachability. */
 export function DistressPanel(p:DistressPanelProps){
  const t=distressText[p.language],tt=tagText[p.language];
- const distress=p.snapshot?.distress??NONE,sessionId=p.snapshot?.session_id??p.snapshot?.replay?.id??null;
+ const rawDistress=p.snapshot?.distress??NONE,sessionId=p.snapshot?.session_id??p.snapshot?.replay?.id??null;
  const [online,setOnline]=useState(()=>typeof navigator==='undefined'||navigator.onLine!==false);
  const [wall,setWall]=useState(()=>Date.now());
  const [selected,setSelected]=useState<DistressTag[]>([]),[localTags,setLocalTags]=useState<DistressTag[]>([]);
@@ -65,6 +65,8 @@ export function DistressPanel(p:DistressPanelProps){
  const serverAt=p.snapshot?.situation?Date.parse(p.snapshot.situation.updated_at):NaN,received=useRef<{at:number;wall:number}|null>(null);
  if(Number.isFinite(serverAt)&&received.current?.at!==serverAt)received.current={at:serverAt,wall:Date.now()};
  const now=p.now??skewedNow(wall,Number.isFinite(serverAt)?serverAt:null,received.current?.wall??null);
+ // Past trigger_expires_at an OFFICIAL_TSUNAMI snapshot (e.g. cached offline) is shown as OFFICIAL_STALE: never "go to a site".
+ const distress=degradeExpiredOfficial(rawDistress,now);
  const verifiedAt=p.snapshot?.situation?.latest_evidence_at??p.snapshot?.situation?.updated_at??null;
  const reported=useMemo(()=>unique([...distress.reports.flatMap(r=>r.tags),...localTags]),[distress.reports,localTags]);
  const level=effectiveDistressLevel(distress.level,localTags);
@@ -102,6 +104,12 @@ export function DistressPanel(p:DistressPanelProps){
  const primaryText=kind==='NONE'?t.chooseSituation:kind==='GO_TO_SITE'&&first?t.goTo.replace('{name}',first.name):kind==='VERTICAL_NOW'?t.verticalNow:t.vertical;
  const aiInfluenced=!!gemini&&level==='OFFICIAL_TSUNAMI'&&guidance!=='PENDING'&&guidance!==null
   &&(gemini.excluded.length>0||(guidance.kind==='GO_TO_SITE'&&first?.place_id!==guidance.candidates[0]?.place_id));
+ const officialLevel=distress.level==='OFFICIAL_TSUNAMI'||distress.level==='OFFICIAL_STALE';
+ const lastOfficial=officialLevel&&distress.last_official_at?Date.parse(distress.last_official_at):NaN;
+ const officialTime=Number.isFinite(lastOfficial)?formatClock(lastOfficial):'--:--';
+ const warningName=distress.warning_class==='MAJOR_WARNING'?t.warningMajor:distress.warning_class==='WARNING'?t.warningWarning:null;
+ const basis=officialLevel&&warningName&&Number.isFinite(lastOfficial)?t.basis.replace('{warning}',warningName).replace('{time}',officialTime):null;
+ const staleNotice=distress.level==='OFFICIAL_STALE'?t.staleNotice.replace('{time}',officialTime):null;
  const reason=guidance&&guidance!=='PENDING'&&guidance.kind==='VERTICAL_NOW'
   ?{NO_TIME:t.reasonNoTime,NO_LOCATION:t.reasonNoLocation,NO_REACHABLE_SITE:t.reasonNoReachable,NO_SITES_IN_PACK:t.reasonNoSites}[guidance.reason]:null;
 
@@ -163,6 +171,8 @@ export function DistressPanel(p:DistressPanelProps){
   {pinned&&sos}
   <div className="distress-primary" data-testid="distress-primary">
    <p className="distress-primary-text" aria-live="assertive">{primaryText}{aiInfluenced&&<span className="distress-ai" data-testid="distress-ai-label">{t.aiSuggestion}</span>}</p>
+   {staleNotice&&<p className="distress-stale" role="status" data-testid="distress-stale">{staleNotice}</p>}
+   {basis&&<p className="distress-basis" data-testid="distress-basis">{basis}</p>}
    {kind==='GO_TO_SITE'&&first&&<p>{t.walkMeta.replace('{min}',String(Math.ceil(first.walk_seconds/60))).replace('{m}',String(Math.round(first.distance_m)))}</p>}
    {deadlineAt!==null&&deadlineAt>now&&<p className="distress-countdown" role="timer" aria-live="off">{t.countdown} <strong>{formatCountdown(deadlineAt-now)}</strong></p>}
    {kind==='GO_TO_SITE'&&<p>{t.roadCandidateNotice}</p>}
