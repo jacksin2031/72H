@@ -47,13 +47,16 @@ function preflightWater(bytes:Uint8Array){
   },null);
   if(reader.pos!==reader.length)throw Error('Truncated geography tile');
 }
-/** GSI uses a land background with water polygons. Supply that background only
- * inside successfully decoded water tiles, never globally over missing data.
+/** GSI z4–7 waterarea contains inland water only (55000), not the ocean mask.
+ * The tile-sized land background requires z8+ detailed water geometry (5000).
+ * Overview/unknown schema tiles retain the Natural Earth land/ocean below.
  * Original layers remain byte-for-byte intact. These are geography, not hazards.
  */
-export function withGsiLandCoverage(bytes:Uint8Array):Uint8Array{
+export function withGsiLandCoverage(bytes:Uint8Array,zoom:number):Uint8Array{
   if(!bytes.length||bytes.length>MAX_BYTES)throw Error('Invalid geography capacity');
+  if(!Number.isInteger(zoom)||zoom<4||zoom>16)throw Error('Invalid geography zoom');
   preflightWater(bytes);
+  if(zoom<8)return bytes;
   const tile=new VectorTile(new PbfReader(bytes)),water=tile.layers.waterarea;
   if(!water?.length)return bytes;
   const extent=water.extent;
@@ -62,6 +65,7 @@ export function withGsiLandCoverage(bytes:Uint8Array):Uint8Array{
   const lines:[number,number][][]= [];let points=0,polygons=0;
   for(let i=0;i<water.length;i++){
     const feature=water.feature(i);if(feature.type!==3)continue;
+    if(feature.properties.ftCode!==5000)return bytes;
     for(const ring of feature.loadGeometry()){
       if(ring.length<4)continue;
       polygons++;points+=ring.length;if(points>MAX_POINTS)throw Error('Geography point limit');

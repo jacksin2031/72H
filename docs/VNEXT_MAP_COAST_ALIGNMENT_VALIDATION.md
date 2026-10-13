@@ -24,3 +24,14 @@ Natural Earth 1:50m 概覽陸地填色與 GSI 精細水域／道路疊加，放�
 只完成本地地理顯示修正；沒有部署或重新核實現實海岸、場所安全及通行狀態。
 本機 native npm 仍有既有 minipass runtime 錯誤，npm lock regeneration 未通過；三項套件已在原 lock 的 transitive graph，僅同步 root declarations 並核對版本。未宣稱 Linux npm ci／standalone 容器驗收。
 截圖保存於忽略的 `.work/coast-aligned-simulation.jpg`；臨時演練密鑰檔在驗收後刪除，不進 Git。
+
+## 連續縮放全綠修正（基線 `3948c07`）
+
+上一輪只核對概覽與詳細海岸，未涵蓋中間縮放。已在模擬地圖連續放大重現：海洋被整片綠色蓋住，只剩湖泊。實際 GSI 東京圖磚 z4–7 的 waterarea 為 `ftCode=55000` 內陸水域，不能作海洋遮罩；z8 起詳細水域為 `5000`。
+
+- API 明確傳入已驗證的 tile zoom；z4–7 原始 PBF 不加陸地矩形，z8+ 仍要求 polygon 的已知 `5000` schema。保留現有容量及 raw command preflight 限制。
+- `reference-land.minzoom=8` 防止過渡期間顯示舊概覽底色；URL 改為 `aligned-v2` 避免 v1 快取。概覽陸海及精細水域／海岸線保留，GPS 圖磚私隱規則不變。
+- 兩項新回歸先 RED 再 GREEN；前端 **372 passed / 3 原有 skips**，TypeScript/build PASS，Build ID `hvoM4pGkQ-nsR3bmJrl60`。
+- 實際 API z4/14/6、z7/113/50 回傳 HTTP 200、land layer=0；z8/227/100、z9/454/201、z16/58220/25801 回傳 HTTP 200、land layer=1，水域保留。
+- 實際 `/simulation` 從全日本連按放大五次，原本出錯級別保持藍色海洋；東京視野由概覽經十次小幅滾輪放大至精細道路／東京灣，切換時海灣保持藍色。另核對公共 `/map` 的連續放大。截圖 `.work/zoom-green-before.jpg`、`zoom-fixed-step-1` 至 `5.jpg`、`zoom-green-fixed.jpg`。
+- 已重開本地 311 模擬載入修正版；臨時演練密鑰檔刪除。未部署，未做實體手機觸控驗收。

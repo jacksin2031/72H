@@ -7,6 +7,10 @@ import {REFERENCE_VECTOR_LAYERS,REFERENCE_VECTOR_SOURCE,REFERENCE_REGION_LAYER} 
 afterEach(()=>vi.unstubAllGlobals());
 const vectorRequest=()=>vectorGET(new Request('http://local/api/reference-vectors/9/454/201'),{params:Promise.resolve({z:'9',x:'454',y:'201'})});
 describe('bounded GSI geography detail',()=>{
+ it('does not render cached overview land rectangles while zooming through lake-only levels',()=>{
+  expect(REFERENCE_VECTOR_LAYERS.find(l=>l.id==='reference-land')?.minzoom).toBe(8);
+  expect(REFERENCE_VECTOR_SOURCE.tiles?.[0]).toContain('geometry=aligned-v2');
+ });
  it('accepts only Japan tiles in the official vector zoom range and fixed font ranges',()=>{
   expect(validJapanVectorTile('9','454','201')?.upstream).toBe('https://cyberjapandata.gsi.go.jp/xyz/experimental_bvmap/9/454/201.pbf');
   for(const [z,x,y] of [['3','7','3'],['17','116401','51602'],['9','0','0'],['9','0454','201'],['9','454','../1']])expect(validJapanVectorTile(z,x,y)).toBeNull();

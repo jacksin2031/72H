@@ -8,7 +8,7 @@ export async function GET(_request:Request,{params}:{params:Promise<{z:string;x:
  if(!tile)return new Response('Outside Japan reference area',{status:404,headers:{'Cache-Control':'no-store'}});
  const response=await gsiPbfResponse(tile.upstream,'vector');if(!response.ok)return response;
  try{
-  const bytes=withGsiLandCoverage(new Uint8Array(await response.arrayBuffer()));
+  const bytes=withGsiLandCoverage(new Uint8Array(await response.arrayBuffer()),tile.z);
   return new Response(new Uint8Array(bytes),{headers:response.headers});
  }catch{return new Response('Reference geography invalid',{status:502,headers:{'Cache-Control':'no-store'}});}
 }

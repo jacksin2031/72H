@@ -4,7 +4,7 @@ import type {LayerSpecification, VectorSourceSpecification, GeoJSONSourceSpecifi
  * Geography only; no road accessibility, shelter classification or routing.
  */
 export const REFERENCE_VECTOR_SOURCE:VectorSourceSpecification={
-  type:'vector',tiles:['/api/reference-vectors/{z}/{x}/{y}?geometry=aligned-v1'],
+  type:'vector',tiles:['/api/reference-vectors/{z}/{x}/{y}?geometry=aligned-v2'],
   minzoom:4,maxzoom:16,bounds:[120,19,156,48],
 };
 export const REFERENCE_GLYPHS='/api/reference-glyphs/{fontstack}/{range}';
@@ -24,7 +24,7 @@ const wholeAnnotation:import('maplibre-gl').ExpressionSpecification=['any',
 export const REFERENCE_VECTOR_LAYERS:LayerSpecification[]=[
   // A tile-local land base and its water polygons share one GSI geometry.
   // Missing tiles leave the verified Natural Earth overview visible below.
-  {id:'reference-land',type:'fill',source,'source-layer':'72h-land-coverage',
+  {id:'reference-land',type:'fill',source,'source-layer':'72h-land-coverage',minzoom:8,
     paint:{'fill-color':'#35574e','fill-antialias':false}},
   {id:'reference-water',type:'fill',source,'source-layer':'waterarea',
     paint:{'fill-color':'#0c2535'}},
