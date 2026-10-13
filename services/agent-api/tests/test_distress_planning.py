@@ -60,7 +60,7 @@ def test_stale_official_warning_never_publishes_tsunami_evacuate_now():
 def test_report_expiry_supersedes_the_plan_and_keeps_history():
     before = base_state(NOW)
     reported = evaluate_and_replan(before, record_distress_report(before, (DistressTag.TRAPPED,), "BUTTON", NOW), Clock(), DEFAULT_POLICY)
-    later = replace(reported, current_time=NOW + timedelta(seconds=DEFAULT_POLICY.user_report_ttl_seconds))
+    later = replace(reported, current_time=NOW + timedelta(seconds=DEFAULT_POLICY.distress_critical_report_ttl_seconds))
     expired = evaluate_and_replan(reported, later, Clock(), DEFAULT_POLICY)
     assert _now_action(expired).intent_id != SafeIntentId.SHELTER_IN_PLACE_VERTICAL
     assert len(expired.plans) > len(reported.plans)

@@ -3,7 +3,7 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import Link from 'next/link';
 import type {DistressStatus,DistressTag,Language} from '../lib/contracts';
 import type {DesignatedPlace} from '../lib/designated-places';
-import {distressText,emphasisText,formatClock,shouldPinSos,tagText} from '../lib/distress';
+import {CRITICAL_REPORT_MS,distressText,emphasisText,formatClock,isCriticalReport,readSosPinUntil,rememberSosPin,shouldPinSos,tagText} from '../lib/distress';
 import {extractDistress,reportDistress,requestAdvice,type AppliedAdvice,type DistressInputMode,type DistressScope} from '../lib/distress-api';
 import {applyDeadline,degradeExpiredOfficial,dropExcluded,effectiveDistressLevel,formatCountdown,orderCandidates,reachFor,reachKey,roundOrigin,skewedNow,speechLang,type DistressOrigin} from '../lib/distress-guidance';
 import {adviceCandidates,DISTRESS_PARAMS,type TsunamiGuidance} from '../lib/distress-reachability';
@@ -53,6 +53,7 @@ export function DistressPanel(p:DistressPanelProps){
  const [pending,setPending]=useState<{tags:DistressTag[];checked:DistressTag[];mode:'VOICE'|'TEXT'}|null>(null);
  const [hint,setHint]=useState<string|null>(null),[notice,setNotice]=useState<string|null>(null),[text,setText]=useState(''),[busy,setBusy]=useState(false),[analyzing,setAnalyzing]=useState(false);
  const [speechOn,setSpeechOn]=useState(readSpeech);
+ const [pinUntil,setPinUntil]=useState(readSosPinUntil);
  const [advice,setAdvice]=useState<{session:string;value:AppliedAdvice|null}|null>(null);
  const alive=useRef(true),requested=useRef(new Set<string>()),spoken=useRef<string|null>(null),onSnapshot=useRef(p.onSnapshot);onSnapshot.current=p.onSnapshot;
  useEffect(()=>{
@@ -146,6 +147,7 @@ export function DistressPanel(p:DistressPanelProps){
  const submit=async(tags:DistressTag[],mode:DistressInputMode)=>{
   if(!tags.length)return;
   setLocalTags(prev=>unique([...prev,...tags]));setNotice(null);
+  if(isCriticalReport(tags))setPinUntil(rememberSosPin(now+CRITICAL_REPORT_MS));
   if(!online||!sessionId||(p.scope==='mock-live'&&!p.accessKey))return;
   setBusy(true);const raw=await reportDistress(p.scope,sessionId,tags,mode,p.accessKey);
   if(!alive.current)return;setBusy(false);
@@ -164,7 +166,10 @@ export function DistressPanel(p:DistressPanelProps){
   setPending(null);setSelected([]);void submit(tags,pending.mode);
  };
  const toggle=(tag:DistressTag)=>setSelected(s=>s.includes(tag)?s.filter(x=>x!==tag):[...s,tag]);
- const pinned=shouldPinSos(reported,p.sosProfile,level)||!!gemini?.suggest_sos;
+ // A critical server report keeps SOS pinned on this device for its whole 60-minute lifetime.
+ const criticalUntil=Math.max(0,...distress.reports.filter(r=>isCriticalReport(r.tags)).map(r=>Date.parse(r.reported_at)+CRITICAL_REPORT_MS).filter(Number.isFinite));
+ useEffect(()=>{if(criticalUntil>pinUntil)setPinUntil(rememberSosPin(criticalUntil));},[criticalUntil,pinUntil]);
+ const pinned=shouldPinSos(reported,p.sosProfile,level)||now<pinUntil||!!gemini?.suggest_sos;
  const sos=<>
   {gemini?.suggest_sos&&<p className="distress-ai-note"><span className="distress-ai" data-testid="distress-sos-ai">{t.aiSuggestion}</span> {t.sosSuggested}</p>}
   <SosPanel language={p.language} profile={p.sosProfile} tags={unique([...reported,...selected])} location={p.location} pinned={pinned}/>

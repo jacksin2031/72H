@@ -53,9 +53,16 @@ class StaleTsunamiTrigger:
     synthetic: bool
 
 
+CRITICAL_TAGS = frozenset({DistressTag.TRAPPED, DistressTag.INJURED, DistressTag.MOBILITY_LIMITED})
+
+
+def report_ttl(report: DistressReport, policy: SafetyPolicy) -> timedelta:
+    critical = any(tag in CRITICAL_TAGS for tag in report.tags)
+    return timedelta(seconds=policy.distress_critical_report_ttl_seconds if critical else policy.user_report_ttl_seconds)
+
+
 def active_distress_reports(state: CoreState, now: datetime, policy: SafetyPolicy) -> tuple[DistressReport, ...]:
-    ttl = timedelta(seconds=policy.user_report_ttl_seconds)
-    return tuple(r for r in state.distress_reports if r.reported_at <= now < r.reported_at + ttl)
+    return tuple(r for r in state.distress_reports if r.reported_at <= now < r.reported_at + report_ttl(r, policy))
 
 
 def _ai_escalated(state: CoreState, now: datetime, policy: SafetyPolicy) -> bool:

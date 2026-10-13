@@ -71,7 +71,7 @@ def test_ai_escalation_only_raises_none_to_user_reported_and_expires():
 
 def test_signature_changes_when_level_changes_over_time():
     state = record_distress_report(base_state(NOW), (DistressTag.TRAPPED,), "BUTTON", NOW)
-    later = NOW + timedelta(seconds=DEFAULT_POLICY.user_report_ttl_seconds)
+    later = NOW + timedelta(seconds=DEFAULT_POLICY.distress_critical_report_ttl_seconds)
     assert distress_signature(state, NOW, DEFAULT_POLICY) != distress_signature(state, later, DEFAULT_POLICY)
 
 
@@ -88,3 +88,22 @@ def test_signature_is_stable_over_time_for_unknown_or_imminent_arrival():
         state = with_claim(tsunami_evidence(base_state(NOW), TsunamiWarningClass.WARNING, arrival))
         signatures = {distress_signature(state, NOW + timedelta(seconds=10 * tick), DEFAULT_POLICY) for tick in range(6)}
         assert len(signatures) == 1
+
+
+def test_critical_reports_keep_level_one_for_60_minutes_others_for_10():
+    assert DEFAULT_POLICY.distress_critical_report_ttl_seconds == 3600
+    for tag in (DistressTag.TRAPPED, DistressTag.INJURED, DistressTag.MOBILITY_LIMITED):
+        state = record_distress_report(base_state(NOW), (tag,), "BUTTON", NOW)
+        assert resolve_distress(state, NOW + timedelta(minutes=59), DEFAULT_POLICY).level == DistressLevel.USER_REPORTED
+        assert resolve_distress(state, NOW + timedelta(minutes=60), DEFAULT_POLICY).level == DistressLevel.NONE
+    mixed = record_distress_report(base_state(NOW), (DistressTag.WATER_RISING, DistressTag.INJURED), "BUTTON", NOW)
+    assert active_distress_reports(mixed, NOW + timedelta(minutes=30), DEFAULT_POLICY)
+    plain = record_distress_report(base_state(NOW), (DistressTag.WATER_RISING,), "BUTTON", NOW)
+    assert resolve_distress(plain, NOW + timedelta(minutes=10), DEFAULT_POLICY).level == DistressLevel.NONE
+
+
+def test_critical_report_signature_is_stable_until_its_one_time_expiry():
+    state = record_distress_report(base_state(NOW), (DistressTag.TRAPPED,), "BUTTON", NOW)
+    first = distress_signature(state, NOW, DEFAULT_POLICY)
+    assert distress_signature(state, NOW + timedelta(minutes=30), DEFAULT_POLICY) == first
+    assert distress_signature(state, NOW + timedelta(minutes=60), DEFAULT_POLICY) != first

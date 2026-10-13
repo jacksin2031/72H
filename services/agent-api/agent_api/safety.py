@@ -79,6 +79,9 @@ class SafetyPolicy:
     user_report_ttl_seconds: int = 10 * 60
     general_update_ttl_seconds: int = 15 * 60
     distress_arrival_margin_seconds: int = 300
+    # Reports naming TRAPPED / INJURED / MOBILITY_LIMITED stay active longer: a trapped or
+    # injured person must not silently drop back to NONE after 10 minutes.
+    distress_critical_report_ttl_seconds: int = 60 * 60
     movement_directive_source_keys: tuple[str, ...] = ()
     destination_status_source_keys: tuple[str, ...] = ()
     route_status_source_keys: tuple[str, ...] = ()
@@ -93,6 +96,7 @@ class SafetyPolicy:
             ("user_report_ttl_seconds", self.user_report_ttl_seconds),
             ("general_update_ttl_seconds", self.general_update_ttl_seconds),
             ("distress_arrival_margin_seconds", self.distress_arrival_margin_seconds),
+            ("distress_critical_report_ttl_seconds", self.distress_critical_report_ttl_seconds),
         ):
             if type(value) is not int or not 1 <= value <= 86400:
                 raise ValueError(f"{name} must be between 1 and 86400 seconds")

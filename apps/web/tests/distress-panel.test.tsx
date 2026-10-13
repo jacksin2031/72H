@@ -294,3 +294,14 @@ it('explains vertical evacuation when every reachable site was excluded on the r
   expect(primary(host).querySelector('[data-testid="distress-ai-label"]')?.textContent).toBe(t.aiSuggestion);
   expect(t.reasonExcludedByReport.startsWith('依你回報的封路，AI 建議排除')).toBe(true);
 });
+it('keeps SOS pinned on this device for a critical report\'s 60-minute lifetime, even after a reload',async()=>{
+  nav({onLine:false});vi.stubGlobal('fetch',vi.fn());
+  const pinnedAbove=(host:HTMLElement)=>!!(host.querySelector('.sos-panel')!.compareDocumentPosition(primary(host))&Node.DOCUMENT_POSITION_FOLLOWING);
+  const {host}=await mount(props());
+  await act(async()=>button(host,tags.TRAPPED)!.click());await act(async()=>button(host,t.send)!.click());
+  expect(Number(localStorage.getItem('72h-sos-pinned-until'))).toBe(NOW+60*60_000);
+  const later=await mount(props({now:NOW+59*60_000}));
+  expect(pinnedAbove(later.host)).toBe(true);
+  const expired=await mount(props({now:NOW+60*60_000}));
+  expect(pinnedAbove(expired.host)).toBe(false);
+});

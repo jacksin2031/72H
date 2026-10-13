@@ -2,6 +2,19 @@ import type {DistressStatus,DistressTag,Language} from './contracts';
 import type {SosProfile} from './emergency-contacts';
 export const NET119_URL='https://www.fdma.go.jp/mission/prepare/transmission/transmission002.html';
 const PIN_TAGS:readonly DistressTag[]=['TRAPPED','INJURED','MOBILITY_LIMITED'];
+/** Same lifetime as the server's critical-report TTL (distress_critical_report_ttl_seconds). */
+export const CRITICAL_REPORT_MS=60*60_000;
+const SOS_PIN_KEY='72h-sos-pinned-until';
+export const isCriticalReport=(tags:readonly DistressTag[])=>tags.some(t=>PIN_TAGS.includes(t));
+/** Device-local "SOS pinned" until time; survives reloads. Storage failures are ignored (pin still follows live state). */
+export function readSosPinUntil():number{
+ try{const v=Number(localStorage.getItem(SOS_PIN_KEY));return Number.isFinite(v)&&v>0?v:0;}catch{return 0;}
+}
+export function rememberSosPin(until:number):number{
+ const next=Math.max(readSosPinUntil(),until);
+ try{localStorage.setItem(SOS_PIN_KEY,String(next));}catch{/* per-device convenience only */}
+ return next;
+}
 export function shouldPinSos(tags:readonly DistressTag[],profile:SosProfile,level:DistressStatus['level']):boolean{
  if(tags.some(t=>PIN_TAGS.includes(t)))return true;
  return level!=='NONE'&&(profile.needsAssistance||profile.mobilityLimited);
