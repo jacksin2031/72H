@@ -834,6 +834,16 @@ _INTENT_TEXT = {
         "en": "The current Safety Core plan includes an action to move to a designated shelter.",
         "zh-TW": "目前的 Safety Core 計劃包含前往指定避難場所的行動。",
     },
+    SafeIntentId.SHELTER_IN_PLACE_VERTICAL: {
+        "ja": "危険が報告されたため、計画は今すぐ建物の上の階か高い場所へ移動し、水辺から離れるよう示しています。",
+        "en": "Because danger was reported, the plan asks you to move to an upper floor or higher ground now and keep away from water.",
+        "zh-TW": "因為已回報危險，計劃建議立刻往建築物上層或高處移動，遠離水邊。",
+    },
+    SafeIntentId.TSUNAMI_EVACUATE_NOW: {
+        "ja": "公式の津波警報があなたの地域に出ているため、計画は今すぐ公式に指定された津波避難場所へ向かい、間に合わない場合は頑丈な建物の3階以上か高い場所へ移動するよう示しています。",
+        "en": "Because an official tsunami warning covers your area, the plan asks you to go now to an officially designated tsunami site, or, if you cannot reach one in time, to the 3rd floor or higher of a solid building or to high ground.",
+        "zh-TW": "因為官方海嘯警報涵蓋你所在的地區，計劃建議立刻前往官方指定的海嘯避難場所；如果來不及，立刻往堅固建築物的 3 樓以上或高處移動。",
+    },
 }
 
 _GENERIC_INTENT_TEXT = {
