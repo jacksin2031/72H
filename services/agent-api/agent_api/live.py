@@ -1189,26 +1189,31 @@ class LiveStore:
                 TsunamiAreaStatus.CANCELLED: DisasterEventStatus.RESOLVED,
                 TsunamiAreaStatus.UNKNOWN: DisasterEventStatus.UNKNOWN,
             }[area.status]
-            cancelled = bulletin.info_type == "取消"
+            # Only an ACTIVE official area may carry class/arrival (feeds level-2 logic).
+            carries_warning = bulletin.info_type != "取消" and area.status == TsunamiAreaStatus.ACTIVE
             assessment = DisasterAssessment(
                 area_id=f"JP-{prefecture}",
                 event_type=DisasterEventType.TSUNAMI,
                 level=None,
                 status=assessment_status,
-                tsunami_warning_class=None if cancelled else area.warning_class,
-                arrival_at=None if cancelled else area.arrival_at,
+                tsunami_warning_class=area.warning_class if carries_warning else None,
+                arrival_at=area.arrival_at if carries_warning else None,
             )
             existing = next((i for i, item in enumerate(assessments) if item.area_id == assessment.area_id), None)
             if existing is None:
                 assessments.append(assessment)
             else:
-                # Keep the most severe class and earliest arrival for the prefecture.
+                # Class/arrival are None on non-ACTIVE areas, so only ACTIVE areas contribute.
+                # Status: ACTIVE wins over UNKNOWN wins over RESOLVED (conservative).
                 prior = assessments[existing]
+                status_rank = {DisasterEventStatus.ACTIVE: 2, DisasterEventStatus.UNKNOWN: 1}
+                merged_status = max((prior.status, assessment.status), key=lambda v: status_rank.get(v, 0))
                 stronger = _TSUNAMI_WARNING_RANK.get(assessment.tsunami_warning_class, -2) > _TSUNAMI_WARNING_RANK.get(
                     prior.tsunami_warning_class, -2
                 )
                 arrivals = [t for t in (prior.arrival_at, assessment.arrival_at) if t is not None]
                 assessments[existing] = prior.model_copy(update={
+                    "status": merged_status,
                     "tsunami_warning_class": assessment.tsunami_warning_class if stronger else prior.tsunami_warning_class,
                     "arrival_at": min(arrivals) if arrivals else None,
                 })
