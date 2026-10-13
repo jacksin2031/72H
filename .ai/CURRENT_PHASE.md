@@ -1,5 +1,13 @@
 # 72H — Current Development Phase
 
+## P2.8 求助輔助 distress assist (2026-10-14 JST)
+
+分支：`codex/p2-8-distress-assist`。狀態：PARTIAL — 本機實作完成；真機驗收與
+Cloud Run 驗收待辦。驗收紀錄：[docs/VNEXT_P2_8_VALIDATION.md](../docs/VNEXT_P2_8_VALIDATION.md)。
+
+NOT RUN：真機驗收（ASUS ROG Phone 6，PENDING）、Cloud Run 驗收、使用者訊號閘門
+的真實 Gemini 冒煙測試（僅有 fake-model 測試）。未部署。
+
 ## P2.7 post-Core explanations / evacuation road candidates (2026-10-13 JST)
 
 On `codex/p2-7-explanation-evacuation-routes` (uncommitted), LIVE/REPLAY/Mock Live

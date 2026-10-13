@@ -15,6 +15,14 @@ below belongs to the earlier candidate path. Cloud Run + real Gemini acceptance 
 the explanation path is NOT RUN and must be recorded before this branch is
 claimed for submission.
 
+**P2.8 branch note (2026-10-14 JST, local only).** On
+`codex/p2-8-distress-assist`, 求助輔助新增兩條 Gemini 路徑：(1) distress extract，
+經 google-genai 走 Vertex AI，將使用者語音/文字轉成標籤；(2) distress advice，
+在使用者明確送出訊號後產生建議。兩者的輸出皆須通過驗證，不能取代 Safety Core
+的判定。本機真實 Gemini 冒煙測試已記錄於
+[VNEXT_P2_8_VALIDATION.md](VNEXT_P2_8_VALIDATION.md)。**Cloud Run 驗收 NOT RUN**，
+在記錄之前不得宣稱此分支可供提交。
+
 **Current vNext gate: PASS.** Runtime `8d1836e`, Cloud Build
 `623824c3-128e-403e-8d12-cc883e699182`, revision `h72-vnext-8d1836e` at 100% traffic.
 Canonical API and clean desktop/mobile GUI each completed 11-event replay with
