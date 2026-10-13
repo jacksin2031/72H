@@ -663,3 +663,81 @@ def test_reconnect_conflict_does_not_clear_barrier_until_fresh_publication_for_a
     assert restored.situation.network_state == NetworkState.ONLINE_VERIFIED
     assert store._get_aggregate(started.session_id).state.reconnect_evidence_count is None
     assert len([item for item in restored.trace if item.event_type == "RECONCILIATION_COMPLETED"]) == 1
+
+
+def _multi_area_result(now, areas, *, info_type="発表", operation=TsunamiOperation.ISSUE):
+    published = now - timedelta(seconds=5)
+    forecast_areas = tuple(
+        JmaTsunamiArea(
+            code="220",
+            name=name,
+            status=TsunamiAreaStatus.ACTIVE,
+            warning_class=warning,
+            max_height=TsunamiMaxHeight(expression=TsunamiHeightExpression.HUGE, description="巨大"),
+            arrival_at=arrival,
+        )
+        for name, warning, arrival in areas
+    )
+    bulletin = JmaTsunamiBulletin(
+        event_id="20261006010000",
+        serial="1",
+        info_type=info_type,
+        operation=operation,
+        published_at=published,
+        occurred_at=NOW - timedelta(minutes=2),
+        reference_url="https://www.data.jma.go.jp/developer/xml/data/tsunami-1.xml",
+        forecast_areas=forecast_areas,
+    )
+    return JmaTsunamiFetchResult(
+        status=LiveSourceStatus.FRESH,
+        retrieved_at=now,
+        last_published_at=published,
+        next_retry_at=None,
+        operation=operation,
+        serial="1",
+        bulletins=(bulletin,),
+        forecast_areas=(),
+        conflict=False,
+        detail="test fixture; not a live source",
+    )
+
+
+def _refresh_with(result_factory):
+    now = [NOW]
+    tsunami = _TsunamiSource(_empty_tsunami_result(NOW))
+    store = _store(now, tsunami)
+    started = store.start({"language": "zh-TW", "profile": _profile()})
+    now[0] = NOW + timedelta(seconds=10)
+    tsunami.result = result_factory(now[0])
+    return store.refresh(started.session_id)
+
+
+def test_tsunami_assessment_keeps_strongest_class_and_earliest_arrival():
+    early = NOW + timedelta(minutes=20)
+    late = NOW + timedelta(minutes=30)
+    state = _refresh_with(lambda t: _multi_area_result(t, [
+        ("宮城県", TsunamiWarningClass.WARNING, late),
+        ("宮城県", TsunamiWarningClass.MAJOR_WARNING, early),
+    ]))
+    evidence = next(item for item in state.evidence if item.source_key == JMA_TSUNAMI_SOURCE_KEY)
+    assessment = next(a for a in evidence.disaster_assessments if a.area_id == "JP-04")
+    assert assessment.tsunami_warning_class == TsunamiWarningClass.MAJOR_WARNING
+    assert assessment.arrival_at == early
+
+
+def test_cancelled_bulletin_clears_warning_class():
+    state = _refresh_with(lambda t: _multi_area_result(
+        t,
+        [("宮城県", TsunamiWarningClass.NONE, None)],
+        info_type="取消",
+        operation=TsunamiOperation.CANCEL,
+    ))
+    checked = 0
+    for evidence in state.evidence:
+        if evidence.source_key != JMA_TSUNAMI_SOURCE_KEY:
+            continue
+        for assessment in evidence.disaster_assessments:
+            checked += 1
+            assert assessment.tsunami_warning_class in (None, TsunamiWarningClass.NONE)
+            assert assessment.arrival_at is None
+    assert checked

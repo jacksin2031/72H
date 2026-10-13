@@ -49,6 +49,7 @@ from seventytwoh_contracts.models import (
     SourceClass,
     StartLiveRequest,
     TsunamiAreaStatus,
+    TsunamiWarningClass,
     TsunamiOperation,
     TsunamiReferenceResponse,
     TraceEvent,
@@ -159,6 +160,16 @@ class LiveAggregate:
 
 def build_live_area_catalog() -> tuple[AreaDefinition, ...]:
     return base_japan_area_catalog()
+
+
+_TSUNAMI_WARNING_RANK = {
+    TsunamiWarningClass.MAJOR_WARNING: 4,
+    TsunamiWarningClass.WARNING: 3,
+    TsunamiWarningClass.ADVISORY: 2,
+    TsunamiWarningClass.FORECAST: 1,
+    TsunamiWarningClass.NONE: 0,
+    TsunamiWarningClass.UNKNOWN: -1,
+}
 
 
 class LiveStore:
@@ -1178,20 +1189,35 @@ class LiveStore:
                 TsunamiAreaStatus.CANCELLED: DisasterEventStatus.RESOLVED,
                 TsunamiAreaStatus.UNKNOWN: DisasterEventStatus.UNKNOWN,
             }[area.status]
+            cancelled = bulletin.info_type == "取消"
             assessment = DisasterAssessment(
                 area_id=f"JP-{prefecture}",
                 event_type=DisasterEventType.TSUNAMI,
                 level=None,
                 status=assessment_status,
+                tsunami_warning_class=None if cancelled else area.warning_class,
+                arrival_at=None if cancelled else area.arrival_at,
             )
-            if all(item.area_id != assessment.area_id for item in assessments):
+            existing = next((i for i, item in enumerate(assessments) if item.area_id == assessment.area_id), None)
+            if existing is None:
                 assessments.append(assessment)
+            else:
+                # Keep the most severe class and earliest arrival for the prefecture.
+                prior = assessments[existing]
+                stronger = _TSUNAMI_WARNING_RANK.get(assessment.tsunami_warning_class, -2) > _TSUNAMI_WARNING_RANK.get(
+                    prior.tsunami_warning_class, -2
+                )
+                arrivals = [t for t in (prior.arrival_at, assessment.arrival_at) if t is not None]
+                assessments[existing] = prior.model_copy(update={
+                    "tsunami_warning_class": assessment.tsunami_warning_class if stronger else prior.tsunami_warning_class,
+                    "arrival_at": min(arrivals) if arrivals else None,
+                })
             names.append(area.name)
         # Preserve withdrawn verified scope directly; never invent a forecast code.
         for previous_event, proof in previous:
             for assessment in proof.disaster_assessments:
                 if assessment.event_type == DisasterEventType.TSUNAMI and all(item.area_id != assessment.area_id for item in assessments):
-                    assessments.append(assessment.model_copy(update={"status": DisasterEventStatus.UNKNOWN, "level": None}))
+                    assessments.append(assessment.model_copy(update={"status": DisasterEventStatus.UNKNOWN, "level": None, "tsunami_warning_class": None, "arrival_at": None}))
             names.extend(previous_event.affected_areas)
         if not assessments:
             return None
