@@ -29,6 +29,8 @@ import { aggregateNotifications, notificationLedgerSchema } from '@/lib/notifica
 import { mapCatalogSchema, verifyMapPack } from '@/lib/offline-map';
 import { requiredCachedPageAssets } from '@/lib/offline-readiness';
 import { AdaptiveHome } from './adaptive-home';
+import { EmergencyContactsSetup } from './emergency-contacts-setup';
+import { SOS_ONBOARDED_KEY } from '@/lib/emergency-contacts';
 import { EmergencyMap } from './emergency-map';
 import { PowerControls } from './power-controls';
 import { DeviceLocationControls } from './device-location';
@@ -551,6 +553,8 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
 }) {
   const [morePanel, setMorePanel] = useState<'home' | 'personal' | 'display' | 'offline' | 'privacy'>('home');
   const [profileEditing, setProfileEditing] = useState(false);
+  const [sosSetupOpen, setSosSetupOpen] = useState(false);
+  useEffect(() => { try { if (localStorage.getItem(SOS_ONBOARDED_KEY) !== '1') setSosSetupOpen(true); } catch { /* storage unavailable */ } }, []);
   const [planPanel, setPlanPanel] = useState<'current' | 'history' | 'advanced'>('current');
   const [localGpsCheckedAt, setLocalGpsCheckedAt] = useState<number | null>(null);
   const localOnlyLocation = connection === 'offline' || (typeof navigator !== 'undefined' && !navigator.onLine);
@@ -631,6 +635,7 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
     {urgent && view !== 'dashboard' && <section className="emergency-takeover" role="status"><strong>{projection.primaryAction?.text || messages.emergency}</strong>
       <p>{projection.presentation.mode === 'MAP_ASSISTED' ? messages.mapLabel : messages.emergencyDetail}</p><Link href="/dashboard">{messages.home} →</Link>
     </section>}
+    {view === 'dashboard' && sosSetupOpen && !criticalProtection && <EmergencyContactsSetup language={language} onDone={() => setSosSetupOpen(false)} />}
     {view === 'dashboard' && <>
       {!locationGateOverride && snapshot.spatial_guidance.current_action_kind === 'EVACUATE' && !projection.mapGate && <p className="map-gate-notice" role="status">{messages.mapGateClosed}</p>}
       {locationGateOverride && <p className="location-sync-inline" role="status">{locationSync?.phase === 'pending' ? messages.locationSyncPending : messages.locationSyncFailed}</p>}
