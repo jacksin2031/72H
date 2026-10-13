@@ -29,6 +29,7 @@ SCENARIO_FILE_REGISTRY: Mapping[str, str] = MappingProxyType(
     {
         "tokyo-earthquake-v1": "tokyo-earthquake-v1.json",
         "osaka-earthquake-v1": "osaka-earthquake-v1.json",
+        "miyagi-tsunami-v1": "miyagi-tsunami-v1.json",
     }
 )
 DEFAULT_SCENARIO_KEY = "tokyo-earthquake-v1"
@@ -79,6 +80,14 @@ SIMULATION_SOURCE_REGISTRY: dict[str, SourceRegistration] = {
         allowed_claim_type=ClaimType.DISASTER_STATUS,
         allowed_claim_values=MappingProxyType({}),
         authorized_area_ids=frozenset({"JP-27"}),
+    ),
+    "miyagi-jma-replay": SourceRegistration(
+        source_name="Miyagi JMA (synthetic replay)",
+        source_class=SourceClass.OFFICIAL,
+        trust_status=TrustStatus.VERIFIED_OFFICIAL,
+        allowed_claim_type=ClaimType.DISASTER_STATUS,
+        allowed_claim_values=MappingProxyType({}),
+        authorized_area_ids=frozenset({"JP-04"}),
     ),
     "social-replay": SourceRegistration(
         source_name="Social media (synthetic replay)",

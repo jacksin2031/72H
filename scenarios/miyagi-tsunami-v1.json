@@ -1,0 +1,119 @@
+{
+  "key": "miyagi-tsunami-v1",
+  "name": "Miyagi Tsunami Replay",
+  "description": "Synthetic deterministic tsunami replay for distress levels; coordinates are demo configuration, not device GPS, and every bulletin is synthetic, not a JMA warning.",
+  "mode": "SYNTHETIC_REPLAY",
+  "start_time": "2026-10-14T14:40:00+09:00",
+  "area_catalog": [
+    { "id": "JP", "label": "Japan", "parent_id": null },
+    { "id": "JP-04", "label": "Miyagi", "parent_id": "JP" },
+    { "id": "JP-13", "label": "Tokyo", "parent_id": "JP" },
+    { "id": "JP-13-SHIBUYA", "label": "Shibuya", "parent_id": "JP-13" },
+    { "id": "JP-13-ASAKUSA", "label": "Asakusa", "parent_id": "JP-13" },
+    { "id": "JP-13-SHINJUKU", "label": "Shinjuku", "parent_id": "JP-13" },
+    { "id": "JP-27", "label": "Osaka", "parent_id": "JP" },
+    { "id": "JP-27-OSAKA-CITY", "label": "Osaka City", "parent_id": "JP-27" },
+    { "id": "JP-27-KITA", "label": "Kita", "parent_id": "JP-27-OSAKA-CITY" }
+  ],
+  "profile_seed": {
+    "current_location": {
+      "label": "Ishinomaki",
+      "lat": 38.4334,
+      "lng": 141.3037,
+      "area_ids": ["JP-04", "JP"],
+      "observed_at": "2026-10-14T14:40:00+09:00",
+      "source": "USER_SELECTED"
+    },
+    "accommodation_location": {
+      "label": "Ishinomaki",
+      "lat": 38.4334,
+      "lng": 141.3037,
+      "area_ids": ["JP-04", "JP"],
+      "observed_at": "2026-10-14T14:40:00+09:00",
+      "source": "USER_SELECTED"
+    },
+    "current_destination": null,
+    "party_size": 1,
+    "self_reported_safety_status": "UNKNOWN",
+    "current_plan_summary": "",
+    "accessibility_constraints": []
+  },
+  "events": [
+    {
+      "id": "miyagi-earthquake-001",
+      "event_type": "official_update",
+      "occurred_at": "2026-10-14T14:46:00+09:00",
+      "offset_seconds": 0,
+      "label": "Synthetic Miyagi earthquake",
+      "source_key": "miyagi-jma-replay",
+      "published_at": "2026-10-14T14:45:50+09:00",
+      "affected_areas": ["Miyagi"],
+      "affected_area_ids": ["JP-04"],
+      "disaster_assessments": [
+        { "area_id": "JP-04", "event_type": "EARTHQUAKE", "level": "L4", "status": "ACTIVE" }
+      ],
+      "claims": [],
+      "summary": "A synthetic typed assessment records a strong earthquake in Miyagi."
+    },
+    {
+      "id": "miyagi-tsunami-warning-001",
+      "event_type": "official_update",
+      "occurred_at": "2026-10-14T14:50:00+09:00",
+      "offset_seconds": 20,
+      "label": "Synthetic tsunami warning",
+      "source_key": "miyagi-jma-replay",
+      "published_at": "2026-10-14T14:49:55+09:00",
+      "affected_areas": ["Miyagi"],
+      "affected_area_ids": ["JP-04"],
+      "disaster_assessments": [
+        {
+          "area_id": "JP-04",
+          "event_type": "TSUNAMI",
+          "status": "ACTIVE",
+          "tsunami_warning_class": "WARNING",
+          "arrival_at": "2026-10-14T15:20:00+09:00"
+        }
+      ],
+      "claims": [],
+      "summary": "A synthetic tsunami warning with an estimated arrival 30 minutes later; not a JMA bulletin."
+    },
+    {
+      "id": "miyagi-tsunami-major-001",
+      "event_type": "official_update",
+      "occurred_at": "2026-10-14T14:52:00+09:00",
+      "offset_seconds": 40,
+      "label": "Synthetic major tsunami warning",
+      "source_key": "miyagi-jma-replay",
+      "published_at": "2026-10-14T14:51:55+09:00",
+      "affected_areas": ["Miyagi"],
+      "affected_area_ids": ["JP-04"],
+      "disaster_assessments": [
+        {
+          "area_id": "JP-04",
+          "event_type": "TSUNAMI",
+          "status": "ACTIVE",
+          "tsunami_warning_class": "MAJOR_WARNING",
+          "arrival_at": "2026-10-14T15:02:00+09:00"
+        }
+      ],
+      "claims": [],
+      "summary": "A synthetic major tsunami warning with an earlier estimated arrival; not a JMA bulletin."
+    },
+    {
+      "id": "miyagi-tsunami-cancel-001",
+      "event_type": "official_update",
+      "occurred_at": "2026-10-14T14:55:00+09:00",
+      "offset_seconds": 60,
+      "label": "Synthetic tsunami warning cancelled",
+      "source_key": "miyagi-jma-replay",
+      "published_at": "2026-10-14T14:54:55+09:00",
+      "affected_areas": ["Miyagi"],
+      "affected_area_ids": ["JP-04"],
+      "disaster_assessments": [
+        { "area_id": "JP-04", "event_type": "TSUNAMI", "status": "RESOLVED" }
+      ],
+      "claims": [],
+      "summary": "A synthetic cancellation resolves the tsunami warning; not a JMA bulletin."
+    }
+  ]
+}

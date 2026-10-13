@@ -1168,7 +1168,7 @@ class ReplayEventBase(ContractModel):
 
 class DisasterAlertReplayEvent(ReplayEventBase):
     event_type: Literal["disaster_alert"]
-    source_key: Literal["jma-replay", "osaka-jma-replay"]
+    source_key: Literal["jma-replay", "osaka-jma-replay", "miyagi-jma-replay"]
     disaster_type: DisasterEventType
     affected_areas: AreaList
     affected_area_ids: StringList = ()
@@ -1186,7 +1186,7 @@ class DisasterAlertReplayEvent(ReplayEventBase):
 
 class OfficialUpdateReplayEvent(ReplayEventBase):
     event_type: Literal["official_update"]
-    source_key: Literal["jma-replay", "osaka-jma-replay"]
+    source_key: Literal["jma-replay", "osaka-jma-replay", "miyagi-jma-replay"]
     published_at: AwareDatetime
     affected_areas: AreaList
     affected_area_ids: StringList = ()
@@ -1270,7 +1270,7 @@ class NetworkRestoredReplayEvent(ReplayEventBase):
 
 class VerifiedUpdateReplayEvent(ReplayEventBase):
     event_type: Literal["verified_update"]
-    source_key: Literal["jma-replay", "osaka-jma-replay", "transport-replay"]
+    source_key: Literal["jma-replay", "osaka-jma-replay", "miyagi-jma-replay", "transport-replay"]
     published_at: AwareDatetime
     affected_areas: AreaList = ()
     affected_area_ids: StringList = ()
