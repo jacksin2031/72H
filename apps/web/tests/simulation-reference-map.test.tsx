@@ -50,6 +50,21 @@ afterEach(async () => {
 });
 
 describe('isolated simulation reference map', () => {
+  it('removes the local reference route when cleared without restoring online GPS tiles',async()=>{
+    const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
+    vi.stubGlobal('crypto',webcrypto);vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)})));
+    mapHarness.operations=[];container=document.createElement('div');document.body.append(container);root=createRoot(container);
+    const gps={lat:38.433,lng:141.303,accuracy_m:5,captured_at:Date.now(),source:'BROWSER_GEOLOCATION' as const};
+    const route={id:'candidate-1' as const,coordinates:[[141.303,38.433],[141.304,38.433]] as [number,number][],distance_m:88,origin_gap_m:0,destination_gap_m:0,road_names:[]};
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" userLocation={gps} referenceRoute={route}/>));
+    await act(async()=>{await new Promise(resolve=>setTimeout(resolve,40));});
+    expect(mapHarness.operations).toContain('add-source:evacuation-reference-route');
+    expect(mapHarness.operations).toContain('remove-source:gsi-reference');
+    const operations=mapHarness.operations.length;
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" userLocation={gps} referenceRoute={null}/>));
+    expect(mapHarness.operations).toContain('remove-source:evacuation-reference-route');
+    expect(mapHarness.operations.slice(operations)).not.toContain('add-source:gsi-reference');
+  });
   it('allows compact map panning and pinch/wheel zoom without a blocking information card',async()=>{
     const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
     vi.stubGlobal('crypto',webcrypto);vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)})));

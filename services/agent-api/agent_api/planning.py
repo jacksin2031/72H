@@ -88,12 +88,6 @@ def route_status_claim_key(state: CoreState) -> str | None:
     return route_claim_key(current[0], destination[0])
 
 
-@dataclass(frozen=True, slots=True)
-class PlannerTrace:
-    mode: str
-    reason_code: str | None = None
-
-
 INTENT_DESCRIPTIONS = {
     SafeIntentId.PROTECT_AND_MONITOR: "Prioritize personal safety and monitor verified updates.",
     SafeIntentId.REVIEW_OFFICIAL_GUIDANCE: "Review verified official guidance and follow local instructions.",
@@ -262,9 +256,6 @@ def evaluate_and_replan(
     event,
     policy: SafetyPolicy = DEFAULT_POLICY,
     *,
-    candidate_selection: CandidatePlanSelection | None = None,
-    candidate_context: dict[str, object] | None = None,
-    planner_trace: PlannerTrace | None = None,
     allow_network_reconciliation: bool = True,
 ) -> CoreState:
     """Rebuild current projections, evaluate plan dependencies, and append new versions."""
@@ -388,11 +379,6 @@ def evaluate_and_replan(
         or can_start_initial_plan
     )
 
-    if candidate_selection is not None:
-        if candidate_context is None or not should_review:
-            raise ValueError("OUTPUT_REJECTED: no matching plan generation is pending")
-        validate_candidate_selection(candidate_selection, candidate_context)
-
     if current_plan and should_review:
         evaluation = _evaluate_plan(
             current_plan,
@@ -431,7 +417,6 @@ def evaluate_and_replan(
                 projection_by_id,
                 policy,
                 event,
-                candidate_selection,
             )
         else:
             after = _emit_trace(
@@ -451,35 +436,7 @@ def evaluate_and_replan(
             projection_by_id,
             policy,
             event,
-            candidate_selection,
         )
-
-    if should_review and planner_trace is not None:
-        generated_plan = next(
-            (plan for plan in reversed(after.plans) if plan.id not in {item.id for item in before.plans}),
-            None,
-        )
-        if generated_plan is not None:
-            if planner_trace.mode == "GEMINI_ADK":
-                event_type = "GEMINI_CANDIDATE_APPLIED"
-                trace_status = TraceStatus.SUCCESS
-                summary = "A constrained Gemini/ADK intent selection was validated and used."
-            else:
-                code = planner_trace.reason_code or "PROVIDER_ERROR"
-                if code not in PUBLIC_PLANNER_REASON_CODES:
-                    code = "PROVIDER_ERROR"
-                event_type = "GEMINI_CANDIDATE_FALLBACK"
-                trace_status = TraceStatus.FAILED
-                summary = f"Gemini/ADK selection unavailable ({code}); deterministic safe intents were used."
-            after = _emit_trace(
-                after,
-                event,
-                event_type,
-                trace_status,
-                (generated_plan.id,),
-                summary,
-                agent=AgentName.ACTION_AGENT,
-            )
 
     after = _expire_historical_plans(after, event)
     if len(after.plan_evaluations) > 512:
@@ -880,7 +837,6 @@ def _generate_plan(
     projections: dict[str, EvidenceProjection],
     policy: SafetyPolicy,
     event,
-    candidate_selection: CandidatePlanSelection | None = None,
 ) -> CoreState:
     version = len(state.plans) + 1
     plan_id = f"plan_v{version}"
@@ -890,11 +846,6 @@ def _generate_plan(
         else ()
     )
     previous_by_category = {item.category: item for item in previous_actions}
-    candidate_by_category = (
-        {choice.category: choice for choice in candidate_selection.choices}
-        if candidate_selection is not None
-        else {}
-    )
     evidence_by_id = {item.id: item for item in state.evidence}
     current_claims = {item.key: item for item in state.situation.claim_states}
     movement_support = resolve_movement_support(state, state.current_time, policy)
@@ -944,7 +895,6 @@ def _generate_plan(
                 current_claims,
                 projections,
                 evidence_by_id,
-                candidate_by_category.get(category),
             )
             assessed = assess_action(action, evidence_by_id, projections)
         actions.append(assessed)
@@ -1069,7 +1019,6 @@ def _new_action(
     claims: dict[str, SituationClaim],
     projections: dict[str, EvidenceProjection],
     evidence_by_id: dict[str, Evidence],
-    candidate: CandidateActionSelection | None = None,
 ) -> PlanAction:
     route_key = route_status_claim_key(state)
     route_state = claims.get(route_key) if route_key else None
@@ -1086,7 +1035,7 @@ def _new_action(
     )
     route_dependencies = (route_key,) if route_key else ()
     route_ids = _eligible_ids_for_claim(route_state, projections)
-    intent_id = candidate.intent_id if candidate is not None else _default_intent(category, route_value)
+    intent_id = _default_intent(category, route_value)
     if category == PlanActionCategory.NOW:
         if intent_id == SafeIntentId.REVIEW_OFFICIAL_GUIDANCE:
             words = {
@@ -1141,8 +1090,6 @@ def _new_action(
                 route_ids,
                 route_dependencies,
             )
-    if candidate is not None:
-        evidence_ids = candidate.evidence_ids
     dependency_expectations = tuple(
         DependencyExpectation(
             key=key,

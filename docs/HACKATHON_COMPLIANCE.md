@@ -6,6 +6,15 @@ test counts and 10/10 replay below are preserved as historical MVP evidence.
 Updated Japanese copy, diagram and recording instructions are in
 [SUBMISSION_PACKAGE.md](SUBMISSION_PACKAGE.md) and [DEMO_SCRIPT.md](DEMO_SCRIPT.md).
 
+**P2.7 branch note (2026-10-13 JST, local only).** On
+`codex/p2-7-explanation-evacuation-routes`, Gemini/ADK no longer selects candidate
+intents before Safety Core gating. The real Gemini/ADK path is now the post-Core
+explanation endpoints (`/api/{live,replay,mock-live}/{id}/explanation`), which return
+whitelisted clause and reference IDs only. The `GEMINI_CANDIDATE_APPLIED` evidence
+below belongs to the earlier candidate path. Cloud Run + real Gemini acceptance of
+the explanation path is NOT RUN and must be recorded before this branch is
+claimed for submission.
+
 **Current vNext gate: PASS.** Runtime `8d1836e`, Cloud Build
 `623824c3-128e-403e-8d12-cc883e699182`, revision `h72-vnext-8d1836e` at 100% traffic.
 Canonical API and clean desktop/mobile GUI each completed 11-event replay with

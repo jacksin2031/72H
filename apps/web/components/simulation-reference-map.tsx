@@ -70,7 +70,7 @@ const mapText={
 export function SimulationReferenceMap({
   language,compact=false,showInformation=true,epicenter=null,userLocation=null,referencePoint=null,officialPack=null,showInundation=false,showPlaces=false,focusPoint=null,onReferencePoint,onPlace,protectDeviceLocation=true,seismicOrigins=[],seismicTime=null,
   disasterReference=null,forecastLinePack=null,referenceConnected=false,referenceNow=0,showForecastLines=false,
-  intensityRegionPack=null,showIntensityRegions=false,referencePlaces,
+  intensityRegionPack=null,showIntensityRegions=false,referencePlaces,referenceRoute=null,
 }:{
   language:Language; compact?:boolean;showInformation?:boolean;epicenter?:Epicenter|null;userLocation?:LocationFix|null;
   referencePoint?:{lat:number;lng:number}|null;
@@ -82,6 +82,7 @@ export function SimulationReferenceMap({
   referenceConnected?:boolean;referenceNow?:number;showForecastLines?:boolean;
   intensityRegionPack?:IntensityRegionPack|null;showIntensityRegions?:boolean;
   referencePlaces?:OfficialPlace[];
+  referenceRoute?:import('@/lib/evacuation-road-graph').RoadCandidate|null;
 }){
   const host=useRef<HTMLDivElement>(null);
   const mapRef=useRef<import('maplibre-gl').Map|null>(null);
@@ -339,6 +340,18 @@ export function SimulationReferenceMap({
       for(const id of ['official-places','official-inundation'])if(map.getSource(id))map.removeSource(id);
     };
   },[status,officialPack,referencePlaces,showInundation,showPlaces,onReferencePoint,onPlace]);
+
+  useEffect(()=>{
+    const map=mapRef.current;
+    if(status!=='ready'||!map||!referenceRoute||referenceRoute.coordinates.length<2||referenceRoute.coordinates.length>2048
+      ||referenceRoute.coordinates.some(p=>p.length!==2||!validPoint({lng:p[0],lat:p[1]})))return;
+    map.addSource('evacuation-reference-route',{type:'geojson',data:{type:'Feature',properties:{authority:'ROAD_REFERENCE_ONLY'},
+      geometry:{type:'LineString',coordinates:referenceRoute.coordinates.map(p=>[p[0],p[1]])}}});
+    map.addLayer({id:'evacuation-reference-route-line',type:'line',source:'evacuation-reference-route',
+      paint:{'line-color':'#afcbed','line-width':4,'line-dasharray':[2,2]}});
+    return()=>{if(map.getLayer('evacuation-reference-route-line'))map.removeLayer('evacuation-reference-route-line');
+      if(map.getSource('evacuation-reference-route'))map.removeSource('evacuation-reference-route');};
+  },[status,referenceRoute]);
 
   useEffect(()=>{
     if(status==='ready'&&focusPoint&&validPoint(focusPoint))mapRef.current?.easeTo({center:[focusPoint.lng,focusPoint.lat],zoom:focusPoint.zoom??13,duration:0});

@@ -14,6 +14,7 @@ import { epicenterForPlayedMilestones, historicTsunamiWarningStarted, screenGeoE
 import { seismicOriginsForMilestones } from '@/lib/seismic-wavefront';
 import { activeSimulationAdvice, simulationAdviceText } from '@/lib/simulation-advice';
 import { SimulationAdvicePanel } from './simulation-advice-panel';
+import {PlanExplanationPanel} from './plan-explanation-panel';
 
 export type SimulationSection = 'home' | 'plan' | 'events' | 'map' | 'more';
 type Stage = 'waiting' | 'processing' | 'running' | 'completed' | 'failed';
@@ -168,6 +169,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
       {tab==='plan'&&<section className="sim-v2-plan" data-testid="simulation-plan">
         <header className="sim-v2-page-title"><span>{t.actions}</span><small>{doneEvent?ai:t.pending}</small></header>
         <SimulationAdvicePanel advice={advice} executionMode={lastMode} language={language} cannotMove={config.input.mobility==='CANNOT_MOVE'} stale={Boolean(state?.movement_assessment&&!advice)}/>
+        {state&&<PlanExplanationPanel snapshot={state.snapshot} language={language} scope="mock-live" accessKey={config.accessKey} enabled={connected&&!processing&&phase!=='failed'&&config.input.network==='ONLINE'}/>}
         {(['NOW','NEXT','AVOID'] as const).map((category,i)=><section key={category} className="sim-v2-plan-step">
           <span className={`sim-v2-plan-index sim-v2-step-${category.toLowerCase()}`}>{i+1}</span>
           <div><h2>{i===0?t.now:i===1?t.next:t.avoid}</h2>

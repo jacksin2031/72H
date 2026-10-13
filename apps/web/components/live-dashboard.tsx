@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { UiIcon, type IconName } from './ui-icon';
 import { OfficialSourceReview } from './official-source-review';
+import {PlanExplanationPanel} from './plan-explanation-panel';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, FormEvent, ReactNode, SetStateAction } from 'react';
 import { usePower } from '@/lib/use-power';
@@ -642,6 +643,7 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
         focusPlanAfterBack.current = true; setPlanPanel('current');
       }}>{messages.backToPlan}</button>}
       {planPanel === 'current' && <>
+        <PlanExplanationPanel snapshot={snapshot} language={language} enabled={connection==='online'&&power.allowNonCriticalNetwork}/>
         <details className="plan-tools">
           <summary>{messages.planTools}</summary>
           <nav className="plan-subviews" aria-label={messages.planReview}>

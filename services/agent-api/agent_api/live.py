@@ -58,7 +58,7 @@ from seventytwoh_contracts.models import (
     validate_location_area_path,
 )
 
-from .domain import apply_live_evidence_batch, apply_live_evidence_batch_with_planner, replan_live_transition_with_planner
+from .domain import apply_live_evidence_batch, replan_live_transition
 from .area_registry import base_japan_area_catalog, catalog_for_state, load_japan_area_registry
 from .live_sources import (
     JMA_EVIDENCE_TTL_SECONDS,
@@ -393,15 +393,11 @@ class LiveStore:
                 except ValueError as exc:
                     raise InvalidLiveLocationRequest(str(exc)) from exc
 
-            from .domain import replan_live_transition_with_planner
             from .planning import evaluate_and_replan
 
-            event = SimpleNamespace(id=event_id)
-            planned, _planning_mode = await replan_live_transition_with_planner(
+            planned = replan_live_transition(
                 before,
                 after,
-                self._planner,
-                f"live-{aggregate.session_id}",
                 self._policy,
                 event_id=event_id,
             )
@@ -518,12 +514,9 @@ class LiveStore:
                 except ValueError as exc:
                     raise InvalidLiveProfileUpdate(str(exc)) from exc
 
-            event = SimpleNamespace(id=event_id)
-            planned, _planning_mode = await replan_live_transition_with_planner(
+            planned = replan_live_transition(
                 before,
                 after,
-                self._planner,
-                f"live-{aggregate.session_id}",
                 self._policy,
                 event_id=event_id,
                 allow_network_reconciliation=False,
@@ -692,12 +685,10 @@ class LiveStore:
                     aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata
                 )
                 prepared = aggregate.state
-            after, _planning_mode = await apply_live_evidence_batch_with_planner(
+            after = apply_live_evidence_batch(
                 prepared,
                 pairs,
                 max(now, prepared.current_time),
-                self._planner,
-                f"live-{aggregate.session_id}",
                 self._policy,
                 synthetic_mode=getattr(self, "_synthetic_source_mode", False),
                 official_aliases=aliases,

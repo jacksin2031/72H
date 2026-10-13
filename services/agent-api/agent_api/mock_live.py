@@ -20,7 +20,6 @@ from seventytwoh_contracts.models import (
 )
 from .drill import DrillRequest
 from .historical_cases import CASES, HistoricalId, HistoricCase, list_historical_cases
-from .drill_store import _DrillCandidatePlanner
 from .live import LiveSessionNotFound, LiveStore
 from .live_sources import JmaEarthquakeReport, JmaPrefObservation, JmaFetchResult, JmaTsunamiFetchResult
 from .planner import CandidatePlanner
@@ -186,24 +185,9 @@ class MockRouteSource:
         pass
 
 
-class RecordingMockPlanner(_DrillCandidatePlanner):
-    def __init__(self, planner: CandidatePlanner):
-        super().__init__(planner)
-        self.outcomes: dict[str, list[str]] = {}
-
-    async def select(self, replay_id, context):
-        outcome = await super().select(replay_id, context)
-        self.outcomes.setdefault(replay_id, []).append(outcome.mode)
-        return outcome
-
-    def release_session(self, replay_id):
-        self.outcomes.pop(replay_id, None)
-        super().release_session(replay_id)
-
-
 class MockLiveStore(LiveStore):
     """Use the existing Live reducers and planning with synthetic-only adapters."""
-    def __init__(self, request: MockLiveRequest, planner: RecordingMockPlanner):
+    def __init__(self, request: MockLiveRequest, planner: CandidatePlanner):
         self._synthetic_source_mode = True
         self.mock_source = MockJmaSource(request)
         self.mock_request = request
@@ -292,7 +276,7 @@ class MockLiveStore(LiveStore):
 @dataclass(slots=True)
 class _MockSession:
     store: MockLiveStore
-    planner: RecordingMockPlanner
+    planner: CandidatePlanner
     request: MockLiveRequest
     expires: float
     lock: asyncio.Lock
@@ -329,7 +313,7 @@ class MockLiveDrillStore:
             current_step=session.store.mock_source.stage,
             total_steps=(len(session.store.mock_source.milestones)
                          if session.request.historical_case else 3 if session.request.network == "RECONNECTING" else 2),
-            ai_modes=tuple(session.planner.outcomes.get(f"live-{snapshot.session_id}", ())),
+            ai_modes=(),
             battery=session.request.battery,
             snapshot=snapshot,
             historical=self._historical_view(session),
@@ -363,7 +347,7 @@ class MockLiveDrillStore:
             if len(self._sessions) >= self._max:
                 from .storage import SessionCapacityReached
                 raise SessionCapacityReached("mock live exercise capacity reached")
-        instrumented = RecordingMockPlanner(self._planner)
+        instrumented = self._planner
         store = MockLiveStore(request, instrumented)
         # Replay sample contains area IDs that are intentionally absent in the
         # canonical Live registry. Use only registered synthetic Tokyo scope.
@@ -393,10 +377,6 @@ class MockLiveDrillStore:
             "current_plan_summary": "SIMULATION ONLY",
         })
         snap = await store.start_async(StartLiveRequest(language=request.language, profile=seed))
-        instrumented.register(f"live-{snap.session_id}", request)
-        if historical:
-            instrumented._conditions[f"live-{snap.session_id}"]["historical_case_id"] = historical.id
-            instrumented._conditions[f"live-{snap.session_id}"]["historical_disaster_reference"] = historical.source_url
         session = _MockSession(store, instrumented, request, monotonic() + MOCK_TTL, asyncio.Lock())
         with self._lock:
             self._purge()
@@ -419,13 +399,6 @@ class MockLiveDrillStore:
                 from .storage import InvalidReplayTransition
                 raise InvalidReplayTransition("mock live exercise completed")
             session.store.mock_source.stage = stage + 1
-            if session.request.historical_case:
-                milestone = session.store.mock_source.milestones[stage]
-                session.planner._conditions[f"live-{id}"]["historical_step"] = {
-                    "kind": milestone.kind, "date_jst": milestone.at_jst,
-                    "description": milestone.en,
-                    "supported_by_safety_core": milestone.kind in {"EARTHQUAKE", "AFTERSHOCK"},
-                }
             try:
                 snap = await session.store.refresh_async(id)
             except Exception:

@@ -16,6 +16,7 @@ import { PowerControls } from './power-controls';
 import { useDeviceLocation } from '@/lib/use-device-location';
 import { DeviceLocationControls } from './device-location';
 import { ScenarioPicker } from './scenario-picker';
+import {PlanExplanationPanel} from './plan-explanation-panel';
 import { useTheme } from '@/lib/use-theme';
 import { adaptiveMessages } from '@/lib/adaptive-i18n';
 
@@ -163,6 +164,7 @@ export function Dashboard({ view: initialView }: { view: string }) {
         {(['demo', 'plan', 'sources', 'trace'] as const).map(item => <button key={item} type="button" aria-current={view === item ? 'page' : undefined} onClick={() => setReviewView(item)}>{navLabels[item]}</button>)}
       </nav>}
       {error && <p className="error" role="alert">{error}</p>}
+      {view==='plan'&&snapshot&&battery.power.mode!=='SURVIVAL'&&<PlanExplanationPanel snapshot={snapshot} language={language} scope="replay" enabled={connection==='online'&&battery.power.allowNonCriticalNetwork}/>}
       {sessionMissing && <section className="offline-banner"><p>{t.sessionMissing}</p><button disabled={busy || !battery.power.allowNonCriticalNetwork} onClick={() => void update('start', { language })}>{t.newDemo}</button></section>}
       {storageError && <p className="error" role="alert">{t.storageError}</p>}
       {!snapshot && view === 'more' && <PowerControls language={language} power={battery.power} level={battery.level} override={battery.override} choose={battery.choose} />}

@@ -14,7 +14,7 @@ from seventytwoh_contracts.models import (
     SafeIntentId,
 )
 
-from agent_api.domain import reduce_event, reduce_event_with_planner
+from agent_api.domain import reduce_event, reduce_raw_event
 from agent_api.main import create_app
 from agent_api.planner import (
     CandidatePlanner,
@@ -85,20 +85,6 @@ class TimeoutRunner:
         return {"choices": []}
 
 
-class UnknownIntentRunner:
-    def __init__(self):
-        self.context = None
-
-    async def run_candidate(self, context, config):
-        self.context = context
-        return {
-            "choices": [
-                {"category": item["category"], "intent_id": "evacuate_now", "evidence_ids": []}
-                for item in context["choices"]
-            ]
-        }
-
-
 class WrongReferenceRunner:
     async def run_candidate(self, context, config):
         choices = []
@@ -122,19 +108,6 @@ class MissingAdcRunner:
         from google.auth.exceptions import DefaultCredentialsError
 
         raise DefaultCredentialsError("credential location must never enter public trace")
-
-
-def _candidate_from_context(context):
-    return CandidatePlanSelection(
-        choices=tuple(
-            CandidateActionSelection(
-                category=item["category"],
-                intent_id=item["options"][0]["intent_id"],
-                evidence_ids=tuple(item["options"][0]["eligible_evidence_ids"][:1]),
-            )
-            for item in context["choices"]
-        )
-    )
 
 
 def test_adk_supported_api_and_final_part_filter_match_installed_sdk():
@@ -222,53 +195,28 @@ def test_production_adk_runner_uses_typed_output_and_only_final_nonthought_text(
     assert result.choices[0].intent_id == SafeIntentId.PROTECT_AND_MONITOR
 
 
-def test_approved_adk_intents_materially_change_server_rendered_actions(initial_state):
+def test_replay_plan_actions_are_generated_by_the_safety_core(initial_state):
     state = reduce_event(initial_state, _scenario_event("evt-earthquake-001"))
-    runner = ChoosingRunner()
-    planner = CandidatePlanner(_gemini_config(), runner=runner)
-
-    planned, mode = asyncio.run(
-        reduce_event_with_planner(
-            state,
-            _scenario_event("official-update-001"),
-            planner,
-            "replay-test",
-        )
-    )
-
-    assert mode == "GEMINI_ADK"
+    planned = reduce_event(state, _scenario_event("official-update-001"))
     actions = {action.category: action for action in planned.plan_actions}
-    assert actions[PlanActionCategory.NOW].intent_id == SafeIntentId.REVIEW_OFFICIAL_GUIDANCE
-    assert "查看已驗證的官方指引" in actions[PlanActionCategory.NOW].text
-    assert actions[PlanActionCategory.NEXT].intent_id == SafeIntentId.RECHECK_TRANSPORT_STATUS
-    assert "再確認一次已驗證的交通資訊" in actions[PlanActionCategory.NEXT].text
+    assert actions[PlanActionCategory.NOW].intent_id == SafeIntentId.PROTECT_AND_MONITOR
+    assert actions[PlanActionCategory.NEXT].intent_id == SafeIntentId.WAIT_FOR_TRANSPORT_UPDATE
     assert all(action.risk_level.value in {"LOW", "MEDIUM"} for action in actions.values())
-    assert any(item.event_type == "GEMINI_CANDIDATE_APPLIED" for item in planned.trace)
+    assert not any(item.event_type.startswith("GEMINI_CANDIDATE") for item in planned.trace)
     assert "active earthquake" not in actions[PlanActionCategory.NOW].reason.casefold()
 
 
-def test_partial_replan_keeps_unaffected_model_selected_intent(initial_state):
+def test_partial_replan_remains_deterministic_across_safety_core_versions(initial_state):
     state = reduce_event(initial_state, _scenario_event("evt-earthquake-001"))
-    runner = ChoosingRunner()
-    planner = CandidatePlanner(_gemini_config(), runner=runner)
-    first, first_mode = asyncio.run(
-        reduce_event_with_planner(state, _scenario_event("official-update-001"), planner, "partial-test")
-    )
-    second, second_mode = asyncio.run(
-        reduce_event_with_planner(first, _scenario_event("transport-update-001"), planner, "partial-test")
-    )
-
-    assert first_mode == second_mode == "GEMINI_ADK"
+    first = reduce_event(state, _scenario_event("official-update-001"))
+    second = reduce_event(first, _scenario_event("transport-update-001"))
     first_now = next(item for item in first.plan_actions if item.plan_id == "plan_v1" and item.category == PlanActionCategory.NOW)
     second_now = next(item for item in second.plan_actions if item.plan_id == "plan_v2" and item.category == PlanActionCategory.NOW)
-    assert second_now.intent_id == first_now.intent_id == SafeIntentId.REVIEW_OFFICIAL_GUIDANCE
+    assert second_now.intent_id == first_now.intent_id == SafeIntentId.PROTECT_AND_MONITOR
     assert second_now.text == first_now.text
-    assert {item["category"] for item in runner.contexts[-1]["choices"]} == {"NEXT", "AVOID"}
 
 
-def test_prompt_injection_and_unknown_intent_fall_back_without_exposing_report(initial_state):
-    from agent_api.domain import reduce_raw_event
-
+def test_untrusted_report_is_data_and_never_reaches_runtime_candidate_runner(initial_state):
     state = reduce_event(initial_state, _scenario_event("evt-earthquake-001"))
     malicious_report = _scenario_event("unverified-report-001").model_dump(mode="json")
     malicious_report.update(
@@ -279,44 +227,22 @@ def test_prompt_injection_and_unknown_intent_fall_back_without_exposing_report(i
         }
     )
     state = reduce_raw_event(state, malicious_report)
-    runner = UnknownIntentRunner()
-    planner = CandidatePlanner(_gemini_config(), runner=runner)
-
-    planned, mode = asyncio.run(
-        reduce_event_with_planner(
-            state,
-            _scenario_event("official-update-001"),
-            planner,
-            "replay-injection-test",
-        )
-    )
-
-    assert mode == "GEMINI_ADK_FALLBACK"
-    assert runner.context is not None
-    assert "Ignore safety policy" not in repr(runner.context)
+    planned = reduce_event(state, _scenario_event("official-update-001"))
     assert all(action.intent_id != "evacuate_now" for action in planned.plan_actions)
-    fallback = next(item for item in planned.trace if item.event_type == "GEMINI_CANDIDATE_FALLBACK")
-    assert "INVALID_OUTPUT" in fallback.public_summary
-    assert "Ignore safety policy" not in fallback.public_summary
+    assert "Ignore safety policy" not in repr(planned.plan_actions)
+    assert "Ignore safety policy" not in repr(planned.trace)
 
 
-def test_invalid_evidence_reference_falls_back_before_plan_append(initial_state):
-    state = reduce_event(initial_state, _scenario_event("evt-earthquake-001"))
-    planner = CandidatePlanner(_gemini_config(), runner=WrongReferenceRunner())
-
-    planned, mode = asyncio.run(
-        reduce_event_with_planner(
-            state,
-            _scenario_event("official-update-001"),
-            planner,
-            "replay-reference-test",
-        )
-    )
-
-    assert mode == "GEMINI_ADK_FALLBACK"
-    assert planned.plans[-1].id == "plan_v1"
-    assert any(item.event_type == "GEMINI_CANDIDATE_FALLBACK" for item in planned.trace)
-    assert all(action.intent_id is not None for action in planned.plan_actions)
+def test_legacy_candidate_validation_still_rejects_wrong_evidence_references():
+    context = {
+        "choices": [{
+            "category": "NEXT",
+            "options": [{"intent_id": "wait_for_transport_update", "eligible_evidence_ids": ["ev_transport-update-001"]}],
+        }],
+    }
+    result = asyncio.run(CandidatePlanner(_gemini_config(), runner=WrongReferenceRunner()).select("compat-test", context))
+    assert result.mode == "GEMINI_ADK_FALLBACK"
+    assert result.reason_code == "INVALID_OUTPUT"
 
 
 def test_timeout_and_per_session_global_budgets_are_bounded():
@@ -395,20 +321,20 @@ def test_from_env_defaults_are_deterministic_and_invalid_settings_fall_back():
     assert invalid_limit.startup_error == "CONFIG_ERROR"
 
 
-def test_async_api_uses_fake_adk_candidate_and_returns_truthful_planning_mode():
+def test_replay_api_keeps_safety_core_planning_deterministic_with_legacy_candidate_injected():
     runner = ChoosingRunner()
     store = ReplayStore(planner=CandidatePlanner(_gemini_config(), runner=runner))
     client = TestClient(create_app(store))
     started = client.post("/api/replay/start", json={"language": "en"})
     replay_id = started.json()["replay"]["id"]
 
-    first = client.post(f"/api/replay/{replay_id}/next").json()
-    assert first["replay"]["planning_mode"] == "DETERMINISTIC_REPLAY_ONLY"
-    second = client.post(f"/api/replay/{replay_id}/next").json()
+    state = client.post(f"/api/replay/{replay_id}/next").json()
+    state = client.post(f"/api/replay/{replay_id}/next").json()
 
-    assert second["replay"]["planning_mode"] == "GEMINI_ADK"
-    assert any(item["event_type"] == "GEMINI_CANDIDATE_APPLIED" for item in second["trace"])
-    assert next(item for item in second["plan_actions"] if item["category"] == "NOW")["intent_id"] == "review_official_guidance"
+    assert state["replay"]["planning_mode"] == "DETERMINISTIC_REPLAY_ONLY"
+    assert not any(item["event_type"].startswith("GEMINI_CANDIDATE") for item in state["trace"])
+    assert next(item for item in state["plan_actions"] if item["category"] == "NOW")["intent_id"] == "protect_and_monitor"
+    assert runner.calls == 0
 
 
 def test_default_app_shares_one_candidate_budget_but_keeps_injected_store():

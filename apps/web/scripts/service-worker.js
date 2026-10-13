@@ -2,7 +2,7 @@
 const VERSION = '72h-shell-__BUILD_ID__';
 // Public reference packs survive shell upgrades; the client still verifies every hash.
 const HAZARDS = '72h-hazards-v1';
-const isHazardPath = path => /^\/hazards\/[a-z0-9/_-]{1,140}\.(json|geojson)$/.test(path);
+const isHazardPath = path => /^\/(hazards|roads)\/[a-z0-9/_-]{1,140}\.(json|geojson)$/.test(path);
 const SHELL = ['/', '/dashboard', '/plan', '/more', '/notifications', '/sources', '/trace', '/demo', '/map', '/icon.svg', '/manifest.webmanifest', '/maps/catalog.json', '/maps/manifest.json', '/maps/japan-land-50m.geojson', '/maps/geography-manifest.json', '/maps/tokyo-central-geography.geojson', '/maplibre/maplibre-gl-worker.mjs', '/maplibre/maplibre-gl-shared.mjs', '/areas/catalog.json', '/areas/manifest.json', '/areas/worker.mjs', '/areas/area-geometry.mjs'];
 self.addEventListener('install', event => {
   event.waitUntil((async () => {

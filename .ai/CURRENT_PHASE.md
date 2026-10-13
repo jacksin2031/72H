@@ -1,5 +1,19 @@
 # 72H — Current Development Phase
 
+## P2.7 post-Core explanations / evacuation road candidates (2026-10-13 JST)
+
+On `codex/p2-7-explanation-evacuation-routes` (uncommitted), LIVE/REPLAY/Mock Live
+plans are published by the deterministic Safety Core only; Gemini/ADK runs after
+Core gating and returns whitelisted explanation clause / reference IDs. Frontend
+acceptance mirrors the backend contract (`fact_ids`, WAIT_FOR_EVIDENCE actions,
+96 paragraphs) and rejects explanations once the plan or cited evidence expires on
+the snapshot's logical clock. Over-limit plans return NOT_RUN instead of HTTP 500.
+The Ishinomaki OSM road pack was rebuilt at `2026-10-13T16:13:38+09:00`
+(2,629 ways / 9,187 nodes / 10,318 edges); the builder script is not in the repo.
+Local gates: 392 frontend passed / 3 existing skips, 314 backend passed,
+typecheck/build/secret scan. Cloud Run + real Gemini explanation acceptance,
+browser acceptance and independent safety review are NOT RUN. No deployment.
+
 ## P2.6 local designated-place partition / opening boundary (2026-10-12 JST)
 
 On `codex/p2-6-designated-places`, the pinned Ishinomaki partition retains 395

@@ -13,6 +13,8 @@ import { useDisasterMap } from '@/lib/use-disaster-map';
 import { DisasterMapPanel } from '@/components/disaster-map-panel';
 import { useDesignatedPlaces } from '@/lib/use-designated-places';
 import { DesignatedPlacesPanel } from '@/components/designated-places-panel';
+import {EvacuationRoutePanel} from '@/components/evacuation-route-panel';
+import type {RoadCandidate} from '@/lib/evacuation-road-graph';
 import '@/components/simulation-flat-ui.css';
 import '@/components/simulation-geo.css';
 import '@/components/simulation-map-ui.css';
@@ -25,6 +27,7 @@ export default function JapanMapPage() {
   const [pack,setPack]=useState<HazardPack|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(false),[attempt,setAttempt]=useState(0);
   const [showInundation,setShowInundation]=useState(true),[showPlaces,setShowPlaces]=useState(true);
   const [manualPoint,setManualPoint]=useState<HazardLocation|null>(null),[focus,setFocus]=useState<{lat:number;lng:number;zoom?:number}|null>(null);
+  const [referenceRoute,setReferenceRoute]=useState<RoadCandidate|null>(null);
   const geo=useSimulationGeo();
   const [showIntensityRegions,setShowIntensityRegions]=useState(false);
   const official=useDisasterMap(showIntensityRegions);
@@ -60,7 +63,7 @@ export default function JapanMapPage() {
         userLocation={geo.location} referencePoint={manualPoint} officialPack={pack} showInundation={showInundation} showPlaces={showPlaces}
         disasterReference={official.data} forecastLinePack={official.pack} referenceConnected={official.connected} referenceNow={official.now} showForecastLines={showForecastLines}
         intensityRegionPack={official.regions} showIntensityRegions={showIntensityRegions}
-        referencePlaces={designations.places}
+        referencePlaces={designations.places} referenceRoute={referenceRoute}
         focusPoint={focus} onReferencePoint={choosePoint} onPlace={choosePlace}/>
       <label className="japan-history-picker"><select aria-label={language==='ja'?'過去の地震':language==='en'?'Historical earthquake':'歷史地震'} value={historicCase} onChange={event=>setHistoricCase(event.target.value)}>
         <option value="">{language==='ja'?'過去の震央を表示':language==='en'?'Show historical epicenter':'顯示歷史震央'}</option>
@@ -70,7 +73,8 @@ export default function JapanMapPage() {
     </div><OfficialHazardPanel language={language} pack={pack} loading={loading} error={error} point={point}
       liveReference={<DisasterMapPanel language={language} {...official} showLines={showForecastLines} onLines={setShowForecastLines}
         showRegions={showIntensityRegions} onRegions={setShowIntensityRegions}/>}
-      placesReference={<DesignatedPlacesPanel language={language} state={designations} onPlace={choosePlace}/>}
+      placesReference={<><EvacuationRoutePanel language={language} state={designations} origin={point} onOrigin={choosePoint} onFocus={setFocus} onRoute={setReferenceRoute}/>
+        <DesignatedPlacesPanel language={language} state={designations} onPlace={choosePlace}/></>}
       showInundation={showInundation} showPlaces={showPlaces} onInundation={setShowInundation} onPlaces={setShowPlaces}
       onRetry={()=>setAttempt(x=>x+1)} onGPS={()=>{setManualPoint(null);geo.request();}} gpsState={geo.state}
       onClear={()=>{geo.clear();setManualPoint(null);}} onFocus={()=>{

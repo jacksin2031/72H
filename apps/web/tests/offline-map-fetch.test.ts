@@ -23,6 +23,13 @@ function harness(cached?: Response) {
 }
 
 describe('offline map pack fetch handling', () => {
+  it('restores pinned public walking graphs offline without caching GPS queries or model responses',async()=>{
+    const app=harness(new Response('pinned-road-reference'));
+    const response=app.request('/roads/ishinomaki-central-v1/graph.json',undefined,'no-cache');
+    expect(response).toHaveBeenCalledOnce();expect(await (await response.mock.calls[0][0]).text()).toBe('pinned-road-reference');
+    expect(app.request('/roads/ishinomaki-central-v1/graph.json?lat=38.4')).not.toHaveBeenCalled();
+    expect(app.request('/api/live/session/explanation')).not.toHaveBeenCalled();
+  });
   it('revalidates a public pack requested with no-cache after a pin/manifest upgrade',async()=>{
     const app=harness(new Response('old-manifest'));app.fetch.mockResolvedValue(new Response('new-manifest'));
     const respond=app.request('/hazards/jma-forecast-lines-v1/manifest.json',undefined,'no-cache');

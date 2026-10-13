@@ -46,9 +46,17 @@ from .drill_store import DrillStore
 from .mock_live import MockLiveDrillStore, MockLiveResponse, MockLiveRequest
 from .historical_cases import list_historical_cases
 from .place_opening import PlaceOpeningStore, PlaceOpeningResponse
+from .explanation import ExplanationRequest, ExplanationResponse, ExplanationService
 
 
-def create_app(store: ReplayStore | None = None, live_store: LiveStore | None = None, drill_store: DrillStore | None = None, mock_live_store: MockLiveDrillStore | None = None, place_opening_store: PlaceOpeningStore | None = None) -> FastAPI:
+def create_app(
+    store: ReplayStore | None = None,
+    live_store: LiveStore | None = None,
+    drill_store: DrillStore | None = None,
+    mock_live_store: MockLiveDrillStore | None = None,
+    place_opening_store: PlaceOpeningStore | None = None,
+    explanation_service: ExplanationService | None = None,
+) -> FastAPI:
     if store is None and live_store is None:
         # Preserve one process-wide Gemini/ADK call budget across replay and live.
         planner = CandidatePlanner()
@@ -69,6 +77,8 @@ def create_app(store: ReplayStore | None = None, live_store: LiveStore | None = 
     application.state.live_store = live_session_store
     application.state.drill_store = isolated_drills
     application.state.mock_live_store = isolated_mock_live
+    explanation_engine = explanation_service or ExplanationService()
+    application.state.explanation_service = explanation_engine
     opening_store = place_opening_store or PlaceOpeningStore()
 
     @application.get('/api/reference/place-opening/{partition}', response_model=PlaceOpeningResponse)
@@ -107,6 +117,19 @@ def create_app(store: ReplayStore | None = None, live_store: LiveStore | None = 
     def get_replay(session_id: UUID) -> ReplaySnapshot:
         return _run(lambda: replay_store.get(session_id))
 
+    @application.post("/api/replay/{session_id}/explanation", response_model=ExplanationResponse)
+    async def explain_replay(session_id: UUID, request: ExplanationRequest) -> ExplanationResponse:
+        try:
+            snapshot = replay_store.get(session_id)
+            return await explanation_engine.explain(
+                snapshot,
+                request.language,
+                source_mode="SYNTHETIC_REPLAY",
+                latest_snapshot=lambda: replay_store.get(session_id),
+            )
+        except SessionNotFound as exc:
+            raise HTTPException(status_code=404, detail="replay session not found") from exc
+
     @application.post("/api/replay/{session_id}/pause", response_model=ReplaySnapshot)
     def pause_replay(session_id: UUID) -> ReplaySnapshot:
         return _run(lambda: replay_store.pause(session_id))
@@ -139,6 +162,19 @@ def create_app(store: ReplayStore | None = None, live_store: LiveStore | None = 
     @application.get("/api/live/{session_id}", response_model=LiveSnapshot)
     def get_live(session_id: UUID) -> LiveSnapshot:
         return _run_live(lambda: live_session_store.get(session_id))
+
+    @application.post("/api/live/{session_id}/explanation", response_model=ExplanationResponse)
+    async def explain_live(session_id: UUID, request: ExplanationRequest) -> ExplanationResponse:
+        try:
+            snapshot = live_session_store.get(session_id)
+            return await explanation_engine.explain(
+                snapshot,
+                request.language,
+                source_mode="LIVE",
+                latest_snapshot=lambda: live_session_store.get(session_id),
+            )
+        except LiveSessionNotFound as exc:
+            raise HTTPException(status_code=404, detail="live session not found") from exc
 
     @application.get("/api/reference/tsunami", response_model=TsunamiReferenceResponse)
     def tsunami_reference() -> TsunamiReferenceResponse:
@@ -223,6 +259,23 @@ def create_app(store: ReplayStore | None = None, live_store: LiveStore | None = 
     @application.get("/api/mock-live/{session_id}", response_model=MockLiveResponse)
     def get_mock_live(session_id: UUID, _: None = Depends(authenticate_drill)) -> MockLiveResponse:
         return _run_live(lambda: isolated_mock_live.get(session_id))
+
+    @application.post("/api/mock-live/{session_id}/explanation", response_model=ExplanationResponse)
+    async def explain_mock_live(
+        session_id: UUID,
+        request: ExplanationRequest,
+        _: None = Depends(authenticate_drill),
+    ) -> ExplanationResponse:
+        try:
+            result = isolated_mock_live.get(session_id)
+            return await explanation_engine.explain(
+                result.snapshot,
+                request.language,
+                source_mode="MOCK_LIVE",
+                latest_snapshot=lambda: isolated_mock_live.get(session_id).snapshot,
+            )
+        except LiveSessionNotFound as exc:
+            raise HTTPException(status_code=404, detail="mock live session not found") from exc
 
     @application.post("/api/mock-live/{session_id}/next", response_model=MockLiveResponse)
     async def next_mock_live(session_id: UUID, _: None = Depends(authenticate_drill)) -> MockLiveResponse:

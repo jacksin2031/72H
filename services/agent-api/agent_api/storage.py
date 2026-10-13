@@ -23,7 +23,7 @@ from seventytwoh_contracts.models import (
     validate_location_area_path,
 )
 
-from .domain import CoreState, reduce_event, reduce_event_with_planner
+from .domain import CoreState, reduce_event
 from .planning import evidence_projections
 from .planner import CandidatePlanner
 from .scenario import (
@@ -216,45 +216,8 @@ class ReplayStore:
             return self._snapshot(aggregate)
 
     async def next_async(self, session_id: UUID) -> ReplaySnapshot:
-        """Advance one event, publishing only after optional candidate validation."""
-        aggregate = self._get_aggregate(session_id)
-        with aggregate.lock:
-            if aggregate.session.status not in {ReplayStatus.RUNNING, ReplayStatus.PAUSED}:
-                raise InvalidReplayTransition("replay must be running or paused before advancing")
-            index = aggregate.session.current_event_index
-            if index >= len(aggregate.scenario.events):
-                raise InvalidReplayTransition("replay has no remaining events")
-            captured_session = aggregate.session
-            captured_state = aggregate.state
-            event = aggregate.scenario.events[index]
-
-        new_state, planning_mode = await reduce_event_with_planner(
-            captured_state,
-            event,
-            self._planner,
-            str(captured_session.id),
-            self._policy,
-        )
-        new_index = index + 1
-        new_status = (
-            ReplayStatus.COMPLETED
-            if new_index == len(aggregate.scenario.events)
-            else captured_session.status
-        )
-        with aggregate.lock:
-            if aggregate.state is not captured_state or aggregate.session != captured_session:
-                raise InvalidReplayTransition("replay changed while candidate planning was in progress")
-            aggregate.state = new_state
-            aggregate.session = captured_session.model_copy(
-                update={
-                    "status": new_status,
-                    "current_event_index": new_index,
-                    "current_time": event.occurred_at,
-                    "planning_mode": planning_mode or captured_session.planning_mode,
-                }
-            )
-            self._touch(aggregate)
-            return self._snapshot(aggregate)
+        """Async API compatibility wrapper; all plan transitions remain deterministic."""
+        return self.next(session_id)
 
     def reset(self, session_id: UUID) -> ReplaySnapshot:
         aggregate = self._get_aggregate(session_id)
