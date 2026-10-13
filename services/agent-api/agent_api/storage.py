@@ -31,6 +31,7 @@ from seventytwoh_contracts.models import (
 from .domain import CoreState, reduce_event
 from .planning import evidence_projections
 from .distress import record_distress_report, resolve_distress
+from .distress_advice import advice_traced_state, ai_escalated_state
 from .planner import CandidatePlanner
 from .scenario import (
     DEFAULT_SCENARIO_KEY,
@@ -296,6 +297,26 @@ class ReplayStore:
             )
             reported = replace(reported, trace=(*reported.trace, trace))
             aggregate.state = evaluate_and_replan(before, reported, SimpleNamespace(id=report_id), self._policy)
+            self._touch(aggregate)
+            return self._snapshot(aggregate)
+
+    def record_ai_escalation(self, session_id: UUID) -> ReplaySnapshot:
+        """Core-approved AI escalation NONE -> USER_REPORTED; it can only make guidance more protective."""
+        from .planning import evaluate_and_replan
+
+        aggregate = self._get_aggregate(session_id)
+        with aggregate.lock:
+            before = aggregate.state
+            escalated = ai_escalated_state(before, before.current_time)
+            event_id = escalated.trace[-1].id
+            aggregate.state = evaluate_and_replan(before, escalated, SimpleNamespace(id=event_id), self._policy)
+            self._touch(aggregate)
+            return self._snapshot(aggregate)
+
+    def record_advice_trace(self, session_id: UUID, applied) -> ReplaySnapshot:
+        aggregate = self._get_aggregate(session_id)
+        with aggregate.lock:
+            aggregate.state = advice_traced_state(aggregate.state, applied, aggregate.state.current_time)
             self._touch(aggregate)
             return self._snapshot(aggregate)
 

@@ -52,6 +52,7 @@ from .historical_cases import list_historical_cases
 from .place_opening import PlaceOpeningStore, PlaceOpeningResponse
 from .explanation import ExplanationRequest, ExplanationResponse, ExplanationService
 from .distress_extract import DistressExtractor, ExtractRequest, ExtractResponse
+from .distress_advice import AdviceRequest, DistressAdvisor
 
 
 def create_app(
@@ -62,6 +63,7 @@ def create_app(
     place_opening_store: PlaceOpeningStore | None = None,
     explanation_service: ExplanationService | None = None,
     distress_extractor: DistressExtractor | None = None,
+    distress_advisor: DistressAdvisor | None = None,
 ) -> FastAPI:
     if store is None and live_store is None:
         # Preserve one process-wide Gemini/ADK call budget across replay and live.
@@ -87,10 +89,15 @@ def create_app(
     application.state.explanation_service = explanation_engine
     opening_store = place_opening_store or PlaceOpeningStore()
     extractor = distress_extractor or DistressExtractor()
+    advisor = distress_advisor or DistressAdvisor()
+
+    def _confirmed_tags(snapshot) -> tuple[str, ...]:
+        return tuple(dict.fromkeys(t.value for r in snapshot.distress.reports for t in r.tags))
 
     @application.exception_handler(RequestValidationError)
     async def validation_handler(request, exc: RequestValidationError):
-        if request.url.path != "/api/distress/extract":
+        path = request.url.path
+        if path != "/api/distress/extract" and not path.endswith("/distress/advice"):
             return await request_validation_exception_handler(request, exc)
         # Never echo `input` or `ctx`: they can contain the user's words or audio.
         detail = [{"loc": list(e.get("loc", ())), "msg": str(e.get("msg", "invalid")), "type": str(e.get("type", "invalid"))} for e in exc.errors()]
@@ -242,6 +249,34 @@ def create_app(
         except InvalidLiveProfileUpdate as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 
+    @application.post("/api/replay/{session_id}/distress/advice")
+    async def replay_distress_advice(session_id: UUID, request: AdviceRequest) -> dict:
+        try:
+            snapshot = replay_store.get(session_id)
+            applied = await advisor.advise(str(session_id), request, level=snapshot.distress.level,
+                                           tags=_confirmed_tags(snapshot))
+            if applied.raised_level:
+                replay_store.record_ai_escalation(session_id)
+            snapshot = replay_store.record_advice_trace(session_id, applied)
+        except SessionNotFound as exc:
+            raise HTTPException(status_code=404, detail="replay session not found") from exc
+        return {"advice": applied.model_dump(mode="json"), "snapshot": snapshot.model_dump(mode="json")}
+
+    @application.post("/api/live/{session_id}/distress/advice")
+    async def live_distress_advice(session_id: UUID, request: AdviceRequest) -> dict:
+        try:
+            snapshot = live_session_store.get(session_id)
+            applied = await advisor.advise(str(session_id), request, level=snapshot.distress.level,
+                                           tags=_confirmed_tags(snapshot))
+            if applied.raised_level:
+                await live_session_store.record_ai_escalation(session_id)
+            snapshot = await live_session_store.record_advice_trace(session_id, applied)
+        except LiveSessionNotFound as exc:
+            raise HTTPException(status_code=404, detail="live session not found") from exc
+        except InvalidLiveProfileUpdate as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        return {"advice": applied.model_dump(mode="json"), "snapshot": snapshot.model_dump(mode="json")}
+
     @application.post("/api/live/{session_id}/refresh", response_model=LiveSnapshot)
     async def refresh_live(session_id: UUID) -> LiveSnapshot:
         return await _run_live_async(lambda: live_session_store.refresh_async(session_id))
@@ -326,6 +361,23 @@ def create_app(
             raise HTTPException(status_code=404, detail="mock live session not found") from exc
         except InvalidLiveProfileUpdate as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    @application.post("/api/mock-live/{session_id}/distress/advice")
+    async def mock_live_distress_advice(
+        session_id: UUID, request: AdviceRequest, _: None = Depends(authenticate_drill),
+    ) -> dict:
+        try:
+            snapshot = isolated_mock_live.get(session_id).snapshot
+            applied = await advisor.advise(str(session_id), request, level=snapshot.distress.level,
+                                           tags=_confirmed_tags(snapshot))
+            if applied.raised_level:
+                await isolated_mock_live.record_ai_escalation(session_id)
+            result = await isolated_mock_live.record_advice_trace(session_id, applied)
+        except LiveSessionNotFound as exc:
+            raise HTTPException(status_code=404, detail="mock live session not found") from exc
+        except InvalidLiveProfileUpdate as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        return {"advice": applied.model_dump(mode="json"), "snapshot": result.model_dump(mode="json")}
 
     return application
 

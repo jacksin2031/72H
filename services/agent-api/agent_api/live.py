@@ -635,6 +635,70 @@ class LiveStore:
                 self._touch(aggregate)
                 return self._snapshot(aggregate)
 
+    async def record_ai_escalation(self, session_id: UUID) -> LiveSnapshot:
+        """Core-approved AI escalation NONE -> USER_REPORTED, then re-plan; it can only add protection."""
+        from .distress_advice import ai_escalated_state
+        from .planning import evaluate_and_replan
+
+        aggregate = self._get_aggregate(session_id)
+
+        def escalated_state(base, at):
+            escalated = ai_escalated_state(base, at)
+            return replace(
+                escalated,
+                situation=escalated.situation.model_copy(update={"updated_at": at}),
+                current_time=at,
+            ), escalated.trace[-1].id
+
+        async with aggregate.operation_lock:
+            with aggregate.lock:
+                before = aggregate.state
+                if len(before.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
+                    raise InvalidLiveProfileUpdate("live trace capacity reached")
+                transition_time = max(self._now(), before.current_time)
+                after, event_id = escalated_state(before, transition_time)
+
+            planned = replan_live_transition(
+                before,
+                after,
+                self._policy,
+                event_id=event_id,
+                allow_network_reconciliation=False,
+            )
+
+            with aggregate.lock:
+                if aggregate.state is before:
+                    aggregate.state = planned
+                else:
+                    latest = aggregate.state
+                    if len(latest.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
+                        raise InvalidLiveProfileUpdate("live trace capacity reached")
+                    latest_time = max(transition_time, latest.current_time)
+                    latest_after, latest_event_id = escalated_state(latest, latest_time)
+                    aggregate.state = evaluate_and_replan(
+                        latest,
+                        latest_after,
+                        SimpleNamespace(id=latest_event_id),
+                        self._policy,
+                        allow_network_reconciliation=False,
+                    )
+                self._touch(aggregate)
+                return self._snapshot(aggregate)
+
+    async def record_advice_trace(self, session_id: UUID, applied) -> LiveSnapshot:
+        """Append the advice outcome trace (field names only, never model text)."""
+        from .distress_advice import advice_traced_state
+
+        aggregate = self._get_aggregate(session_id)
+        async with aggregate.operation_lock:
+            with aggregate.lock:
+                state = aggregate.state
+                if len(state.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
+                    raise InvalidLiveProfileUpdate("live trace capacity reached")
+                aggregate.state = advice_traced_state(state, applied, max(self._now(), state.current_time))
+                self._touch(aggregate)
+                return self._snapshot(aggregate)
+
     @staticmethod
     def _validate_location_timestamp(request: LiveLocationUpdateRequest, now: datetime) -> None:
         if request.observed_at > now:

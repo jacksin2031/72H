@@ -74,7 +74,7 @@ class ExtractResponse(BaseModel):
 
 
 class ExtractionModel(Protocol):
-    async def generate(self, parts: list[object], config: PlannerConfig) -> dict[str, object]: ...
+    async def generate(self, parts: list[object], config: PlannerConfig, **kwargs) -> dict[str, object]: ...
 
 
 class VertexExtractionModel:
@@ -90,7 +90,8 @@ class VertexExtractionModel:
                                         http_options=types.HttpOptions(retry_options=types.HttpRetryOptions(attempts=1)))
         return self._clients[key]
 
-    async def generate(self, parts, config):
+    async def generate(self, parts, config, *, schema: type[BaseModel] = _ProviderExtraction,
+                       instruction: str = INSTRUCTION, max_output_tokens: int = 256):
         from google.genai import types
 
         client = self._client(config)
@@ -98,8 +99,8 @@ class VertexExtractionModel:
         response = await client.aio.models.generate_content(
             model=config.model, contents=contents,
             config=types.GenerateContentConfig(
-                system_instruction=INSTRUCTION, response_mime_type="application/json",
-                response_schema=_ProviderExtraction, max_output_tokens=256,
+                system_instruction=instruction, response_mime_type="application/json",
+                response_schema=schema, max_output_tokens=max_output_tokens,
             ),
         )
         import json
