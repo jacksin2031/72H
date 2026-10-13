@@ -10,6 +10,7 @@ from uuid import UUID, uuid4
 
 from seventytwoh_contracts.models import (
     AgentName,
+    DistressLevel,
     DistressRequest,
     TraceEvent,
     TraceStatus,
@@ -300,18 +301,21 @@ class ReplayStore:
             self._touch(aggregate)
             return self._snapshot(aggregate)
 
-    def record_ai_escalation(self, session_id: UUID) -> ReplaySnapshot:
-        """Core-approved AI escalation NONE -> USER_REPORTED; it can only make guidance more protective."""
+    def record_ai_escalation(self, session_id: UUID) -> bool:
+        """Core-approved AI escalation NONE -> USER_REPORTED; it can only make guidance more protective.
+        Returns False (no trace, no re-plan) when the Core level is no longer NONE."""
         from .planning import evaluate_and_replan
 
         aggregate = self._get_aggregate(session_id)
         with aggregate.lock:
             before = aggregate.state
+            if resolve_distress(before, before.current_time, self._policy).level != DistressLevel.NONE:
+                return False
             escalated = ai_escalated_state(before, before.current_time)
             event_id = escalated.trace[-1].id
             aggregate.state = evaluate_and_replan(before, escalated, SimpleNamespace(id=event_id), self._policy)
             self._touch(aggregate)
-            return self._snapshot(aggregate)
+            return True
 
     def record_advice_trace(self, session_id: UUID, applied) -> ReplaySnapshot:
         aggregate = self._get_aggregate(session_id)

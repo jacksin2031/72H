@@ -395,11 +395,10 @@ class MockLiveDrillStore:
             snap = await session.store.record_distress(id, request)
             return self._response(session, snap)
 
-    async def record_ai_escalation(self, id: UUID) -> MockLiveResponse:
+    async def record_ai_escalation(self, id: UUID) -> bool:
         session = self._lookup(id)
         async with session.lock:
-            snap = await session.store.record_ai_escalation(id)
-            return self._response(session, snap)
+            return await session.store.record_ai_escalation(id)
 
     async def record_advice_trace(self, id: UUID, applied) -> MockLiveResponse:
         session = self._lookup(id)

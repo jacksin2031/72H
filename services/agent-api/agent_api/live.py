@@ -13,6 +13,7 @@ from types import SimpleNamespace
 from uuid import UUID, uuid4
 
 from seventytwoh_contracts.models import (
+    DistressLevel,
     DistressRequest,
     AgentName,
     AreaDefinition,
@@ -635,8 +636,9 @@ class LiveStore:
                 self._touch(aggregate)
                 return self._snapshot(aggregate)
 
-    async def record_ai_escalation(self, session_id: UUID) -> LiveSnapshot:
-        """Core-approved AI escalation NONE -> USER_REPORTED, then re-plan; it can only add protection."""
+    async def record_ai_escalation(self, session_id: UUID) -> bool:
+        """Core-approved AI escalation NONE -> USER_REPORTED, then re-plan; it can only add protection.
+        Returns False (no trace, no re-plan) when the Core level is no longer NONE."""
         from .distress_advice import ai_escalated_state
         from .planning import evaluate_and_replan
 
@@ -650,12 +652,17 @@ class LiveStore:
                 current_time=at,
             ), escalated.trace[-1].id
 
+        def still_none(state, at) -> bool:
+            return resolve_distress(state, at, self._policy).level == DistressLevel.NONE
+
         async with aggregate.operation_lock:
             with aggregate.lock:
                 before = aggregate.state
+                transition_time = max(self._now(), before.current_time)
+                if not still_none(before, transition_time):
+                    return False
                 if len(before.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
                     raise InvalidLiveProfileUpdate("live trace capacity reached")
-                transition_time = max(self._now(), before.current_time)
                 after, event_id = escalated_state(before, transition_time)
 
             planned = replan_live_transition(
@@ -674,6 +681,8 @@ class LiveStore:
                     if len(latest.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
                         raise InvalidLiveProfileUpdate("live trace capacity reached")
                     latest_time = max(transition_time, latest.current_time)
+                    if not still_none(latest, latest_time):
+                        return False
                     latest_after, latest_event_id = escalated_state(latest, latest_time)
                     aggregate.state = evaluate_and_replan(
                         latest,
@@ -683,7 +692,7 @@ class LiveStore:
                         allow_network_reconciliation=False,
                     )
                 self._touch(aggregate)
-                return self._snapshot(aggregate)
+                return True
 
     async def record_advice_trace(self, session_id: UUID, applied) -> LiveSnapshot:
         """Append the advice outcome trace (field names only, never model text)."""

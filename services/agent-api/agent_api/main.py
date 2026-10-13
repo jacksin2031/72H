@@ -52,7 +52,8 @@ from .historical_cases import list_historical_cases
 from .place_opening import PlaceOpeningStore, PlaceOpeningResponse
 from .explanation import ExplanationRequest, ExplanationResponse, ExplanationService
 from .distress_extract import DistressExtractor, ExtractRequest, ExtractResponse
-from .distress_advice import AdviceRequest, DistressAdvisor
+from .distress_advice import AdviceRequest, DistressAdvisor, escalation_skipped
+from .planner import _CallBudget
 
 
 def create_app(
@@ -88,11 +89,27 @@ def create_app(
     explanation_engine = explanation_service or ExplanationService()
     application.state.explanation_service = explanation_engine
     opening_store = place_opening_store or PlaceOpeningStore()
-    extractor = distress_extractor or DistressExtractor()
-    advisor = distress_advisor or DistressAdvisor()
+    # One Gemini budget for the whole distress feature (extract + advice): 6/session, 12/min.
+    distress_budget = (
+        distress_extractor._budget if distress_extractor is not None
+        else distress_advisor._budget if distress_advisor is not None
+        else _CallBudget()
+    )
+    extractor = distress_extractor or DistressExtractor(budget=distress_budget)
+    advisor = distress_advisor or DistressAdvisor(budget=distress_budget)
+    application.state.distress_extractor = extractor
+    application.state.distress_advisor = advisor
 
     def _confirmed_tags(snapshot) -> tuple[str, ...]:
         return tuple(dict.fromkeys(t.value for r in snapshot.distress.reports for t in r.tags))
+
+    def _user_signal(snapshot, request: AdviceRequest) -> bool:
+        """Only the person's own active report or blocked-route hint lets AI raise the level."""
+        return bool(snapshot.distress.reports) or bool((request.route_blocked_hint or "").strip())
+
+    async def _advise(session_id: UUID, snapshot, request: AdviceRequest):
+        return await advisor.advise(str(session_id), request, level=snapshot.distress.level,
+                                    tags=_confirmed_tags(snapshot), user_signal=_user_signal(snapshot, request))
 
     @application.exception_handler(RequestValidationError)
     async def validation_handler(request, exc: RequestValidationError):
@@ -253,10 +270,9 @@ def create_app(
     async def replay_distress_advice(session_id: UUID, request: AdviceRequest) -> dict:
         try:
             snapshot = replay_store.get(session_id)
-            applied = await advisor.advise(str(session_id), request, level=snapshot.distress.level,
-                                           tags=_confirmed_tags(snapshot))
-            if applied.raised_level:
-                replay_store.record_ai_escalation(session_id)
+            applied = await _advise(session_id, snapshot, request)
+            if applied.raised_level and not replay_store.record_ai_escalation(session_id):
+                applied = escalation_skipped(applied)
             snapshot = replay_store.record_advice_trace(session_id, applied)
         except SessionNotFound as exc:
             raise HTTPException(status_code=404, detail="replay session not found") from exc
@@ -266,10 +282,9 @@ def create_app(
     async def live_distress_advice(session_id: UUID, request: AdviceRequest) -> dict:
         try:
             snapshot = live_session_store.get(session_id)
-            applied = await advisor.advise(str(session_id), request, level=snapshot.distress.level,
-                                           tags=_confirmed_tags(snapshot))
-            if applied.raised_level:
-                await live_session_store.record_ai_escalation(session_id)
+            applied = await _advise(session_id, snapshot, request)
+            if applied.raised_level and not await live_session_store.record_ai_escalation(session_id):
+                applied = escalation_skipped(applied)
             snapshot = await live_session_store.record_advice_trace(session_id, applied)
         except LiveSessionNotFound as exc:
             raise HTTPException(status_code=404, detail="live session not found") from exc
@@ -368,10 +383,9 @@ def create_app(
     ) -> dict:
         try:
             snapshot = isolated_mock_live.get(session_id).snapshot
-            applied = await advisor.advise(str(session_id), request, level=snapshot.distress.level,
-                                           tags=_confirmed_tags(snapshot))
-            if applied.raised_level:
-                await isolated_mock_live.record_ai_escalation(session_id)
+            applied = await _advise(session_id, snapshot, request)
+            if applied.raised_level and not await isolated_mock_live.record_ai_escalation(session_id):
+                applied = escalation_skipped(applied)
             result = await isolated_mock_live.record_advice_trace(session_id, applied)
         except LiveSessionNotFound as exc:
             raise HTTPException(status_code=404, detail="mock live session not found") from exc

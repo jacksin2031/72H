@@ -118,10 +118,12 @@ def extract_config_from_env(environ: dict[str, str] | None = None) -> PlannerCon
 
 
 class DistressExtractor:
-    def __init__(self, config: PlannerConfig | None = None, *, model: ExtractionModel | None = None) -> None:
+    def __init__(self, config: PlannerConfig | None = None, *, model: ExtractionModel | None = None,
+                 budget: _CallBudget | None = None) -> None:
         self.config = config or extract_config_from_env()
         self.model = model or VertexExtractionModel()
-        self._budget = _CallBudget()
+        # Share one budget with DistressAdvisor so the distress feature stays within one limit.
+        self._budget = budget if budget is not None else _CallBudget()
 
     async def extract(self, request: ExtractRequest) -> ExtractResponse:
         if self.config.mode != "gemini":
