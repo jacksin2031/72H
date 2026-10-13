@@ -5,6 +5,7 @@ from dataclasses import replace
 from datetime import timedelta
 
 from agent_api.distress import distress_signature, official_tsunami_trigger, resolve_distress
+from agent_api.live_sources import JMA_TSUNAMI_SOURCE_KEY
 from agent_api.planning import evaluate_and_replan
 from agent_api.safety import DEFAULT_POLICY
 from seventytwoh_contracts.models import (
@@ -150,3 +151,126 @@ def test_live_warning_degrades_to_official_stale_after_jma_ttl_instead_of_none()
     assert stale.distress.last_official_at == warned.distress.last_official_at
     current = [a for a in stale.plan_actions if a.plan_id == stale.situation.current_plan_id and a.category == "NOW"]
     assert current[0].intent_id == SafeIntentId.SHELTER_IN_PLACE_VERTICAL
+
+
+# --- F1: a real JMA cancellation / withdrawal through the live conversion clears STALE ---
+
+class _XmlTsunamiFeed:
+    """Raw VTSE41 XML through the real JmaTsunamiSource parser and lifecycle state."""
+
+    def __init__(self, start):
+        from tests.test_live_sources import TSUNAMI_DETAIL_URL
+        self.url = TSUNAMI_DETAIL_URL
+        self.wall = [start]
+        self.mono = [0.0]
+        self.documents: list[tuple[str, bytes]] = []
+
+    def publish(self, url, body):
+        self.documents = [*self.documents, (url, body)]
+
+    def fetch(self, url, headers):
+        from agent_api.live_sources import JMA_FEED_URL, HttpPayload
+        if url == JMA_FEED_URL:
+            entries = "".join(
+                f'<entry><title>津波警報・注意報・予報</title><updated>{self.wall[0].isoformat()}</updated>'
+                f'<link type="application/xml" href="{item_url}"/></entry>'
+                for item_url, _ in self.documents
+            )
+            return HttpPayload(200, f"<feed>{entries}</feed>".encode(), {})
+        return HttpPayload(200, dict(self.documents)[url], {})
+
+    def advance(self, delta):
+        self.wall[0] += delta
+        self.mono[0] += delta.total_seconds()
+
+
+def _xml_bulletin(*, report_at, info_type="発表", event_id="20261006010000", areas=(("宮城県", "220", "53"),)):
+    from tests.test_live_sources import _tsunami_detail
+    body = _tsunami_detail(info_type=info_type, report_at=report_at.isoformat(),
+                           origin="" if info_type == "取消" else "2026-10-06T00:58:00Z").decode()
+    body = body.replace("<EventID>20261006010000</EventID>", f"<EventID>{event_id}</EventID>")
+    if info_type != "取消":
+        items = "".join(
+            f"<Item><Area><Name>{name}</Name><Code>{code}</Code></Area>"
+            f"<Category><Kind><Name>fixture warning</Name><Code>{kind}</Code></Kind></Category>"
+            f"<FirstHeight><ArrivalTime>2026-10-06T01:20:00+09:00</ArrivalTime></FirstHeight>"
+            f'<MaxHeight><jmx_eb:TsunamiHeight xmlns:jmx_eb="urn:jmaxml:element" unit="m" description="巨大">NaN</jmx_eb:TsunamiHeight></MaxHeight></Item>'
+            for name, code, kind in areas
+        )
+        start, end = body.index("<Forecast>") + len("<Forecast>"), body.index("</Forecast>")
+        body = body[:start] + items + body[end:]
+    return body.encode()
+
+
+def _live_stale_session():
+    """Real live session: JMA MAJOR_WARNING for 宮城県, user-selected JP-04, then the JMA TTL passes."""
+    from agent_api.live import LiveStore
+    from agent_api.live_sources import JMA_EVIDENCE_TTL_SECONDS, JmaTsunamiSource
+    from tests.test_live_tsunami import NOW as LIVE_NOW, _DestinationSource, _EarthquakeSource, _profile
+
+    feed = _XmlTsunamiFeed(LIVE_NOW)
+    feed.publish(feed.url, _xml_bulletin(report_at=LIVE_NOW))
+    source = JmaTsunamiSource(feed.fetch, now=lambda: feed.wall[0], clock=lambda: feed.mono[0])
+    store = LiveStore(jma_source=_EarthquakeSource(lambda: feed.wall[0]), tsunami_source=source,
+                      destination_source=_DestinationSource(), now=lambda: feed.wall[0])
+    sid = store.start({"language": "zh-TW", "profile": _profile()}).session_id
+    selected = LiveLocationUpdateRequest(area_ids=("JP-04", "JP"), source=LocationSource.USER_SELECTED, observed_at=LIVE_NOW)
+    assert asyncio.run(store.update_location(sid, selected)).distress.level == DistressLevel.OFFICIAL_TSUNAMI
+    feed.advance(timedelta(seconds=JMA_EVIDENCE_TTL_SECONDS + 60))
+    assert store.refresh(sid).distress.level == DistressLevel.OFFICIAL_STALE
+    return store, sid, feed
+
+
+def _next_url(feed, n):
+    return feed.url.replace("_010000.xml", f"_01{n:02d}00.xml")
+
+
+def test_real_jma_cancellation_bulletin_clears_official_stale_to_none():
+    store, sid, feed = _live_stale_session()
+    feed.advance(timedelta(minutes=5))
+    feed.publish(_next_url(feed, 1), _xml_bulletin(report_at=feed.wall[0], info_type="取消"))
+    cancelled = store.refresh(sid)
+    withdrawn = [a for e in cancelled.evidence if e.source_key == JMA_TSUNAMI_SOURCE_KEY
+                 for a in e.disaster_assessments if a.area_id == "JP-04" and a.status == DisasterEventStatus.UNKNOWN]
+    assert withdrawn and all(a.withdrawn for a in withdrawn)
+    assert cancelled.distress.level == DistressLevel.NONE
+    for minutes in (20, 120, 600):
+        feed.advance(timedelta(minutes=minutes))
+        assert store.refresh(sid).distress.level == DistressLevel.NONE
+
+
+def test_newer_bulletin_that_omits_the_area_clears_official_stale_to_none():
+    store, sid, feed = _live_stale_session()
+    feed.advance(timedelta(minutes=5))
+    feed.publish(_next_url(feed, 1), _xml_bulletin(report_at=feed.wall[0], areas=(("岩手県", "210", "51"),)))
+    assert store.refresh(sid).distress.level == DistressLevel.NONE
+
+
+def test_unrelated_unknown_does_not_clear_official_stale():
+    # A different JMA event that only names another prefecture does not withdraw JP-04.
+    store, sid, feed = _live_stale_session()
+    feed.advance(timedelta(minutes=5))
+    feed.publish(_next_url(feed, 1), _xml_bulletin(report_at=feed.wall[0], event_id="20261006020000",
+                                                   areas=(("岩手県", "210", "51"),)))
+    assert store.refresh(sid).distress.level == DistressLevel.OFFICIAL_STALE
+    # The same event re-listing JP-04 with an unrecognised kind is UNKNOWN, not a cancellation.
+    store, sid, feed = _live_stale_session()
+    feed.advance(timedelta(minutes=5))
+    feed.publish(_next_url(feed, 1), _xml_bulletin(report_at=feed.wall[0], areas=(("宮城県", "220", "99"),)))
+    refreshed = store.refresh(sid)
+    assert any(a.area_id == "JP-04" and a.status == DisasterEventStatus.UNKNOWN and not a.withdrawn
+               for e in refreshed.evidence if e.source_key == JMA_TSUNAMI_SOURCE_KEY for a in e.disaster_assessments)
+    assert refreshed.distress.level == DistressLevel.OFFICIAL_STALE
+
+
+def test_plain_unknown_assessment_never_supersedes_but_withdrawn_unknown_does():
+    base = _warned(source=LocationSource.USER_SELECTED)
+    later = NOW + timedelta(minutes=10)
+    unknown = tsunami_evidence(base, None, None, status=DisasterEventStatus.UNKNOWN,
+                               evidence_id="ev_jma-tsunami-unknown", published_at=later, ttl=TTL)
+    assert resolve_distress(unknown, NOW + timedelta(minutes=20), DEFAULT_POLICY).level == DistressLevel.OFFICIAL_STALE
+    last = unknown.evidence[-1]
+    withdrawn = last.model_copy(update={"disaster_assessments": tuple(
+        a.model_copy(update={"withdrawn": True}) for a in last.disaster_assessments)})
+    state = replace(unknown, evidence=(*unknown.evidence[:-1], withdrawn))
+    assert resolve_distress(state, NOW + timedelta(minutes=20), DEFAULT_POLICY).level == DistressLevel.NONE

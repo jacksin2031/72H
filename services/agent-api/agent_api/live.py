@@ -1339,6 +1339,8 @@ class LiveStore:
                 status=assessment_status,
                 tsunami_warning_class=area.warning_class if carries_warning else None,
                 arrival_at=area.arrival_at if carries_warning else None,
+                # InfoType 取消 withdraws the information unit: deterministic cancellation marker.
+                withdrawn=bulletin.info_type == "取消",
             )
             existing = next((i for i, item in enumerate(assessments) if item.area_id == assessment.area_id), None)
             if existing is None:
@@ -1355,6 +1357,7 @@ class LiveStore:
                 arrivals = [t for t in (prior.arrival_at, assessment.arrival_at) if t is not None]
                 assessments[existing] = prior.model_copy(update={
                     "status": merged_status,
+                    "withdrawn": prior.withdrawn and assessment.withdrawn and merged_status == DisasterEventStatus.UNKNOWN,
                     "tsunami_warning_class": assessment.tsunami_warning_class if stronger else prior.tsunami_warning_class,
                     "arrival_at": min(arrivals) if arrivals else None,
                 })
@@ -1363,7 +1366,8 @@ class LiveStore:
         for previous_event, proof in previous:
             for assessment in proof.disaster_assessments:
                 if assessment.event_type == DisasterEventType.TSUNAMI and all(item.area_id != assessment.area_id for item in assessments):
-                    assessments.append(assessment.model_copy(update={"status": DisasterEventStatus.UNKNOWN, "level": None, "tsunami_warning_class": None, "arrival_at": None}))
+                    # The newer bulletin of the same unit no longer issues this area: withdrawn.
+                    assessments.append(assessment.model_copy(update={"status": DisasterEventStatus.UNKNOWN, "level": None, "tsunami_warning_class": None, "arrival_at": None, "withdrawn": True}))
             names.extend(previous_event.affected_areas)
         if not assessments:
             return None

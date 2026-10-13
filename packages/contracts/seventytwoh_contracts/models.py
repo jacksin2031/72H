@@ -370,9 +370,15 @@ class DisasterAssessment(ContractModel):
     status: DisasterEventStatus
     tsunami_warning_class: TsunamiWarningClass | None = None
     arrival_at: AwareDatetime | None = None
+    # Deterministic withdrawal marker: the official issuer withdrew this area's status (JMA
+    # InfoType 取消, or a newer bulletin of the same information unit omitted the area). The
+    # status stays UNKNOWN, but an earlier warning for the area is no longer issued.
+    withdrawn: StrictBool = False
 
     @model_validator(mode="after")
     def tsunami_does_not_use_earthquake_severity(self) -> "DisasterAssessment":
+        if self.withdrawn and self.status != DisasterEventStatus.UNKNOWN:
+            raise ValueError("only an UNKNOWN assessment can be marked withdrawn")
         if self.event_type == DisasterEventType.TSUNAMI and self.level is not None:
             raise ValueError("tsunami assessments must not use earthquake L0-L4 severity levels")
         if self.event_type != DisasterEventType.TSUNAMI and (

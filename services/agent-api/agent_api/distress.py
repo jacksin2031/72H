@@ -33,6 +33,15 @@ STALE_TRUST = frozenset({TrustStatus.VERIFIED_OFFICIAL, TrustStatus.STALE})
 SUPERSEDING_STATUSES = frozenset({DisasterEventStatus.ACTIVE, DisasterEventStatus.RESOLVED})
 
 
+def _supersedes(assessment) -> bool:
+    """A newer official status replaces an older one for the area when it is ACTIVE or RESOLVED,
+    or UNKNOWN *because the issuer withdrew it* (JMA 取消, or omission by a newer bulletin of the
+    same unit). A plain UNKNOWN (unrecognised kind, stale source) never clears a warning."""
+    return assessment.status in SUPERSEDING_STATUSES or (
+        assessment.status == DisasterEventStatus.UNKNOWN and assessment.withdrawn
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class TsunamiTrigger:
     evidence_id: str
@@ -154,7 +163,7 @@ def official_stale_trigger(state: CoreState, now: datetime, policy: SafetyPolicy
                 assessment.event_type != DisasterEventType.TSUNAMI
                 or assessment.area_id == NATIONWIDE_AREA_ID
                 or assessment.area_id not in user_areas
-                or assessment.status not in SUPERSEDING_STATUSES
+                or not _supersedes(assessment)
             ):
                 continue
             previous = latest.get(assessment.area_id)
