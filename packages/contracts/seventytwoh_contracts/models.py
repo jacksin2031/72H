@@ -676,6 +676,9 @@ class DistressStatus(ContractModel):
     warning_class: TsunamiWarningClass | None = None
     last_official_at: AwareDatetime | None = None
     trigger_expires_at: AwareDatetime | None = None
+    # OFFICIAL_STALE only: the official evidence expired, or it is still current but the
+    # location fix is too old (> 2 min, <= 30 min) to confirm the person is in the area.
+    stale_reason: Literal["EVIDENCE_EXPIRED", "LOCATION_STALE"] | None = None
 
 
 class PlanAction(ContractModel):

@@ -33,7 +33,7 @@ import { EmergencyContactsSetup } from './emergency-contacts-setup';
 import { SOS_ONBOARDED_KEY, shouldShowSosSetup } from '@/lib/emergency-contacts';
 import { EmergencyMap } from './emergency-map';
 import { DistressEntry } from './distress-entry';
-import { fixFromDevicePosition, locationRefreshNetworkAllowed } from '@/lib/distress-guidance';
+import { fixFromDevicePosition, locationRefreshNetworkAllowed, locationUploadAllowed } from '@/lib/distress-guidance';
 import { sosText } from '@/lib/distress';
 import { PowerControls } from './power-controls';
 import { DeviceLocationControls } from './device-location';
@@ -1117,7 +1117,8 @@ export function LiveDashboard({ view }: { view: string }) {
 
   const postLocationUpdate = useCallback(async (update: LiveLocationUpdate) => {
     const current = snapshotRef.current;
-    if (!current || !navigator.onLine || connectionRef.current === 'offline' || !power.power.allowNonCriticalNetwork) {
+    if (!current || !locationUploadAllowed({ online: navigator.onLine, offline: connectionRef.current === 'offline',
+      allowNonCriticalNetwork: power.power.allowNonCriticalNetwork, level: current.distress.level })) {
       setLocationGate({ phase: 'failed', update });
       return false;
     }

@@ -274,3 +274,45 @@ def test_plain_unknown_assessment_never_supersedes_but_withdrawn_unknown_does():
         a.model_copy(update={"withdrawn": True}) for a in last.disaster_assessments)})
     state = replace(unknown, evidence=(*unknown.evidence[:-1], withdrawn))
     assert resolve_distress(state, NOW + timedelta(minutes=20), DEFAULT_POLICY).level == DistressLevel.NONE
+
+
+# --- F2: CURRENT official evidence but a GPS fix older than 2 minutes -> OFFICIAL_STALE / LOCATION_STALE ---
+
+def test_current_evidence_with_three_minute_old_gps_is_stale_location_not_none():
+    at = NOW + timedelta(minutes=5)
+    state = _gps_at(_warned(), at - timedelta(minutes=3))
+    status = resolve_distress(state, at, DEFAULT_POLICY)
+    assert status.level == DistressLevel.OFFICIAL_STALE
+    assert status.stale_reason == "LOCATION_STALE"
+    assert status.deadline_at is None  # never "go to a place"
+    assert status.trigger_evidence_ids == ("ev_jma-tsunami-test",)
+    assert status.warning_class == TsunamiWarningClass.MAJOR_WARNING
+    assert status.last_official_at == NOW and status.trigger_expires_at == EXPIRES
+
+
+def test_current_evidence_with_31_minute_old_gps_is_none():
+    at = NOW + timedelta(minutes=10)
+    state = _gps_at(_warned(), at - timedelta(minutes=31))
+    status = resolve_distress(state, at, DEFAULT_POLICY)
+    assert status.level == DistressLevel.NONE
+    assert status.stale_reason is None
+
+
+def test_stale_reason_is_evidence_expired_after_ttl_and_null_when_live():
+    fresh = _gps_at(_warned(), NOW)
+    assert resolve_distress(fresh, NOW + timedelta(minutes=1), DEFAULT_POLICY).stale_reason is None
+    selected = _warned(source=LocationSource.USER_SELECTED)
+    expired = resolve_distress(selected, EXPIRES + timedelta(minutes=1), DEFAULT_POLICY)
+    assert (expired.level, expired.stale_reason) == (DistressLevel.OFFICIAL_STALE, "EVIDENCE_EXPIRED")
+
+
+def test_location_stale_plan_is_low_risk_vertical_shelter():
+    warned = evaluate_and_replan(base_state(NOW), _warned(), Clock(), DEFAULT_POLICY)
+    assert _now_action(warned).intent_id == SafeIntentId.TSUNAMI_EVACUATE_NOW
+    later = replace(warned, current_time=NOW + timedelta(minutes=3))
+    stale = evaluate_and_replan(warned, later, Clock(), DEFAULT_POLICY)
+    action = _now_action(stale)
+    assert resolve_distress(stale, stale.current_time, DEFAULT_POLICY).stale_reason == "LOCATION_STALE"
+    assert action.intent_id == SafeIntentId.SHELTER_IN_PLACE_VERTICAL
+    assert action.risk_level == RiskLevel.LOW
+    assert "位置" in action.reason or "location" in action.reason.casefold() or "位置情報" in action.reason

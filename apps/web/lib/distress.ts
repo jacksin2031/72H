@@ -68,7 +68,7 @@ export const distressText={
   notGuaranteed:'這是建議，不代表地點或路線一定沒有危險。請依現場狀況與官方指示判斷。',walkMeta:'步行約 {min} 分鐘 · {m} m',computing:'正在計算可到達的場所…',
   reasonNoTime:'海嘯預估抵達時間已到或已過。',reasonNoLocation:'沒有可靠的目前位置。',reasonNoReachable:'在預估抵達時間前走不到任何指定場所。',reasonNoSites:'這個範圍沒有指定緊急避難場所資料。',reasonExcludedByReport:'依你回報的封路，AI 建議排除可到達的指定場所。',
   officialSites:'查看官方指定避難場所',pendingTags:'AI 判讀的狀況（請勾選正確的項目）',analyze:'讓 AI 判讀',moreDetails:'更多細節',otherCandidates:'其他候選場所',sosSuggested:'建議求救',lastReport:'已回報',
-  basis:'依據：氣象廳 {warning} · 發布 {time}',warningMajor:'大津波警報',warningWarning:'津波警報',staleNotice:'官方資料已超過有效時間，最後確認 {time}'},
+  basis:'依據：氣象廳 {warning} · 發布 {time}',warningMajor:'大津波警報',warningWarning:'津波警報',staleNotice:'官方資料已超過有效時間，最後確認 {time}',locationStaleNotice:'位置資料過舊，最後定位 {time}'},
  ja:{vertical:'今すぐ上の階・高い場所へ。水から離れてください。',verticalNow:'今すぐ頑丈な建物の3階以上か高台へ移動（指定の場所には間に合いません）',goTo:'今すぐ {name} へ（公式指定の津波避難場所）',verticalTrapped:'助けを求め、身を守れる場所にとどまってください。水が上がってきたら高い所へ移動してください。',
   roadCandidateNotice:'道路の候補です。途中の状況は未確認です。',exercise:'訓練／模擬',aiSuggestion:'AIの提案',aiUnavailable:'AIを利用できません。内蔵の案内を表示しています。',
   countdown:'残り時間',speak:'読み上げ',mute:'消音',replay:'もう一度',chooseSituation:'今の状況を選んでください',confirm:'確認',record:'録音',stopRecording:'録音を停止',typeInstead:'文字で入力',
@@ -77,7 +77,7 @@ export const distressText={
   notGuaranteed:'これは提案です。場所や道に危険がないという意味ではありません。現地の状況と公式の指示で判断してください。',walkMeta:'徒歩 約{min}分 · {m} m',computing:'到達できる場所を計算中…',
   reasonNoTime:'津波の到達予想時刻になった、または過ぎました。',reasonNoLocation:'信頼できる現在地がありません。',reasonNoReachable:'到達予想時刻までに歩いて行ける指定場所がありません。',reasonNoSites:'この範囲の指定緊急避難場所データがありません。',reasonExcludedByReport:'あなたが報告した通行止めにより、AIは到達できる指定場所を除外するよう提案しています。',
   officialSites:'公式の指定避難場所を見る',pendingTags:'AIが判定した状況（正しいものにチェック）',analyze:'AIで判定',moreDetails:'詳細',otherCandidates:'ほかの候補',sosSuggested:'救助要請をおすすめ',lastReport:'報告済み',
-  basis:'根拠：気象庁 {warning} · 発表 {time}',warningMajor:'大津波警報',warningWarning:'津波警報',staleNotice:'公式情報の有効時間を過ぎています。最終確認 {time}'},
+  basis:'根拠：気象庁 {warning} · 発表 {time}',warningMajor:'大津波警報',warningWarning:'津波警報',staleNotice:'公式情報の有効時間を過ぎています。最終確認 {time}',locationStaleNotice:'位置情報が古くなっています。最終測位 {time}'},
  en:{vertical:'Move up / to high ground now, away from water.',verticalNow:'Move now to the 3rd floor or higher of a solid building, or to high ground (you cannot reach a designated site in time).',goTo:'Go now to {name} (officially designated tsunami site)',verticalTrapped:'Call for help and stay where you can protect yourself. If water is rising, move higher.',
   roadCandidateNotice:'Road candidate; conditions along the way are unverified.',exercise:'Exercise / simulated',aiSuggestion:'AI suggestion',aiUnavailable:'AI is unavailable. Showing built-in guidance.',
   countdown:'Time left',speak:'Read aloud',mute:'Mute',replay:'Replay',chooseSituation:'Choose your situation',confirm:'Confirm',record:'Record',stopRecording:'Stop recording',typeInstead:'Type instead',
@@ -86,7 +86,7 @@ export const distressText={
   notGuaranteed:'This is a suggestion. It does not mean the place or road is free of danger. Follow local conditions and official instructions.',walkMeta:'About {min} min walk · {m} m',computing:'Working out which sites you can reach…',
   reasonNoTime:'The estimated tsunami arrival time has come or passed.',reasonNoLocation:'No reliable current location.',reasonNoReachable:'No designated site can be reached on foot before the estimated arrival.',reasonNoSites:'No designated emergency site data for this area.',reasonExcludedByReport:'Based on the road block you reported, AI suggests excluding the reachable designated sites.',
   officialSites:'See official designated evacuation sites',pendingTags:'Situation read by AI (tick the ones that are right)',analyze:'Let AI read it',moreDetails:'More details',otherCandidates:'Other candidates',sosSuggested:'Calling for help is suggested',lastReport:'Reported',
-  basis:'Basis: JMA {warning} · issued {time}',warningMajor:'Major Tsunami Warning',warningWarning:'Tsunami Warning',staleNotice:'Official data has expired. Last confirmed {time}'},
+  basis:'Basis: JMA {warning} · issued {time}',warningMajor:'Major Tsunami Warning',warningWarning:'Tsunami Warning',staleNotice:'Official data has expired. Last confirmed {time}',locationStaleNotice:'Location data is too old. Last fix {time}'},
 } as const;
 /** AI emphasis clauses (fixed wording; the model only picks ids). */
 export const emphasisText:Record<Language,Record<'MOVE_UP_NOW'|'AVOID_WATER'|'STAY_TOGETHER'|'CALL_FOR_HELP'|'KEEP_PHONE_POWER',string>>={

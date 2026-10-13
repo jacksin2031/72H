@@ -64,10 +64,10 @@ it('drops excluded sites from a reused result and falls back to vertical when no
 import {degradeExpiredOfficial,keepsLocationFresh} from '../lib/distress-guidance';
 it('downgrades a cached OFFICIAL_TSUNAMI to OFFICIAL_STALE once the device clock reaches trigger_expires_at',()=>{
   const base={level:'OFFICIAL_TSUNAMI' as const,reports:[],trigger_evidence_ids:['ev-1'],deadline_at:new Date(NOW+20*60_000).toISOString(),ai_escalated:false,synthetic:false,
-    warning_class:'MAJOR_WARNING' as const,last_official_at:new Date(NOW-60_000).toISOString(),trigger_expires_at:new Date(NOW+5*60_000).toISOString()};
+    warning_class:'MAJOR_WARNING' as const,last_official_at:new Date(NOW-60_000).toISOString(),trigger_expires_at:new Date(NOW+5*60_000).toISOString(),stale_reason:null};
   expect(degradeExpiredOfficial(base,NOW+5*60_000-1)).toBe(base);
   const stale=degradeExpiredOfficial(base,NOW+5*60_000);
-  expect(stale).toMatchObject({level:'OFFICIAL_STALE',deadline_at:null,last_official_at:base.last_official_at,warning_class:'MAJOR_WARNING'});
+  expect(stale).toMatchObject({level:'OFFICIAL_STALE',deadline_at:null,last_official_at:base.last_official_at,warning_class:'MAJOR_WARNING',stale_reason:'EVIDENCE_EXPIRED'});
   expect(degradeExpiredOfficial({...base,trigger_expires_at:null},NOW+3_600_000)).toMatchObject({level:'OFFICIAL_TSUNAMI'});
   const reported={...base,level:'USER_REPORTED' as const};
   expect(degradeExpiredOfficial(reported,NOW+3_600_000)).toBe(reported);
@@ -83,6 +83,17 @@ it('lets the same-area location refresh through power-saving modes only during o
   expect(locationRefreshNetworkAllowed(false,'USER_REPORTED')).toBe(false);
   expect(locationRefreshNetworkAllowed(false,'OFFICIAL_TSUNAMI')).toBe(true);
   expect(locationRefreshNetworkAllowed(false,'OFFICIAL_STALE')).toBe(true);
+});
+import {locationUploadAllowed} from '../lib/distress-guidance';
+it('F2: the location upload itself is allowed in SURVIVAL (no non-critical network) at OFFICIAL_STALE / OFFICIAL_TSUNAMI',()=>{
+  const survival={online:true,offline:false,allowNonCriticalNetwork:false};
+  expect(locationUploadAllowed({...survival,level:'OFFICIAL_STALE'})).toBe(true);
+  expect(locationUploadAllowed({...survival,level:'OFFICIAL_TSUNAMI'})).toBe(true);
+  expect(locationUploadAllowed({...survival,level:'NONE'})).toBe(false);
+  expect(locationUploadAllowed({...survival,level:'USER_REPORTED'})).toBe(false);
+  expect(locationUploadAllowed({online:true,offline:false,allowNonCriticalNetwork:true,level:'NONE'})).toBe(true);
+  expect(locationUploadAllowed({online:false,offline:false,allowNonCriticalNetwork:true,level:'OFFICIAL_STALE'})).toBe(false);
+  expect(locationUploadAllowed({online:true,offline:true,allowNonCriticalNetwork:true,level:'OFFICIAL_STALE'})).toBe(false);
 });
 it('reports EXCLUDED_BY_REPORT only while an excluded site would still be reachable before the deadline',()=>{
   const all=['emergency_site:NEAR','emergency_site:MID','emergency_site:FAR'];

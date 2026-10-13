@@ -13,7 +13,8 @@ import {useDistressRecorder} from '../lib/use-distress-recorder';
 import {SosPanel} from './sos-panel';
 import './distress.css';
 
-export type DistressSnapshot={distress:DistressStatus;session_id?:string;replay?:{id:string};situation?:{updated_at:string;latest_evidence_at?:string|null}}|null;
+export type DistressSnapshot={distress:DistressStatus;session_id?:string;replay?:{id:string};situation?:{updated_at:string;latest_evidence_at?:string|null};
+ profile?:{current_location?:{observed_at?:string|null}}}|null;
 export type DistressPanelProps={snapshot:DistressSnapshot;language:Language;scope:DistressScope;accessKey?:string;
  /** Already freshness-checked device origin, or null. */
  location:DistressOrigin|null;
@@ -27,7 +28,7 @@ export type DistressPanelProps={snapshot:DistressSnapshot;language:Language;scop
  /** Logical clock (replay). Otherwise the device clock, floored by the snapshot's server time. */
  now?:number};
 const TAGS:readonly DistressTag[]=['WATER_RISING','TRAPPED','INJURED','MOBILITY_LIMITED','WITH_DEPENDENTS','LOST_NO_DESTINATION','ROUTE_BLOCKED_REPORTED'];
-const NONE:DistressStatus={level:'NONE',reports:[],trigger_evidence_ids:[],deadline_at:null,ai_escalated:false,synthetic:false,warning_class:null,last_official_at:null,trigger_expires_at:null};
+const NONE:DistressStatus={level:'NONE',reports:[],trigger_evidence_ids:[],deadline_at:null,ai_escalated:false,synthetic:false,warning_class:null,last_official_at:null,trigger_expires_at:null,stale_reason:null};
 const SPEECH_KEY='72h-distress-speech';
 const unique=<T,>(xs:readonly T[])=>[...new Set(xs)];
 function readSpeech(){try{return localStorage.getItem(SPEECH_KEY)!=='0';}catch{return true;}}
@@ -116,7 +117,10 @@ export function DistressPanel(p:DistressPanelProps){
  const officialTime=Number.isFinite(lastOfficial)?formatClock(lastOfficial):'--:--';
  const warningName=distress.warning_class==='MAJOR_WARNING'?t.warningMajor:distress.warning_class==='WARNING'?t.warningWarning:null;
  const basis=officialLevel&&warningName&&Number.isFinite(lastOfficial)?t.basis.replace('{warning}',warningName).replace('{time}',officialTime):null;
- const staleNotice=distress.level==='OFFICIAL_STALE'?t.staleNotice.replace('{time}',officialTime):null;
+ const fixAt=Date.parse(p.snapshot?.profile?.current_location?.observed_at??'');
+ const staleNotice=distress.level!=='OFFICIAL_STALE'?null:distress.stale_reason==='LOCATION_STALE'
+  ?t.locationStaleNotice.replace('{time}',Number.isFinite(fixAt)?formatClock(fixAt):'--:--')
+  :t.staleNotice.replace('{time}',officialTime);
  const reason=guidance&&guidance!=='PENDING'&&guidance.kind==='VERTICAL_NOW'
   ?{NO_TIME:t.reasonNoTime,NO_LOCATION:t.reasonNoLocation,NO_REACHABLE_SITE:t.reasonNoReachable,NO_SITES_IN_PACK:t.reasonNoSites,EXCLUDED_BY_REPORT:t.reasonExcludedByReport}[guidance.reason]:null;
 

@@ -54,6 +54,10 @@ class TsunamiTrigger:
     expires_at: datetime | None = None
 
 
+EVIDENCE_EXPIRED = "EVIDENCE_EXPIRED"
+LOCATION_STALE = "LOCATION_STALE"
+
+
 @dataclass(frozen=True, slots=True)
 class StaleTsunamiTrigger:
     evidence_id: str
@@ -62,6 +66,7 @@ class StaleTsunamiTrigger:
     published_at: datetime
     expires_at: datetime | None
     synthetic: bool
+    reason: str = EVIDENCE_EXPIRED
 
 
 CRITICAL_TAGS = frozenset({DistressTag.TRAPPED, DistressTag.INJURED, DistressTag.MOBILITY_LIMITED})
@@ -92,6 +97,13 @@ def _location_usable(state: CoreState, now: datetime) -> bool:
 
 def official_tsunami_trigger(state: CoreState, now: datetime, policy: SafetyPolicy) -> TsunamiTrigger | None:
     if not _location_usable(state, now):
+        return None
+    return _current_official_trigger(state, now, policy)
+
+
+def _current_official_trigger(state: CoreState, now: datetime, policy: SafetyPolicy) -> TsunamiTrigger | None:
+    """Current, verified official warning for the user's areas, without the location-age check."""
+    if not state.profile.current_location.area_ids:
         return None
     user_areas = set(state.profile.current_location.area_ids)
     claims = {item.key: item for item in state.situation.claim_states}
@@ -148,6 +160,14 @@ def official_stale_trigger(state: CoreState, now: datetime, policy: SafetyPolicy
     Callers check `official_tsunami_trigger` first; this never authorizes movement."""
     if not _stale_location_usable(state, now):
         return None
+    if not _location_usable(state, now):
+        # F2: the warning is still current but the fix is older than the 2-minute rule. The
+        # person is very likely still in the area: protective vertical shelter, not NONE.
+        current = _current_official_trigger(state, now, policy)
+        if current is not None:
+            return StaleTsunamiTrigger(current.evidence_id, current.area_id, current.warning_class,
+                                       current.published_at, current.expires_at, current.synthetic,
+                                       LOCATION_STALE)
     user_areas = set(state.profile.current_location.area_ids)
     latest: dict[str, tuple] = {}
     for evidence in state.evidence:
@@ -203,7 +223,8 @@ def resolve_distress(state: CoreState, now: datetime, policy: SafetyPolicy) -> D
         return DistressStatus(level=DistressLevel.OFFICIAL_STALE, reports=reports,
                               trigger_evidence_ids=(stale.evidence_id,), ai_escalated=escalated,
                               synthetic=stale.synthetic, warning_class=stale.warning_class,
-                              last_official_at=stale.published_at, trigger_expires_at=stale.expires_at)
+                              last_official_at=stale.published_at, trigger_expires_at=stale.expires_at,
+                              stale_reason=stale.reason)
     protective = any(tag in PROTECTIVE_TAGS for report in reports for tag in report.tags)
     if protective or escalated:
         return DistressStatus(level=DistressLevel.USER_REPORTED, reports=reports, ai_escalated=escalated)
@@ -217,7 +238,7 @@ def distress_signature(state: CoreState, now: datetime, policy: SafetyPolicy) ->
     trigger = official_tsunami_trigger(state, now, policy)
     trigger_key = (trigger.area_id, trigger.warning_class, trigger.arrival_at) if trigger is not None else None
     if trigger is None and status.level == DistressLevel.OFFICIAL_STALE:
-        trigger_key = ("STALE", status.warning_class)
+        trigger_key = ("STALE", status.warning_class, status.stale_reason)
     return (status.level, status.trigger_evidence_ids, trigger_key,
             tuple(sorted({tag for report in status.reports for tag in report.tags})),
             status.ai_escalated)

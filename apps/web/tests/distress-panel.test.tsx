@@ -14,7 +14,7 @@ const site=(id:string,lat:number)=>({id:`emergency_site:${id}`,kind:'EMERGENCY_S
 const places=[site('NEAR',38.4330),site('NEXT',38.4345)];
 const origin={lat:38.43,lng:141.3,accuracy_m:10};
 const empty={contacts:[],needsAssistance:false,mobilityLimited:false};
-const status=(over:Partial<DistressStatus>={}):DistressStatus=>({level:'NONE',reports:[],trigger_evidence_ids:[],deadline_at:null,ai_escalated:false,synthetic:false,warning_class:null,last_official_at:null,trigger_expires_at:null,...over});
+const status=(over:Partial<DistressStatus>={}):DistressStatus=>({level:'NONE',reports:[],trigger_evidence_ids:[],deadline_at:null,ai_escalated:false,synthetic:false,warning_class:null,last_official_at:null,trigger_expires_at:null,stale_reason:null,...over});
 const tsunami=(minutes:number,over:Partial<DistressStatus>={})=>status({level:'OFFICIAL_TSUNAMI',trigger_evidence_ids:['ev-1'],deadline_at:new Date(NOW+minutes*60_000).toISOString(),...over});
 const mounted:{root:ReturnType<typeof createRoot>;host:HTMLDivElement}[]=[];
 const json=(body:unknown,code=200)=>new Response(JSON.stringify(body),{status:code,headers:{'Content-Type':'application/json'}});
@@ -257,6 +257,18 @@ it('OFFICIAL_STALE: vertical evacuation plus a data-expired notice with the last
   expect(text).toContain(t.vertical);expect(text).not.toContain('測試場所');expect(text).not.toContain(t.countdown);
   expect(primary(host).querySelector('[data-testid="distress-stale"]')!.textContent).toBe(t.staleNotice.replace('{time}',formatClock(NOW-10*60_000)));
   expect(t.staleNotice).toContain('官方資料已超過有效時間，最後確認');
+});
+it('F2 LOCATION_STALE: vertical evacuation plus "location too old, last fix HH:MM", never a site, in three languages',async()=>{
+  nav({});vi.stubGlobal('fetch',vi.fn(async()=>json({},503)));
+  const fixAt=new Date(NOW-3*60_000).toISOString();
+  const {host}=await mount(props({snapshot:{distress:status({level:'OFFICIAL_STALE',stale_reason:'LOCATION_STALE',trigger_evidence_ids:['ev-1'],...official}),
+    replay:{id:'r1'},profile:{current_location:{observed_at:fixAt}}}}));
+  await settle();
+  const text=primary(host).textContent!;
+  expect(text).toContain(t.vertical);expect(text).not.toContain('測試場所');expect(text).not.toContain(t.countdown);
+  expect(primary(host).querySelector('[data-testid="distress-stale"]')!.textContent).toBe(t.locationStaleNotice.replace('{time}',formatClock(NOW-3*60_000)));
+  expect(t.locationStaleNotice).toBe('位置資料過舊，最後定位 {time}');
+  expect(distressText.ja.locationStaleNotice).toContain('{time}');expect(distressText.en.locationStaleNotice).toContain('{time}');
 });
 it('never shows a site past trigger_expires_at, even from a cached OFFICIAL_TSUNAMI snapshot',async()=>{
   nav({onLine:false});vi.stubGlobal('fetch',vi.fn());

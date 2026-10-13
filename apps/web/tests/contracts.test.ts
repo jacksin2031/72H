@@ -80,4 +80,11 @@ describe('Snapshot boundary', () => {
     const legacy = distressStatusSchema.parse({level:'NONE',reports:[],trigger_evidence_ids:[],deadline_at:null,ai_escalated:false,synthetic:false});
     expect(legacy).toMatchObject({warning_class:null,last_official_at:null,trigger_expires_at:null});
   });
+  it('keeps the OFFICIAL_STALE stale_reason (F2) and defaults it to null for older snapshots', () => {
+    const base = {level:'OFFICIAL_STALE',reports:[],trigger_evidence_ids:['ev-1'],deadline_at:null,ai_escalated:false,synthetic:false};
+    expect(distressStatusSchema.parse({...base,stale_reason:'LOCATION_STALE'}).stale_reason).toBe('LOCATION_STALE');
+    expect(distressStatusSchema.parse({...base,stale_reason:'EVIDENCE_EXPIRED'}).stale_reason).toBe('EVIDENCE_EXPIRED');
+    expect(distressStatusSchema.parse(base).stale_reason).toBeNull();
+    expect(() => distressStatusSchema.parse({...base,stale_reason:'WHATEVER'})).toThrow();
+  });
 });

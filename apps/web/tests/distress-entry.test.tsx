@@ -11,7 +11,7 @@ const {DistressEntry,LOCATION_REFRESH_MS}=await import('../components/distress-e
 
 (globalThis as {IS_REACT_ACT_ENVIRONMENT?:boolean}).IS_REACT_ACT_ENVIRONMENT=true;
 afterEach(()=>{vi.useRealTimers();vi.unstubAllGlobals();});
-const status=(level:DistressStatus['level']):DistressStatus=>({level,reports:[],trigger_evidence_ids:[],deadline_at:level==='OFFICIAL_TSUNAMI'?new Date(Date.now()+30*60_000).toISOString():null,ai_escalated:false,synthetic:false,warning_class:null,last_official_at:null,trigger_expires_at:null});
+const status=(level:DistressStatus['level']):DistressStatus=>({level,reports:[],trigger_evidence_ids:[],deadline_at:level==='OFFICIAL_TSUNAMI'?new Date(Date.now()+30*60_000).toISOString():null,ai_escalated:false,synthetic:false,warning_class:null,last_official_at:null,trigger_expires_at:null,stale_reason:null});
 
 it('refreshes the location before it expires while a tsunami level is shown, and stops afterwards',async()=>{
   vi.useFakeTimers({toFake:['setInterval','clearInterval','setTimeout','clearTimeout','Date']});

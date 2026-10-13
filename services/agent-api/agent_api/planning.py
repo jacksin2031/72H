@@ -1217,6 +1217,28 @@ _STALE_WORDS = {
 }
 
 
+# OFFICIAL_STALE / LOCATION_STALE: the warning is current but the location fix is too old.
+_LOCATION_STALE_WORDS = {
+    "ja": (
+        "今すぐ建物の上の階か高い場所へ移動し、水辺から離れてください。",
+        "位置情報が古く、公式の津波警報の地域内にいるか確認できません。今すぐ建物の上の階か高い場所へ移動し、水辺から離れてください。",
+    ),
+    "en": (
+        "Move to an upper floor or higher ground now and keep away from water.",
+        "Your location fix is too old to confirm you are inside the official tsunami warning area. Move to an upper floor or higher ground now and keep away from water.",
+    ),
+    "zh-TW": (
+        "立刻往建築物上層或高處移動，遠離水邊。",
+        "位置資料過舊，無法確認你仍在官方海嘯警報地區內。立刻往建築物上層或高處移動，遠離水邊。",
+    ),
+}
+_LOCATION_STALE_PREFIX = {
+    "ja": "位置情報が古く、公式の津波警報の地域内にいるか確認できません。",
+    "en": "Your location fix is too old to confirm you are inside the official tsunami warning area.",
+    "zh-TW": "位置資料過舊，無法確認你仍在官方海嘯警報地區內。",
+}
+
+
 _STALE_PREFIX = {
     "ja": "公式の津波警報の情報が有効時間を過ぎました（取り消しは確認されていません）。",
     "en": "The official tsunami warning data has expired (no cancellation was received).",
@@ -1260,9 +1282,11 @@ def _distress_action(
     if not official and trapped:
         text, reason = _TRAPPED_WORDS[language]
         if distress.level == DistressLevel.OFFICIAL_STALE:
-            reason = _STALE_PREFIX[language] + (" " if language == "en" else "") + reason
+            prefix = _LOCATION_STALE_PREFIX if distress.stale_reason == "LOCATION_STALE" else _STALE_PREFIX
+            reason = prefix[language] + (" " if language == "en" else "") + reason
     elif distress.level == DistressLevel.OFFICIAL_STALE and not official:
-        text, reason = _STALE_WORDS[language]
+        words = _LOCATION_STALE_WORDS if distress.stale_reason == "LOCATION_STALE" else _STALE_WORDS
+        text, reason = words[language]
     else:
         text, reason = _DISTRESS_WORDS[intent][language]
     evidence_ids = (

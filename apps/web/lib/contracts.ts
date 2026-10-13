@@ -74,9 +74,11 @@ export const distressStatusSchema = z.object({
   warning_class: z.enum(['MAJOR_WARNING','WARNING','ADVISORY','FORECAST','NONE','UNKNOWN']).nullable().default(null),
   last_official_at: timestamp.nullable().default(null),
   trigger_expires_at: timestamp.nullable().default(null),
+  // OFFICIAL_STALE only: expired official evidence, or current evidence with a location fix older than 2 min.
+  stale_reason: z.enum(['EVIDENCE_EXPIRED','LOCATION_STALE']).nullable().default(null),
 });
 export type DistressStatus = z.infer<typeof distressStatusSchema>;
-const defaultDistress: DistressStatus = { level: 'NONE', reports: [], trigger_evidence_ids: [], deadline_at: null, ai_escalated: false, synthetic: false, warning_class: null, last_official_at: null, trigger_expires_at: null };
+const defaultDistress: DistressStatus = { level: 'NONE', reports: [], trigger_evidence_ids: [], deadline_at: null, ai_escalated: false, synthetic: false, warning_class: null, last_official_at: null, trigger_expires_at: null, stale_reason: null };
 export const snapshotSchema = z.object({
   profile: z.object({ id, preferred_language: z.enum(['ja', 'en', 'zh-TW']), current_location: location, accommodation_location: location, current_destination: location.nullable(), party_size: z.number().int().positive(), self_reported_safety_status: z.enum(['SAFE', 'UNCERTAIN', 'NEEDS_ASSISTANCE', 'UNKNOWN']), current_plan_summary: text.default(''), accessibility_constraints: z.array(text).max(32).default([]), created_at: timestamp, updated_at: timestamp }),
   area_catalog: z.array(areaDefinitionSchema).max(512).default([]),
