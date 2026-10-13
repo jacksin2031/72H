@@ -141,7 +141,7 @@ it('applies AI exclusion deterministically and labels it; keeps the order on det
   nav({});
   let fetchMock=vi.fn(async(_u:string,_i?:RequestInit)=>json(advice({excluded:['emergency_site:NEAR']})));vi.stubGlobal('fetch',fetchMock);
   const onSnapshot=vi.fn();
-  let {host}=await mount(props({snapshot:{distress:tsunami(15,{reports:[{id:'d1',tags:['WATER_RISING' as DistressTag],input_mode:'BUTTON',reported_at:new Date(NOW).toISOString(),source:'USER_REPORTED'}]}),replay:{id:'r1'}},onSnapshot}));
+  let {host}=await mount(props({snapshot:{distress:tsunami(15,{reports:[{id:'d1',tags:['ROUTE_BLOCKED_REPORTED' as DistressTag],input_mode:'BUTTON',reported_at:new Date(NOW).toISOString(),source:'USER_REPORTED'}]}),replay:{id:'r1'}},onSnapshot}));
   await vi.waitFor(()=>expect(primary(host).textContent).toContain(t.goTo.replace('{name}','測試場所NEXT')));
   expect(primary(host).querySelector('[data-testid="distress-ai-label"]')?.textContent).toBe(t.aiSuggestion);
   const call=fetchMock.mock.calls.find(c=>c[0]==='/api/replay/r1/distress/advice')!;
@@ -266,4 +266,31 @@ it('never shows a site past trigger_expires_at, even from a cached OFFICIAL_TSUN
   expect(text).not.toContain('測試場所');expect(text).not.toContain(t.countdown);
   expect(text).toContain(t.vertical);
   expect(primary(host).querySelector('[data-testid="distress-stale"]')).toBeTruthy();
+});
+
+const blocked=[{id:'d1',tags:['ROUTE_BLOCKED_REPORTED' as DistressTag],input_mode:'BUTTON' as const,reported_at:new Date(NOW).toISOString(),source:'USER_REPORTED' as const}];
+it('keeps the deterministic nearest site as the primary instruction; AI order only reorders the other candidates',async()=>{
+  nav({});vi.stubGlobal('fetch',vi.fn(async()=>json(advice({candidate_order:['emergency_site:NEXT','emergency_site:NEAR']}))));
+  const {host}=await mount(props({snapshot:{distress:tsunami(15),replay:{id:'r1'}},places:[...places,site('THIRD',38.4350)]}));
+  await vi.waitFor(()=>expect(host.querySelector('[data-testid="distress-other-ai"]')).toBeTruthy());
+  expect(primary(host).textContent).toContain(t.goTo.replace('{name}','測試場所NEAR'));
+  expect(primary(host).querySelector('[data-testid="distress-ai-label"]')).toBeNull();
+  const others=[...host.querySelectorAll('.distress-details li')].map(li=>li.textContent);
+  expect(others[0]).toContain('測試場所NEXT');expect(others[1]).toContain('測試場所THIRD');
+  expect(host.querySelector('[data-testid="distress-other-ai"]')!.textContent).toBe(t.aiSuggestion);
+});
+it('ignores an AI exclusion on the device without the blocked-route report',async()=>{
+  nav({});vi.stubGlobal('fetch',vi.fn(async()=>json(advice({excluded:['emergency_site:NEAR']}))));
+  const {host}=await mount(props({snapshot:{distress:tsunami(15),replay:{id:'r1'}}}));
+  await settle();await settle();
+  expect(primary(host).textContent).toContain(t.goTo.replace('{name}','測試場所NEAR'));
+  expect(primary(host).querySelector('[data-testid="distress-ai-label"]')).toBeNull();
+});
+it('explains vertical evacuation when every reachable site was excluded on the report, labelled as AI',async()=>{
+  nav({});vi.stubGlobal('fetch',vi.fn(async()=>json(advice({excluded:['emergency_site:NEAR','emergency_site:NEXT']}))));
+  const {host}=await mount(props({snapshot:{distress:tsunami(15,{reports:blocked}),replay:{id:'r1'}}}));
+  await vi.waitFor(()=>expect(primary(host).textContent).toContain(t.reasonExcludedByReport));
+  expect(primary(host).textContent).toContain(t.verticalNow);
+  expect(primary(host).querySelector('[data-testid="distress-ai-label"]')?.textContent).toBe(t.aiSuggestion);
+  expect(t.reasonExcludedByReport.startsWith('依你回報的封路，AI 建議排除')).toBe(true);
 });

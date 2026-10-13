@@ -15,7 +15,7 @@ it('splits reachability into an expensive deadline-free part and a cheap deadlin
     {origin,tags:[] as const,deadlineAt:NOW},{origin,tags:[] as const,deadlineAt:NOW+60_000},
     {origin:null,tags:[] as const,deadlineAt:NOW+60_000},{origin:{...origin,accuracy_m:80},tags:[] as const,deadlineAt:NOW+3_600_000},
   ];
-  for(const c of cases)for(const excluded of [undefined,['emergency_site:NEAR']]){
+  for(const c of cases)for(const excluded of [undefined,['emergency_site:NEAR'],['emergency_site:NEAR','emergency_site:MID','emergency_site:FAR']]){
     const input={origin:c.origin,tags:c.tags,places,graph:null,excluded};
     expect(applyDeadline(reachFor(input),c.deadlineAt,NOW)).toEqual(resolveTsunamiGuidance({...input,deadlineAt:c.deadlineAt,now:NOW}));
   }
@@ -59,7 +59,7 @@ it('drops excluded sites from a reused result and falls back to vertical when no
   const c=(id:string)=>({place_id:id,name:id,distance_m:1,walk_seconds:1,via_road:false});
   const g={kind:'GO_TO_SITE' as const,candidates:[c('a'),c('b')],deadlineAt:1};
   expect(dropExcluded(g,['a'])).toEqual({...g,candidates:[c('b')]});
-  expect(dropExcluded(g,['a','b'])).toEqual({kind:'VERTICAL_NOW',reason:'NO_REACHABLE_SITE',deadlineAt:1});
+  expect(dropExcluded(g,['a','b'])).toEqual({kind:'VERTICAL_NOW',reason:'EXCLUDED_BY_REPORT',deadlineAt:1});
 });
 import {degradeExpiredOfficial,keepsLocationFresh} from '../lib/distress-guidance';
 it('downgrades a cached OFFICIAL_TSUNAMI to OFFICIAL_STALE once the device clock reaches trigger_expires_at',()=>{
@@ -83,4 +83,10 @@ it('lets the same-area location refresh through power-saving modes only during o
   expect(locationRefreshNetworkAllowed(false,'USER_REPORTED')).toBe(false);
   expect(locationRefreshNetworkAllowed(false,'OFFICIAL_TSUNAMI')).toBe(true);
   expect(locationRefreshNetworkAllowed(false,'OFFICIAL_STALE')).toBe(true);
+});
+it('reports EXCLUDED_BY_REPORT only while an excluded site would still be reachable before the deadline',()=>{
+  const all=['emergency_site:NEAR','emergency_site:MID','emergency_site:FAR'];
+  const reach=reachFor({origin,tags:[],places,graph:null,excluded:all});
+  expect(applyDeadline(reach,NOW+10*60_000,NOW)).toMatchObject({kind:'VERTICAL_NOW',reason:'EXCLUDED_BY_REPORT'});
+  expect(applyDeadline(reach,NOW+60_000,NOW)).toMatchObject({kind:'VERTICAL_NOW',reason:'NO_REACHABLE_SITE'});
 });

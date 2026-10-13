@@ -17,15 +17,17 @@ export function reachFor(input:ReachInput):TsunamiGuidance{
 export function applyDeadline(reach:TsunamiGuidance,deadlineAt:number,now:number):TsunamiGuidance{
  const available=(deadlineAt-now)/1000;
  if(!Number.isFinite(available)||available<=0)return {kind:'VERTICAL_NOW',reason:'NO_TIME',deadlineAt};
- if(reach.kind==='VERTICAL_NOW')return {...reach,deadlineAt};
+ const extra=reach.excludedReach===undefined?{}:{excludedReach:reach.excludedReach};
+ const noSite=reach.excludedReach!==undefined&&reach.excludedReach<=available?'EXCLUDED_BY_REPORT' as const:'NO_REACHABLE_SITE' as const;
+ if(reach.kind==='VERTICAL_NOW')return reach.reason==='EXCLUDED_BY_REPORT'||reach.reason==='NO_REACHABLE_SITE'?{...reach,reason:noSite,deadlineAt}:{...reach,deadlineAt};
  const candidates=reach.candidates.filter(c=>c.walk_seconds<=available);
- return candidates.length?{kind:'GO_TO_SITE',candidates,deadlineAt}:{kind:'VERTICAL_NOW',reason:'NO_REACHABLE_SITE',deadlineAt};
+ return candidates.length?{kind:'GO_TO_SITE',candidates,deadlineAt,...extra}:{kind:'VERTICAL_NOW',reason:noSite,deadlineAt,...extra};
 }
 /** Removes excluded sites from a reach result (used when reusing a previous result while recomputing). */
 export function dropExcluded(reach:TsunamiGuidance,excluded:readonly string[]):TsunamiGuidance{
  if(reach.kind!=='GO_TO_SITE'||!excluded.length)return reach;
  const out=new Set(excluded),candidates=reach.candidates.filter(c=>!out.has(c.place_id));
- return candidates.length?{...reach,candidates}:{kind:'VERTICAL_NOW',reason:'NO_REACHABLE_SITE',deadlineAt:reach.deadlineAt};
+ return candidates.length?{...reach,candidates}:{kind:'VERTICAL_NOW',reason:'EXCLUDED_BY_REPORT',deadlineAt:reach.deadlineAt};
 }
 /** ~11 m position buckets; accuracy is rounded up (never more optimistic than measured). */
 export function roundOrigin(o:DistressOrigin|null):DistressOrigin|null{

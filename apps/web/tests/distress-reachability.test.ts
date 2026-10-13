@@ -40,7 +40,10 @@ describe('resolveTsunamiGuidance',()=>{
     expect(blurry.candidates[0].distance_m-sharp.candidates[0].distance_m).toBeCloseTo(80,0);
   });
   it('honours exclusions and reports when the pack has no tsunami sites',()=>{
-    expect(resolveTsunamiGuidance({origin,deadlineAt:NOW+600_000,now:NOW,tags:[],places:[near],graph:null,excluded:['emergency_site:NEAR']})).toMatchObject({kind:'VERTICAL_NOW',reason:'NO_REACHABLE_SITE'});
+    // Every reachable site excluded on the person's blocked-route report: a distinct reason, not "unreachable".
+    expect(resolveTsunamiGuidance({origin,deadlineAt:NOW+600_000,now:NOW,tags:[],places:[near],graph:null,excluded:['emergency_site:NEAR']})).toMatchObject({kind:'VERTICAL_NOW',reason:'EXCLUDED_BY_REPORT'});
+    // An excluded site that was not reachable anyway does not change the reason.
+    expect(resolveTsunamiGuidance({origin,deadlineAt:NOW+60_000,now:NOW,tags:[],places:[near,far],graph:null,excluded:['emergency_site:NEAR']})).toMatchObject({kind:'VERTICAL_NOW',reason:'NO_REACHABLE_SITE'});
     expect(resolveTsunamiGuidance({origin,deadlineAt:NOW+600_000,now:NOW,tags:[],places:[],graph:null})).toMatchObject({kind:'VERTICAL_NOW',reason:'NO_SITES_IN_PACK'});
   });
   it('never exposes coordinates to AI advice payloads',()=>{

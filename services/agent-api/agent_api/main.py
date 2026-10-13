@@ -13,6 +13,7 @@ from fastapi import Body, Depends, FastAPI, HTTPException, Header, status
 from seventytwoh_contracts.models import (
     ApiVersion,
     DistressRequest,
+    DistressTag,
     LiveLocationUpdateRequest,
     LiveProfileUpdateRequest,
     LiveSnapshot,
@@ -107,9 +108,15 @@ def create_app(
         """Only the person's own active report or blocked-route hint lets AI raise the level."""
         return bool(snapshot.distress.reports) or bool((request.route_blocked_hint or "").strip())
 
+    def _exclusion_signal(snapshot, request: AdviceRequest) -> bool:
+        """Spec 13.3: AI may exclude places only on the person's own active blocked-route report or hint."""
+        reported = any(t == DistressTag.ROUTE_BLOCKED_REPORTED for r in snapshot.distress.reports for t in r.tags)
+        return reported or bool((request.route_blocked_hint or "").strip())
+
     async def _advise(session_id: UUID, snapshot, request: AdviceRequest):
         return await advisor.advise(str(session_id), request, level=snapshot.distress.level,
-                                    tags=_confirmed_tags(snapshot), user_signal=_user_signal(snapshot, request))
+                                    tags=_confirmed_tags(snapshot), user_signal=_user_signal(snapshot, request),
+                                    exclusion_signal=_exclusion_signal(snapshot, request))
 
     @application.exception_handler(RequestValidationError)
     async def validation_handler(request, exc: RequestValidationError):

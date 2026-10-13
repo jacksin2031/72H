@@ -19,7 +19,7 @@ def test_valid_advice_reorders_and_excludes_within_core_set():
     applied = apply_conservative_advice(
         DistressAdvice(candidate_order=("emergency_site:B", "emergency_site:A", "emergency_site:C"),
                        exclude_candidates=("emergency_site:C",), suggest_sos=True, emphasis_clause_ids=("MOVE_UP_NOW",)),
-        level=DistressLevel.OFFICIAL_TSUNAMI, candidate_ids=IDS, user_signal=True)
+        level=DistressLevel.OFFICIAL_TSUNAMI, candidate_ids=IDS, user_signal=True, exclusion_signal=True)
     assert applied.candidate_order == ("emergency_site:B", "emergency_site:A")
     assert applied.excluded == ("emergency_site:C",)
     assert applied.suggest_sos is True and applied.raised_level is False
@@ -28,7 +28,7 @@ def test_valid_advice_reorders_and_excludes_within_core_set():
 def test_invented_place_drops_ordering_but_keeps_valid_exclusions():
     applied = apply_conservative_advice(
         DistressAdvice(candidate_order=("emergency_site:Z", "emergency_site:A"), exclude_candidates=("emergency_site:B", "emergency_site:Z")),
-        level=DistressLevel.OFFICIAL_TSUNAMI, candidate_ids=IDS, user_signal=True)
+        level=DistressLevel.OFFICIAL_TSUNAMI, candidate_ids=IDS, user_signal=True, exclusion_signal=True)
     assert applied.candidate_order == ("emergency_site:A", "emergency_site:C")
     assert applied.excluded == ("emergency_site:B",)
     assert "candidate_order" in applied.rejected_fields
@@ -51,6 +51,7 @@ def test_property_result_is_never_less_protective_than_core():
     for _ in range(2000):
         level = rng.choice(list(DistressLevel))
         user_signal = rng.random() < 0.5
+        exclusion_signal = rng.random() < 0.5
         ids = tuple(rng.sample(IDS, rng.randint(0, 3)))
         advice = DistressAdvice(
             raise_level_to=rng.choice([None, 1]),
@@ -58,13 +59,44 @@ def test_property_result_is_never_less_protective_than_core():
             exclude_candidates=tuple(rng.sample(pool, rng.randint(0, 5))),
             suggest_sos=rng.random() < 0.5,
         )
-        applied = apply_conservative_advice(advice, level=level, candidate_ids=ids, user_signal=user_signal)
+        applied = apply_conservative_advice(advice, level=level, candidate_ids=ids, user_signal=user_signal,
+                                            exclusion_signal=exclusion_signal)
         assert set(applied.candidate_order) <= set(ids)
         assert set(applied.excluded) <= set(ids)
         assert not set(applied.candidate_order) & set(applied.excluded)
         assert set(applied.candidate_order) | set(applied.excluded) == set(ids)
         if applied.raised_level:
             assert level == DistressLevel.NONE and user_signal
+        if not exclusion_signal:
+            # Spec 13.3: AI may exclude places only on the person's own blocked-route report.
+            assert applied.excluded == ()
+            if advice.exclude_candidates:
+                assert "exclude_candidates" in applied.rejected_fields
+
+
+def test_exclusions_require_the_persons_blocked_route_report():
+    advice = DistressAdvice(exclude_candidates=("emergency_site:A",))
+    rejected = apply_conservative_advice(advice, level=DistressLevel.OFFICIAL_TSUNAMI, candidate_ids=IDS, user_signal=True)
+    assert rejected.excluded == () and rejected.candidate_order == IDS
+    assert rejected.rejected_fields == ("exclude_candidates",)
+    accepted = apply_conservative_advice(advice, level=DistressLevel.OFFICIAL_TSUNAMI, candidate_ids=IDS,
+                                         user_signal=True, exclusion_signal=True)
+    assert accepted.excluded == ("emergency_site:A",) and accepted.rejected_fields == ()
+
+
+def test_replay_exclusion_is_gated_by_route_blocked_report_or_hint():
+    reply = {"exclude_candidates": ["emergency_site:A"]}
+    with _replay_client(reply) as client:
+        def advise(body, tags=None):
+            replay_id = client.post("/api/replay/start").json()["replay"]["id"]
+            if tags:
+                assert client.post(f"/api/replay/{replay_id}/distress", json={"tags": tags, "input_mode": "BUTTON"}).status_code == 200
+            return client.post(f"/api/replay/{replay_id}/distress/advice", json=body).json()["advice"]
+
+        no_signal = advise(ADVICE_BODY, ["WATER_RISING"])
+        assert no_signal["excluded"] == [] and "exclude_candidates" in no_signal["rejected_fields"]
+        assert advise(ADVICE_BODY, ["ROUTE_BLOCKED_REPORTED"])["excluded"] == ["emergency_site:A"]
+        assert advise(HINT_BODY)["excluded"] == ["emergency_site:A"]
 
 
 def test_unknown_emphasis_clause_is_dropped_and_reported():

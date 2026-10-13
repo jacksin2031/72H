@@ -95,15 +95,23 @@ class AdviceResponse(BaseModel):
 
 def apply_conservative_advice(
     advice: DistressAdvice, *, level: DistressLevel, candidate_ids: tuple[str, ...], user_signal: bool,
+    exclusion_signal: bool = False,
 ) -> AppliedAdvice:
     """`user_signal` is True only when the person reported distress or a blocked route themselves;
-    without it the model can never raise the level on its own."""
+    without it the model can never raise the level on its own. `exclusion_signal` is True only when
+    the person has an active ROUTE_BLOCKED_REPORTED report or gave a blocked-route hint (spec 13.3):
+    without it no place may be excluded."""
     allowed = tuple(dict.fromkeys(candidate_ids))
     allowed_set = set(allowed)
     rejected: list[str] = []
-    excluded = tuple(i for i in dict.fromkeys(advice.exclude_candidates) if i in allowed_set)
-    if len(excluded) != len(set(advice.exclude_candidates)):
-        rejected.append("exclude_candidates")
+    if exclusion_signal:
+        excluded = tuple(i for i in dict.fromkeys(advice.exclude_candidates) if i in allowed_set)
+        if len(excluded) != len(set(advice.exclude_candidates)):
+            rejected.append("exclude_candidates")
+    else:
+        excluded = ()
+        if advice.exclude_candidates:
+            rejected.append("exclude_candidates")
     remaining = tuple(i for i in allowed if i not in excluded)
     order = tuple(dict.fromkeys(advice.candidate_order))
     if order and set(order) <= allowed_set:
@@ -183,7 +191,7 @@ class DistressAdvisor:
         self._budget = budget if budget is not None else _CallBudget()
 
     async def advise(self, session_id: str, request: AdviceRequest, *, level: DistressLevel,
-                     tags: tuple[str, ...], user_signal: bool) -> AppliedAdvice:
+                     tags: tuple[str, ...], user_signal: bool, exclusion_signal: bool = False) -> AppliedAdvice:
         ids = tuple(c.place_id for c in request.candidates)
         fallback = apply_conservative_advice(DistressAdvice(), level=level, candidate_ids=ids, user_signal=user_signal)
 
@@ -222,4 +230,5 @@ class DistressAdvisor:
             return degrade("INVALID_OUTPUT")
         except Exception as exc:  # provider details never reach the response
             return degrade(_safe_provider_reason(exc))
-        return apply_conservative_advice(advice, level=level, candidate_ids=ids, user_signal=user_signal)
+        return apply_conservative_advice(advice, level=level, candidate_ids=ids, user_signal=user_signal,
+                                         exclusion_signal=exclusion_signal)

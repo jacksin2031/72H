@@ -72,7 +72,9 @@ export function DistressPanel(p:DistressPanelProps){
  const level=effectiveDistressLevel(distress.level,localTags);
  const canAi=online&&!!sessionId&&!(p.scope==='mock-live'&&!p.accessKey);
  const current=advice&&advice.session===sessionId?advice.value:null,gemini=current?.mode==='GEMINI'?current:null;
- const excluded=useMemo(()=>gemini?.excluded??[],[gemini]);
+ // Spec 13.3: AI exclusions apply only on the person's own blocked-route report or hint (the server also enforces this).
+ const exclusionAllowed=reported.includes('ROUTE_BLOCKED_REPORTED')||!!hint?.trim();
+ const excluded=useMemo(()=>exclusionAllowed?gemini?.excluded??[]:[],[gemini,exclusionAllowed]);
  const aiOff=!!advice&&advice.session===sessionId&&!gemini;
 
  // Reachability: memoized per (rounded origin, tags, excluded) and per places/graph identity; deadline applied cheaply every tick.
@@ -98,12 +100,15 @@ export function DistressPanel(p:DistressPanelProps){
  const reachValue=exact??(reuse&&reach?dropExcluded(reach.value,excluded):null);
  const guidance=deadlineAt===null?null:reachValue?applyDeadline(reachValue,deadlineAt,now)
   :deadlineAt<=now?applyDeadline({kind:'VERTICAL_NOW',reason:'NO_TIME',deadlineAt},deadlineAt,now):'PENDING' as const;
- const ordered=guidance&&guidance!=='PENDING'&&guidance.kind==='GO_TO_SITE'?(gemini?orderCandidates(guidance.candidates,gemini.candidate_order):guidance.candidates):[];
- const first=ordered[0]??null;
+ // The primary site is always the deterministic first candidate (shortest walk). AI order only reorders the other candidates.
+ const deterministic=guidance&&guidance!=='PENDING'&&guidance.kind==='GO_TO_SITE'?guidance.candidates:[];
+ const first=deterministic[0]??null;
+ const others=gemini?orderCandidates(deterministic.slice(1),gemini.candidate_order):deterministic.slice(1);
+ const othersByAi=!!gemini&&gemini.candidate_order.length>0&&others.length>0;
  const kind=level==='NONE'?'NONE':guidance===null?'VERTICAL':guidance==='PENDING'?'PENDING':guidance.kind;
  const primaryText=kind==='NONE'?t.chooseSituation:kind==='GO_TO_SITE'&&first?t.goTo.replace('{name}',first.name):kind==='VERTICAL_NOW'?t.verticalNow:t.vertical;
  const aiInfluenced=!!gemini&&level==='OFFICIAL_TSUNAMI'&&guidance!=='PENDING'&&guidance!==null
-  &&(gemini.excluded.length>0||(guidance.kind==='GO_TO_SITE'&&first?.place_id!==guidance.candidates[0]?.place_id));
+  &&excluded.length>0;
  const officialLevel=distress.level==='OFFICIAL_TSUNAMI'||distress.level==='OFFICIAL_STALE';
  const lastOfficial=officialLevel&&distress.last_official_at?Date.parse(distress.last_official_at):NaN;
  const officialTime=Number.isFinite(lastOfficial)?formatClock(lastOfficial):'--:--';
@@ -111,7 +116,7 @@ export function DistressPanel(p:DistressPanelProps){
  const basis=officialLevel&&warningName&&Number.isFinite(lastOfficial)?t.basis.replace('{warning}',warningName).replace('{time}',officialTime):null;
  const staleNotice=distress.level==='OFFICIAL_STALE'?t.staleNotice.replace('{time}',officialTime):null;
  const reason=guidance&&guidance!=='PENDING'&&guidance.kind==='VERTICAL_NOW'
-  ?{NO_TIME:t.reasonNoTime,NO_LOCATION:t.reasonNoLocation,NO_REACHABLE_SITE:t.reasonNoReachable,NO_SITES_IN_PACK:t.reasonNoSites}[guidance.reason]:null;
+  ?{NO_TIME:t.reasonNoTime,NO_LOCATION:t.reasonNoLocation,NO_REACHABLE_SITE:t.reasonNoReachable,NO_SITES_IN_PACK:t.reasonNoSites,EXCLUDED_BY_REPORT:t.reasonExcludedByReport}[guidance.reason]:null;
 
  // Read aloud once per instruction change.
  const speechKey=`${level}|${kind}|${first?.place_id??''}`;
@@ -212,7 +217,7 @@ export function DistressPanel(p:DistressPanelProps){
   </fieldset>}
   {!pinned&&sos}
   <details className="distress-details"><summary>{t.moreDetails}</summary>
-   {ordered.length>1&&<><p>{t.otherCandidates}</p><ul>{ordered.slice(1).map(c=><li key={c.place_id}>{c.name} · {t.walkMeta.replace('{min}',String(Math.ceil(c.walk_seconds/60))).replace('{m}',String(Math.round(c.distance_m)))}</li>)}</ul></>}
+   {others.length>0&&<><p>{t.otherCandidates}{othersByAi&&<> <span className="distress-ai" data-testid="distress-other-ai">{t.aiSuggestion}</span></>}</p><ul>{others.map(c=><li key={c.place_id}>{c.name} · {t.walkMeta.replace('{min}',String(Math.ceil(c.walk_seconds/60))).replace('{m}',String(Math.round(c.distance_m)))}</li>)}</ul></>}
    {!!reported.length&&<p>{t.lastReport}: {reported.map(x=>tt[x]).join('、')}</p>}
    {kind!=='NONE'&&<Link href="/map#evacuation-routes">{t.officialSites} →</Link>}
   </details>
