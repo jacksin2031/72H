@@ -175,6 +175,14 @@ def escalation_skipped(applied: AppliedAdvice) -> AppliedAdvice:
     })
 
 
+def advice_needs_trace(applied: AppliedAdvice) -> bool:
+    """A deterministic fallback with nothing applied changes nothing, so it writes no trace."""
+    return applied.mode == "GEMINI" or bool(
+        applied.excluded or applied.suggest_sos or applied.emphasis_clause_ids
+        or applied.raised_level or applied.rejected_fields
+    )
+
+
 def advice_traced_state(state, applied: AppliedAdvice, at: datetime):
     event_type, summary = advice_trace_summary(applied)
     status = TraceStatus.REJECTED if event_type == "DISTRESS_ADVICE_REJECTED" else (

@@ -696,12 +696,15 @@ class LiveStore:
 
     async def record_advice_trace(self, session_id: UUID, applied) -> LiveSnapshot:
         """Append the advice outcome trace (field names only, never model text)."""
-        from .distress_advice import advice_traced_state
+        from .distress_advice import advice_needs_trace, advice_traced_state
 
         aggregate = self._get_aggregate(session_id)
         async with aggregate.operation_lock:
             with aggregate.lock:
                 state = aggregate.state
+                if not advice_needs_trace(applied):
+                    self._touch(aggregate)
+                    return self._snapshot(aggregate)
                 if len(state.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
                     raise InvalidLiveProfileUpdate("live trace capacity reached")
                 aggregate.state = advice_traced_state(state, applied, max(self._now(), state.current_time))

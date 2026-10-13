@@ -283,6 +283,8 @@ def create_app(
             snapshot = replay_store.record_advice_trace(session_id, applied)
         except SessionNotFound as exc:
             raise HTTPException(status_code=404, detail="replay session not found") from exc
+        except InvalidReplayTransition as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
         return {"advice": applied.model_dump(mode="json"), "snapshot": snapshot.model_dump(mode="json")}
 
     @application.post("/api/live/{session_id}/distress/advice")

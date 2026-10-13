@@ -130,3 +130,77 @@ def test_live_distress_trace_capacity_maps_to_409():
         live_module.MAX_LIVE_TRACE_EVENTS = monkeypatch_cap
     assert response.status_code == 409, response.text
     assert len(aggregate.state.distress_reports) == 0
+
+
+def _fill_replay_trace(store, replay_id, remaining):
+    """Pad a replay aggregate's trace so only `remaining` slots are left below MAX_TRACE."""
+    from uuid import UUID
+
+    from agent_api.domain import MAX_TRACE
+
+    from seventytwoh_contracts.models import AgentName, TraceEvent, TraceStatus
+
+    aggregate = store._get_aggregate(UUID(replay_id))
+    state = aggregate.state
+    padding = tuple(
+        TraceEvent(id=f"trace_{len(state.trace) + i + 1:03d}", situation_id=state.situation.id,
+                   timestamp=state.current_time, agent=AgentName.SAFETY_CORE, event_type="TEST_PADDING",
+                   status=TraceStatus.SUCCESS, public_summary="test padding")
+        for i in range(MAX_TRACE - remaining - len(state.trace))
+    )
+    aggregate.state = replace(state, trace=(*state.trace, *padding))
+    return aggregate
+
+
+def test_replay_distress_and_advice_trace_capacity_map_to_409():
+    from test_distress_advice import ADVICE_BODY, _advisor
+
+    store = ReplayStore()
+    advisor, _ = _advisor({"suggest_sos": True})
+    with TestClient(create_app(store=store, distress_advisor=advisor)) as client:
+        replay_id = client.post("/api/replay/start").json()["replay"]["id"]
+        aggregate = _fill_replay_trace(store, replay_id, 8)
+        before = aggregate.state
+        assert client.post(f"/api/replay/{replay_id}/distress", json=BODY).status_code == 409
+        assert client.post(f"/api/replay/{replay_id}/distress/advice", json=ADVICE_BODY).status_code == 409
+        assert aggregate.state.distress_reports == before.distress_reports
+        assert len(aggregate.state.trace) == len(before.trace)
+        assert client.get(f"/api/replay/{replay_id}").status_code == 200
+
+
+def _disabled_advisor():
+    # Never reach a real model in tests: an explicitly disabled advisor always degrades.
+    from agent_api.distress_advice import DistressAdvisor
+    from agent_api.planner import PlannerConfig
+
+    return DistressAdvisor(PlannerConfig(mode="deterministic"))
+
+
+def test_fallback_advice_writes_no_trace_even_at_capacity():
+    from test_distress_advice import ADVICE_BODY
+
+    store = ReplayStore()
+    with TestClient(create_app(store=store, distress_advisor=_disabled_advisor())) as client:
+        replay_id = client.post("/api/replay/start").json()["replay"]["id"]
+        before = len(client.get(f"/api/replay/{replay_id}").json()["trace"])
+        response = client.post(f"/api/replay/{replay_id}/distress/advice", json=ADVICE_BODY)
+        assert response.status_code == 200, response.text
+        assert response.json()["advice"]["mode"] == "DETERMINISTIC_FALLBACK"
+        assert len(response.json()["snapshot"]["trace"]) == before
+        _fill_replay_trace(store, replay_id, 8)
+        assert client.post(f"/api/replay/{replay_id}/distress/advice", json=ADVICE_BODY).status_code == 200
+
+
+def test_live_fallback_advice_writes_no_trace():
+    from test_distress_advice import ADVICE_BODY
+
+    from test_live_location import _store_and_client, _start
+
+    store, _ = _store_and_client()
+    client = TestClient(create_app(live_store=store, distress_advisor=_disabled_advisor()))
+    sid = _start(client)["session_id"]
+    before = len(client.get(f"/api/live/{sid}").json()["trace"])
+    response = client.post(f"/api/live/{sid}/distress/advice", json=ADVICE_BODY)
+    assert response.status_code == 200, response.text
+    assert response.json()["advice"]["mode"] == "DETERMINISTIC_FALLBACK"
+    assert len(response.json()["snapshot"]["trace"]) == before

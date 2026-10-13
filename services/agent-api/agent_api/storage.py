@@ -32,7 +32,8 @@ from seventytwoh_contracts.models import (
 from .domain import CoreState, reduce_event
 from .planning import evidence_projections
 from .distress import record_distress_report, resolve_distress
-from .distress_advice import advice_traced_state, ai_escalated_state
+from .distress_advice import advice_needs_trace, advice_traced_state, ai_escalated_state
+from .domain import MAX_TRACE
 from .planner import CandidatePlanner
 from .scenario import (
     DEFAULT_SCENARIO_KEY,
@@ -286,6 +287,7 @@ class ReplayStore:
         aggregate = self._get_aggregate(session_id)
         with aggregate.lock:
             before = aggregate.state
+            self._require_trace_capacity(before)
             now = before.current_time
             reported = record_distress_report(before, request.tags, request.input_mode, now)
             report_id = reported.distress_reports[-1].id
@@ -311,6 +313,7 @@ class ReplayStore:
             before = aggregate.state
             if resolve_distress(before, before.current_time, self._policy).level != DistressLevel.NONE:
                 return False
+            self._require_trace_capacity(before)
             escalated = ai_escalated_state(before, before.current_time)
             event_id = escalated.trace[-1].id
             aggregate.state = evaluate_and_replan(before, escalated, SimpleNamespace(id=event_id), self._policy)
@@ -320,9 +323,17 @@ class ReplayStore:
     def record_advice_trace(self, session_id: UUID, applied) -> ReplaySnapshot:
         aggregate = self._get_aggregate(session_id)
         with aggregate.lock:
-            aggregate.state = advice_traced_state(aggregate.state, applied, aggregate.state.current_time)
+            if advice_needs_trace(applied):
+                self._require_trace_capacity(aggregate.state)
+                aggregate.state = advice_traced_state(aggregate.state, applied, aggregate.state.current_time)
             self._touch(aggregate)
             return self._snapshot(aggregate)
+
+    @staticmethod
+    def _require_trace_capacity(state) -> None:
+        # Same headroom as live: a re-plan can append several trace events.
+        if len(state.trace) >= MAX_TRACE - 8:
+            raise InvalidReplayTransition("replay trace capacity reached")
 
     def _touch(self, aggregate: SessionAggregate) -> None:
         aggregate.expires_at = monotonic() + self._ttl_seconds
