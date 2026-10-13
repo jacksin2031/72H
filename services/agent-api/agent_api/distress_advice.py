@@ -199,7 +199,8 @@ class DistressAdvisor:
         self._budget = budget if budget is not None else DistressCallBudget()
 
     async def advise(self, session_id: str, request: AdviceRequest, *, level: DistressLevel,
-                     tags: tuple[str, ...], user_signal: bool, exclusion_signal: bool = False) -> AppliedAdvice:
+                     tags: tuple[str, ...], user_signal: bool, exclusion_signal: bool = False,
+                     trace_capacity: bool = True) -> AppliedAdvice:
         ids = tuple(c.place_id for c in request.candidates)
         fallback = apply_conservative_advice(DistressAdvice(), level=level, candidate_ids=ids, user_signal=user_signal)
 
@@ -210,6 +211,8 @@ class DistressAdvisor:
             return degrade("MODEL_DISABLED")
         if self.config.startup_error:
             return degrade(self.config.startup_error)
+        if not trace_capacity:
+            return degrade("TRACE_CAPACITY")
         budget_error = self._budget.reserve(session_id, self.config)
         if budget_error:
             return degrade(budget_error)

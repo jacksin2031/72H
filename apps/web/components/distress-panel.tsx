@@ -54,7 +54,7 @@ export function DistressPanel(p:DistressPanelProps){
  const [pending,setPending]=useState<{tags:DistressTag[];checked:DistressTag[];mode:'VOICE'|'TEXT'}|null>(null);
  const [hint,setHint]=useState<string|null>(null),[notice,setNotice]=useState<string|null>(null),[text,setText]=useState(''),[busy,setBusy]=useState(false),[analyzing,setAnalyzing]=useState(false);
  const [speechOn,setSpeechOn]=useState(readSpeech);
- const [pinUntil,setPinUntil]=useState(readSosPinUntil);
+ const [pinUntil,setPinUntil]=useState(()=>readSosPinUntil(p.scope));
  const [advice,setAdvice]=useState<{session:string;value:AppliedAdvice|null}|null>(null);
  const alive=useRef(true),requested=useRef(new Set<string>()),spoken=useRef<string|null>(null),onSnapshot=useRef(p.onSnapshot);onSnapshot.current=p.onSnapshot;
  useEffect(()=>{
@@ -154,7 +154,7 @@ export function DistressPanel(p:DistressPanelProps){
  const submit=async(tags:DistressTag[],mode:DistressInputMode)=>{
   if(!tags.length)return;
   setLocalTags(prev=>unique([...prev,...tags]));setNotice(null);
-  if(isCriticalReport(tags))setPinUntil(rememberSosPin(now+CRITICAL_REPORT_MS));
+  if(isCriticalReport(tags))setPinUntil(rememberSosPin(p.scope,now+CRITICAL_REPORT_MS));
   if(!online||!sessionId||(p.scope==='mock-live'&&!p.accessKey))return;
   setBusy(true);const raw=await reportDistress(p.scope,sessionId,tags,mode,p.accessKey);
   if(!alive.current)return;setBusy(false);
@@ -175,7 +175,7 @@ export function DistressPanel(p:DistressPanelProps){
  const toggle=(tag:DistressTag)=>setSelected(s=>s.includes(tag)?s.filter(x=>x!==tag):[...s,tag]);
  // A critical server report keeps SOS pinned on this device for its whole 60-minute lifetime.
  const criticalUntil=Math.max(0,...distress.reports.filter(r=>isCriticalReport(r.tags)).map(r=>Date.parse(r.reported_at)+CRITICAL_REPORT_MS).filter(Number.isFinite));
- useEffect(()=>{if(criticalUntil>pinUntil)setPinUntil(rememberSosPin(criticalUntil));},[criticalUntil,pinUntil]);
+ useEffect(()=>{if(criticalUntil>pinUntil)setPinUntil(rememberSosPin(p.scope,criticalUntil));},[criticalUntil,pinUntil,p.scope]);
  const pinned=shouldPinSos(reported,p.sosProfile,level)||now<pinUntil||!!gemini?.suggest_sos;
  const sos=<>
   {gemini?.suggest_sos&&<p className="distress-ai-note"><span className="distress-ai" data-testid="distress-sos-ai">{t.aiSuggestion}</span> {t.sosSuggested}</p>}

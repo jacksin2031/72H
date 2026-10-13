@@ -311,11 +311,22 @@ it('keeps SOS pinned on this device for a critical report\'s 60-minute lifetime,
   const pinnedAbove=(host:HTMLElement)=>!!(host.querySelector('.sos-panel')!.compareDocumentPosition(primary(host))&Node.DOCUMENT_POSITION_FOLLOWING);
   const {host}=await mount(props());
   await act(async()=>button(host,tags.TRAPPED)!.click());await act(async()=>button(host,t.send)!.click());
-  expect(Number(localStorage.getItem('72h-sos-pinned-until'))).toBe(NOW+60*60_000);
+  expect(Number(localStorage.getItem('72h-sos-pinned-until:replay'))).toBe(NOW+60*60_000);
   const later=await mount(props({now:NOW+59*60_000}));
   expect(pinnedAbove(later.host)).toBe(true);
   const expired=await mount(props({now:NOW+60*60_000}));
   expect(pinnedAbove(expired.host)).toBe(false);
+});
+it('F5: an exercise (replay / mock-live) SOS pin never pins SOS in live, and vice versa',async()=>{
+  nav({onLine:false});vi.stubGlobal('fetch',vi.fn());
+  const pinnedAbove=(host:HTMLElement)=>!!(host.querySelector('.sos-panel')!.compareDocumentPosition(primary(host))&Node.DOCUMENT_POSITION_FOLLOWING);
+  const {host}=await mount(props({scope:'replay'}));
+  await act(async()=>button(host,tags.TRAPPED)!.click());await act(async()=>button(host,t.send)!.click());
+  expect(pinnedAbove((await mount(props({scope:'replay',now:NOW+10*60_000}))).host)).toBe(true);
+  const live=await mount(props({scope:'live',now:NOW+10*60_000,snapshot:{distress:status(),session_id:'s1'}}));
+  expect(pinnedAbove(live.host)).toBe(false);
+  expect(pinnedAbove((await mount(props({scope:'mock-live',accessKey:'k',now:NOW+10*60_000}))).host)).toBe(false);
+  expect(localStorage.getItem('72h-sos-pinned-until:live')).toBeNull();
 });
 it('asks the AI only after the distress report POST has completed, with its tags',async()=>{
   nav({});let release!:(r:Response)=>void;

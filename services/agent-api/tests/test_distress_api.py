@@ -156,16 +156,50 @@ def test_replay_distress_and_advice_trace_capacity_map_to_409():
     from test_distress_advice import ADVICE_BODY, _advisor
 
     store = ReplayStore()
-    advisor, _ = _advisor({"suggest_sos": True})
+    advisor, model = _advisor({"suggest_sos": True})
     with TestClient(create_app(store=store, distress_advisor=advisor)) as client:
         replay_id = client.post("/api/replay/start").json()["replay"]["id"]
         aggregate = _fill_replay_trace(store, replay_id, 8)
         before = aggregate.state
         assert client.post(f"/api/replay/{replay_id}/distress", json=BODY).status_code == 409
-        assert client.post(f"/api/replay/{replay_id}/distress/advice", json=ADVICE_BODY).status_code == 409
+        # F6: trace capacity is checked before the model; at capacity the advice degrades to the
+        # deterministic fallback (no trace needed) without calling Gemini or spending its budget.
+        response = client.post(f"/api/replay/{replay_id}/distress/advice", json=ADVICE_BODY)
+        assert response.status_code == 200, response.text
+        assert response.json()["advice"]["mode"] == "DETERMINISTIC_FALLBACK"
+        assert response.json()["advice"]["reason_code"] == "TRACE_CAPACITY"
+        assert model.calls == []
+        assert advisor._budget.lifetime_calls == 0
         assert aggregate.state.distress_reports == before.distress_reports
         assert len(aggregate.state.trace) == len(before.trace)
         assert client.get(f"/api/replay/{replay_id}").status_code == 200
+
+
+def test_live_advice_at_trace_capacity_never_calls_the_model():
+    from test_distress_advice import ADVICE_BODY, _advisor
+
+    from agent_api.live import MAX_LIVE_TRACE_EVENTS
+    from test_live_location import _start, _store_and_client
+    from seventytwoh_contracts.models import AgentName, TraceEvent, TraceStatus
+
+    store, _ = _store_and_client()
+    advisor, model = _advisor({"suggest_sos": True})
+    client = TestClient(create_app(live_store=store, distress_advisor=advisor))
+    sid = _start(client)["session_id"]
+    from uuid import UUID
+    aggregate = store._get_aggregate(UUID(sid))
+    state = aggregate.state
+    padding = tuple(
+        TraceEvent(id=f"trace_pad_{i:03d}", situation_id=state.situation.id, timestamp=state.current_time,
+                   agent=AgentName.SAFETY_CORE, event_type="TEST_PADDING", input_refs=(), output_refs=(),
+                   status=TraceStatus.SUCCESS, public_summary="padding")
+        for i in range(MAX_LIVE_TRACE_EVENTS - 8 - len(state.trace))
+    )
+    aggregate.state = replace(state, trace=(*state.trace, *padding))
+    response = client.post(f"/api/live/{sid}/distress/advice", json=ADVICE_BODY)
+    assert response.status_code == 200, response.text
+    assert response.json()["advice"]["reason_code"] == "TRACE_CAPACITY"
+    assert model.calls == [] and advisor._budget.lifetime_calls == 0
 
 
 def _disabled_advisor():

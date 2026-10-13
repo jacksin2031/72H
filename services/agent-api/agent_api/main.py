@@ -44,7 +44,9 @@ from .live import (
     LiveSessionCapacityReached,
     LiveSessionNotFound,
     LiveStore,
+    MAX_LIVE_TRACE_EVENTS,
 )
+from .domain import MAX_TRACE
 from .planner import CandidatePlanner
 from .drill import DrillRequest
 from .drill_store import DrillStore
@@ -112,10 +114,13 @@ def create_app(
         reported = any(t == DistressTag.ROUTE_BLOCKED_REPORTED for r in snapshot.distress.reports for t in r.tags)
         return reported or bool((request.route_blocked_hint or "").strip())
 
-    async def _advise(session_id: UUID, snapshot, request: AdviceRequest):
+    async def _advise(session_id: UUID, snapshot, request: AdviceRequest, max_trace: int):
+        # F6: check trace capacity before the model so a session that cannot record the
+        # outcome never spends the shared Gemini budget (same headroom as the stores).
         return await advisor.advise(str(session_id), request, level=snapshot.distress.level,
                                     tags=_confirmed_tags(snapshot), user_signal=_user_signal(snapshot, request),
-                                    exclusion_signal=_exclusion_signal(snapshot, request))
+                                    exclusion_signal=_exclusion_signal(snapshot, request),
+                                    trace_capacity=len(snapshot.trace) < max_trace - 8)
 
     @application.exception_handler(RequestValidationError)
     async def validation_handler(request, exc: RequestValidationError):
@@ -300,7 +305,7 @@ def create_app(
     async def replay_distress_advice(session_id: UUID, request: AdviceRequest) -> dict:
         try:
             snapshot = replay_store.get(session_id)
-            applied = await _advise(session_id, snapshot, request)
+            applied = await _advise(session_id, snapshot, request, MAX_TRACE)
             if applied.raised_level and not replay_store.record_ai_escalation(session_id):
                 applied = escalation_skipped(applied)
             snapshot = replay_store.record_advice_trace(session_id, applied)
@@ -314,7 +319,7 @@ def create_app(
     async def live_distress_advice(session_id: UUID, request: AdviceRequest) -> dict:
         try:
             snapshot = live_session_store.get(session_id)
-            applied = await _advise(session_id, snapshot, request)
+            applied = await _advise(session_id, snapshot, request, MAX_LIVE_TRACE_EVENTS)
             if applied.raised_level and not await live_session_store.record_ai_escalation(session_id):
                 applied = escalation_skipped(applied)
             snapshot = await live_session_store.record_advice_trace(session_id, applied)
@@ -415,7 +420,7 @@ def create_app(
     ) -> dict:
         try:
             snapshot = isolated_mock_live.get(session_id).snapshot
-            applied = await _advise(session_id, snapshot, request)
+            applied = await _advise(session_id, snapshot, request, MAX_LIVE_TRACE_EVENTS)
             if applied.raised_level and not await isolated_mock_live.record_ai_escalation(session_id):
                 applied = escalation_skipped(applied)
             result = await isolated_mock_live.record_advice_trace(session_id, applied)
