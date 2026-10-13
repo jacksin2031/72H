@@ -12,6 +12,7 @@
 
 ## Global Constraints
 
+- **AI 只提出建議，目的是提高使用者的存活機會**（使用者原話）。畫面上 AI 產生或影響的內容（排序、排除、強調、建議開啟 SOS）一律標示「AI 建議」；主要指示的文字和等級只來自 Safety Core 與本機的確定性規則。
 - 不對稱授權：AI 只能讓結果更保守；等級 2 只能由 `VERIFIED_OFFICIAL`、`CURRENT`、無衝突的 JMA 海嘯證據觸發（`MAJOR_WARNING` 或 `WARNING`）。
 - 使用者回報一律是 `USER_REPORTED`，永遠不能單獨支持「前往某地」。
 - 精確 GPS 不上傳；送給 AI 的資料只包含公開的場所 ID、名稱、四捨五入的步行分鐘數和標籤。
@@ -2002,7 +2003,7 @@ git commit -m "feat(web): user-triggered SOS with call, prefilled message, alarm
 5. 快照的 `distress.synthetic===true`：顯示「演習」標籤。
 6. 等級改變時，`speechSynthesis.speak` 被呼叫一次；同一個等級重新 render 時不會再唸；按「重播」會再唸一次；按「關閉朗讀」之後不會再唸。
 7. `shouldPinSos` 為 true 時，`SosPanel` 會被放在主要指示**上方**。
-8. advice 回傳 `excluded:['emergency_site:NEAR']` 時，主要指示改成下一個候選；回傳 `DETERMINISTIC_FALLBACK` 時保持原本的排序，並顯示「AI 建議無法使用」的小字。
+8. advice 回傳 `excluded:['emergency_site:NEAR']` 時，主要指示改成下一個候選，旁邊顯示「AI 建議」標示；回傳 `DETERMINISTIC_FALLBACK` 時保持原本的排序，並顯示「AI 建議無法使用」的小字。
 
 - [ ] **Step 2: 執行測試，確認會失敗**
 
