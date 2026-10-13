@@ -27,6 +27,8 @@ PROTECTIVE_TAGS = frozenset({
 # OFFICIAL_STALE may use an older GPS fix than the live trigger (2 min): the person is
 # very likely still in the same area, and the result is only protective vertical shelter.
 STALE_LOCATION_MAX_AGE = timedelta(minutes=30)
+# Every user area path ends at the nationwide ancestor; a "JP" assessment is not area-specific.
+NATIONWIDE_AREA_ID = "JP"
 STALE_TRUST = frozenset({TrustStatus.VERIFIED_OFFICIAL, TrustStatus.STALE})
 SUPERSEDING_STATUSES = frozenset({DisasterEventStatus.ACTIVE, DisasterEventStatus.RESOLVED})
 
@@ -100,6 +102,7 @@ def official_tsunami_trigger(state: CoreState, now: datetime, policy: SafetyPoli
             if (
                 assessment.event_type != DisasterEventType.TSUNAMI
                 or assessment.status != DisasterEventStatus.ACTIVE
+                or assessment.area_id == NATIONWIDE_AREA_ID
                 or assessment.area_id not in user_areas
                 or assessment.tsunami_warning_class not in TRIGGER_CLASSES
             ):
@@ -149,6 +152,7 @@ def official_stale_trigger(state: CoreState, now: datetime, policy: SafetyPolicy
         for assessment in evidence.disaster_assessments:
             if (
                 assessment.event_type != DisasterEventType.TSUNAMI
+                or assessment.area_id == NATIONWIDE_AREA_ID
                 or assessment.area_id not in user_areas
                 or assessment.status not in SUPERSEDING_STATUSES
             ):

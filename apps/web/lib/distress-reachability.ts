@@ -17,6 +17,7 @@ function haversine(a:{lat:number;lng:number},b:{lat:number;lng:number}){
  const h=Math.sin(dLat/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLng/2)**2;
  return 2*6_371_008.8*Math.asin(Math.min(1,Math.sqrt(h)));
 }
+const GRAPH_NOT_APPLICABLE:ReadonlySet<string>=new Set(['OUTSIDE_PACK_BOUNDS','INVALID_GRAPH','ORIGIN_TOO_FAR_FROM_ROAD','DESTINATION_TOO_FAR_FROM_ROAD','SAME_GRAPH_NODE']);
 const inBounds=(p:{lat:number;lng:number})=>p.lat>=EVACUATION_ROAD_BOUNDS.south&&p.lat<=EVACUATION_ROAD_BOUNDS.north&&p.lng>=EVACUATION_ROAD_BOUNDS.west&&p.lng<=EVACUATION_ROAD_BOUNDS.east;
 
 export function resolveTsunamiGuidance(input:{origin:{lat:number;lng:number;accuracy_m:number|null}|null;deadlineAt:number;now:number;
@@ -40,8 +41,9 @@ export function resolveTsunamiGuidance(input:{origin:{lat:number;lng:number;accu
    const road=findEvacuationRoadCandidates(input.graph,origin,s);
    const best=road.candidates[0];
    if(best){distance=best.distance_m+best.origin_gap_m+best.destination_gap_m;viaRoad=true;}
-   // Graph applies but says no walkable path: never fall back to optimistic straight-line.
-   else if(road.reason==='DISCONNECTED_GRAPH'||road.reason==='IMPLAUSIBLE_DISTANCE')return null;
+   // Only an allow-listed "graph not applicable" reason falls back to the straight-line estimate; any other
+   // reason (no walkable path, implausible path, or one added later) is treated as unreachable.
+   else if(!road.reason||!GRAPH_NOT_APPLICABLE.has(road.reason))return null;
   }
   distance+=penalty;
   return {place_id:s.id,name:s.name,distance_m:distance,walk_seconds:distance/speed,via_road:viaRoad};

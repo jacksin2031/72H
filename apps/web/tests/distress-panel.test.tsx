@@ -305,3 +305,32 @@ it('keeps SOS pinned on this device for a critical report\'s 60-minute lifetime,
   const expired=await mount(props({now:NOW+60*60_000}));
   expect(pinnedAbove(expired.host)).toBe(false);
 });
+it('asks the AI only after the distress report POST has completed, with its tags',async()=>{
+  nav({});let release!:(r:Response)=>void;
+  const fetchMock=vi.fn((url:string,_i?:RequestInit)=>url==='/api/replay/r1/distress'?new Promise<Response>(r=>{release=r;}):Promise.resolve(json(advice({}))));
+  vi.stubGlobal('fetch',fetchMock);
+  const base=props();const {host,rerender}=await mount(base);
+  await act(async()=>button(host,tags.TRAPPED)!.click());await act(async()=>button(host,t.send)!.click());
+  await settle();
+  expect(fetchMock.mock.calls.filter(c=>String(c[0]).endsWith('/advice'))).toHaveLength(0);
+  const reports=[{id:'d1',tags:['TRAPPED' as DistressTag],input_mode:'BUTTON' as const,reported_at:new Date(NOW).toISOString(),source:'USER_REPORTED' as const}];
+  await act(async()=>{release(json({ok:true}));});
+  await rerender({...base,snapshot:{distress:status({level:'USER_REPORTED',reports}),replay:{id:'r1'}}});
+  await vi.waitFor(()=>expect(fetchMock.mock.calls.filter(c=>String(c[0]).endsWith('/advice'))).toHaveLength(1));
+});
+it('level 1 for a trapped person: call for help, stay protected, move up only if water rises',async()=>{
+  nav({onLine:false});vi.stubGlobal('fetch',vi.fn());
+  const reports=[{id:'d1',tags:['TRAPPED' as DistressTag],input_mode:'BUTTON' as const,reported_at:new Date(NOW).toISOString(),source:'USER_REPORTED' as const}];
+  const {host}=await mount(props({snapshot:{distress:status({level:'USER_REPORTED',reports}),replay:{id:'r1'}}}));
+  expect(primary(host).textContent).toContain(t.verticalTrapped);
+  expect(t.verticalTrapped).toContain('求救');
+});
+it('shows the exercise label at every level for replay and mock-live, never for live',async()=>{
+  nav({onLine:false});vi.stubGlobal('fetch',vi.fn());
+  let {host}=await mount(props());
+  expect(host.querySelector('[data-testid="distress-exercise"]')?.textContent).toBe(t.exercise);
+  ({host}=await mount(props({scope:'mock-live',snapshot:{distress:status(),session_id:'m1'}})));
+  expect(host.querySelector('[data-testid="distress-exercise"]')).toBeTruthy();
+  ({host}=await mount(props({scope:'live',now:undefined,snapshot:{distress:status(),session_id:'l1'}})));
+  expect(host.querySelector('[data-testid="distress-exercise"]')).toBeNull();
+});

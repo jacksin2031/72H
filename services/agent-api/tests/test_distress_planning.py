@@ -149,3 +149,13 @@ def test_synthetic_official_trigger_is_blocked_not_substituted():
     action = _now_action(planned)
     assert action.intent_id == SafeIntentId.TSUNAMI_EVACUATE_NOW
     assert action.safety_decision == SafetyDecision.BLOCK
+
+
+def test_trapped_level_one_asks_for_help_and_moves_up_only_if_water_rises():
+    for language, needle in ((Language.TRADITIONAL_CHINESE, "求救"), (Language.JAPANESE, "助けを求め"), (Language.ENGLISH, "Call for help")):
+        before = base_state(NOW)
+        before = replace(before, profile=before.profile.model_copy(update={"preferred_language": language}))
+        trapped = _now_action(evaluate_and_replan(before, record_distress_report(before, (DistressTag.TRAPPED,), "BUTTON", NOW), Clock(), DEFAULT_POLICY))
+        assert trapped.intent_id == SafeIntentId.SHELTER_IN_PLACE_VERTICAL and needle in trapped.text
+        plain = _now_action(evaluate_and_replan(before, record_distress_report(before, (DistressTag.WATER_RISING,), "BUTTON", NOW), Clock(), DEFAULT_POLICY))
+        assert needle not in plain.text

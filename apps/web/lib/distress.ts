@@ -60,7 +60,7 @@ export function formatClock(at:number):string{
 }
 /** Copy for primary distress instructions. Never promises safety; route text is a candidate, not a verdict. */
 export const distressText={
- 'zh-TW':{vertical:'現在往上走／往高處去，遠離水。',verticalNow:'立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）',goTo:'立刻前往 {name}',
+ 'zh-TW':{vertical:'現在往上走／往高處去，遠離水。',verticalNow:'立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）',goTo:'立刻前往 {name}（官方指定海嘯避難場所）',verticalTrapped:'請求救，留在可以保護自己的地方；如果水在上升，就往高處移動。',
   roadCandidateNotice:'這是道路候選路線，沿途狀況未經確認。',exercise:'演練／模擬',aiSuggestion:'AI 建議',aiUnavailable:'AI 暫時無法使用，以下為內建指引。',
   countdown:'剩餘時間',speak:'朗讀',mute:'靜音',replay:'重播',chooseSituation:'請選擇你現在的狀況',confirm:'確認',record:'錄音',stopRecording:'停止錄音',typeInstead:'改用文字輸入',
   offlineReason:'目前離線，顯示的是上次確認的資訊。',
@@ -69,7 +69,7 @@ export const distressText={
   reasonNoTime:'海嘯預估抵達時間已到或已過。',reasonNoLocation:'沒有可靠的目前位置。',reasonNoReachable:'在預估抵達時間前走不到任何指定場所。',reasonNoSites:'這個範圍沒有指定緊急避難場所資料。',reasonExcludedByReport:'依你回報的封路，AI 建議排除可到達的指定場所。',
   officialSites:'查看官方指定避難場所',pendingTags:'AI 判讀的狀況（請勾選正確的項目）',analyze:'讓 AI 判讀',moreDetails:'更多細節',otherCandidates:'其他候選場所',sosSuggested:'建議求救',lastReport:'已回報',
   basis:'依據：氣象廳 {warning} · 發布 {time}',warningMajor:'大津波警報',warningWarning:'津波警報',staleNotice:'官方資料已超過有效時間，最後確認 {time}'},
- ja:{vertical:'今すぐ上の階・高い場所へ。水から離れてください。',verticalNow:'今すぐ頑丈な建物の3階以上か高台へ移動（指定の場所には間に合いません）',goTo:'今すぐ {name} へ',
+ ja:{vertical:'今すぐ上の階・高い場所へ。水から離れてください。',verticalNow:'今すぐ頑丈な建物の3階以上か高台へ移動（指定の場所には間に合いません）',goTo:'今すぐ {name} へ（公式指定の津波避難場所）',verticalTrapped:'助けを求め、身を守れる場所にとどまってください。水が上がってきたら高い所へ移動してください。',
   roadCandidateNotice:'道路の候補です。途中の状況は未確認です。',exercise:'訓練／模擬',aiSuggestion:'AIの提案',aiUnavailable:'AIを利用できません。内蔵の案内を表示しています。',
   countdown:'残り時間',speak:'読み上げ',mute:'消音',replay:'もう一度',chooseSituation:'今の状況を選んでください',confirm:'確認',record:'録音',stopRecording:'録音を停止',typeInstead:'文字で入力',
   offlineReason:'オフラインです。最後に確認した情報を表示しています。',
@@ -78,7 +78,7 @@ export const distressText={
   reasonNoTime:'津波の到達予想時刻になった、または過ぎました。',reasonNoLocation:'信頼できる現在地がありません。',reasonNoReachable:'到達予想時刻までに歩いて行ける指定場所がありません。',reasonNoSites:'この範囲の指定緊急避難場所データがありません。',reasonExcludedByReport:'あなたが報告した通行止めにより、AIは到達できる指定場所を除外するよう提案しています。',
   officialSites:'公式の指定避難場所を見る',pendingTags:'AIが判定した状況（正しいものにチェック）',analyze:'AIで判定',moreDetails:'詳細',otherCandidates:'ほかの候補',sosSuggested:'救助要請をおすすめ',lastReport:'報告済み',
   basis:'根拠：気象庁 {warning} · 発表 {time}',warningMajor:'大津波警報',warningWarning:'津波警報',staleNotice:'公式情報の有効時間を過ぎています。最終確認 {time}'},
- en:{vertical:'Move up / to high ground now, away from water.',verticalNow:'Move now to the 3rd floor or higher of a solid building, or to high ground (you cannot reach a designated site in time).',goTo:'Go now to {name}',
+ en:{vertical:'Move up / to high ground now, away from water.',verticalNow:'Move now to the 3rd floor or higher of a solid building, or to high ground (you cannot reach a designated site in time).',goTo:'Go now to {name} (officially designated tsunami site)',verticalTrapped:'Call for help and stay where you can protect yourself. If water is rising, move higher.',
   roadCandidateNotice:'Road candidate; conditions along the way are unverified.',exercise:'Exercise / simulated',aiSuggestion:'AI suggestion',aiUnavailable:'AI is unavailable. Showing built-in guidance.',
   countdown:'Time left',speak:'Read aloud',mute:'Mute',replay:'Replay',chooseSituation:'Choose your situation',confirm:'Confirm',record:'Record',stopRecording:'Stop recording',typeInstead:'Type instead',
   offlineReason:'You are offline. Showing the last verified information.',

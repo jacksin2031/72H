@@ -16,6 +16,7 @@ from seventytwoh_contracts.models import (
     DisasterEventStatus,
     DistressLevel,
     DistressStatus,
+    DistressTag,
     Evidence,
     EvidenceProjection,
     FreshnessStatus,
@@ -1216,6 +1217,28 @@ _STALE_WORDS = {
 }
 
 
+_STALE_PREFIX = {
+    "ja": "公式の津波警報の情報が有効時間を過ぎました（取り消しは確認されていません）。",
+    "en": "The official tsunami warning data has expired (no cancellation was received).",
+    "zh-TW": "官方海嘯警報資料已超過有效時間（未收到解除）。",
+}
+# Level-1 vertical guidance for a person who reported TRAPPED: they may not be able to move.
+_TRAPPED_WORDS = {
+    "ja": (
+        "助けを求め、身を守れる場所にとどまってください。水が上がってきたら高い所へ移動してください。",
+        "閉じ込められていると報告されました。助けを求め、身を守れる場所にとどまってください。水が上がってきたら高い所へ移動してください。",
+    ),
+    "en": (
+        "Call for help and stay where you can protect yourself. If water is rising, move higher.",
+        "You reported being trapped. Call for help and stay where you can protect yourself. If water is rising, move higher.",
+    ),
+    "zh-TW": (
+        "請求救，留在可以保護自己的地方；如果水在上升，就往高處移動。",
+        "你回報受困。請求救，留在可以保護自己的地方；如果水在上升，就往高處移動。",
+    ),
+}
+
+
 def _distress_action(
     state: CoreState,
     plan_id: str,
@@ -1233,7 +1256,12 @@ def _distress_action(
             raise ValueError("OFFICIAL_TSUNAMI distress requires a current official trigger")
         key = disaster_claim_key(trigger.area_id, "TSUNAMI", "status")
     language = state.profile.preferred_language.value
-    if distress.level == DistressLevel.OFFICIAL_STALE and not official:
+    trapped = any(DistressTag.TRAPPED in report.tags for report in distress.reports)
+    if not official and trapped:
+        text, reason = _TRAPPED_WORDS[language]
+        if distress.level == DistressLevel.OFFICIAL_STALE:
+            reason = _STALE_PREFIX[language] + (" " if language == "en" else "") + reason
+    elif distress.level == DistressLevel.OFFICIAL_STALE and not official:
         text, reason = _STALE_WORDS[language]
     else:
         text, reason = _DISTRESS_WORDS[intent][language]

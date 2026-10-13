@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useMemo,useRef,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import type {DistressTag,Language} from '../lib/contracts';
 import {NET119_URL,buildSosMessage,smsHref,sosText} from '../lib/distress';
 import type {SosProfile} from '../lib/emergency-contacts';
@@ -68,17 +68,19 @@ export function SosPanel({language,profile,tags,location,pinned}:{language:Langu
    setFlashOn(true);setFlashing(true);
   }
  };
- const message=useMemo(()=>buildSosMessage({language,tags,lat:location?.lat??null,lng:location?.lng??null,accuracy_m:location?.accuracy_m??null,at:Date.now()}),[language,tags,location]);
+ // Built at tap time so the message carries when the person asked for help, not when the panel rendered.
+ const buildMessage=()=>buildSosMessage({language,tags,lat:location?.lat??null,lng:location?.lng??null,accuracy_m:location?.accuracy_m??null,at:Date.now()});
+ const message=buildMessage();
  const phones=profile.contacts.map(c=>c.phone);
  const canShare=typeof navigator!=='undefined'&&typeof navigator.share==='function';
- const share=()=>{void navigator.share({text:message}).catch(()=>{/* user cancelled */});};
+ const share=()=>{void navigator.share({text:buildMessage()}).catch(()=>{/* user cancelled */});};
  return <section className={`sos-panel${pinned?' pinned':''}`} aria-labelledby="sos-title">
   <h2 id="sos-title">{t.title}</h2>
   <div className="sos-actions">
    <a className="button primary" href="tel:119">{t.call119}</a>
    <a className="button primary" href="tel:110">{t.call110}</a>
    {phones.length>0
-    ?<a className="button" href={smsHref(phones,message)}>{t.message}</a>
+    ?<a className="button" href={smsHref(phones,message)} onClick={e=>{e.currentTarget.href=smsHref(phones,buildMessage());}}>{t.message}</a>
     :canShare?<button type="button" onClick={share}>{t.share}</button>
     :<pre className="sos-message">{message}</pre>}
    {active

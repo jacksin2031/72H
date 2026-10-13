@@ -107,3 +107,11 @@ def test_critical_report_signature_is_stable_until_its_one_time_expiry():
     first = distress_signature(state, NOW, DEFAULT_POLICY)
     assert distress_signature(state, NOW + timedelta(minutes=30), DEFAULT_POLICY) == first
     assert distress_signature(state, NOW + timedelta(minutes=60), DEFAULT_POLICY) != first
+
+
+def test_nationwide_jp_assessment_never_triggers_or_goes_stale():
+    selected = base_state(NOW, source=LocationSource.USER_SELECTED)
+    state = with_claim(tsunami_evidence(selected, TsunamiWarningClass.MAJOR_WARNING, None, area_id="JP"))
+    assert official_tsunami_trigger(state, NOW, DEFAULT_POLICY) is None
+    assert resolve_distress(state, NOW, DEFAULT_POLICY).level == DistressLevel.NONE
+    assert resolve_distress(state, NOW + timedelta(hours=2), DEFAULT_POLICY).level == DistressLevel.NONE

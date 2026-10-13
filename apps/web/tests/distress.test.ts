@@ -35,3 +35,8 @@ it('stamps the SOS message with device-local time, a timezone label and no milli
   expect(m).toContain(`Time: ${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())} (UTC`);
   expect(m).toMatch(/\(UTC[+-]\d{2}:\d{2}\)/);expect(m).not.toContain('.123');expect(m).not.toContain('Z\n');
 });
+it('names the go-to target as an officially designated tsunami site in every language',()=>{
+  expect(distressText['zh-TW'].goTo).toBe('立刻前往 {name}（官方指定海嘯避難場所）');
+  expect(distressText.ja.goTo).toBe('今すぐ {name} へ（公式指定の津波避難場所）');
+  expect(distressText.en.goTo).toBe('Go now to {name} (officially designated tsunami site)');
+});

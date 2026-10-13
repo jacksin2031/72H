@@ -69,6 +69,7 @@ export function DistressPanel(p:DistressPanelProps){
  // Past trigger_expires_at an OFFICIAL_TSUNAMI snapshot (e.g. cached offline) is shown as OFFICIAL_STALE: never "go to a site".
  const distress=degradeExpiredOfficial(rawDistress,now);
  const verifiedAt=p.snapshot?.situation?.latest_evidence_at??p.snapshot?.situation?.updated_at??null;
+ const serverTags=useMemo(()=>distress.reports.flatMap(r=>r.tags),[distress.reports]);
  const reported=useMemo(()=>unique([...distress.reports.flatMap(r=>r.tags),...localTags]),[distress.reports,localTags]);
  const level=effectiveDistressLevel(distress.level,localTags);
  const canAi=online&&!!sessionId&&!(p.scope==='mock-live'&&!p.accessKey);
@@ -107,7 +108,7 @@ export function DistressPanel(p:DistressPanelProps){
  const others=gemini?orderCandidates(deterministic.slice(1),gemini.candidate_order):deterministic.slice(1);
  const othersByAi=!!gemini&&gemini.candidate_order.length>0&&others.length>0;
  const kind=level==='NONE'?'NONE':guidance===null?'VERTICAL':guidance==='PENDING'?'PENDING':guidance.kind;
- const primaryText=kind==='NONE'?t.chooseSituation:kind==='GO_TO_SITE'&&first?t.goTo.replace('{name}',first.name):kind==='VERTICAL_NOW'?t.verticalNow:t.vertical;
+ const primaryText=kind==='NONE'?t.chooseSituation:kind==='GO_TO_SITE'&&first?t.goTo.replace('{name}',first.name):kind==='VERTICAL_NOW'?t.verticalNow:reported.includes('TRAPPED')?t.verticalTrapped:t.vertical;
  const aiInfluenced=!!gemini&&level==='OFFICIAL_TSUNAMI'&&guidance!=='PENDING'&&guidance!==null
   &&excluded.length>0;
  const officialLevel=distress.level==='OFFICIAL_TSUNAMI'||distress.level==='OFFICIAL_STALE';
@@ -135,6 +136,8 @@ export function DistressPanel(p:DistressPanelProps){
  // AI advice: once per (session, level, confirmed tags, hint), after deterministic candidates exist. The server decides any level raise.
  useEffect(()=>{
   if(level==='NONE'||!canAi||!sessionId||guidance==='PENDING')return;
+  // Wait for the report POST so the server has the person's tags and signal; never spend budget on an empty request.
+  if(busy||localTags.some(tag=>!serverTags.includes(tag)))return;
   const id=`${sessionId}|${level}|${[...reported].sort().join(',')}|${hint??''}`;
   if(requested.current.has(id))return;requested.current.add(id);
   void requestAdvice(p.scope,sessionId,{language:p.language,candidates:guidance?adviceCandidates(guidance):[],route_blocked_hint:hint},p.accessKey).then(res=>{
@@ -176,7 +179,7 @@ export function DistressPanel(p:DistressPanelProps){
  </>;
 
  return <section className="distress-panel" aria-label={t.chooseSituation}>
-  {distress.synthetic&&<p className="distress-exercise" data-testid="distress-exercise">{t.exercise}</p>}
+  {(distress.synthetic||p.scope!=='live')&&<p className="distress-exercise" data-testid="distress-exercise">{t.exercise}</p>}
   {!online&&<p className="distress-offline" role="status">{t.offlineReason}{verifiedAt&&<span data-testid="distress-last-verified"> {t.lastVerified}: {new Date(verifiedAt).toLocaleString(p.language)}</span>}</p>}
   {pinned&&sos}
   <div className="distress-primary" data-testid="distress-primary">

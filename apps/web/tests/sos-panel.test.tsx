@@ -73,3 +73,18 @@ it('offline: dial and alarm stay available, Net119 says it needs a network',asyn
  expect(host.querySelector('a[href="tel:119"]')).not.toBeNull();expect(button(host,t.alarm).disabled).toBe(false);
  expect(host.textContent).toContain(t.needsNetwork);
 });
+it('stamps the SOS message with the tap time, not the render time',async()=>{
+ vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(Date.parse('2026-10-13T08:00:00Z'));
+ const share=vi.fn(async(_d:{text:string})=>{});nav({share});
+ const host=await mount({contacts:[],needsAssistance:false,mobilityLimited:false});
+ vi.setSystemTime(Date.parse('2026-10-13T08:07:00Z'));
+ await act(async()=>button(host,t.share).click());
+ const d=new Date(Date.parse('2026-10-13T08:07:00Z')),p=(n:number)=>String(n).padStart(2,'0');
+ expect(share.mock.calls[0][0].text).toContain(`${p(d.getHours())}:${p(d.getMinutes())}:00`);
+ vi.setSystemTime(Date.parse('2026-10-13T08:09:00Z'));
+ const sms=await mount();const link=sms.querySelector<HTMLAnchorElement>('a[href^="sms:"]')!;
+ vi.setSystemTime(Date.parse('2026-10-13T08:12:00Z'));
+ await act(async()=>{link.addEventListener('click',e=>e.preventDefault());link.click();});
+ const at=new Date(Date.parse('2026-10-13T08:12:00Z'));
+ expect(decodeURIComponent(link.getAttribute('href')!)).toContain(`${p(at.getHours())}:${p(at.getMinutes())}:00`);
+});
