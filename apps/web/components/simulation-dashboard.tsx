@@ -148,7 +148,8 @@ function Playback({ config }: { config: SimulationLaunch }) {
   };
   return <SimulationScreens config={config} phase={phase} tab={tab} setTab={setTab}
     time={time} speed={speed} state={state} done={done}
-    processing={processing} error={error} leave={leave} />;
+    processing={processing} error={error} leave={leave}
+    onState={next => setState(prev => !prev || (prev.snapshot.session_id === next.snapshot.session_id && next.current_step >= prev.current_step) ? next : prev)} />;
 }
 
 export function SimulationDashboard() {

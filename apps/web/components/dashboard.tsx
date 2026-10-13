@@ -17,6 +17,8 @@ import { useDeviceLocation } from '@/lib/use-device-location';
 import { DeviceLocationControls } from './device-location';
 import { ScenarioPicker } from './scenario-picker';
 import {PlanExplanationPanel} from './plan-explanation-panel';
+import { DistressEntry } from './distress-entry';
+import { fixFromDevicePosition } from '@/lib/distress-guidance';
 import { useTheme } from '@/lib/use-theme';
 import { adaptiveMessages } from '@/lib/adaptive-i18n';
 
@@ -87,6 +89,17 @@ export function Dashboard({ view: initialView }: { view: string }) {
     }
     finally { requestPending.current = false; setBusy(false); }
   }, [language, network]);
+
+  // Distress reports/advice return a full replay snapshot; adopt it only for the same session and never move backwards.
+  const adoptDistress = useCallback((raw: unknown) => {
+    const parsed = snapshotSchema.safeParse(raw), previous = envelope.current;
+    if (!parsed.success || !previous || parsed.data.replay.id !== previous.snapshot.replay.id
+      || parsed.data.replay.current_event_index < previous.snapshot.replay.current_event_index) return;
+    const state = parsed.data;
+    const nextEnvelope: CacheEnvelope = { ...previous, snapshot: state, saved_at: previous.snapshot.replay.current_time === state.replay.current_time ? previous.saved_at : Date.now() };
+    envelope.current = nextEnvelope; setSnapshot(state);
+    void saveSnapshot(nextEnvelope).then(() => setStorageError(false)).catch(() => setStorageError(true));
+  }, []);
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem('72h-language');
@@ -164,6 +177,7 @@ export function Dashboard({ view: initialView }: { view: string }) {
         {(['demo', 'plan', 'sources', 'trace'] as const).map(item => <button key={item} type="button" aria-current={view === item ? 'page' : undefined} onClick={() => setReviewView(item)}>{navLabels[item]}</button>)}
       </nav>}
       {error && <p className="error" role="alert">{error}</p>}
+      {view==='plan'&&snapshot&&<DistressEntry snapshot={snapshot} language={language} scope="replay" fix={fixFromDevicePosition(deviceLocation.position)} now={continuityTime} onSnapshot={adoptDistress} refreshLocation={deviceLocation.permissionGranted ? () => void deviceLocation.locate() : undefined} />}
       {view==='plan'&&snapshot&&battery.power.mode!=='SURVIVAL'&&<PlanExplanationPanel snapshot={snapshot} language={language} scope="replay" enabled={connection==='online'&&battery.power.allowNonCriticalNetwork}/>}
       {sessionMissing && <section className="offline-banner"><p>{t.sessionMissing}</p><button disabled={busy || !battery.power.allowNonCriticalNetwork} onClick={() => void update('start', { language })}>{t.newDemo}</button></section>}
       {storageError && <p className="error" role="alert">{t.storageError}</p>}

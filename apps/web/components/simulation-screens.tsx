@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from
 import type { Language } from '@/lib/contracts';
 import { jstInputFromEpoch } from '@/lib/historical-playback';
 import type { SimulationLaunch } from '@/lib/simulation-session';
-import type { MockLiveResponse } from '@/lib/mock-live-envelope';
+import { mockLiveResponseSchema, type MockLiveResponse } from '@/lib/mock-live-envelope';
+import { DistressEntry } from './distress-entry';
 import { UiIcon } from './ui-icon';
 import { SimulationReferenceMap } from './simulation-reference-map';
 import { SimulationRiskPanel } from './simulation-risk-panel';
@@ -71,9 +72,11 @@ type Props = {
   setTab: Dispatch<SetStateAction<SimulationSection>>;
   time: number; speed: number; state: MockLiveResponse | null;
   done: number; processing: boolean; error: string; leave: () => void;
+  /** Adopts a validated distress/advice response for the same exercise session. */
+  onState?: (next: MockLiveResponse) => void;
 };
 
-export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done,processing,error,leave}:Props) {
+export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done,processing,error,leave,onState}:Props) {
   const language:Language = config.language;
   const t=ui[language];
   const [eventDetail,setEventDetail]=useState<number|null>(null);
@@ -169,6 +172,9 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
       {tab==='plan'&&<section className="sim-v2-plan" data-testid="simulation-plan">
         <header className="sim-v2-page-title"><span>{t.actions}</span><small>{doneEvent?ai:t.pending}</small></header>
         <SimulationAdvicePanel advice={advice} executionMode={lastMode} language={language} cannotMove={config.input.mobility==='CANNOT_MOVE'} stale={Boolean(state?.movement_assessment&&!advice)}/>
+        {state&&<DistressEntry snapshot={state.snapshot} language={language} scope="mock-live" accessKey={config.accessKey}
+          fix={geo.location?{lat:geo.location.lat,lng:geo.location.lng,accuracy_m:geo.location.accuracy_m,captured_at:geo.location.captured_at,manual:geo.location.source==='MANUAL_EXERCISE'}:null}
+          onSnapshot={raw=>{const parsed=mockLiveResponseSchema.safeParse(raw);if(parsed.success&&parsed.data.snapshot.session_id===state.snapshot.session_id)onState?.(parsed.data);}}/>}
         {state&&<PlanExplanationPanel snapshot={state.snapshot} language={language} scope="mock-live" accessKey={config.accessKey} enabled={connected&&!processing&&phase!=='failed'&&config.input.network==='ONLINE'}/>}
         {(['NOW','NEXT','AVOID'] as const).map((category,i)=><section key={category} className="sim-v2-plan-step">
           <span className={`sim-v2-plan-index sim-v2-step-${category.toLowerCase()}`}>{i+1}</span>

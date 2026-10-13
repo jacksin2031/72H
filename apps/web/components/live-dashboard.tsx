@@ -17,7 +17,7 @@ import { useDeviceRole } from '@/lib/device-role';
 import { adaptiveMessages } from '@/lib/adaptive-i18n';
 import { liveMessages } from '@/lib/live-i18n';
 import { liveMoreMessages } from '@/lib/live-more-i18n';
-import { liveProfileSeedSchema, type Language, type LiveProfileSeed, type LiveSnapshot, type Location, type Snapshot } from '@/lib/contracts';
+import { liveProfileSeedSchema, liveSnapshotSchema, type Language, type LiveProfileSeed, type LiveSnapshot, type Location, type Snapshot } from '@/lib/contracts';
 import { clearProfileDraft, readProfileDraft, writeProfileDraft } from '@/lib/profile-draft';
 import { projectLocationPresentation } from '@/lib/location-presentation';
 import { loadLiveSnapshot, saveLiveSnapshot } from '@/lib/continuity';
@@ -32,6 +32,9 @@ import { AdaptiveHome } from './adaptive-home';
 import { EmergencyContactsSetup } from './emergency-contacts-setup';
 import { SOS_ONBOARDED_KEY, shouldShowSosSetup } from '@/lib/emergency-contacts';
 import { EmergencyMap } from './emergency-map';
+import { DistressEntry } from './distress-entry';
+import { fixFromDevicePosition } from '@/lib/distress-guidance';
+import { sosText } from '@/lib/distress';
 import { PowerControls } from './power-controls';
 import { DeviceLocationControls } from './device-location';
 import { AreaFallbackPicker, LocationOnboarding, type OnboardingLocation } from './location-onboarding';
@@ -828,6 +831,7 @@ export function LiveDashboard({ view }: { view: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [sessionLost, setSessionLost] = useState(false);
+  const [distressOpen, setDistressOpen] = useState(false);
   const [now, setNow] = useState(0);
   const [link, setLink] = useState<string | null>(null);
   const [check, setCheck] = useState(initialSafetyCheck);
@@ -1098,6 +1102,14 @@ export function LiveDashboard({ view }: { view: string }) {
   const deviceLocation = useDeviceLocation(connection === 'online', { powerMode: power.power.mode, routeActive: !!authorizedHomeMap });
   latestDevicePosition.current = deviceLocation.position;
 
+  // Distress report/advice responses: same session only, never older than what is shown.
+  const adoptDistress = useCallback((raw: unknown) => {
+    const parsed = liveSnapshotSchema.safeParse(raw), current = snapshotRef.current;
+    if (!parsed.success || !current || parsed.data.session_id !== current.session_id
+      || Date.parse(parsed.data.situation.updated_at) < Date.parse(current.situation.updated_at)) return;
+    store(parsed.data);
+  }, [store]);
+
   const setLocationGate = useCallback((next: LocationSyncState | null) => {
     locationSyncRef.current = next;
     setLocationSync(next);
@@ -1281,6 +1293,10 @@ export function LiveDashboard({ view }: { view: string }) {
       <label className="live-language">{messages.language}<select aria-label={messages.language} value={language} onChange={event => chooseLanguage(event.target.value as Language)}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option></select></label>
     </header>}
     <main className="live-main">
+      {/* Reachable in every presentation and power mode, including urgent takeovers and SURVIVAL. */}
+      <button type="button" className="distress-entry-button" aria-expanded={distressOpen} onClick={() => setDistressOpen(open => !open)}>{sosText[language].title}</button>
+      {distressOpen && <DistressEntry snapshot={snapshot} language={language} scope="live" fix={fixFromDevicePosition(deviceLocation.position)} onSnapshot={adoptDistress}
+        refreshLocation={deviceLocation.permissionGranted ? () => void deviceLocation.locate() : undefined} />}
       {error && <p className="error" role="alert">{error}</p>}
       {sessionLost && snapshot && !criticalMobileTakeover && <section className="session-loss-banner" role="status">
         <strong>{messages.sessionLost}</strong><p>{messages.lastVerified}: {displayTime(snapshot.situation.latest_evidence_at, language)}</p>
