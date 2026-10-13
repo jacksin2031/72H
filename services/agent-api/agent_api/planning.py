@@ -332,7 +332,12 @@ def evaluate_and_replan(
         None,
     )
     current_actions = _actions_for_plan(after, current_plan.id) if current_plan else ()
-    location_changed = before.profile.current_location != after.profile.current_location
+    # Only an area-scope or source change re-evaluates the plan. A same-area GPS refresh
+    # (new observed_at / lat / lng) must not invalidate HIGH actions or append plan
+    # versions; spatial dependencies that need coordinates are checked separately below.
+    location_changed = _location_scope_changed(
+        before.profile.current_location, after.profile.current_location
+    )
     profile_context_changed = any(
         getattr(before.profile, field) != getattr(after.profile, field)
         for field in (
@@ -818,6 +823,10 @@ def _evaluate_plan(
         reason=reason[:240],
         invalid_action_ids=tuple(sorted(set(invalid))),
     )
+
+
+def _location_scope_changed(before, after) -> bool:
+    return before.area_ids != after.area_ids or before.source != after.source
 
 
 def _spatial_dependency_changed(
