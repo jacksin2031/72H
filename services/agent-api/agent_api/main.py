@@ -48,6 +48,7 @@ from .mock_live import MockLiveDrillStore, MockLiveResponse, MockLiveRequest
 from .historical_cases import list_historical_cases
 from .place_opening import PlaceOpeningStore, PlaceOpeningResponse
 from .explanation import ExplanationRequest, ExplanationResponse, ExplanationService
+from .distress_extract import DistressExtractor, ExtractRequest, ExtractResponse
 
 
 def create_app(
@@ -57,6 +58,7 @@ def create_app(
     mock_live_store: MockLiveDrillStore | None = None,
     place_opening_store: PlaceOpeningStore | None = None,
     explanation_service: ExplanationService | None = None,
+    distress_extractor: DistressExtractor | None = None,
 ) -> FastAPI:
     if store is None and live_store is None:
         # Preserve one process-wide Gemini/ADK call budget across replay and live.
@@ -81,6 +83,11 @@ def create_app(
     explanation_engine = explanation_service or ExplanationService()
     application.state.explanation_service = explanation_engine
     opening_store = place_opening_store or PlaceOpeningStore()
+    extractor = distress_extractor or DistressExtractor()
+
+    @application.post("/api/distress/extract", response_model=ExtractResponse)
+    async def distress_extract(request: ExtractRequest) -> ExtractResponse:
+        return await extractor.extract(request)
 
     @application.get('/api/reference/place-opening/{partition}', response_model=PlaceOpeningResponse)
     def place_opening(partition: str) -> PlaceOpeningResponse:
