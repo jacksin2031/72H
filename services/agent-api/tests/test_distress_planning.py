@@ -100,3 +100,52 @@ def test_distress_text_follows_preferred_language_without_safety_guarantees():
         assert needle in action.text or needle in action.reason
         for banned in ("保證安全", "guaranteed safe", "安全を保証"):
             assert banned not in action.text and banned not in action.reason
+
+
+def _tick_plan_counts(state, ticks=6, step_seconds=10):
+    counts = []
+    for _ in range(ticks):
+        later = replace(state, current_time=state.current_time + timedelta(seconds=step_seconds))
+        state = evaluate_and_replan(state, later, Clock(), DEFAULT_POLICY)
+        counts.append(len(state.plans))
+    return counts
+
+
+def test_tsunami_trigger_with_unknown_arrival_does_not_replan_every_tick():
+    before = base_state(NOW)
+    warned = evaluate_and_replan(before, with_claim(tsunami_evidence(before, TsunamiWarningClass.MAJOR_WARNING, None)), Clock(), DEFAULT_POLICY)
+    assert _now_action(warned).intent_id == SafeIntentId.TSUNAMI_EVACUATE_NOW
+    assert _tick_plan_counts(warned) == [len(warned.plans)] * 6
+
+
+def test_tsunami_trigger_with_arrival_inside_margin_does_not_replan_every_tick():
+    before = base_state(NOW)
+    warned = evaluate_and_replan(before, with_claim(tsunami_evidence(before, TsunamiWarningClass.WARNING, NOW + timedelta(minutes=2))), Clock(), DEFAULT_POLICY)
+    assert _now_action(warned).intent_id == SafeIntentId.TSUNAMI_EVACUATE_NOW
+    assert _tick_plan_counts(warned) == [len(warned.plans)] * 6
+
+
+def test_tsunami_cancellation_after_ticks_still_replans():
+    before = base_state(NOW)
+    warned = evaluate_and_replan(before, with_claim(tsunami_evidence(before, TsunamiWarningClass.WARNING, None)), Clock(), DEFAULT_POLICY)
+    later = replace(warned, current_time=NOW + timedelta(seconds=30))
+    ticked = evaluate_and_replan(warned, later, Clock(), DEFAULT_POLICY)
+    cancelled_state = replace(ticked, evidence=(), situation=ticked.situation.model_copy(update={"claim_states": ()}))
+    cancelled = evaluate_and_replan(ticked, cancelled_state, Clock(), DEFAULT_POLICY)
+    assert len(cancelled.plans) == len(ticked.plans) + 1
+    assert _now_action(cancelled).intent_id != SafeIntentId.TSUNAMI_EVACUATE_NOW
+
+
+def test_synthetic_official_trigger_is_blocked_not_substituted():
+    from agent_api.distress import resolve_distress
+    from seventytwoh_contracts.models import DistressLevel
+    before = base_state(NOW)
+    state = tsunami_evidence(before, TsunamiWarningClass.MAJOR_WARNING, NOW + timedelta(minutes=20))
+    synthetic = state.evidence[-1].model_copy(update={"is_synthetic": True})
+    state = with_claim(replace(state, evidence=(*state.evidence[:-1], synthetic)))
+    status = resolve_distress(state, NOW, DEFAULT_POLICY)
+    assert status.level == DistressLevel.OFFICIAL_TSUNAMI and status.synthetic is True
+    planned = evaluate_and_replan(before, state, Clock(), DEFAULT_POLICY)
+    action = _now_action(planned)
+    assert action.intent_id == SafeIntentId.TSUNAMI_EVACUATE_NOW
+    assert action.safety_decision == SafetyDecision.BLOCK

@@ -108,9 +108,14 @@ def resolve_distress(state: CoreState, now: datetime, policy: SafetyPolicy) -> D
 
 
 def distress_signature(state: CoreState, now: datetime, policy: SafetyPolicy) -> tuple:
+    """Stable change-detection key. Never include values derived from `now` (e.g. deadline_at):
+    those change every tick and would append a new plan version on every clock advance."""
     status = resolve_distress(state, now, policy)
-    return (status.level, status.trigger_evidence_ids, status.deadline_at,
-            tuple(sorted({tag for report in status.reports for tag in report.tags})))
+    trigger = official_tsunami_trigger(state, now, policy)
+    trigger_key = (trigger.area_id, trigger.warning_class, trigger.arrival_at) if trigger is not None else None
+    return (status.level, status.trigger_evidence_ids, trigger_key,
+            tuple(sorted({tag for report in status.reports for tag in report.tags})),
+            status.ai_escalated)
 
 
 def record_distress_report(state: CoreState, tags, input_mode: str, now: datetime) -> CoreState:

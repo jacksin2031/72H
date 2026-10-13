@@ -81,3 +81,10 @@ def test_report_history_is_bounded_and_preserved_in_order():
         state = record_distress_report(state, (DistressTag.INJURED,), "BUTTON", NOW + timedelta(minutes=minute))
     assert len(state.distress_reports) == 16
     assert state.distress_reports[-1].reported_at == NOW + timedelta(minutes=19)
+
+
+def test_signature_is_stable_over_time_for_unknown_or_imminent_arrival():
+    for arrival in (None, NOW + timedelta(minutes=2), NOW - timedelta(minutes=1)):
+        state = with_claim(tsunami_evidence(base_state(NOW), TsunamiWarningClass.WARNING, arrival))
+        signatures = {distress_signature(state, NOW + timedelta(seconds=10 * tick), DEFAULT_POLICY) for tick in range(6)}
+        assert len(signatures) == 1
