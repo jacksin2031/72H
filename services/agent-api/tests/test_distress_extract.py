@@ -41,7 +41,7 @@ def test_injection_or_unknown_tags_never_pass():
     assert result.tags == () and result.mode == "UNAVAILABLE" and result.reason_code == "INVALID_OUTPUT"
 
 
-def test_free_prose_hint_is_truncated_and_cannot_add_fields():
+def test_extra_fields_in_model_reply_are_rejected():
     extractor, _ = _extractor({"tags": ["TRAPPED"], "route_blocked_hint": "x" * 500, "level": "OFFICIAL_TSUNAMI"})
     result = asyncio.run(extractor.extract(ExtractRequest(session_id="s1", language=Language.ENGLISH, text="stuck")))
     assert result.mode == "UNAVAILABLE"
@@ -77,3 +77,21 @@ def test_endpoint_validates_payload():
         ok = client.post("/api/distress/extract", json={"session_id": "s1", "language": "en", "text": "stuck"})
         assert ok.status_code == 200 and ok.json()["tags"] == ["TRAPPED"]
         assert client.post("/api/distress/extract", json={"session_id": "s1", "language": "en"}).status_code == 422
+
+
+def test_overlong_hint_is_invalid_output():
+    extractor, _ = _extractor({"tags": ["TRAPPED"], "route_blocked_hint": "x" * 81})
+    result = asyncio.run(extractor.extract(ExtractRequest(session_id="s1", language=Language.ENGLISH, text="stuck")))
+    assert result.mode == "UNAVAILABLE" and result.reason_code == "INVALID_OUTPUT"
+
+
+def test_422_never_echoes_input():
+    big = base64.b64encode(b"0" * 1_000_001).decode()
+    secret_text = "my-private-words-xyz"
+    with TestClient(create_app(distress_extractor=_extractor({"tags": ["TRAPPED"], "route_blocked_hint": None})[0])) as client:
+        r1 = client.post("/api/distress/extract", json={"session_id": "s1", "language": "en", "audio_base64": big, "audio_mime": "audio/webm"})
+        r2 = client.post("/api/distress/extract", json={"session_id": "s1", "language": "en", "text": secret_text, "audio_base64": "AAAA", "audio_mime": "audio/webm"})
+    assert r1.status_code == 422 and r2.status_code == 422
+    assert big[:100] not in r1.text and secret_text not in r2.text
+    for r in (r1, r2):
+        assert all(set(e) <= {"loc", "msg", "type"} for e in r.json()["detail"])

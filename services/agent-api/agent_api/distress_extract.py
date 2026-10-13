@@ -78,11 +78,22 @@ class ExtractionModel(Protocol):
 
 
 class VertexExtractionModel:
-    async def generate(self, parts, config):
+    def __init__(self) -> None:
+        self._clients: dict[tuple[object, object], object] = {}
+
+    def _client(self, config):
         from google.genai import Client, types
 
-        client = Client(vertexai=True, project=config.project, location=config.location,
-                        http_options=types.HttpOptions(retry_options=types.HttpRetryOptions(attempts=1)))
+        key = (config.project, config.location)
+        if key not in self._clients:
+            self._clients[key] = Client(vertexai=True, project=config.project, location=config.location,
+                                        http_options=types.HttpOptions(retry_options=types.HttpRetryOptions(attempts=1)))
+        return self._clients[key]
+
+    async def generate(self, parts, config):
+        from google.genai import types
+
+        client = self._client(config)
         contents = [types.Part(text=p) if isinstance(p, str) else types.Part.from_bytes(data=p[1], mime_type=p[0]) for p in parts]
         response = await client.aio.models.generate_content(
             model=config.model, contents=contents,

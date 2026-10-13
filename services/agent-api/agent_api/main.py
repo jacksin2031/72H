@@ -6,6 +6,9 @@ from uuid import UUID
 import os
 import secrets
 
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi import Body, Depends, FastAPI, HTTPException, Header, status
 from seventytwoh_contracts.models import (
     ApiVersion,
@@ -84,6 +87,14 @@ def create_app(
     application.state.explanation_service = explanation_engine
     opening_store = place_opening_store or PlaceOpeningStore()
     extractor = distress_extractor or DistressExtractor()
+
+    @application.exception_handler(RequestValidationError)
+    async def validation_handler(request, exc: RequestValidationError):
+        if request.url.path != "/api/distress/extract":
+            return await request_validation_exception_handler(request, exc)
+        # Never echo `input` or `ctx`: they can contain the user's words or audio.
+        detail = [{"loc": list(e.get("loc", ())), "msg": str(e.get("msg", "invalid")), "type": str(e.get("type", "invalid"))} for e in exc.errors()]
+        return JSONResponse(status_code=422, content={"detail": detail})
 
     @application.post("/api/distress/extract", response_model=ExtractResponse)
     async def distress_extract(request: ExtractRequest) -> ExtractResponse:
