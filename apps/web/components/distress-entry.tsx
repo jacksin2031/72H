@@ -9,6 +9,8 @@ import {loadEvacuationRoadGraph,type RoadGraphPack} from '../lib/evacuation-road
 import {DistressPanel,type DistressSnapshot} from './distress-panel';
 
 export type DistressFix={lat:number;lng:number;accuracy_m:number|null;captured_at:number;manual?:boolean}|null;
+/** Below LIVE_LOCATION_MS (2 min) so a fresh fix normally arrives before the current one expires. */
+export const LOCATION_REFRESH_MS=90_000;
 const EMPTY:SosProfile={contacts:[],needsAssistance:false,mobilityLimited:false};
 
 /** Loads device-local assets once (place pack, road graph only for a tsunami level, SOS profile) and freshness-checks the fix.
@@ -36,6 +38,13 @@ export function DistressEntry({snapshot,language,scope,accessKey,fix,onSnapshot,
  const location=usableDistressOrigin(fix,wall);
  // One fresh fix per opening when permission was already granted; never prompts on its own.
  useEffect(()=>{if(!location&&refreshLocation&&!asked.current){asked.current=true;refreshLocation();}},[location,refreshLocation]);
+ // During a tsunami level, keep the origin fresh so "go to X" does not flip to NO_LOCATION mid-walk.
+ const refreshRef=useRef(refreshLocation);refreshRef.current=refreshLocation;
+ useEffect(()=>{
+  if(!tsunami)return;
+  const id=setInterval(()=>refreshRef.current?.(),LOCATION_REFRESH_MS);
+  return()=>clearInterval(id);
+ },[tsunami]);
  return <DistressPanel snapshot={snapshot} language={language} scope={scope} accessKey={accessKey} location={location}
   places={places} graph={tsunami?graph:null} sosProfile={profile} onSnapshot={onSnapshot} now={now}/>;
 }

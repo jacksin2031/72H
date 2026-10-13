@@ -79,6 +79,7 @@ it('records at most 30 s, releases the mic, and only reports AI tags after the p
   expect(boxes.every(b=>!b.checked)).toBe(true);
   expect(fetchMock.mock.calls.filter(c=>String(c[0]).endsWith('/distress'))).toHaveLength(0);
   expect(JSON.parse(String(fetchMock.mock.calls[0][1]!.body)).audio_mime).toBe('audio/webm');
+  expect(host.textContent).not.toContain(t.analyzing);
   for(const b of boxes)await act(async()=>b.click());
   await act(async()=>button(host,t.confirm)!.click());
   const report=fetchMock.mock.calls.find(c=>c[0]==='/api/replay/r1/distress');
@@ -176,4 +177,64 @@ it('does not ask the AI for advice at level NONE, and reports buttons online wit
   expect(JSON.parse(String(report[1]!.body))).toEqual({tags:['TRAPPED'],input_mode:'BUTTON'});
   // TRAPPED pins SOS above the instruction immediately, even before the server answers.
   expect(host.querySelector('.sos-panel')!.compareDocumentPosition(primary(host))&Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
+it('shows a microphone-unavailable line when permission is denied',async()=>{
+  nav({mediaDevices:{getUserMedia:vi.fn(async()=>{throw new DOMException('no','NotAllowedError');})}});
+  vi.stubGlobal('MediaRecorder',class{});vi.stubGlobal('fetch',vi.fn());
+  const {host}=await mount(props());
+  await act(async()=>button(host,t.record)!.click());await settle();
+  expect(host.textContent).toContain(t.micUnavailable);
+});
+
+it('announces only the instruction; the countdown is a silent timer',async()=>{
+  nav({});vi.stubGlobal('fetch',vi.fn(async()=>json({},503)));
+  const {host}=await mount(props({snapshot:{distress:tsunami(15),replay:{id:'r1'}}}));
+  await vi.waitFor(()=>expect(primary(host).textContent).toContain('測試場所NEAR'));
+  expect(primary(host).getAttribute('aria-live')).toBeNull();
+  expect(host.querySelector('.distress-primary-text')!.getAttribute('aria-live')).toBe('assertive');
+  const timer=host.querySelector('.distress-countdown')!;
+  expect(timer.getAttribute('role')).toBe('timer');expect(timer.getAttribute('aria-live')).toBe('off');
+});
+
+it('never lets a slow device clock add time: live uses the server time as a floor',async()=>{
+  vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(NOW-5*60_000);
+  nav({});vi.stubGlobal('fetch',vi.fn(async()=>json({},503)));
+  const {host}=await mount(props({scope:'live',now:undefined,
+    snapshot:{distress:tsunami(15),session_id:'l1',situation:{updated_at:new Date(NOW).toISOString(),latest_evidence_at:null}}}));
+  await vi.waitFor(()=>expect(primary(host).textContent).toContain('測試場所NEAR'));
+  expect(primary(host).textContent).toContain('15:00');expect(primary(host).textContent).not.toContain('20:00');
+});
+
+it('keeps the previous instruction while recomputing after the origin moves (no computing flash)',async()=>{
+  nav({});vi.stubGlobal('fetch',vi.fn(async()=>json({},503)));
+  const base=props({snapshot:{distress:tsunami(15),replay:{id:'r1'}}});
+  const {host,rerender}=await mount(base);
+  await vi.waitFor(()=>expect(primary(host).textContent).toContain('測試場所NEAR'));
+  vi.useFakeTimers({toFake:['setTimeout','clearTimeout']});
+  await rerender({...base,location:{lat:38.4302,lng:141.3,accuracy_m:10}});
+  expect(primary(host).textContent).not.toContain(t.computing);
+  expect(primary(host).textContent).toContain('測試場所NEAR');
+  await act(async()=>{vi.advanceTimersByTime(5);});
+  vi.useRealTimers();
+  expect(primary(host).textContent).toContain('測試場所NEAR');
+});
+
+it('gives the right reason when online without a session, shows analyzing, AI-heard and last-verified offline',async()=>{
+  nav({});vi.stubGlobal('fetch',vi.fn());
+  let {host}=await mount(props({snapshot:null}));
+  expect(host.textContent).toContain(t.noSession);expect(host.textContent).not.toContain(t.voiceNeedsNetwork);
+  let release!:(r:Response)=>void;
+  vi.stubGlobal('fetch',vi.fn((url:string)=>url==='/api/distress/extract'?new Promise<Response>(r=>{release=r;}):Promise.resolve(json({},503))));
+  ({host}=await mount(props()));
+  const area=host.querySelector('textarea')!;
+  await act(async()=>{const set=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value')!.set!;set.call(area,'水が来た');area.dispatchEvent(new Event('input',{bubbles:true}));});
+  await act(async()=>button(host,t.analyze)!.click());
+  expect(host.textContent).toContain(t.analyzing);
+  await act(async()=>{release(json({tags:['WATER_RISING'],route_blocked_hint:'橋が落ちた',mode:'GEMINI',reason_code:null}));});
+  await vi.waitFor(()=>expect(host.textContent).toContain(`${t.aiHeard}「橋が落ちた」`));
+  expect(host.textContent).not.toContain(t.analyzing);
+  nav({onLine:false});
+  ({host}=await mount(props({snapshot:{distress:status(),replay:{id:'r1'},situation:{updated_at:new Date(NOW).toISOString(),latest_evidence_at:new Date(NOW-60_000).toISOString()}}})));
+  expect(host.querySelector('[data-testid="distress-last-verified"]')?.textContent).toContain(t.lastVerified);
 });

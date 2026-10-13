@@ -21,6 +21,12 @@ export function applyDeadline(reach:TsunamiGuidance,deadlineAt:number,now:number
  const candidates=reach.candidates.filter(c=>c.walk_seconds<=available);
  return candidates.length?{kind:'GO_TO_SITE',candidates,deadlineAt}:{kind:'VERTICAL_NOW',reason:'NO_REACHABLE_SITE',deadlineAt};
 }
+/** Removes excluded sites from a reach result (used when reusing a previous result while recomputing). */
+export function dropExcluded(reach:TsunamiGuidance,excluded:readonly string[]):TsunamiGuidance{
+ if(reach.kind!=='GO_TO_SITE'||!excluded.length)return reach;
+ const out=new Set(excluded),candidates=reach.candidates.filter(c=>!out.has(c.place_id));
+ return candidates.length?{...reach,candidates}:{kind:'VERTICAL_NOW',reason:'NO_REACHABLE_SITE',deadlineAt:reach.deadlineAt};
+}
 /** ~11 m position buckets; accuracy is rounded up (never more optimistic than measured). */
 export function roundOrigin(o:DistressOrigin|null):DistressOrigin|null{
  if(!o)return null;
@@ -42,6 +48,13 @@ export function usableDistressOrigin(fix:{lat:number;lng:number;accuracy_m:numbe
 }
 export function fixFromDevicePosition(p:{latitude:number;longitude:number;accuracy_m:number;captured_at:number}|null){
  return p?{lat:p.latitude,lng:p.longitude,accuracy_m:p.accuracy_m,captured_at:p.captured_at}:null;
+}
+/** Deadline clock for live / mock-live: the server time is a floor and device time elapsed since receipt is added,
+ * so a slow device clock can never add time. `serverAt` = snapshot server timestamp, `receivedAt` = device time when it was first seen. */
+export function skewedNow(wall:number,serverAt:number|null,receivedAt:number|null):number{
+ if(serverAt===null||!Number.isFinite(serverAt))return wall;
+ const elapsed=receivedAt!==null&&Number.isFinite(receivedAt)?Math.max(0,wall-receivedAt):0;
+ return Math.max(wall,serverAt+elapsed);
 }
 /** Floors: never shows more time than remains. */
 export function formatCountdown(ms:number):string{

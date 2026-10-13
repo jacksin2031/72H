@@ -5,15 +5,15 @@ import type {DistressStatus,DistressTag,Language} from '../lib/contracts';
 import type {DesignatedPlace} from '../lib/designated-places';
 import {distressText,emphasisText,shouldPinSos,tagText} from '../lib/distress';
 import {extractDistress,reportDistress,requestAdvice,type AppliedAdvice,type DistressInputMode,type DistressScope} from '../lib/distress-api';
-import {applyDeadline,effectiveDistressLevel,formatCountdown,orderCandidates,reachFor,reachKey,roundOrigin,speechLang,type DistressOrigin} from '../lib/distress-guidance';
-import {adviceCandidates,type TsunamiGuidance} from '../lib/distress-reachability';
+import {applyDeadline,dropExcluded,effectiveDistressLevel,formatCountdown,orderCandidates,reachFor,reachKey,roundOrigin,skewedNow,speechLang,type DistressOrigin} from '../lib/distress-guidance';
+import {adviceCandidates,DISTRESS_PARAMS,type TsunamiGuidance} from '../lib/distress-reachability';
 import type {SosProfile} from '../lib/emergency-contacts';
 import type {RoadGraphPack} from '../lib/evacuation-road-graph';
 import {useDistressRecorder} from '../lib/use-distress-recorder';
 import {SosPanel} from './sos-panel';
 import './distress.css';
 
-export type DistressSnapshot={distress:DistressStatus;session_id?:string;replay?:{id:string}}|null;
+export type DistressSnapshot={distress:DistressStatus;session_id?:string;replay?:{id:string};situation?:{updated_at:string;latest_evidence_at?:string|null}}|null;
 export type DistressPanelProps={snapshot:DistressSnapshot;language:Language;scope:DistressScope;accessKey?:string;
  /** Already freshness-checked device origin, or null. */
  location:DistressOrigin|null;
@@ -24,7 +24,7 @@ export type DistressPanelProps={snapshot:DistressSnapshot;language:Language;scop
  sosProfile:SosProfile;
  /** Raw server JSON; the caller parses it with its scope's snapshot schema. */
  onSnapshot:(raw:unknown)=>void;
- /** Logical clock (replay / exercise). Defaults to the device clock. */
+ /** Logical clock (replay). Otherwise the device clock, floored by the snapshot's server time. */
  now?:number};
 const TAGS:readonly DistressTag[]=['WATER_RISING','TRAPPED','INJURED','MOBILITY_LIMITED','WITH_DEPENDENTS','LOST_NO_DESTINATION','ROUTE_BLOCKED_REPORTED'];
 const NONE:DistressStatus={level:'NONE',reports:[],trigger_evidence_ids:[],deadline_at:null,ai_escalated:false,synthetic:false};
@@ -51,7 +51,7 @@ export function DistressPanel(p:DistressPanelProps){
  const [wall,setWall]=useState(()=>Date.now());
  const [selected,setSelected]=useState<DistressTag[]>([]),[localTags,setLocalTags]=useState<DistressTag[]>([]);
  const [pending,setPending]=useState<{tags:DistressTag[];checked:DistressTag[];mode:'VOICE'|'TEXT'}|null>(null);
- const [hint,setHint]=useState<string|null>(null),[notice,setNotice]=useState<string|null>(null),[text,setText]=useState(''),[busy,setBusy]=useState(false);
+ const [hint,setHint]=useState<string|null>(null),[notice,setNotice]=useState<string|null>(null),[text,setText]=useState(''),[busy,setBusy]=useState(false),[analyzing,setAnalyzing]=useState(false);
  const [speechOn,setSpeechOn]=useState(readSpeech);
  const [advice,setAdvice]=useState<{session:string;value:AppliedAdvice|null}|null>(null);
  const alive=useRef(true),requested=useRef(new Set<string>()),spoken=useRef<string|null>(null),onSnapshot=useRef(p.onSnapshot);onSnapshot.current=p.onSnapshot;
@@ -61,7 +61,11 @@ export function DistressPanel(p:DistressPanelProps){
   window.addEventListener('online',on);window.addEventListener('offline',off);
   return()=>{alive.current=false;clearInterval(tick);window.removeEventListener('online',on);window.removeEventListener('offline',off);};
  },[]);
- const now=p.now??wall;
+ // A slow device clock must never add time: server time is a floor (live / mock-live).
+ const serverAt=p.snapshot?.situation?Date.parse(p.snapshot.situation.updated_at):NaN,received=useRef<{at:number;wall:number}|null>(null);
+ if(Number.isFinite(serverAt)&&received.current?.at!==serverAt)received.current={at:serverAt,wall:Date.now()};
+ const now=p.now??skewedNow(wall,Number.isFinite(serverAt)?serverAt:null,received.current?.wall??null);
+ const verifiedAt=p.snapshot?.situation?.latest_evidence_at??p.snapshot?.situation?.updated_at??null;
  const reported=useMemo(()=>unique([...distress.reports.flatMap(r=>r.tags),...localTags]),[distress.reports,localTags]);
  const level=effectiveDistressLevel(distress.level,localTags);
  const canAi=online&&!!sessionId&&!(p.scope==='mock-live'&&!p.accessKey);
@@ -74,17 +78,22 @@ export function DistressPanel(p:DistressPanelProps){
  const origin=roundOrigin(p.location);
  const key=deadlineAt!==null&&p.places!==null&&p.graph!==undefined?reachKey(origin,reported,excluded):null;
  const cache=useMemo(()=>new Map<string,TsunamiGuidance>(),[p.places,p.graph]);
- const [reach,setReach]=useState<{key:string;cache:Map<string,TsunamiGuidance>;value:TsunamiGuidance}|null>(null);
+ const tagsKey=[...reported].sort().join(',');
+ const [reach,setReach]=useState<{key:string;tagsKey:string;cache:Map<string,TsunamiGuidance>;value:TsunamiGuidance}|null>(null);
  useEffect(()=>{
   if(!key||!p.places)return;
   const hit=cache.get(key);
-  if(hit){setReach({key,cache,value:hit});return;}
+  if(hit){setReach({key,tagsKey,cache,value:hit});return;}
   const places=p.places,graph=p.graph??null;
-  return defer(()=>{const value=reachFor({origin,tags:reported,places,graph,excluded});cache.set(key,value);if(alive.current)setReach({key,cache,value});});
+  return defer(()=>{const value=reachFor({origin,tags:reported,places,graph,excluded});cache.set(key,value);if(alive.current)setReach({key,tagsKey,cache,value});});
  // `key` encodes origin, tags and excluded.
  // eslint-disable-next-line react-hooks/exhaustive-deps
  },[key,cache]);
- const reachValue=reach&&reach.key===key&&reach.cache===cache?reach.value:null;
+ // While recomputing after a move or a new exclusion, keep the previous result (same places/graph, same tags, usable fix),
+ // with current exclusions removed, so the instruction does not flash. Tag changes (e.g. slower walking) always wait.
+ const exact=reach&&reach.key===key&&reach.cache===cache?reach.value:null;
+ const reuse=!exact&&!!key&&!!reach&&reach.cache===cache&&reach.tagsKey===tagsKey&&!!origin&&origin.accuracy_m!==null&&origin.accuracy_m<=DISTRESS_PARAMS.maxAccuracyM;
+ const reachValue=exact??(reuse&&reach?dropExcluded(reach.value,excluded):null);
  const guidance=deadlineAt===null?null:reachValue?applyDeadline(reachValue,deadlineAt,now)
   :deadlineAt<=now?applyDeadline({kind:'VERTICAL_NOW',reason:'NO_TIME',deadlineAt},deadlineAt,now):'PENDING' as const;
  const ordered=guidance&&guidance!=='PENDING'&&guidance.kind==='GO_TO_SITE'?(gemini?orderCandidates(guidance.candidates,gemini.candidate_order):guidance.candidates):[];
@@ -131,8 +140,8 @@ export function DistressPanel(p:DistressPanelProps){
  };
  const analyze=async(input:{text?:string;audio?:Blob},mode:'VOICE'|'TEXT')=>{
   if(!canAi||!sessionId)return;
-  setBusy(true);setNotice(null);const r=await extractDistress({sessionId,language:p.language,...input});
-  if(!alive.current)return;setBusy(false);
+  setBusy(true);setAnalyzing(true);setNotice(null);const r=await extractDistress({sessionId,language:p.language,...input});
+  if(!alive.current)return;setBusy(false);setAnalyzing(false);
   if(!r||(!r.tags.length&&!r.hint)){setNotice(t.extractFailed);return;}
   setPending({tags:r.tags,checked:[],mode});setHint(r.hint);
  };
@@ -150,12 +159,12 @@ export function DistressPanel(p:DistressPanelProps){
 
  return <section className="distress-panel" aria-label={t.chooseSituation}>
   {distress.synthetic&&<p className="distress-exercise" data-testid="distress-exercise">{t.exercise}</p>}
-  {!online&&<p className="distress-offline" role="status">{t.offlineReason}</p>}
+  {!online&&<p className="distress-offline" role="status">{t.offlineReason}{verifiedAt&&<span data-testid="distress-last-verified"> {t.lastVerified}: {new Date(verifiedAt).toLocaleString(p.language)}</span>}</p>}
   {pinned&&sos}
-  <div className="distress-primary" data-testid="distress-primary" aria-live="assertive">
-   <p className="distress-primary-text">{primaryText}{aiInfluenced&&<span className="distress-ai" data-testid="distress-ai-label">{t.aiSuggestion}</span>}</p>
+  <div className="distress-primary" data-testid="distress-primary">
+   <p className="distress-primary-text" aria-live="assertive">{primaryText}{aiInfluenced&&<span className="distress-ai" data-testid="distress-ai-label">{t.aiSuggestion}</span>}</p>
    {kind==='GO_TO_SITE'&&first&&<p>{t.walkMeta.replace('{min}',String(Math.ceil(first.walk_seconds/60))).replace('{m}',String(Math.round(first.distance_m)))}</p>}
-   {deadlineAt!==null&&deadlineAt>now&&<p className="distress-countdown">{t.countdown} <strong>{formatCountdown(deadlineAt-now)}</strong></p>}
+   {deadlineAt!==null&&deadlineAt>now&&<p className="distress-countdown" role="timer" aria-live="off">{t.countdown} <strong>{formatCountdown(deadlineAt-now)}</strong></p>}
    {kind==='GO_TO_SITE'&&<p>{t.roadCandidateNotice}</p>}
    {kind==='PENDING'&&<p>{t.computing}</p>}
    {reason&&<p>{reason}</p>}
@@ -175,8 +184,10 @@ export function DistressPanel(p:DistressPanelProps){
   <div className="distress-voice">
    {recorder.recording
     ?<button type="button" className="danger" onClick={recorder.stop}>{t.stopRecording}</button>
-    :<button type="button" disabled={!canAi||busy} onClick={()=>void recorder.start()}>{t.record}</button>}
-   {!canAi&&<small>{t.voiceNeedsNetwork}</small>}
+    :<button type="button" disabled={!canAi||busy||recorder.starting} onClick={()=>void recorder.start()}>{t.record}</button>}
+   {!online?<small>{t.voiceNeedsNetwork}</small>:!canAi?<small>{t.noSession}</small>:null}
+   {recorder.failed&&<small role="status">{t.micUnavailable}</small>}
+   {analyzing&&<small role="status">{t.analyzing}</small>}
   </div>
   <details className="distress-type"><summary>{t.typeInstead}</summary>
    <textarea maxLength={500} value={text} onChange={e=>setText(e.target.value)} aria-label={t.typeInstead}/>
@@ -186,7 +197,7 @@ export function DistressPanel(p:DistressPanelProps){
   {pending&&<fieldset className="distress-pending"><legend>{t.pendingTags}</legend>
    {pending.tags.map(tag=><label key={tag}><input type="checkbox" checked={pending.checked.includes(tag)}
     onChange={()=>setPending(v=>v&&{...v,checked:v.checked.includes(tag)?v.checked.filter(x=>x!==tag):[...v.checked,tag]})}/> {tt[tag]}</label>)}
-   {hint&&<p>{t.youSaid}「{hint}」</p>}
+   {hint&&<p>{t.aiHeard}「{hint}」</p>}
    <button type="button" className="distress-send" disabled={busy||!unique([...selected,...pending.checked]).length} onClick={confirm}>{t.confirm}</button>
   </fieldset>}
   {!pinned&&sos}

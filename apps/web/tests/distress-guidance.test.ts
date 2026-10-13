@@ -46,3 +46,18 @@ it('formats the countdown, derives a local level floor, and maps speech language
   expect(effectiveDistressLevel('OFFICIAL_TSUNAMI',[])).toBe('OFFICIAL_TSUNAMI');
   expect([speechLang('ja'),speechLang('en'),speechLang('zh-TW')]).toEqual(['ja-JP','en-US','zh-TW']);
 });
+import {skewedNow} from '../lib/distress-guidance';
+it('uses the server clock as a floor and never lets a slow device clock add time',()=>{
+  const server=NOW,received=NOW-300_000;// device was 5 min behind when the snapshot arrived
+  expect(skewedNow(NOW-300_000,server,received)).toBe(NOW);
+  expect(skewedNow(NOW-240_000,server,received)).toBe(NOW+60_000);
+  expect(skewedNow(NOW+10_000,server,NOW+10_000)).toBe(NOW+10_000);
+  expect(skewedNow(NOW,null,null)).toBe(NOW);
+});
+import {dropExcluded} from '../lib/distress-guidance';
+it('drops excluded sites from a reused result and falls back to vertical when none remain',()=>{
+  const c=(id:string)=>({place_id:id,name:id,distance_m:1,walk_seconds:1,via_road:false});
+  const g={kind:'GO_TO_SITE' as const,candidates:[c('a'),c('b')],deadlineAt:1};
+  expect(dropExcluded(g,['a'])).toEqual({...g,candidates:[c('b')]});
+  expect(dropExcluded(g,['a','b'])).toEqual({kind:'VERTICAL_NOW',reason:'NO_REACHABLE_SITE',deadlineAt:1});
+});
