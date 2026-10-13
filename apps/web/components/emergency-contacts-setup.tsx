@@ -1,5 +1,5 @@
 'use client';
-import {useRef,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import type {Language} from '../lib/contracts';
 import {sosText} from '../lib/distress';
 import {SOS_ONBOARDED_KEY,saveSosProfile,validateContact,type EmergencyContact} from '../lib/emergency-contacts';
@@ -10,17 +10,24 @@ export function EmergencyContactsSetup({language,onDone}:{language:Language;onDo
  const t=sosText[language];
  const [rows,setRows]=useState([0,1,2].map(()=>({name:'',phone:''})));
  const [mobility,setMobility]=useState(false),[assist,setAssist]=useState(false),[failed,setFailed]=useState(false);
- const playing=useRef(false);
+ const alarm=useRef<{ctx:AudioContext;osc:OscillatorNode;timer:ReturnType<typeof setTimeout>}|null>(null);
  const filled=rows.filter(r=>r.name.trim()||r.phone.trim());
  const canSave=filled.every(r=>validateContact(r));
  const update=(i:number,key:'name'|'phone',value:string)=>setRows(prev=>prev.map((r,j)=>j===i?{...r,[key]:value}:r));
+ const stopAlarm=()=>{
+  const a=alarm.current;if(!a)return;alarm.current=null;clearTimeout(a.timer);
+  try{a.osc.stop();}catch{/* already stopped */}
+  try{void a.ctx.close();}catch{/* already closed */}
+ };
+ useEffect(()=>stopAlarm,[]);
  const testAlarm=()=>{
-  if(playing.current)return;
+  if(alarm.current)return;
+  const Ctor=(globalThis as unknown as {AudioContext?:typeof AudioContext}).AudioContext;if(!Ctor)return;
+  let ctx:AudioContext|null=null;
   try{
-   const Ctor=(globalThis as unknown as {AudioContext?:typeof AudioContext}).AudioContext;if(!Ctor)return;
-   const ctx=new Ctor(),osc=ctx.createOscillator();osc.frequency.value=880;osc.connect(ctx.destination);osc.start();playing.current=true;
-   setTimeout(()=>{try{osc.stop();void ctx.close();}catch{/* already stopped */}playing.current=false;},1000);
-  }catch{playing.current=false;}
+   ctx=new Ctor();const osc=ctx.createOscillator();osc.frequency.value=880;osc.connect(ctx.destination);
+   alarm.current={ctx,osc,timer:setTimeout(stopAlarm,1000)};osc.start();
+  }catch{stopAlarm();try{void ctx?.close();}catch{/* ignore */}}
  };
  const save=async()=>{
   const contacts=filled.map(validateContact).filter((c):c is EmergencyContact=>!!c);

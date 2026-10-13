@@ -30,7 +30,7 @@ import { mapCatalogSchema, verifyMapPack } from '@/lib/offline-map';
 import { requiredCachedPageAssets } from '@/lib/offline-readiness';
 import { AdaptiveHome } from './adaptive-home';
 import { EmergencyContactsSetup } from './emergency-contacts-setup';
-import { SOS_ONBOARDED_KEY } from '@/lib/emergency-contacts';
+import { SOS_ONBOARDED_KEY, shouldShowSosSetup } from '@/lib/emergency-contacts';
 import { EmergencyMap } from './emergency-map';
 import { PowerControls } from './power-controls';
 import { DeviceLocationControls } from './device-location';
@@ -635,13 +635,13 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
     {urgent && view !== 'dashboard' && <section className="emergency-takeover" role="status"><strong>{projection.primaryAction?.text || messages.emergency}</strong>
       <p>{projection.presentation.mode === 'MAP_ASSISTED' ? messages.mapLabel : messages.emergencyDetail}</p><Link href="/dashboard">{messages.home} →</Link>
     </section>}
-    {view === 'dashboard' && sosSetupOpen && !criticalProtection && <EmergencyContactsSetup language={language} onDone={() => setSosSetupOpen(false)} />}
     {view === 'dashboard' && <>
       {!locationGateOverride && snapshot.spatial_guidance.current_action_kind === 'EVACUATE' && !projection.mapGate && <p className="map-gate-notice" role="status">{messages.mapGateClosed}</p>}
       {locationGateOverride && <p className="location-sync-inline" role="status">{locationSync?.phase === 'pending' ? messages.locationSyncPending : messages.locationSyncFailed}</p>}
       <AdaptiveHome presentation={presentedState} snapshot={snapshot} language={language}
         networkState={projection.networkState} planStatus={projection.planStatus} notifications={notifications.length} actions={activeActions}
         mapSurface={mapSurface} checkControls={checkControls} powerMode={power.mode} location={deviceLocation} mapClosed={false} now={now} />
+      {shouldShowSosSetup({ view, open: sosSetupOpen, urgent, criticalProtection }) && <EmergencyContactsSetup language={language} onDone={() => setSosSetupOpen(false)} />}
     </>}
     {view === 'plan' && <section className="live-plan-scene"><h1>{messages.planReview}</h1>
       {planPanel !== 'current' && <button type="button" className="more-back" onClick={() => {

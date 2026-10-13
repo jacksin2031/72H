@@ -41,3 +41,15 @@ it('test alarm uses AudioContext and stops after about one second',async()=>{
  await act(async()=>{vi.advanceTimersByTime(1100);});
  expect(osc.stop).toHaveBeenCalledTimes(1);expect(ctx.close).toHaveBeenCalledTimes(1);
 });
+it('closes the audio context when unmounted mid-alarm and when start throws',async()=>{
+ vi.useFakeTimers();
+ const osc={frequency:{value:0},connect:vi.fn(),start:vi.fn(),stop:vi.fn()};
+ const ctx={createOscillator:vi.fn(()=>osc),destination:{},close:vi.fn(async()=>{})};
+ vi.stubGlobal('AudioContext',vi.fn(function(){return ctx;}));
+ const {host}=await mount();await act(async()=>button(host,'試播警報聲').click());
+ const m=mounted.pop()!;await act(async()=>m.root.unmount());m.host.remove();
+ expect(osc.stop).toHaveBeenCalledTimes(1);expect(ctx.close).toHaveBeenCalledTimes(1);
+ osc.start.mockImplementation(()=>{throw new Error('x');});ctx.close.mockClear();
+ const again=await mount();await act(async()=>button(again.host,'試播警報聲').click());
+ expect(ctx.close).toHaveBeenCalled();
+});

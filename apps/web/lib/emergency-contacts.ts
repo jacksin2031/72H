@@ -31,3 +31,7 @@ export async function saveSosProfile(p:SosProfile):Promise<boolean>{
  try{await storage.put({contacts,needsAssistance:!!p.needsAssistance,mobilityLimited:!!p.mobilityLimited});return true;}
  catch{return false;}
 }
+/** First-use setup must never compete with, or precede, urgent guidance. */
+export function shouldShowSosSetup(i:{view:string;open:boolean;urgent:boolean;criticalProtection:boolean}):boolean{
+ return i.view==='dashboard'&&i.open&&!i.urgent&&!i.criticalProtection;
+}
