@@ -23,18 +23,20 @@ def base_state(now: datetime, *, gps_observed_at: datetime | None = None, source
 
 
 def tsunami_evidence(state, warning_class, arrival_at, *, freshness=FreshnessStatus.CURRENT,
-                     trust=TrustStatus.VERIFIED_OFFICIAL, area_id="JP-04"):
+                     trust=TrustStatus.VERIFIED_OFFICIAL, area_id="JP-04", status=DisasterEventStatus.ACTIVE,
+                     evidence_id="ev_jma-tsunami-test", published_at=None, ttl=timedelta(hours=1)):
     from agent_api.live_sources import JMA_TSUNAMI_SOURCE_NAME
     from seventytwoh_contracts.models import Evidence
+    published = published_at or state.current_time
     template = Evidence.model_validate({
-        "id": "ev_jma-tsunami-test", "situation_id": state.situation.id, "source_key": "jma-tsunami",
+        "id": evidence_id, "situation_id": state.situation.id, "source_key": "jma-tsunami",
         "source_name": JMA_TSUNAMI_SOURCE_NAME, "source_class": SourceClass.OFFICIAL, "trust_status": trust,
-        "freshness_status": freshness, "published_at": state.current_time, "received_at": state.current_time,
-        "expires_at": state.current_time + timedelta(hours=1), "relevant_areas": ("宮城県",),
+        "freshness_status": freshness, "published_at": published, "received_at": published,
+        "expires_at": published + ttl, "relevant_areas": ("宮城県",),
         "affected_area_ids": (area_id,),
         "disaster_assessments": (DisasterAssessment(area_id=area_id, event_type=DisasterEventType.TSUNAMI,
-            status=DisasterEventStatus.ACTIVE, tsunami_warning_class=warning_class, arrival_at=arrival_at),),
-        "claim_type": "DISASTER_STATUS", "claims": ({"key": disaster_claim_key(area_id, "TSUNAMI", "status"), "value": "ACTIVE"},),
+            status=status, tsunami_warning_class=warning_class, arrival_at=arrival_at),),
+        "claim_type": "DISASTER_STATUS", "claims": ({"key": disaster_claim_key(area_id, "TSUNAMI", "status"), "value": status.value},),
         "summary": "test tsunami", "raw_reference": "https://www.data.jma.go.jp/test", "is_synthetic": False,
     })
     return replace(state, evidence=(*state.evidence, template))

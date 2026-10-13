@@ -1069,7 +1069,7 @@ def _new_action(
     if category == PlanActionCategory.NOW and distress is not None:
         if distress.level == DistressLevel.OFFICIAL_TSUNAMI:
             return _distress_action(state, plan_id, distress, SafeIntentId.TSUNAMI_EVACUATE_NOW, evidence_by_id, policy)
-        if distress.level == DistressLevel.USER_REPORTED:
+        if distress.level in {DistressLevel.USER_REPORTED, DistressLevel.OFFICIAL_STALE}:
             return _distress_action(state, plan_id, distress, SafeIntentId.SHELTER_IN_PLACE_VERTICAL, evidence_by_id, policy)
     route_key = route_status_claim_key(state)
     route_state = claims.get(route_key) if route_key else None
@@ -1198,6 +1198,24 @@ _DISTRESS_WORDS = {
 }
 
 
+# OFFICIAL_STALE: the official warning expired without a cancellation. Same protective
+# vertical-shelter intent, never "go to a place"; the reason states the data age.
+_STALE_WORDS = {
+    "ja": (
+        "今すぐ建物の上の階か高い場所へ移動し、水辺から離れてください。",
+        "公式の津波警報の情報が有効時間を過ぎました（取り消しは確認されていません）。今すぐ建物の上の階か高い場所へ移動し、水辺から離れてください。",
+    ),
+    "en": (
+        "Move to an upper floor or higher ground now and keep away from water.",
+        "The official tsunami warning data has expired (no cancellation was received). Move to an upper floor or higher ground now and keep away from water.",
+    ),
+    "zh-TW": (
+        "立刻往建築物上層或高處移動，遠離水邊。",
+        "官方海嘯警報資料已超過有效時間（未收到解除）。立刻往建築物上層或高處移動，遠離水邊。",
+    ),
+}
+
+
 def _distress_action(
     state: CoreState,
     plan_id: str,
@@ -1214,7 +1232,11 @@ def _distress_action(
         if trigger is None:  # pragma: no cover - resolve_distress already found one
             raise ValueError("OFFICIAL_TSUNAMI distress requires a current official trigger")
         key = disaster_claim_key(trigger.area_id, "TSUNAMI", "status")
-    text, reason = _DISTRESS_WORDS[intent][state.profile.preferred_language.value]
+    language = state.profile.preferred_language.value
+    if distress.level == DistressLevel.OFFICIAL_STALE and not official:
+        text, reason = _STALE_WORDS[language]
+    else:
+        text, reason = _DISTRESS_WORDS[intent][language]
     evidence_ids = (
         tuple(reference for reference in distress.trigger_evidence_ids if reference in evidence_by_id)
         if official

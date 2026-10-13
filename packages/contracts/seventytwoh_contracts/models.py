@@ -653,6 +653,9 @@ class DistressLevel(StrEnum):
     NONE = "NONE"
     USER_REPORTED = "USER_REPORTED"
     OFFICIAL_TSUNAMI = "OFFICIAL_TSUNAMI"
+    # The last official tsunami warning for the area expired without a newer
+    # cancellation: protective vertical shelter plus a "data expired" notice.
+    OFFICIAL_STALE = "OFFICIAL_STALE"
 
 
 class DistressStatus(ContractModel):
@@ -662,6 +665,11 @@ class DistressStatus(ContractModel):
     deadline_at: AwareDatetime | None = None
     ai_escalated: StrictBool = False
     synthetic: StrictBool = False
+    # Official basis (OFFICIAL_TSUNAMI / OFFICIAL_STALE only): the warning class, when the
+    # official evidence was issued, and when it stops being current.
+    warning_class: TsunamiWarningClass | None = None
+    last_official_at: AwareDatetime | None = None
+    trigger_expires_at: AwareDatetime | None = None
 
 
 class PlanAction(ContractModel):
