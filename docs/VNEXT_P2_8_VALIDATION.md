@@ -12,12 +12,12 @@
 | typecheck（tsc --noEmit） | 無錯誤，exit 0 |
 | production build（node scripts/build.mjs） | 成功，exit 0；Prepared 40 static assets for offline shell |
 | scripts/check_secrets.py | PASS: repository secret-pattern and credential-file checks |
-| `git diff main...HEAD` 密鑰 grep | 唯一命中是計畫文件中記載該 grep 指令的那一行（`docs/superpowers/plans/2026-10-13-p2-8-distress-assist.md` 內容），不是密鑰；未發現 AIza、私鑰或 NEXT_PUBLIC 密鑰 |
+| `git diff main...HEAD` 密鑰 grep | 有兩處自我引用的命中，皆非密鑰：(1) 計畫文件 `docs/superpowers/plans/2026-10-13-p2-8-distress-assist.md` 引用該 grep 指令；(2) 本驗收文件自身列出了被搜尋的樣式名稱（本文件提交後也會進入 diff）。未發現實際的 API 金鑰、私鑰或 NEXT_PUBLIC 密鑰 |
 
 ## 真實 Gemini 結果
 
 - Task 6 distress 抽取冒煙測試：回傳標籤 WATER_RISING、WITH_DEPENDENTS，mode 為 GEMINI。
-- Task 7 distress 建議冒煙測試：mode 為 GEMINI，沒有被拒絕的欄位。該次呼叫在沒有使用者訊號的情況下升級；之後已加入使用者訊號閘門，該閘門目前只有 fake-model 測試覆蓋，尚未用真實 Gemini 重跑。
+- Task 7 distress 建議冒煙測試：mode 為 GEMINI，沒有被拒絕的欄位（此結果依控制者提供的紀錄）。該次呼叫在沒有使用者訊號的情況下升級；之後已加入使用者訊號閘門，該閘門目前只有 fake-model 測試覆蓋，尚未用真實 Gemini 重跑。
 
 ## 真機驗收（Real-device acceptance）
 

@@ -20,7 +20,9 @@ claimed for submission.
 經 google-genai 走 Vertex AI，將使用者語音/文字轉成標籤；(2) distress advice，
 在使用者明確送出訊號後產生建議。兩者的輸出皆須通過驗證，不能取代 Safety Core
 的判定。本機真實 Gemini 冒煙測試已記錄於
-[VNEXT_P2_8_VALIDATION.md](VNEXT_P2_8_VALIDATION.md)。**Cloud Run 驗收 NOT RUN**，
+[VNEXT_P2_8_VALIDATION.md](VNEXT_P2_8_VALIDATION.md)，但建議的冒煙測試早於使用者訊號門檻，
+當時是在沒有使用者訊號下升級；使用者訊號門檻僅由假模型測試涵蓋，
+以真實 Gemini 驗證此門檻：NOT RUN。**Cloud Run 驗收 NOT RUN**，
 在記錄之前不得宣稱此分支可供提交。
 
 **Current vNext gate: PASS.** Runtime `8d1836e`, Cloud Build
