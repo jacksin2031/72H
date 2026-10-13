@@ -27,9 +27,10 @@ export function resolveTsunamiGuidance(input:{origin:{lat:number;lng:number;accu
  const sites=selectEvacuationDestinations(input.places,'tsunami');
  if(!sites.length)return {kind:'VERTICAL_NOW',reason:'NO_SITES_IN_PACK',deadlineAt};
  const excluded=new Set(input.excluded??[]);
+ const finite=(p:{lat:number;lng:number})=>Number.isFinite(p.lat)&&Number.isFinite(p.lng);
  const speed=input.tags.some(t=>SLOW_TAGS.includes(t))?DISTRESS_PARAMS.slowWalkMps:DISTRESS_PARAMS.walkMps;
  const penalty=origin.accuracy_m>DISTRESS_PARAMS.lowAccuracyM?origin.accuracy_m:0;
- const nearest=sites.filter(s=>!excluded.has(s.id)).map(s=>({s,straight:haversine(origin,s)}))
+ const nearest=sites.filter(s=>!excluded.has(s.id)&&finite(s)).map(s=>({s,straight:haversine(origin,s)}))
   .sort((a,b)=>a.straight-b.straight).slice(0,DISTRESS_PARAMS.maxCandidates);
  const candidates:ReachCandidate[]=[];
  for(const {s,straight} of nearest){
@@ -38,6 +39,8 @@ export function resolveTsunamiGuidance(input:{origin:{lat:number;lng:number;accu
    const road=findEvacuationRoadCandidates(input.graph,origin,s);
    const best=road.candidates[0];
    if(best){distance=best.distance_m+best.origin_gap_m+best.destination_gap_m;viaRoad=true;}
+   // Graph applies but says no walkable path: never fall back to optimistic straight-line.
+   else if(road.reason==='DISCONNECTED_GRAPH'||road.reason==='IMPLAUSIBLE_DISTANCE')continue;
   }
   distance+=penalty;
   const walk=distance/speed;
@@ -49,5 +52,5 @@ export function resolveTsunamiGuidance(input:{origin:{lat:number;lng:number;accu
 }
 
 export function adviceCandidates(g:TsunamiGuidance){
- return g.kind==='GO_TO_SITE'?g.candidates.map(c=>({place_id:c.place_id,name:c.name.slice(0,80),walk_minutes:Math.min(240,Math.round(c.walk_seconds/60))})):[];
+ return g.kind==='GO_TO_SITE'?g.candidates.map(c=>({place_id:c.place_id,name:c.name.slice(0,80),walk_minutes:Math.min(240,Math.ceil(c.walk_seconds/60))})):[];
 }
