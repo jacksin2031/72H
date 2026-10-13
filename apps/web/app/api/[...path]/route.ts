@@ -2,11 +2,13 @@ import { NextRequest } from 'next/server';
 import { sameOrigin } from '@/lib/request-origin';
 
 export const dynamic = 'force-dynamic';
-const allowed = /^(health|version|reference\/(tsunami|disaster-map|place-opening\/\d{5})|replay\/(start|[a-zA-Z0-9_-]{1,80}(\/(pause|resume|next|reset|speed))?)|mock-live\/(start|cases|[a-zA-Z0-9_-]{1,80}(\/next)?)|drill\/(start|[a-zA-Z0-9_-]{1,80}(\/next)?)|live\/(start|[a-zA-Z0-9_-]{1,80}(\/(refresh|routes\/search|location|profile))?))$/;
+const allowed = /^(health|version|reference\/(tsunami|disaster-map|place-opening\/\d{5})|replay\/(start|[a-zA-Z0-9_-]{1,80}(\/(pause|resume|next|reset|speed|explanation))?)|mock-live\/(start|cases|[a-zA-Z0-9_-]{1,80}(\/(next|explanation))?)|drill\/(start|[a-zA-Z0-9_-]{1,80}(\/next)?)|live\/(start|[a-zA-Z0-9_-]{1,80}(\/(refresh|routes\/search|location|profile|explanation))?))$/;
 export function isAllowedApiProxyPath(path: string) { return allowed.test(path); }
 export function isAllowedApiProxyRequest(path: string, method: string) {
   if (!isAllowedApiProxyPath(path) || !['GET', 'POST'].includes(method)) return false;
   if (path.startsWith('reference/')) return method === 'GET';
+  // Post-Core explanations are generated on demand and never fetched with GET.
+  if (/^(replay|live|mock-live)\/[a-zA-Z0-9_-]{1,80}\/explanation$/.test(path)) return method === 'POST';
   if (path === 'mock-live/cases') return method === 'GET';
   if (path === 'mock-live/start' || /^mock-live\/[a-zA-Z0-9_-]{1,80}\/next$/.test(path)) return method === 'POST';
   if (/^mock-live\/[a-zA-Z0-9_-]{1,80}$/.test(path)) return method === 'GET';

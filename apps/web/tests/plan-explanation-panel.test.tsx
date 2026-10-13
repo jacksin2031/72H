@@ -31,3 +31,12 @@ it('clears a validated explanation on browser offline and never calls the model 
  await act(async()=>window.dispatchEvent(new Event('offline')));
  expect(host.textContent).not.toContain('CURRENT MODEL WORDING');expect(fetcher).toHaveBeenCalledTimes(1);
 });
+it('requests replay explanations with the replay session id',async()=>{
+ const snapshot=movementLiveSnapshot(),fetcher=vi.fn(async(_url:string)=>new Response(JSON.stringify(payload(snapshot,'REPLAY WORDING'))));vi.stubGlobal('fetch',fetcher);
+ const {session_id:_,...rest}=snapshot as typeof snapshot&{session_id?:string};
+ const replay={...rest,replay:{id:'11111111-2222-4333-8444-555555555555',current_time:new Date(LIVE_NOW).toISOString()}};
+ vi.spyOn(Date,'now').mockReturnValue(LIVE_NOW);const host=document.createElement('div');document.body.append(host);const root=createRoot(host);mounted.push({root,host});
+ await act(async()=>root.render(<PlanExplanationPanel snapshot={replay} language="zh-TW" scope="replay"/>));
+ expect(fetcher).toHaveBeenCalledTimes(1);
+ expect(String(fetcher.mock.calls[0][0])).toBe('/api/replay/11111111-2222-4333-8444-555555555555/explanation');
+});

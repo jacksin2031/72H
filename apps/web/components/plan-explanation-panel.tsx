@@ -6,9 +6,9 @@ import {boundedText} from '@/lib/disaster-map';
 import {EXPLAINABLE_DECISIONS,acceptPlanExplanation,explanationText,planExplanationKey,type ExplanationSnapshot,type PlanExplanation} from '@/lib/plan-explanation';
 import './plan-explanation.css';
 
-export function PlanExplanationPanel({snapshot,language,scope='live',accessKey,enabled=true}:{snapshot:ExplanationSnapshot&{session_id?:string;session?:{id:string}};
+export function PlanExplanationPanel({snapshot,language,scope='live',accessKey,enabled=true}:{snapshot:ExplanationSnapshot&{session_id?:string;session?:{id:string};replay?:{id:string}};
  language:Language;scope?:'live'|'replay'|'mock-live';accessKey?:string;enabled?:boolean}){
- const t=explanationText[language],key=planExplanationKey(snapshot),sessionId=snapshot.session_id??snapshot.session?.id;
+ const t=explanationText[language],key=planExplanationKey(snapshot),sessionId=snapshot.session_id??snapshot.session?.id??snapshot.replay?.id;
  const latest=useRef(snapshot);latest.current=snapshot;
  const [result,setResult]=useState<{key:string;language:Language;data:PlanExplanation}|null>(null),[loading,setLoading]=useState(false),[attempt,setAttempt]=useState(0);
  const [now,setNow]=useState(()=>Date.now()),[online,setOnline]=useState(()=>typeof navigator!=='undefined'&&navigator.onLine);

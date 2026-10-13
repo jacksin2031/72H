@@ -313,3 +313,21 @@ def test_over_limit_plan_is_not_run_without_model_call_or_server_error():
     assert response.reason_code == "ACTION_LIMIT"
     assert response.paragraphs == () and response.action_ids == ()
     assert runner.calls == []
+
+
+def test_adk_runner_sends_vertex_compatible_schema_but_strictly_validates_reply(monkeypatch):
+    from agent_api import explanation as module
+
+    captured = {}
+    choice = {"action_id": "a", "clause_ids": ["LIMITATION_ONLY"], "evidence_ids": [], "fact_ids": []}
+
+    async def fake_run_structured(self, context, config, schema, **kwargs):
+        captured["schema"] = schema
+        return schema.model_validate({"choices": [{**choice, "action_id": f"a{i}"} for i in range(module.MAX_ACTIONS + 1)]})
+
+    monkeypatch.setattr(module.AdkCandidateRunner, "run_structured", fake_run_structured)
+    # Vertex AI rejects the strict schema's combined nested array limits with 400 INVALID_ARGUMENT.
+    with pytest.raises(ValidationError):
+        asyncio.run(module.AdkExplanationRunner().run_explanation({}, PlannerConfig(mode="gemini", timeout_seconds=1)))
+    assert captured["schema"] is not ExplanationSelection
+    assert "maxItems" not in captured["schema"].model_json_schema()["properties"]["choices"]
