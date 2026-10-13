@@ -31,8 +31,60 @@ def test_200_same_area_gps_refreshes_keep_plan_count_constant_under_official_tsu
     assert snapshot.distress.level == DistressLevel.OFFICIAL_TSUNAMI
     assert len(snapshot.plans) == plans
     assert len(snapshot.plan_evaluations) == evaluations
-    # One PROFILE_LOCATION_REFRESHED trace per refresh, nothing more.
-    assert len(snapshot.trace) == len(first.trace) + 200
+    # F3: a refresh that produces no plan evaluation replaces the previous
+    # PROFILE_LOCATION_REFRESHED trace in place; at most one is added.
+    assert len(snapshot.trace) <= len(first.trace) + 1
+    assert snapshot.trace[-1].event_type == "PROFILE_LOCATION_REFRESHED"
+
+
+def test_500_same_area_refreshes_keep_trace_bounded_and_endpoints_never_422_or_409():
+    from fastapi.testclient import TestClient
+
+    from agent_api.main import create_app
+
+    now = [NOW]
+    store = _store(now, _TsunamiSource(_tsunami_result(NOW)))
+    client = TestClient(create_app(live_store=store))
+    sid = client.post("/api/live/start", json={"language": "zh-TW", "profile": _profile()}).json()["session_id"]
+
+    def refresh(step):
+        now[0] = NOW + timedelta(milliseconds=200 * step)
+        body = {"area_ids": ["JP-04", "JP"], "source": "GPS", "observed_at": now[0].isoformat()}
+        return client.post(f"/api/live/{sid}/location", json=body)
+
+    first = refresh(1)
+    assert first.status_code == 200, first.text
+    baseline = len(first.json()["trace"])
+    for step in range(2, 502):
+        response = refresh(step)
+        assert response.status_code == 200, (step, response.text)
+    snapshot = response.json()
+    assert len(snapshot["trace"]) <= baseline + 1
+    ids = [t["id"] for t in snapshot["trace"]]
+    assert len(ids) == len(set(ids))
+    assert snapshot["distress"]["level"] == "OFFICIAL_TSUNAMI"
+    reported = client.post(f"/api/live/{sid}/distress", json={"tags": ["WATER_RISING"], "input_mode": "BUTTON"})
+    assert reported.status_code == 200, reported.text
+
+
+def test_refresh_that_changes_the_plan_still_appends_its_trace():
+    now = [NOW]
+    store = _store(now, _TsunamiSource(_tsunami_result(NOW)))
+    sid = store.start({"language": "zh-TW", "profile": _profile()}).session_id
+    now[0] = NOW + timedelta(seconds=1)
+    first = asyncio.run(store.update_location(sid, _gps(now[0])))
+    now[0] = NOW + timedelta(seconds=2)
+    second = asyncio.run(store.update_location(sid, _gps(now[0])))
+    assert second.trace[-1].event_type == "PROFILE_LOCATION_REFRESHED"
+    # 3 minutes later the old fix lapses -> LOCATION_STALE; a fresh fix restores OFFICIAL_TSUNAMI (plan evaluation).
+    now[0] = NOW + timedelta(minutes=3)
+    stale = store.refresh(sid)
+    assert stale.distress.level == DistressLevel.OFFICIAL_STALE
+    restored = asyncio.run(store.update_location(sid, _gps(now[0])))
+    assert restored.distress.level == DistressLevel.OFFICIAL_TSUNAMI
+    assert len(restored.plan_evaluations) > len(stale.plan_evaluations)
+    refreshed = [t for t in restored.trace[len(stale.trace):] if t.event_type == "PROFILE_LOCATION_REFRESHED"]
+    assert len(refreshed) == 1
 
 
 def test_area_change_still_invalidates_high_risk_actions():

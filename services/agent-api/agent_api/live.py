@@ -337,42 +337,53 @@ class LiveStore:
                     # A same-area fix refreshes only location metadata. Retain route
                     # and source evidence; the normal evaluator still enforces their
                     # own TTLs at the new current time.
-                    if len(before.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
-                        raise InvalidLiveLocationRequest("live trace capacity reached")
                     transition_time = max(now, before.current_time)
-                    event_id = f"live-location-refresh-{len(before.trace) + 1}-{int(transition_time.timestamp())}"
-                    trace = TraceEvent(
-                        id=f"trace_{len(before.trace) + 1:03d}",
-                        situation_id=before.situation.id,
-                        timestamp=transition_time,
-                        agent=AgentName.SITUATION_AGENT,
-                        event_type="PROFILE_LOCATION_REFRESHED",
-                        input_refs=(event_id,),
-                        output_refs=request.area_ids,
-                        status=TraceStatus.SUCCESS,
-                        public_summary=(
-                            f"Current area location timestamp refreshed from {request.source.value}: "
-                            f"{location.label}. Area scope and source evidence were not changed."
-                        ),
-                    )
                     profile = before.profile.model_copy(
                         update={"current_location": location, "updated_at": transition_time}
                     )
-                    after = replace(
-                        before,
-                        profile=profile,
-                        current_time=transition_time,
-                        trace=(*before.trace, trace),
-                    )
-                    event = SimpleNamespace(id=event_id)
                     from .planning import evaluate_and_replan
 
-                    aggregate.state = evaluate_and_replan(
-                        before,
-                        after,
-                        event,
-                        self._policy,
-                    )
+                    def refreshed(position: int, prior_trace: tuple) -> CoreState:
+                        event_id = f"live-location-refresh-{position}-{int(transition_time.timestamp())}"
+                        trace = TraceEvent(
+                            id=f"trace_{position:03d}",
+                            situation_id=before.situation.id,
+                            timestamp=transition_time,
+                            agent=AgentName.SITUATION_AGENT,
+                            event_type="PROFILE_LOCATION_REFRESHED",
+                            input_refs=(event_id,),
+                            output_refs=request.area_ids,
+                            status=TraceStatus.SUCCESS,
+                            public_summary=(
+                                f"Current area location timestamp refreshed from {request.source.value}: "
+                                f"{location.label}. Area scope and source evidence were not changed."
+                            ),
+                        )
+                        after = replace(before, profile=profile, current_time=transition_time,
+                                        trace=(*prior_trace, trace))
+                        return evaluate_and_replan(before, after, SimpleNamespace(id=event_id), self._policy)
+
+                    # F3: a refresh that produces no plan evaluation replaces the previous
+                    # PROFILE_LOCATION_REFRESHED trace in place (same id and position), so a
+                    # long run of same-area refreshes never grows the trace toward its cap.
+                    previous = before.trace[-1] if before.trace else None
+                    if previous is not None and previous.event_type == "PROFILE_LOCATION_REFRESHED":
+                        candidate = refreshed(len(before.trace), before.trace[:-1])
+                        candidate = replace(candidate, trace=(
+                            *candidate.trace[:len(before.trace) - 1],
+                            candidate.trace[len(before.trace) - 1].model_copy(update={"id": previous.id}),
+                            *candidate.trace[len(before.trace):],
+                        ))
+                        if (
+                            len(candidate.plan_evaluations) == len(before.plan_evaluations)
+                            and len(candidate.trace) == len(before.trace)
+                        ):
+                            aggregate.state = candidate
+                            self._touch(aggregate)
+                            return self._snapshot(aggregate)
+                    if len(before.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
+                        raise InvalidLiveLocationRequest("live trace capacity reached")
+                    aggregate.state = refreshed(len(before.trace) + 1, before.trace)
                     self._touch(aggregate)
                     return self._snapshot(aggregate)
 
