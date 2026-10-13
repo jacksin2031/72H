@@ -306,6 +306,8 @@ def create_app(
             return await isolated_mock_live.record_distress(session_id, request)
         except LiveSessionNotFound as exc:
             raise HTTPException(status_code=404, detail="mock live session not found") from exc
+        except InvalidLiveProfileUpdate as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
 
     return application
 

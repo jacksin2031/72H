@@ -1,3 +1,5 @@
+from dataclasses import replace
+from datetime import timedelta
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
@@ -63,3 +65,68 @@ def test_mock_live_and_live_distress(monkeypatch):
         assert snapshot["distress"]["level"] == "USER_REPORTED"
         assert any(t["event_type"] == "DISTRESS_REPORTED" for t in snapshot["trace"])
         assert client.post(f"/api/mock-live/{uuid4()}/distress", json=body, headers=headers).status_code == 404
+
+
+BODY = {"tags": ["WATER_RISING"], "input_mode": "BUTTON"}
+
+
+def _live_client():
+    from test_live_location import _store_and_client, _start
+
+    store, client = _store_and_client()
+    sid = _start(client)["session_id"]
+    return store, client, sid
+
+
+def _live_aggregate(store, sid):
+    return store._get_aggregate(__import__("uuid").UUID(sid))
+
+
+def test_live_distress_success_preserves_plan_history():
+    store, client, sid = _live_client()
+    before = client.get(f"/api/live/{sid}").json()
+    response = client.post(f"/api/live/{sid}/distress", json=BODY)
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["distress"]["level"] == "USER_REPORTED"
+    assert sum(t["event_type"] == "DISTRESS_REPORTED" for t in data["trace"]) == 1
+    assert data["situation"]["current_plan_id"] != before["situation"]["current_plan_id"]
+    assert {p["id"] for p in before["plans"]} <= {p["id"] for p in data["plans"]}
+    assert all(a["intent_id"] != "tsunami_evacuate_now" for a in data["plan_actions"])
+
+
+def test_live_distress_applies_report_once_when_state_changes_during_replan(monkeypatch):
+    import agent_api.live as live_module
+
+    store, client, sid = _live_client()
+    aggregate = _live_aggregate(store, sid)
+    original = live_module.replan_live_transition
+
+    def racing(before, after, *args, **kwargs):
+        result = original(before, after, *args, **kwargs)
+        # A concurrent writer replaces the aggregate state while we were planning.
+        aggregate.state = replace(aggregate.state, current_time=aggregate.state.current_time + timedelta(seconds=5))
+        return result
+
+    monkeypatch.setattr(live_module, "replan_live_transition", racing)
+    response = client.post(f"/api/live/{sid}/distress", json=BODY)
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert len(aggregate.state.distress_reports) == 1
+    assert sum(t["event_type"] == "DISTRESS_REPORTED" for t in data["trace"]) == 1
+    assert data["distress"]["level"] == "USER_REPORTED"
+
+
+def test_live_distress_trace_capacity_maps_to_409():
+    import agent_api.live as live_module
+
+    store, client, sid = _live_client()
+    monkeypatch_cap = live_module.MAX_LIVE_TRACE_EVENTS
+    aggregate = _live_aggregate(store, sid)
+    live_module.MAX_LIVE_TRACE_EVENTS = len(aggregate.state.trace) + 8
+    try:
+        response = client.post(f"/api/live/{sid}/distress", json=BODY)
+    finally:
+        live_module.MAX_LIVE_TRACE_EVENTS = monkeypatch_cap
+    assert response.status_code == 409, response.text
+    assert len(aggregate.state.distress_reports) == 0
