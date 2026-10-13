@@ -4,7 +4,7 @@ import type {LayerSpecification, VectorSourceSpecification, GeoJSONSourceSpecifi
  * Geography only; no road accessibility, shelter classification or routing.
  */
 export const REFERENCE_VECTOR_SOURCE:VectorSourceSpecification={
-  type:'vector',tiles:['/api/reference-vectors/{z}/{x}/{y}'],
+  type:'vector',tiles:['/api/reference-vectors/{z}/{x}/{y}?geometry=aligned-v1'],
   minzoom:4,maxzoom:16,bounds:[120,19,156,48],
 };
 export const REFERENCE_GLYPHS='/api/reference-glyphs/{fontstack}/{range}';
@@ -22,6 +22,10 @@ const wholeAnnotation:import('maplibre-gl').ExpressionSpecification=['any',
   ['!',['has','annoChar']],['==',['get','knj'],['get','annoChar']],['has','kana']];
 
 export const REFERENCE_VECTOR_LAYERS:LayerSpecification[]=[
+  // A tile-local land base and its water polygons share one GSI geometry.
+  // Missing tiles leave the verified Natural Earth overview visible below.
+  {id:'reference-land',type:'fill',source,'source-layer':'72h-land-coverage',
+    paint:{'fill-color':'#35574e','fill-antialias':false}},
   {id:'reference-water',type:'fill',source,'source-layer':'waterarea',
     paint:{'fill-color':'#0c2535'}},
   {id:'reference-rivers',type:'line',source,'source-layer':'river',minzoom:8,
@@ -36,7 +40,7 @@ export const REFERENCE_VECTOR_LAYERS:LayerSpecification[]=[
     paint:{'line-color':'#bdc5ad','line-opacity':.85,'line-width':['interpolate',['linear'],['zoom'],6,.6,10,1.3,16,3]}},
   {id:'reference-railways',type:'line',source,'source-layer':'railway',minzoom:8,
     paint:{'line-color':'#a0b5ba','line-dasharray':[3,2],'line-width':['interpolate',['linear'],['zoom'],8,.6,16,1.8]}},
-  {id:'reference-coastline',type:'line',source,'source-layer':'coastline',
+  {id:'reference-coastline',type:'line',source,'source-layer':'72h-water-edges',
     paint:{'line-color':'#aad2c5','line-width':1.4}},
   {id:'reference-city-labels',type:'symbol',source,'source-layer':'label',minzoom:6,
     filter:['all',wholeAnnotation,['in',['get','annoCtg'],['literal',[110,140]]]],
