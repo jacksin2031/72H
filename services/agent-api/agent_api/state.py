@@ -9,6 +9,7 @@ from seventytwoh_contracts.models import (
     AreaDefinition,
     DestinationRecord,
     DisasterEvent,
+    DistressReport,
     Evidence,
     MobilitySnapshot,
     Plan,
@@ -40,3 +41,5 @@ class CoreState:
     plan_evaluations: tuple[PlanEvaluation, ...] = ()
     destinations: tuple[DestinationRecord, ...] = ()
     routes: tuple[RoutePresentation, ...] = ()
+    distress_reports: tuple[DistressReport, ...] = ()
+    ai_escalations: tuple[datetime, ...] = ()
