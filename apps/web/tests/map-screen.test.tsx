@@ -54,3 +54,9 @@ it('keeps the pinned help control clear of the bottom sheet (above the peek, at 
   expect(css).toMatch(/\.ui-app:has\(\.ui-sheet\) \.ui-help-pin\{[^}]*bottom:calc\(64px \+ env\(safe-area-inset-bottom\) \+ 56px \+ var\(--sp-3\)\)/);
   expect(css).toMatch(/\.ui-app:has\(\.ui-sheet\[data-open\]\) \.ui-help-pin\{[^}]*top:/);
 });
+it('styles the GPS / epicenter markers and keeps the out-of-coverage note positioned above the map canvas',()=>{
+  const css=readFileSync(resolve(__dirname,'../components/ui/ui.css'),'utf8');
+  expect(css).toMatch(/\.sim-map-geo-note\{[^}]*position:absolute[^}]*z-index:5/);
+  expect(css).toMatch(/\.sim-geo-marker\{[^}]*border-radius:50%[^}]*background:var\(--info\)/);
+  expect(css).toMatch(/\.sim-geo-epicenter\{[^}]*background:var\(--danger\)/);
+});

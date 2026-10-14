@@ -17,18 +17,20 @@ import { useDesignatedPlaces } from '@/lib/use-designated-places';
 import { DesignatedPlacesPanel } from '@/components/designated-places-panel';
 import {EvacuationRoutePanel} from '@/components/evacuation-route-panel';
 import type {RoadCandidate} from '@/lib/evacuation-road-graph';
+import { forecastLines } from '@/lib/disaster-map';
+import { forecastLegendState, forecastLegendText } from '@/lib/map-legend';
 import '@/components/simulation-flat-ui.css';
 import '@/components/simulation-map-ui.css';
 
 const screenText={
   'zh-TW':{title:'全日本參考地圖',inundation:'浸水想定',places:'避難場所',lines:'海嘯預報區',regions:'震度地域',
-    legendInundation:'浸水想定：官方靜態想定，非即時',legendPlaces:'避難場所：官方指定，開放未核實',legendLines:'海嘯預報區：最新電文參考',legendRegions:'震度地域：地域最大值，非逐點實測',
+    legendInundation:'浸水想定：官方靜態想定，非即時',legendPlaces:'避難場所：官方指定，開放未核實',legendRegions:'震度地域：地域最大值，非逐點實測',
     note:'僅供參考：不可作避難導航，也不是安全判定',peek:(n:number)=>`附近 ${n} 處指定避難場所`,placesTitle:'避難場所',officialTitle:'官方資料'},
   ja:{title:'日本全国の参考地図',inundation:'浸水想定',places:'避難場所',lines:'津波予報区',regions:'震度地域',
-    legendInundation:'浸水想定：公式の静的想定・リアルタイムではない',legendPlaces:'避難場所：公式指定・開設は未確認',legendLines:'津波予報区：最新電文の参考',legendRegions:'震度地域：地域の最大値・各地点の実測ではない',
+    legendInundation:'浸水想定：公式の静的想定・リアルタイムではない',legendPlaces:'避難場所：公式指定・開設は未確認',legendRegions:'震度地域：地域の最大値・各地点の実測ではない',
     note:'参考情報：避難ナビ・安全判定には使えません',peek:(n:number)=>`付近の指定避難場所 ${n} か所`,placesTitle:'避難場所',officialTitle:'公式情報'},
   en:{title:'All Japan reference map',inundation:'Inundation',places:'Places',lines:'Tsunami areas',regions:'Intensity regions',
-    legendInundation:'Inundation: official static scenario, not live',legendPlaces:'Places: official designations, opening unverified',legendLines:'Tsunami areas: latest bulletin reference',legendRegions:'Intensity regions: regional maxima, not point readings',
+    legendInundation:'Inundation: official static scenario, not live',legendPlaces:'Places: official designations, opening unverified',legendRegions:'Intensity regions: regional maxima, not point readings',
     note:'Reference only: not for evacuation navigation or a safety determination',peek:(n:number)=>`${n} designated places nearby`,placesTitle:'Evacuation places',officialTitle:'Official data'},
 } as const;
 
@@ -68,14 +70,17 @@ export default function JapanMapPage() {
     }
   },[]);
   const t=screenText[language];
+  // The forecast-line legend follows the drawn line states, so expired / unverified / cancelled lines are never called current.
+  const lineStates=forecastLines(official.pack??null,official.data??null,official.connected??false,official.now??0).features.map(f=>f.properties.state);
+  const legendLines=forecastLegendText(language,forecastLegendState(lineStates));
   const layers=[
     {key:'inundation',label:t.inundation,on:showInundation,toggle:()=>setShowInundation(v=>!v),legend:t.legendInundation},
     {key:'places',label:t.places,on:showPlaces,toggle:()=>setShowPlaces(v=>!v),legend:t.legendPlaces},
-    {key:'lines',label:t.lines,on:showForecastLines,toggle:()=>setShowForecastLines(v=>!v),legend:t.legendLines},
+    {key:'lines',label:t.lines,on:showForecastLines,toggle:()=>setShowForecastLines(v=>!v),legend:legendLines},
     {key:'regions',label:t.regions,on:showIntensityRegions,toggle:()=>setShowIntensityRegions(v=>!v),legend:t.legendRegions},
   ];
   // One legend line: what each visible layer is, then the page's single navigation / safety note (shown even with every layer off).
-  const legend=[...layers.filter(l=>l.on).map(l=>l.legend),t.note].join(' · ');
+  const legend=[...layers.filter(l=>l.on&&(l.key!=='inundation'||pack)).map(l=>l.legend),t.note].join(' · ');
   // Road candidates need an origin: the section appears once a point (GPS, map point or place) is chosen, and stays while a candidate is drawn.
   const routeSection=point||referenceRoute?<EvacuationRoutePanel language={language} state={designations} origin={point} onOrigin={choosePoint} onFocus={setFocus} onRoute={setReferenceRoute}/>:null;
   return <AppShell tab="map" language={language} fullBleed>

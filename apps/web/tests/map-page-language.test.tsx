@@ -49,7 +49,11 @@ it('shows exactly one not-for-navigation / not-a-safety-determination note, in t
   await act(async()=>(host.querySelector('.ui-sheet-head') as HTMLButtonElement).click());
   expect(count(host.textContent??'',note)).toBe(1);
   expect(host.querySelector('.map-legend')?.textContent).toContain(note);
-  expect(host.querySelector('.map-legend')?.textContent).toContain('浸水想定');
+  expect(host.querySelector('.map-legend')?.textContent).toContain('避難場所：官方指定，開放未核實');
+  // No verified pack / bulletin loaded: the legend must not claim an inundation layer or a current bulletin.
+  expect(host.querySelector('.map-legend')?.textContent).not.toContain('浸水想定');
+  expect(host.querySelector('.map-legend')?.textContent).toContain('海嘯預報區：未取得可核實電文');
+  expect(host.querySelector('.map-legend')?.textContent).not.toMatch(/最新|期限內電文/);
   for(const chip of [...host.querySelectorAll<HTMLButtonElement>('.map-chips .ui-chip')])if(chip.getAttribute('aria-pressed')==='true')await act(async()=>chip.click());
   expect(host.querySelector('.map-legend')?.textContent).toBe(note);
   expect(count(host.textContent??'',note)).toBe(1);
@@ -63,4 +67,11 @@ it('sheet lists titled sections and adds the road-candidate section only after a
   await act(async()=>onReferencePoint({lat:38.43,lng:141.3}));
   expect([...host.querySelectorAll('.ui-section-title')].map(e=>e.textContent)).toEqual(['道路候選','避難場所','官方資料']);
   expect(host.querySelector('[data-testid=route-panel]')).not.toBeNull();
+});
+it('real sheet panels carry no navigation note of their own (the legend line is the only one)',async()=>{
+  const {readFileSync}=await import('node:fs');const {resolve}=await import('node:path');
+  for(const f of ['official-hazard-panel','japan-shelter-panel','designated-places-panel','disaster-map-panel','evacuation-route-panel']){
+    const src=readFileSync(resolve(__dirname,`../components/${f}.tsx`),'utf8');
+    expect(src,f).not.toMatch(/導航|ナビ|[Nn]avigation/);
+  }
 });

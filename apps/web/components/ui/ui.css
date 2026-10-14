@@ -142,3 +142,8 @@ a.ui-btn-secondary{color:var(--info)}
 .sim-risk-limits,.sim-risk-alert{color:var(--warn);font-weight:700}
 .sim-risk-tsunami-on{border-left:4px solid var(--warn);padding-left:var(--sp-2)}
 .sim-risk-privacy{color:var(--text-2);font-size:var(--fs-meta)}
+/* Map markers and the out-of-coverage note (ported from simulation-geo.css; used by /map and exercise maps). */
+.sim-map-geo-note{position:absolute;z-index:5;top:40px;left:var(--sp-2);right:var(--sp-2);max-width:calc(100% - 16px);padding:var(--sp-1) var(--sp-2);background:var(--bg);color:var(--text);font-size:var(--fs-meta);line-height:1.4;pointer-events:none}
+.sim-map-geo-note span{color:var(--warn)}
+.sim-geo-marker{display:grid;place-items:center;width:24px;height:24px;border:3px solid var(--text);border-radius:50%;background:var(--info);color:var(--bg);font-size:15px;font-weight:800;line-height:1}
+.sim-geo-epicenter{background:var(--danger)}
