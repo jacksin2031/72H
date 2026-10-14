@@ -21,6 +21,8 @@ export const mockLiveResponseSchema = z.object({
   snapshot: mockLiveSnapshotSchema,
   movement_assessment: simulationAssessmentSchema.nullable().optional().default(null),
   movement_assessment_history: z.array(simulationAssessmentSchema).max(24).optional().default([]),
+  // Assessments the server replaced because the Safety Core plan changed after them (retained history, never current advice).
+  movement_assessment_superseded: z.array(simulationAssessmentSchema).max(24).optional().default([]),
   historical: z.object({
     case_id: z.string(),
     title: historicalLabel,

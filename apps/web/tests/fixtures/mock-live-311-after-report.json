@@ -1,0 +1,1940 @@
+{
+ "mode": "MOCK_LIVE",
+ "current_step": 4,
+ "total_steps": 4,
+ "ai_modes": [],
+ "battery": 60,
+ "snapshot": {
+  "session_id": "0624111f-4ac8-441a-93b7-c4d92aee6290",
+  "mode": "LIVE",
+  "source": {
+   "source_key": "jma-live-eqvol",
+   "source_name": "SIMULATED JMA provider (NOT official)",
+   "source_url": "mock://72h/jma",
+   "status": "FRESH",
+   "retrieved_at": "2026-10-14T17:35:23.380445Z",
+   "last_published_at": "2026-10-14T17:35:23.380445Z",
+   "next_retry_at": null,
+   "record_count": 1,
+   "detail": "SIMULATION ONLY. MOCK LIVE historical tohoku-2011; archived 2011-03-11T15:15:00+09:00; not live JMA.",
+   "recovery": null
+  },
+  "destination_source": {
+   "source_key": "tokyo-evacuation-designations",
+   "source_name": "SIMULATED shelter source (empty)",
+   "source_url": "mock://72h/shelter",
+   "status": "UNAVAILABLE",
+   "retrieved_at": null,
+   "last_published_at": "2021-04-01T00:00:00+09:00",
+   "next_retry_at": null,
+   "record_count": 0,
+   "detail": "SIMULATION ONLY. No shelters have been verified.",
+   "recovery": null
+  },
+  "route_source": {
+   "source_key": "ekispert-route-search",
+   "source_name": "SIMULATED route source (blocked)",
+   "source_url": "mock://72h/routes",
+   "status": "UNAVAILABLE",
+   "retrieved_at": null,
+   "last_published_at": null,
+   "next_retry_at": null,
+   "record_count": 0,
+   "detail": "SIMULATION ONLY. No route has been verified.",
+   "recovery": null
+  },
+  "profile": {
+   "id": "user_live_0624111f4ac8441a93b7c4d92aee6290",
+   "preferred_language": "zh-TW",
+   "current_location": {
+    "label": "石巻市",
+    "lat": null,
+    "lng": null,
+    "area_ids": [
+     "JP-MUNI-04202",
+     "JP-04",
+     "JP"
+    ],
+    "observed_at": "2026-10-14T17:35:23.358987Z",
+    "source": "USER_SELECTED"
+   },
+   "accommodation_location": {
+    "label": "未設定 (MOCK)",
+    "lat": null,
+    "lng": null,
+    "area_ids": [],
+    "observed_at": null,
+    "source": null
+   },
+   "current_destination": null,
+   "party_size": 1,
+   "self_reported_safety_status": "UNCERTAIN",
+   "current_plan_summary": "SIMULATION ONLY",
+   "accessibility_constraints": [],
+   "created_at": "2026-10-14T17:35:23.362117Z",
+   "updated_at": "2026-10-14T17:35:23.362117Z"
+  },
+  "area_catalog": [
+   {
+    "id": "JP",
+    "label": "日本",
+    "parent_id": null
+   },
+   {
+    "id": "JP-01",
+    "label": "北海道",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-02",
+    "label": "青森県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-03",
+    "label": "岩手県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-04",
+    "label": "宮城県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-05",
+    "label": "秋田県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-06",
+    "label": "山形県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-07",
+    "label": "福島県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-08",
+    "label": "茨城県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-09",
+    "label": "栃木県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-10",
+    "label": "群馬県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-11",
+    "label": "埼玉県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-12",
+    "label": "千葉県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-13",
+    "label": "東京都",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-14",
+    "label": "神奈川県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-15",
+    "label": "新潟県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-16",
+    "label": "富山県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-17",
+    "label": "石川県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-18",
+    "label": "福井県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-19",
+    "label": "山梨県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-20",
+    "label": "長野県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-21",
+    "label": "岐阜県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-22",
+    "label": "静岡県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-23",
+    "label": "愛知県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-24",
+    "label": "三重県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-25",
+    "label": "滋賀県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-26",
+    "label": "京都府",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-27",
+    "label": "大阪府",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-28",
+    "label": "兵庫県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-29",
+    "label": "奈良県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-30",
+    "label": "和歌山県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-31",
+    "label": "鳥取県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-32",
+    "label": "島根県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-33",
+    "label": "岡山県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-34",
+    "label": "広島県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-35",
+    "label": "山口県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-36",
+    "label": "徳島県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-37",
+    "label": "香川県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-38",
+    "label": "愛媛県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-39",
+    "label": "高知県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-40",
+    "label": "福岡県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-41",
+    "label": "佐賀県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-42",
+    "label": "長崎県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-43",
+    "label": "熊本県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-44",
+    "label": "大分県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-45",
+    "label": "宮崎県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-46",
+    "label": "鹿児島県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-47",
+    "label": "沖縄県",
+    "parent_id": "JP"
+   },
+   {
+    "id": "JP-MUNI-04202",
+    "label": "石巻市",
+    "parent_id": "JP-04"
+   }
+  ],
+  "situation": {
+   "id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+   "user_id": "user_live_0624111f4ac8441a93b7c4d92aee6290",
+   "incident_status": "ASSESSING",
+   "network_state": "ONLINE_VERIFIED",
+   "active_event_ids": [
+    "jma-historical-tohoku-2011-1",
+    "jma-tsunami-94f4e59c95bd6654--1-1791999323",
+    "jma-historical-tohoku-2011-4"
+   ],
+   "current_plan_id": "plan_v3",
+   "latest_evidence_at": "2026-10-14T17:35:23.380445Z",
+   "uncertainty_flags": [],
+   "conflict_flags": [],
+   "claim_states": [
+    {
+     "key": "disaster.EARTHQUAKE.JP-04.status",
+     "status": "VERIFIED",
+     "value": "ACTIVE",
+     "evidence_ids": [
+      "ev_jma-historical-tohoku-2011-4"
+     ],
+     "updated_at": "2026-10-14T17:35:23.384032Z"
+    },
+    {
+     "key": "disaster.TSUNAMI.JP-03.status",
+     "status": "VERIFIED",
+     "value": "ACTIVE",
+     "evidence_ids": [
+      "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+     ],
+     "updated_at": "2026-10-14T17:35:23.384032Z"
+    },
+    {
+     "key": "disaster.TSUNAMI.JP-04.status",
+     "status": "VERIFIED",
+     "value": "ACTIVE",
+     "evidence_ids": [
+      "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+     ],
+     "updated_at": "2026-10-14T17:35:23.384032Z"
+    },
+    {
+     "key": "disaster.TSUNAMI.JP-07.status",
+     "status": "VERIFIED",
+     "value": "ACTIVE",
+     "evidence_ids": [
+      "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+     ],
+     "updated_at": "2026-10-14T17:35:23.384032Z"
+    }
+   ],
+   "created_at": "2026-10-14T17:35:23.362117Z",
+   "updated_at": "2026-10-14T17:35:23.384032Z"
+  },
+  "events": [
+   {
+    "id": "jma-historical-tohoku-2011-1",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "event_type": "EARTHQUAKE",
+    "occurred_at": "2026-10-14T17:35:23.369133Z",
+    "received_at": "2026-10-14T17:35:23.369133Z",
+    "affected_areas": [
+     "宮城県 (MOCK)"
+    ],
+    "affected_area_ids": [
+     "JP-04"
+    ],
+    "source_name": "SIMULATED JMA provider (NOT official)",
+    "source_class": "OFFICIAL",
+    "severity_raw": "HISTORICAL EXERCISE max intensity 7 (not live)",
+    "status": "ACTIVE",
+    "raw_reference": "mock://72h/historical/tohoku-2011/1",
+    "is_synthetic": true
+   },
+   {
+    "id": "jma-tsunami-94f4e59c95bd6654--1-1791999323",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "event_type": "TSUNAMI",
+    "occurred_at": "2026-10-14T17:35:23.373124Z",
+    "received_at": "2026-10-14T17:35:23.373124Z",
+    "affected_areas": [
+     "岩手県",
+     "宮城県",
+     "福島県"
+    ],
+    "affected_area_ids": [
+     "JP-03",
+     "JP-04",
+     "JP-07"
+    ],
+    "source_name": "SIMULATED JMA tsunami provider (NOT official)",
+    "source_class": "OFFICIAL",
+    "severity_raw": "HISTORICAL EXERCISE tsunami warning classes: MAJOR_WARNING",
+    "status": "ACTIVE",
+    "raw_reference": "mock://72h/historical/tohoku-2011/2/tsunami",
+    "is_synthetic": true
+   },
+   {
+    "id": "jma-historical-tohoku-2011-4",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "event_type": "EARTHQUAKE",
+    "occurred_at": "2026-10-14T17:35:23.380445Z",
+    "received_at": "2026-10-14T17:35:23.380445Z",
+    "affected_areas": [
+     "宮城県 (MOCK)"
+    ],
+    "affected_area_ids": [
+     "JP-04"
+    ],
+    "source_name": "SIMULATED JMA provider (NOT official)",
+    "source_class": "OFFICIAL",
+    "severity_raw": "HISTORICAL EXERCISE max intensity 7 (not live)",
+    "status": "ACTIVE",
+    "raw_reference": "mock://72h/historical/tohoku-2011/4",
+    "is_synthetic": true
+   }
+  ],
+  "evidence": [
+   {
+    "id": "ev_jma-historical-tohoku-2011-1",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "source_key": "jma-live-eqvol",
+    "source_name": "SIMULATED JMA provider (NOT official)",
+    "source_class": "OFFICIAL",
+    "trust_status": "VERIFIED_OFFICIAL",
+    "freshness_status": "CURRENT",
+    "published_at": "2026-10-14T17:35:23.369133Z",
+    "received_at": "2026-10-14T17:35:23.369133Z",
+    "expires_at": "2026-10-14T17:50:23.369133Z",
+    "relevant_areas": [
+     "宮城県 (MOCK)"
+    ],
+    "affected_area_ids": [
+     "JP-04"
+    ],
+    "disaster_assessments": [
+     {
+      "area_id": "JP-04",
+      "event_type": "EARTHQUAKE",
+      "level": null,
+      "status": "ACTIVE",
+      "tsunami_warning_class": null,
+      "arrival_at": null,
+      "withdrawn": false
+     }
+    ],
+    "claim_type": "DISASTER_STATUS",
+    "claims": [
+     {
+      "key": "disaster.EARTHQUAKE.JP-04.status",
+      "value": "ACTIVE"
+     }
+    ],
+    "summary": "SYNTHETIC HISTORICAL EXERCISE: tohoku-2011, archived maximum JMA intensity 7, replayed on an artificial runtime clock.",
+    "conflict_group": null,
+    "conflict": false,
+    "raw_reference": "mock://72h/historical/tohoku-2011/1",
+    "is_synthetic": true,
+    "eligible_for_high_risk": false
+   },
+   {
+    "id": "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "source_key": "jma-live-tsunami",
+    "source_name": "SIMULATED JMA tsunami provider (NOT official)",
+    "source_class": "OFFICIAL",
+    "trust_status": "VERIFIED_OFFICIAL",
+    "freshness_status": "CURRENT",
+    "published_at": "2026-10-14T17:35:23.373124Z",
+    "received_at": "2026-10-14T17:35:23.373124Z",
+    "expires_at": "2026-10-14T17:50:23.373124Z",
+    "relevant_areas": [
+     "岩手県",
+     "宮城県",
+     "福島県"
+    ],
+    "affected_area_ids": [
+     "JP-03",
+     "JP-04",
+     "JP-07"
+    ],
+    "disaster_assessments": [
+     {
+      "area_id": "JP-03",
+      "event_type": "TSUNAMI",
+      "level": null,
+      "status": "ACTIVE",
+      "tsunami_warning_class": "MAJOR_WARNING",
+      "arrival_at": null,
+      "withdrawn": false
+     },
+     {
+      "area_id": "JP-04",
+      "event_type": "TSUNAMI",
+      "level": null,
+      "status": "ACTIVE",
+      "tsunami_warning_class": "MAJOR_WARNING",
+      "arrival_at": null,
+      "withdrawn": false
+     },
+     {
+      "area_id": "JP-07",
+      "event_type": "TSUNAMI",
+      "level": null,
+      "status": "ACTIVE",
+      "tsunami_warning_class": "MAJOR_WARNING",
+      "arrival_at": null,
+      "withdrawn": false
+     }
+    ],
+    "claim_type": "DISASTER_STATUS",
+    "claims": [
+     {
+      "key": "disaster.TSUNAMI.JP-03.status",
+      "value": "ACTIVE"
+     },
+     {
+      "key": "disaster.TSUNAMI.JP-04.status",
+      "value": "ACTIVE"
+     },
+     {
+      "key": "disaster.TSUNAMI.JP-07.status",
+      "value": "ACTIVE"
+     }
+    ],
+    "summary": "SYNTHETIC HISTORICAL EXERCISE: tohoku-2011 tsunami warning replayed on an artificial runtime clock; not live JMA. Prefecture-level area only; it does not authorize movement or identify safe places.",
+    "conflict_group": null,
+    "conflict": false,
+    "raw_reference": "mock://72h/historical/tohoku-2011/2/tsunami",
+    "is_synthetic": true,
+    "eligible_for_high_risk": false
+   },
+   {
+    "id": "ev_jma-historical-tohoku-2011-4",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "source_key": "jma-live-eqvol",
+    "source_name": "SIMULATED JMA provider (NOT official)",
+    "source_class": "OFFICIAL",
+    "trust_status": "VERIFIED_OFFICIAL",
+    "freshness_status": "CURRENT",
+    "published_at": "2026-10-14T17:35:23.380445Z",
+    "received_at": "2026-10-14T17:35:23.380445Z",
+    "expires_at": "2026-10-14T17:50:23.380445Z",
+    "relevant_areas": [
+     "宮城県 (MOCK)"
+    ],
+    "affected_area_ids": [
+     "JP-04"
+    ],
+    "disaster_assessments": [
+     {
+      "area_id": "JP-04",
+      "event_type": "EARTHQUAKE",
+      "level": null,
+      "status": "ACTIVE",
+      "tsunami_warning_class": null,
+      "arrival_at": null,
+      "withdrawn": false
+     }
+    ],
+    "claim_type": "DISASTER_STATUS",
+    "claims": [
+     {
+      "key": "disaster.EARTHQUAKE.JP-04.status",
+      "value": "ACTIVE"
+     }
+    ],
+    "summary": "SYNTHETIC HISTORICAL EXERCISE: tohoku-2011, archived maximum JMA intensity 7, replayed on an artificial runtime clock.",
+    "conflict_group": null,
+    "conflict": false,
+    "raw_reference": "mock://72h/historical/tohoku-2011/4",
+    "is_synthetic": true,
+    "eligible_for_high_risk": false
+   }
+  ],
+  "evidence_projections": [
+   {
+    "evidence_id": "ev_jma-historical-tohoku-2011-1",
+    "freshness_status": "CURRENT",
+    "age_seconds": 0,
+    "ttl_seconds": 900,
+    "expires_at": "2026-10-14T17:50:23.369133Z",
+    "conflict": false,
+    "eligible_for_claims": true,
+    "eligible_for_high_risk": false
+   },
+   {
+    "evidence_id": "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323",
+    "freshness_status": "CURRENT",
+    "age_seconds": 0,
+    "ttl_seconds": 900,
+    "expires_at": "2026-10-14T17:50:23.373124Z",
+    "conflict": false,
+    "eligible_for_claims": true,
+    "eligible_for_high_risk": false
+   },
+   {
+    "evidence_id": "ev_jma-historical-tohoku-2011-4",
+    "freshness_status": "CURRENT",
+    "age_seconds": 0,
+    "ttl_seconds": 900,
+    "expires_at": "2026-10-14T17:50:23.380445Z",
+    "conflict": false,
+    "eligible_for_claims": true,
+    "eligible_for_high_risk": false
+   }
+  ],
+  "plans": [
+   {
+    "id": "plan_v1",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "version": 1,
+    "status": "ACTIVE",
+    "created_at": "2026-10-14T17:35:23.369133Z",
+    "expires_at": "2026-10-14T17:50:23.369133Z",
+    "invalidate_on_new_relevant_evidence": true,
+    "based_on_evidence_ids": [
+     "ev_jma-historical-tohoku-2011-1"
+    ],
+    "previous_plan_id": null,
+    "invalidation_reason": null,
+    "changed_action_ids": [
+     "act_plan_v1_now",
+     "act_plan_v1_next",
+     "act_plan_v1_avoid"
+    ],
+    "language": "zh-TW"
+   },
+   {
+    "id": "plan_v2",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "version": 2,
+    "status": "ACTIVE",
+    "created_at": "2026-10-14T17:35:23.373124Z",
+    "expires_at": "2026-10-14T17:50:23.373124Z",
+    "invalidate_on_new_relevant_evidence": true,
+    "based_on_evidence_ids": [
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    ],
+    "previous_plan_id": "plan_v1",
+    "invalidation_reason": null,
+    "changed_action_ids": [
+     "act_plan_v2_now",
+     "act_plan_v2_next",
+     "act_plan_v2_avoid"
+    ],
+    "language": "zh-TW"
+   },
+   {
+    "id": "plan_v3",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "version": 3,
+    "status": "ACTIVE",
+    "created_at": "2026-10-14T17:35:23.384032Z",
+    "expires_at": "2026-10-14T17:50:23.373124Z",
+    "invalidate_on_new_relevant_evidence": true,
+    "based_on_evidence_ids": [
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    ],
+    "previous_plan_id": "plan_v2",
+    "invalidation_reason": null,
+    "changed_action_ids": [
+     "act_plan_v3_now"
+    ],
+    "language": "zh-TW"
+   }
+  ],
+  "plan_actions": [
+   {
+    "id": "act_plan_v1_now",
+    "plan_id": "plan_v1",
+    "category": "NOW",
+    "intent_id": "protect_and_monitor",
+    "text": "先注意自身安全，遵循現場人員與官方指示，並留意已驗證的最新資訊。",
+    "reason": "目前有符合資格的已驗證官方資訊，請查看其中所載的災害狀態。",
+    "risk_level": "LOW",
+    "confidence_class": "LOW",
+    "evidence_ids": [
+     "ev_jma-historical-tohoku-2011-1"
+    ],
+    "dependency_keys": [
+     "disaster.EARTHQUAKE.JP-MUNI-04202.status",
+     "disaster.EARTHQUAKE.JP-04.status",
+     "disaster.EARTHQUAKE.JP.status",
+     "disaster.TSUNAMI.JP-MUNI-04202.status",
+     "disaster.TSUNAMI.JP-04.status",
+     "disaster.TSUNAMI.JP.status"
+    ],
+    "dependency_expectations": [
+     {
+      "key": "disaster.EARTHQUAKE.JP-MUNI-04202.status",
+      "expected_value": "UNKNOWN"
+     },
+     {
+      "key": "disaster.EARTHQUAKE.JP-04.status",
+      "expected_value": "ACTIVE"
+     },
+     {
+      "key": "disaster.EARTHQUAKE.JP.status",
+      "expected_value": "UNKNOWN"
+     },
+     {
+      "key": "disaster.TSUNAMI.JP-MUNI-04202.status",
+      "expected_value": "UNKNOWN"
+     },
+     {
+      "key": "disaster.TSUNAMI.JP-04.status",
+      "expected_value": "UNKNOWN"
+     },
+     {
+      "key": "disaster.TSUNAMI.JP.status",
+      "expected_value": "UNKNOWN"
+     }
+    ],
+    "status": "ACTIVE",
+    "safety_decision": "ALLOW",
+    "dependency_values": {
+     "disaster.EARTHQUAKE.JP-MUNI-04202.status": "UNKNOWN",
+     "disaster.EARTHQUAKE.JP-04.status": "ACTIVE",
+     "disaster.EARTHQUAKE.JP.status": "UNKNOWN",
+     "disaster.TSUNAMI.JP-MUNI-04202.status": "UNKNOWN",
+     "disaster.TSUNAMI.JP-04.status": "UNKNOWN",
+     "disaster.TSUNAMI.JP.status": "UNKNOWN"
+    }
+   },
+   {
+    "id": "act_plan_v1_next",
+    "plan_id": "plan_v1",
+    "category": "NEXT",
+    "intent_id": "protect_and_monitor",
+    "text": "持續留意已驗證的官方資訊，並遵循現場人員指示。",
+    "reason": "目前沒有設定行程，因此優先確認官方資訊，而不是交通資訊。",
+    "risk_level": "MEDIUM",
+    "confidence_class": "UNKNOWN",
+    "evidence_ids": [],
+    "dependency_keys": [],
+    "dependency_expectations": [],
+    "status": "ACTIVE",
+    "safety_decision": "WAIT_FOR_EVIDENCE",
+    "dependency_values": {}
+   },
+   {
+    "id": "act_plan_v1_avoid",
+    "plan_id": "plan_v1",
+    "category": "AVOID",
+    "intent_id": "do_not_assume_route_safety",
+    "text": "沒有已驗證資訊之前，不要自行認定周邊或任何路線是安全的。",
+    "reason": "目前沒有已驗證資訊可確認周邊或路線的安全。",
+    "risk_level": "MEDIUM",
+    "confidence_class": "UNKNOWN",
+    "evidence_ids": [],
+    "dependency_keys": [],
+    "dependency_expectations": [],
+    "status": "ACTIVE",
+    "safety_decision": "WAIT_FOR_EVIDENCE",
+    "dependency_values": {}
+   },
+   {
+    "id": "act_plan_v2_now",
+    "plan_id": "plan_v2",
+    "category": "NOW",
+    "intent_id": "tsunami_evacuate_now",
+    "text": "This high-risk action is blocked because live verified support is unavailable.",
+    "reason": "Synthetic replay, stale, conflicting, unverified, or missing evidence cannot authorize it.",
+    "risk_level": "HIGH",
+    "confidence_class": "UNKNOWN",
+    "evidence_ids": [
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    ],
+    "dependency_keys": [
+     "disaster.TSUNAMI.JP-04.status"
+    ],
+    "dependency_expectations": [
+     {
+      "key": "disaster.TSUNAMI.JP-04.status",
+      "expected_value": "ACTIVE"
+     }
+    ],
+    "status": "BLOCKED",
+    "safety_decision": "BLOCK",
+    "dependency_values": {
+     "disaster.TSUNAMI.JP-04.status": "ACTIVE"
+    }
+   },
+   {
+    "id": "act_plan_v2_next",
+    "plan_id": "plan_v2",
+    "category": "NEXT",
+    "intent_id": "stay_high_until_official_clear",
+    "text": "到達高處後留在原地，直到官方解除海嘯警報，並持續確認官方更新。",
+    "reason": "海嘯可能多次來襲；只有官方發布才代表警報解除。",
+    "risk_level": "LOW",
+    "confidence_class": "LOW",
+    "evidence_ids": [
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    ],
+    "dependency_keys": [
+     "disaster.TSUNAMI.JP-04.status"
+    ],
+    "dependency_expectations": [
+     {
+      "key": "disaster.TSUNAMI.JP-04.status",
+      "expected_value": "ACTIVE"
+     }
+    ],
+    "status": "ACTIVE",
+    "safety_decision": "ALLOW",
+    "dependency_values": {
+     "disaster.TSUNAMI.JP-04.status": "ACTIVE"
+    }
+   },
+   {
+    "id": "act_plan_v2_avoid",
+    "plan_id": "plan_v2",
+    "category": "AVOID",
+    "intent_id": "avoid_coast_and_rivers",
+    "text": "遠離海岸、河川及低窪地方，不要回去查看情況。",
+    "reason": "海嘯警報生效期間，海岸及河岸可能持續危險。",
+    "risk_level": "LOW",
+    "confidence_class": "LOW",
+    "evidence_ids": [
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    ],
+    "dependency_keys": [
+     "disaster.TSUNAMI.JP-04.status"
+    ],
+    "dependency_expectations": [
+     {
+      "key": "disaster.TSUNAMI.JP-04.status",
+      "expected_value": "ACTIVE"
+     }
+    ],
+    "status": "ACTIVE",
+    "safety_decision": "ALLOW",
+    "dependency_values": {
+     "disaster.TSUNAMI.JP-04.status": "ACTIVE"
+    }
+   },
+   {
+    "id": "act_plan_v3_now",
+    "plan_id": "plan_v3",
+    "category": "NOW",
+    "intent_id": "tsunami_evacuate_now",
+    "text": "This high-risk action is blocked because live verified support is unavailable.",
+    "reason": "Synthetic replay, stale, conflicting, unverified, or missing evidence cannot authorize it.",
+    "risk_level": "HIGH",
+    "confidence_class": "UNKNOWN",
+    "evidence_ids": [
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    ],
+    "dependency_keys": [
+     "disaster.TSUNAMI.JP-04.status"
+    ],
+    "dependency_expectations": [
+     {
+      "key": "disaster.TSUNAMI.JP-04.status",
+      "expected_value": "ACTIVE"
+     }
+    ],
+    "status": "BLOCKED",
+    "safety_decision": "BLOCK",
+    "dependency_values": {
+     "disaster.TSUNAMI.JP-04.status": "ACTIVE"
+    }
+   },
+   {
+    "id": "act_v3_next",
+    "plan_id": "plan_v3",
+    "category": "NEXT",
+    "intent_id": "stay_high_until_official_clear",
+    "text": "到達高處後留在原地，直到官方解除海嘯警報，並持續確認官方更新。",
+    "reason": "海嘯可能多次來襲；只有官方發布才代表警報解除。",
+    "risk_level": "LOW",
+    "confidence_class": "LOW",
+    "evidence_ids": [
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    ],
+    "dependency_keys": [
+     "disaster.TSUNAMI.JP-04.status"
+    ],
+    "dependency_expectations": [
+     {
+      "key": "disaster.TSUNAMI.JP-04.status",
+      "expected_value": "ACTIVE"
+     }
+    ],
+    "status": "ACTIVE",
+    "safety_decision": "ALLOW",
+    "dependency_values": {
+     "disaster.TSUNAMI.JP-04.status": "ACTIVE"
+    }
+   },
+   {
+    "id": "act_v3_avoid",
+    "plan_id": "plan_v3",
+    "category": "AVOID",
+    "intent_id": "avoid_coast_and_rivers",
+    "text": "遠離海岸、河川及低窪地方，不要回去查看情況。",
+    "reason": "海嘯警報生效期間，海岸及河岸可能持續危險。",
+    "risk_level": "LOW",
+    "confidence_class": "LOW",
+    "evidence_ids": [
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    ],
+    "dependency_keys": [
+     "disaster.TSUNAMI.JP-04.status"
+    ],
+    "dependency_expectations": [
+     {
+      "key": "disaster.TSUNAMI.JP-04.status",
+      "expected_value": "ACTIVE"
+     }
+    ],
+    "status": "ACTIVE",
+    "safety_decision": "ALLOW",
+    "dependency_values": {
+     "disaster.TSUNAMI.JP-04.status": "ACTIVE"
+    }
+   }
+  ],
+  "trace": [
+   {
+    "id": "trace_live_event_001",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "timestamp": "2026-10-14T17:35:23.369133Z",
+    "agent": "SOURCE_AGENT",
+    "event_type": "MOCK_LIVE_EVENT_RECEIVED",
+    "input_refs": [
+     "jma-historical-tohoku-2011-1"
+    ],
+    "output_refs": [
+     "jma-historical-tohoku-2011-1"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "MOCK LIVE: synthetic earthquake input exercised the Live reducer; not a JMA bulletin."
+   },
+   {
+    "id": "trace_jma-historical-tohoku-2011-1",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "timestamp": "2026-10-14T17:35:23.369133Z",
+    "agent": "REPLAY_ENGINE",
+    "event_type": "MOCK_LIVE_EVIDENCE_ADDED",
+    "input_refs": [
+     "jma-historical-tohoku-2011-1"
+    ],
+    "output_refs": [
+     "ev_jma-historical-tohoku-2011-1",
+     "jma-historical-tohoku-2011-1"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "Synthetic replay evidence was normalized and stored with server-assigned source trust."
+   },
+   {
+    "id": "trace_003",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "timestamp": "2026-10-14T17:35:23.369133Z",
+    "agent": "SAFETY_CORE",
+    "event_type": "PLAN_GENERATED",
+    "input_refs": [
+     "live-refresh-1791999323"
+    ],
+    "output_refs": [
+     "plan_v1",
+     "ev_jma-historical-tohoku-2011-1"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "A conservative plan was generated from current verified state."
+   },
+   {
+    "id": "trace_live_event_004",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "timestamp": "2026-10-14T17:35:23.373124Z",
+    "agent": "SOURCE_AGENT",
+    "event_type": "MOCK_LIVE_EVENT_RECEIVED",
+    "input_refs": [
+     "jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    ],
+    "output_refs": [
+     "jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "MOCK LIVE: synthetic earthquake input exercised the Live reducer; not a JMA bulletin."
+   },
+   {
+    "id": "trace_jma-tsunami-94f4e59c95bd6654--1-1791999323",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "timestamp": "2026-10-14T17:35:23.373124Z",
+    "agent": "REPLAY_ENGINE",
+    "event_type": "MOCK_LIVE_EVIDENCE_ADDED",
+    "input_refs": [
+     "jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    ],
+    "output_refs": [
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323",
+     "jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "Synthetic replay evidence was normalized and stored with server-assigned source trust."
+   },
+   {
+    "id": "trace_006",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "timestamp": "2026-10-14T17:35:23.373124Z",
+    "agent": "SAFETY_CORE",
+    "event_type": "PLAN_EVALUATED",
+    "input_refs": [
+     "live-refresh-1791999323"
+    ],
+    "output_refs": [
+     "plan_v1",
+     "act_plan_v1_avoid",
+     "act_plan_v1_next",
+     "act_plan_v1_now"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "Every plan action lost a dependency or current evidence. Changed dependencies: disaster.TSUNAMI.JP-04.status."
+   },
+   {
+    "id": "trace_007",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "timestamp": "2026-10-14T17:35:23.373124Z",
+    "agent": "SAFETY_CORE",
+    "event_type": "PLAN_INVALIDATED",
+    "input_refs": [
+     "live-refresh-1791999323"
+    ],
+    "output_refs": [
+     "act_plan_v1_avoid",
+     "act_plan_v1_next",
+     "act_plan_v1_now"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "Every plan action lost a dependency or current evidence. Changed dependencies: disaster.TSUNAMI.JP-04.status."
+   },
+   {
+    "id": "trace_008",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "timestamp": "2026-10-14T17:35:23.373124Z",
+    "agent": "SAFETY_CORE",
+    "event_type": "REPLAN_TRIGGERED",
+    "input_refs": [
+     "live-refresh-1791999323"
+    ],
+    "output_refs": [
+     "plan_v1",
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "A dependency changed; a new plan version preserves unaffected guidance."
+   },
+   {
+    "id": "trace_009",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "timestamp": "2026-10-14T17:35:23.373124Z",
+    "agent": "SAFETY_CORE",
+    "event_type": "PLAN_GENERATED",
+    "input_refs": [
+     "live-refresh-1791999323"
+    ],
+    "output_refs": [
+     "plan_v2",
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "A new conservative plan version was appended."
+   },
+   {
+    "id": "trace_live_event_010",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "timestamp": "2026-10-14T17:35:23.380445Z",
+    "agent": "SOURCE_AGENT",
+    "event_type": "MOCK_LIVE_EVENT_RECEIVED",
+    "input_refs": [
+     "jma-historical-tohoku-2011-4"
+    ],
+    "output_refs": [
+     "jma-historical-tohoku-2011-4"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "MOCK LIVE: synthetic earthquake input exercised the Live reducer; not a JMA bulletin."
+   },
+   {
+    "id": "trace_jma-historical-tohoku-2011-4",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "timestamp": "2026-10-14T17:35:23.380445Z",
+    "agent": "REPLAY_ENGINE",
+    "event_type": "MOCK_LIVE_EVIDENCE_ADDED",
+    "input_refs": [
+     "jma-historical-tohoku-2011-4"
+    ],
+    "output_refs": [
+     "ev_jma-historical-tohoku-2011-4",
+     "jma-historical-tohoku-2011-4"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "Synthetic replay evidence was normalized and stored with server-assigned source trust."
+   },
+   {
+    "id": "trace_012",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "timestamp": "2026-10-14T17:35:23.384032Z",
+    "agent": "SITUATION_AGENT",
+    "event_type": "DISTRESS_REPORTED",
+    "input_refs": [
+     "distress_001_1791999323"
+    ],
+    "output_refs": [
+     "WATER_RISING"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "The user reported distress. It can only make guidance more protective."
+   },
+   {
+    "id": "trace_013",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "timestamp": "2026-10-14T17:35:23.384032Z",
+    "agent": "SAFETY_CORE",
+    "event_type": "PLAN_EVALUATED",
+    "input_refs": [
+     "distress_001_1791999323"
+    ],
+    "output_refs": [
+     "plan_v2",
+     "act_plan_v2_now"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "One or more plan actions lost a dependency or current evidence. the distress level changed; the NOW action must be re-evaluated."
+   },
+   {
+    "id": "trace_014",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "timestamp": "2026-10-14T17:35:23.384032Z",
+    "agent": "SAFETY_CORE",
+    "event_type": "PLAN_INVALIDATED",
+    "input_refs": [
+     "distress_001_1791999323"
+    ],
+    "output_refs": [
+     "act_plan_v2_now"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "One or more plan actions lost a dependency or current evidence. the distress level changed; the NOW action must be re-evaluated."
+   },
+   {
+    "id": "trace_015",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "timestamp": "2026-10-14T17:35:23.384032Z",
+    "agent": "SAFETY_CORE",
+    "event_type": "REPLAN_TRIGGERED",
+    "input_refs": [
+     "distress_001_1791999323"
+    ],
+    "output_refs": [
+     "plan_v2",
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "A dependency changed; a new plan version preserves unaffected guidance."
+   },
+   {
+    "id": "trace_016",
+    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "timestamp": "2026-10-14T17:35:23.384032Z",
+    "agent": "SAFETY_CORE",
+    "event_type": "PLAN_GENERATED",
+    "input_refs": [
+     "distress_001_1791999323"
+    ],
+    "output_refs": [
+     "plan_v3",
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "A new conservative plan version was appended."
+   }
+  ],
+  "plan_evaluations": [
+   {
+    "plan_id": "plan_v1",
+    "status": "INVALIDATED",
+    "evaluated_at": "2026-10-14T17:35:23.373124Z",
+    "reason": "Every plan action lost a dependency or current evidence. Changed dependencies: disaster.TSUNAMI.JP-04.status.",
+    "invalid_action_ids": [
+     "act_plan_v1_avoid",
+     "act_plan_v1_next",
+     "act_plan_v1_now"
+    ]
+   },
+   {
+    "plan_id": "plan_v2",
+    "status": "PARTIAL_INVALIDATION",
+    "evaluated_at": "2026-10-14T17:35:23.384032Z",
+    "reason": "One or more plan actions lost a dependency or current evidence. the distress level changed; the NOW action must be re-evaluated.",
+    "invalid_action_ids": [
+     "act_plan_v2_now"
+    ]
+   }
+  ],
+  "destinations": [],
+  "routes": [],
+  "spatial_guidance": {
+   "current_action_kind": "UNKNOWN",
+   "movement_authorized": false,
+   "destination": null,
+   "route": null,
+   "plan_id": null,
+   "action_id": null,
+   "evaluated_at": "2026-10-14T17:35:23.384032Z",
+   "gate_reasons": [
+    "NO_SUPPORTED_LIVE_MOVEMENT_DIRECTIVE",
+    "DESTINATION_OR_ROUTE_EVIDENCE_IS_NOT_CURRENT_AND_ELIGIBLE",
+    "ACTIVE_SAFETY_CORE_PLAN_DOES_NOT_ALLOW_EVACUATION"
+   ],
+   "map_mount_eligible": false
+  },
+  "official_reports": [],
+  "official_sources": [
+   {
+    "source_key": "jma-live-eqvol",
+    "source_name": "SIMULATED JMA provider (NOT official)",
+    "source_url": "mock://72h/jma",
+    "status": "FRESH",
+    "retrieved_at": "2026-10-14T17:35:23.380445Z",
+    "last_published_at": "2026-10-14T17:35:23.380445Z",
+    "next_retry_at": null,
+    "record_count": 1,
+    "detail": "SIMULATION ONLY. MOCK LIVE historical tohoku-2011; archived 2011-03-11T15:15:00+09:00; not live JMA.",
+    "recovery": null
+   },
+   {
+    "source_key": "jma-live-tsunami",
+    "source_name": "SIMULATED JMA tsunami provider (NOT official)",
+    "source_url": "mock://72h/jma-tsunami",
+    "status": "FRESH",
+    "retrieved_at": "2026-10-14T17:35:23.380445Z",
+    "last_published_at": "2026-10-14T17:35:23.373124Z",
+    "next_retry_at": null,
+    "record_count": 1,
+    "detail": "SIMULATION ONLY. HISTORICAL EXERCISE tsunami bulletin for tohoku-2011 (archived 2011-03-11T15:14:00+09:00); synthetic, replayed on the runtime clock; not live JMA.",
+    "recovery": null
+   }
+  ],
+  "distress": {
+   "level": "OFFICIAL_TSUNAMI",
+   "reports": [
+    {
+     "id": "distress_001_1791999323",
+     "tags": [
+      "WATER_RISING"
+     ],
+     "input_mode": "BUTTON",
+     "reported_at": "2026-10-14T17:35:23.384032Z",
+     "source": "USER_REPORTED"
+    }
+   ],
+   "trigger_evidence_ids": [
+    "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+   ],
+   "deadline_at": "2026-10-14T17:35:23.384032Z",
+   "ai_escalated": false,
+   "synthetic": true,
+   "warning_class": "MAJOR_WARNING",
+   "last_official_at": "2026-10-14T17:35:23.373124Z",
+   "trigger_expires_at": "2026-10-14T17:50:23.373124Z",
+   "stale_reason": null
+  }
+ },
+ "historical": {
+  "case_id": "tohoku-2011",
+  "title": {
+   "ja": "東日本大震災（3.11）",
+   "zh-TW": "東日本大震災（311）",
+   "en": "2011 Tohoku earthquake / tsunami"
+  },
+  "source_url": "https://www.jma.go.jp/jma/en/2011_Earthquake/Information_on_2011_Earthquake.html",
+  "magnitude": "9.0",
+  "max_intensity": "7",
+  "milestones": [
+   {
+    "at_jst": "2011-03-11T14:46:00+09:00",
+    "kind": "EARTHQUAKE",
+    "label": {
+     "ja": "三陸沖M9.0、宮城県栗原市で最大震度7",
+     "zh-TW": "三陸沖 M9.0，宮城縣栗原市最大震度7",
+     "en": "M9.0 offshore Tohoku; JMA intensity 7 at Kurihara"
+    },
+    "source_url": "https://www.jma.go.jp/jma/en/2011_Earthquake/Information_on_2011_Earthquake.html",
+    "historic_observation": true,
+    "fed_to_safety_core": true
+   },
+   {
+    "at_jst": "2011-03-11T14:49:00+09:00",
+    "kind": "TSUNAMI_WARNING",
+    "label": {
+     "ja": "岩手・宮城・福島に大津波警報",
+     "zh-TW": "岩手、宮城、福島發布大海嘯警報",
+     "en": "Major tsunami warnings issued for Iwate, Miyagi, Fukushima"
+    },
+    "source_url": "https://www.jma.go.jp/jma/en/2011_Earthquake/Information_on_2011_Earthquake.html",
+    "historic_observation": true,
+    "fed_to_safety_core": true
+   },
+   {
+    "at_jst": "2011-03-11T15:14:00+09:00",
+    "kind": "TSUNAMI_UPGRADE",
+    "label": {
+     "ja": "津波警報の対象範囲・予想高さを引き上げ",
+     "zh-TW": "擴大海嘯警報範圍並提高預測海嘯高度",
+     "en": "Tsunami warnings expanded and upgraded"
+    },
+    "source_url": "https://www.data.jma.go.jp/eqev/data/tsunamihyoka/20110311Tohokuchihoutaiheiyouoki/index.html",
+    "historic_observation": true,
+    "fed_to_safety_core": true
+   },
+   {
+    "at_jst": "2011-03-11T15:15:00+09:00",
+    "kind": "AFTERSHOCK",
+    "label": {
+     "ja": "M7.6の最大余震発生",
+     "zh-TW": "發生 M7.6 大型餘震",
+     "en": "Major M7.6 aftershock"
+    },
+    "source_url": "https://www.jma.go.jp/jma/en/2011_Earthquake/Information_on_2011_Earthquake.html",
+    "historic_observation": true,
+    "fed_to_safety_core": true
+   }
+  ],
+  "current_milestone": {
+   "at_jst": "2011-03-11T15:15:00+09:00",
+   "kind": "AFTERSHOCK",
+   "label": {
+    "ja": "M7.6の最大余震発生",
+    "zh-TW": "發生 M7.6 大型餘震",
+    "en": "Major M7.6 aftershock"
+   },
+   "source_url": "https://www.jma.go.jp/jma/en/2011_Earthquake/Information_on_2011_Earthquake.html",
+   "historic_observation": true,
+   "fed_to_safety_core": true
+  },
+  "advisory_is_not_safety_core_input": true
+ },
+ "movement_assessment": {
+  "authority": "SIMULATION_REFERENCE_ONLY",
+  "version": "1108cdc4d09d003865533bb7a05e7c90066f41e52789aaf28666f2afdad4baf1",
+  "session_id": "0624111f-4ac8-441a-93b7-c4d92aee6290",
+  "step": 4,
+  "plan_id": "plan_v3",
+  "decision": "UNKNOWN",
+  "allowed_decisions": [
+   "UNKNOWN"
+  ],
+  "area_ids": [
+   "JP-MUNI-04202",
+   "JP-04",
+   "JP"
+  ],
+  "area_label": "石巻市",
+  "location_source": "USER_SELECTED",
+  "location_observed_at": "2026-10-14T17:35:23.358987Z",
+  "created_at": "2026-10-14T17:35:23.385027Z",
+  "expires_at": "2026-10-14T17:40:23.385027Z",
+  "facts": [
+   {
+    "id": "LOCATION",
+    "value": "USER_SELECTED:石巻市:CURRENT_OBSERVATION"
+   },
+   {
+    "id": "EVENT",
+    "value": "AFTERSHOCK"
+   },
+   {
+    "id": "NETWORK",
+    "value": "ONLINE"
+   },
+   {
+    "id": "EVIDENCE",
+    "value": "FRESH"
+   },
+   {
+    "id": "MOBILITY",
+    "value": "ABLE"
+   },
+   {
+    "id": "TSUNAMI_SCENARIO",
+    "value": "ACTIVE"
+   },
+   {
+    "id": "SITE",
+    "value": "COASTAL_LOWLAND"
+   },
+   {
+    "id": "SHAKING",
+    "value": "AFTER"
+   },
+   {
+    "id": "BUILDING",
+    "value": "UNKNOWN"
+   },
+   {
+    "id": "SHELTER",
+    "value": "UNKNOWN"
+   },
+   {
+    "id": "HIGH_GROUND",
+    "value": "UNKNOWN"
+   },
+   {
+    "id": "ROUTE",
+    "value": "UNKNOWN"
+   }
+  ],
+  "fact_ids": [
+   "LOCATION",
+   "EVENT",
+   "NETWORK",
+   "EVIDENCE",
+   "MOBILITY",
+   "TSUNAMI_SCENARIO",
+   "SITE",
+   "SHAKING",
+   "BUILDING",
+   "SHELTER",
+   "HIGH_GROUND",
+   "ROUTE"
+  ],
+  "limitation_ids": [
+   "SIMULATION_ONLY",
+   "NOT_LIVE_AUTHORITY",
+   "NO_SAFE_ROUTE",
+   "LOCATION_NOT_SAFETY"
+  ],
+  "ai_mode": "NOT_RUN",
+  "reason_code": "PLAN_CHANGED",
+  "route_authorized": false,
+  "safe_location_verified": false
+ },
+ "movement_assessment_history": [
+  {
+   "authority": "SIMULATION_REFERENCE_ONLY",
+   "version": "e1449767f9c12de7287a0fd51519fa556e7e6a64e66f9e9f5bdd25db1bb5d8d1",
+   "session_id": "0624111f-4ac8-441a-93b7-c4d92aee6290",
+   "step": 1,
+   "plan_id": "plan_v1",
+   "decision": "UNKNOWN",
+   "allowed_decisions": [
+    "UNKNOWN"
+   ],
+   "area_ids": [
+    "JP-MUNI-04202",
+    "JP-04",
+    "JP"
+   ],
+   "area_label": "石巻市",
+   "location_source": "USER_SELECTED",
+   "location_observed_at": "2026-10-14T17:35:23.358987Z",
+   "created_at": "2026-10-14T17:35:23.369133Z",
+   "expires_at": "2026-10-14T17:40:23.369133Z",
+   "facts": [
+    {
+     "id": "LOCATION",
+     "value": "USER_SELECTED:石巻市:CURRENT_OBSERVATION"
+    },
+    {
+     "id": "EVENT",
+     "value": "EARTHQUAKE"
+    },
+    {
+     "id": "NETWORK",
+     "value": "ONLINE"
+    },
+    {
+     "id": "EVIDENCE",
+     "value": "FRESH"
+    },
+    {
+     "id": "MOBILITY",
+     "value": "ABLE"
+    },
+    {
+     "id": "TSUNAMI_SCENARIO",
+     "value": "NOT_ASSERTED"
+    },
+    {
+     "id": "SITE",
+     "value": "COASTAL_LOWLAND"
+    },
+    {
+     "id": "SHAKING",
+     "value": "AFTER"
+    },
+    {
+     "id": "BUILDING",
+     "value": "UNKNOWN"
+    },
+    {
+     "id": "SHELTER",
+     "value": "UNKNOWN"
+    },
+    {
+     "id": "HIGH_GROUND",
+     "value": "UNKNOWN"
+    },
+    {
+     "id": "ROUTE",
+     "value": "UNKNOWN"
+    }
+   ],
+   "fact_ids": [
+    "LOCATION",
+    "EVENT",
+    "NETWORK",
+    "EVIDENCE",
+    "MOBILITY",
+    "TSUNAMI_SCENARIO",
+    "SITE",
+    "SHAKING",
+    "BUILDING",
+    "SHELTER",
+    "HIGH_GROUND",
+    "ROUTE"
+   ],
+   "limitation_ids": [
+    "SIMULATION_ONLY",
+    "NOT_LIVE_AUTHORITY",
+    "NO_SAFE_ROUTE",
+    "LOCATION_NOT_SAFETY"
+   ],
+   "ai_mode": "GEMINI_ADK",
+   "reason_code": null,
+   "route_authorized": false,
+   "safe_location_verified": false
+  },
+  {
+   "authority": "SIMULATION_REFERENCE_ONLY",
+   "version": "c3cbbdc83213953195b071adbc8c5f49761042fda84a5e125213c0d801ac5ce4",
+   "session_id": "0624111f-4ac8-441a-93b7-c4d92aee6290",
+   "step": 2,
+   "plan_id": "plan_v2",
+   "decision": "UNKNOWN",
+   "allowed_decisions": [
+    "UNKNOWN"
+   ],
+   "area_ids": [
+    "JP-MUNI-04202",
+    "JP-04",
+    "JP"
+   ],
+   "area_label": "石巻市",
+   "location_source": "USER_SELECTED",
+   "location_observed_at": "2026-10-14T17:35:23.358987Z",
+   "created_at": "2026-10-14T17:35:23.373124Z",
+   "expires_at": "2026-10-14T17:40:23.373124Z",
+   "facts": [
+    {
+     "id": "LOCATION",
+     "value": "USER_SELECTED:石巻市:CURRENT_OBSERVATION"
+    },
+    {
+     "id": "EVENT",
+     "value": "TSUNAMI_WARNING"
+    },
+    {
+     "id": "NETWORK",
+     "value": "ONLINE"
+    },
+    {
+     "id": "EVIDENCE",
+     "value": "FRESH"
+    },
+    {
+     "id": "MOBILITY",
+     "value": "ABLE"
+    },
+    {
+     "id": "TSUNAMI_SCENARIO",
+     "value": "ACTIVE"
+    },
+    {
+     "id": "SITE",
+     "value": "COASTAL_LOWLAND"
+    },
+    {
+     "id": "SHAKING",
+     "value": "AFTER"
+    },
+    {
+     "id": "BUILDING",
+     "value": "UNKNOWN"
+    },
+    {
+     "id": "SHELTER",
+     "value": "UNKNOWN"
+    },
+    {
+     "id": "HIGH_GROUND",
+     "value": "UNKNOWN"
+    },
+    {
+     "id": "ROUTE",
+     "value": "UNKNOWN"
+    }
+   ],
+   "fact_ids": [
+    "LOCATION",
+    "EVENT",
+    "NETWORK",
+    "EVIDENCE",
+    "MOBILITY",
+    "TSUNAMI_SCENARIO",
+    "SITE",
+    "SHAKING",
+    "BUILDING",
+    "SHELTER",
+    "HIGH_GROUND",
+    "ROUTE"
+   ],
+   "limitation_ids": [
+    "SIMULATION_ONLY",
+    "NOT_LIVE_AUTHORITY",
+    "NO_SAFE_ROUTE",
+    "LOCATION_NOT_SAFETY"
+   ],
+   "ai_mode": "GEMINI_ADK",
+   "reason_code": null,
+   "route_authorized": false,
+   "safe_location_verified": false
+  },
+  {
+   "authority": "SIMULATION_REFERENCE_ONLY",
+   "version": "01a5696d9a425562c156be08648fd17a6242cd9c6546be5fcc0508cf2688359d",
+   "session_id": "0624111f-4ac8-441a-93b7-c4d92aee6290",
+   "step": 3,
+   "plan_id": "plan_v2",
+   "decision": "UNKNOWN",
+   "allowed_decisions": [
+    "UNKNOWN"
+   ],
+   "area_ids": [
+    "JP-MUNI-04202",
+    "JP-04",
+    "JP"
+   ],
+   "area_label": "石巻市",
+   "location_source": "USER_SELECTED",
+   "location_observed_at": "2026-10-14T17:35:23.358987Z",
+   "created_at": "2026-10-14T17:35:23.378619Z",
+   "expires_at": "2026-10-14T17:40:23.378619Z",
+   "facts": [
+    {
+     "id": "LOCATION",
+     "value": "USER_SELECTED:石巻市:CURRENT_OBSERVATION"
+    },
+    {
+     "id": "EVENT",
+     "value": "TSUNAMI_UPGRADE"
+    },
+    {
+     "id": "NETWORK",
+     "value": "ONLINE"
+    },
+    {
+     "id": "EVIDENCE",
+     "value": "FRESH"
+    },
+    {
+     "id": "MOBILITY",
+     "value": "ABLE"
+    },
+    {
+     "id": "TSUNAMI_SCENARIO",
+     "value": "ACTIVE"
+    },
+    {
+     "id": "SITE",
+     "value": "COASTAL_LOWLAND"
+    },
+    {
+     "id": "SHAKING",
+     "value": "AFTER"
+    },
+    {
+     "id": "BUILDING",
+     "value": "UNKNOWN"
+    },
+    {
+     "id": "SHELTER",
+     "value": "UNKNOWN"
+    },
+    {
+     "id": "HIGH_GROUND",
+     "value": "UNKNOWN"
+    },
+    {
+     "id": "ROUTE",
+     "value": "UNKNOWN"
+    }
+   ],
+   "fact_ids": [
+    "LOCATION",
+    "EVENT",
+    "NETWORK",
+    "EVIDENCE",
+    "MOBILITY",
+    "TSUNAMI_SCENARIO",
+    "SITE",
+    "SHAKING",
+    "BUILDING",
+    "SHELTER",
+    "HIGH_GROUND",
+    "ROUTE"
+   ],
+   "limitation_ids": [
+    "SIMULATION_ONLY",
+    "NOT_LIVE_AUTHORITY",
+    "NO_SAFE_ROUTE",
+    "LOCATION_NOT_SAFETY"
+   ],
+   "ai_mode": "GEMINI_ADK",
+   "reason_code": null,
+   "route_authorized": false,
+   "safe_location_verified": false
+  },
+  {
+   "authority": "SIMULATION_REFERENCE_ONLY",
+   "version": "1108cdc4d09d003865533bb7a05e7c90066f41e52789aaf28666f2afdad4baf1",
+   "session_id": "0624111f-4ac8-441a-93b7-c4d92aee6290",
+   "step": 4,
+   "plan_id": "plan_v3",
+   "decision": "UNKNOWN",
+   "allowed_decisions": [
+    "UNKNOWN"
+   ],
+   "area_ids": [
+    "JP-MUNI-04202",
+    "JP-04",
+    "JP"
+   ],
+   "area_label": "石巻市",
+   "location_source": "USER_SELECTED",
+   "location_observed_at": "2026-10-14T17:35:23.358987Z",
+   "created_at": "2026-10-14T17:35:23.385027Z",
+   "expires_at": "2026-10-14T17:40:23.385027Z",
+   "facts": [
+    {
+     "id": "LOCATION",
+     "value": "USER_SELECTED:石巻市:CURRENT_OBSERVATION"
+    },
+    {
+     "id": "EVENT",
+     "value": "AFTERSHOCK"
+    },
+    {
+     "id": "NETWORK",
+     "value": "ONLINE"
+    },
+    {
+     "id": "EVIDENCE",
+     "value": "FRESH"
+    },
+    {
+     "id": "MOBILITY",
+     "value": "ABLE"
+    },
+    {
+     "id": "TSUNAMI_SCENARIO",
+     "value": "ACTIVE"
+    },
+    {
+     "id": "SITE",
+     "value": "COASTAL_LOWLAND"
+    },
+    {
+     "id": "SHAKING",
+     "value": "AFTER"
+    },
+    {
+     "id": "BUILDING",
+     "value": "UNKNOWN"
+    },
+    {
+     "id": "SHELTER",
+     "value": "UNKNOWN"
+    },
+    {
+     "id": "HIGH_GROUND",
+     "value": "UNKNOWN"
+    },
+    {
+     "id": "ROUTE",
+     "value": "UNKNOWN"
+    }
+   ],
+   "fact_ids": [
+    "LOCATION",
+    "EVENT",
+    "NETWORK",
+    "EVIDENCE",
+    "MOBILITY",
+    "TSUNAMI_SCENARIO",
+    "SITE",
+    "SHAKING",
+    "BUILDING",
+    "SHELTER",
+    "HIGH_GROUND",
+    "ROUTE"
+   ],
+   "limitation_ids": [
+    "SIMULATION_ONLY",
+    "NOT_LIVE_AUTHORITY",
+    "NO_SAFE_ROUTE",
+    "LOCATION_NOT_SAFETY"
+   ],
+   "ai_mode": "NOT_RUN",
+   "reason_code": "PLAN_CHANGED",
+   "route_authorized": false,
+   "safe_location_verified": false
+  }
+ ],
+ "movement_assessment_superseded": [
+  {
+   "authority": "SIMULATION_REFERENCE_ONLY",
+   "version": "c13cb78c297328db90e21b1ffa154307ab1fab8a24f90664522fedd045ca54e9",
+   "session_id": "0624111f-4ac8-441a-93b7-c4d92aee6290",
+   "step": 4,
+   "plan_id": "plan_v2",
+   "decision": "UNKNOWN",
+   "allowed_decisions": [
+    "UNKNOWN"
+   ],
+   "area_ids": [
+    "JP-MUNI-04202",
+    "JP-04",
+    "JP"
+   ],
+   "area_label": "石巻市",
+   "location_source": "USER_SELECTED",
+   "location_observed_at": "2026-10-14T17:35:23.358987Z",
+   "created_at": "2026-10-14T17:35:23.381109Z",
+   "expires_at": "2026-10-14T17:40:23.381109Z",
+   "facts": [
+    {
+     "id": "LOCATION",
+     "value": "USER_SELECTED:石巻市:CURRENT_OBSERVATION"
+    },
+    {
+     "id": "EVENT",
+     "value": "AFTERSHOCK"
+    },
+    {
+     "id": "NETWORK",
+     "value": "ONLINE"
+    },
+    {
+     "id": "EVIDENCE",
+     "value": "FRESH"
+    },
+    {
+     "id": "MOBILITY",
+     "value": "ABLE"
+    },
+    {
+     "id": "TSUNAMI_SCENARIO",
+     "value": "ACTIVE"
+    },
+    {
+     "id": "SITE",
+     "value": "COASTAL_LOWLAND"
+    },
+    {
+     "id": "SHAKING",
+     "value": "AFTER"
+    },
+    {
+     "id": "BUILDING",
+     "value": "UNKNOWN"
+    },
+    {
+     "id": "SHELTER",
+     "value": "UNKNOWN"
+    },
+    {
+     "id": "HIGH_GROUND",
+     "value": "UNKNOWN"
+    },
+    {
+     "id": "ROUTE",
+     "value": "UNKNOWN"
+    }
+   ],
+   "fact_ids": [
+    "LOCATION",
+    "EVENT",
+    "NETWORK",
+    "EVIDENCE",
+    "MOBILITY",
+    "TSUNAMI_SCENARIO",
+    "SITE",
+    "SHAKING",
+    "BUILDING",
+    "SHELTER",
+    "HIGH_GROUND",
+    "ROUTE"
+   ],
+   "limitation_ids": [
+    "SIMULATION_ONLY",
+    "NOT_LIVE_AUTHORITY",
+    "NO_SAFE_ROUTE",
+    "LOCATION_NOT_SAFETY"
+   ],
+   "ai_mode": "GEMINI_ADK",
+   "reason_code": null,
+   "route_authorized": false,
+   "safe_location_verified": false
+  }
+ ]
+}

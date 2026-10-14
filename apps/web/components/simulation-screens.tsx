@@ -21,6 +21,7 @@ import { liveMessages } from '@/lib/live-i18n';
 import { MapScreen } from './map-screen';
 import { MAP_REGIONS, mapOverviewLabel, mapRegionLabel } from '@/lib/map-regions';
 import { sosText } from '@/lib/distress';
+import { exerciseHeroText, officialAlert } from '@/lib/now-status';
 import type { AppTab } from '@/lib/app-tabs';
 
 /** home / plan / events all render the shared Now screen (events opens its basis on the timeline); map and more use the shared Map and More layouts. */
@@ -37,7 +38,7 @@ const ui = {
     details:'演習の詳細（AI / Safety Core）', ai:'AI / Safety Core',
     consult:'史料', actions:'行動プラン', source:'模擬ソース', status:'ステータス', simulationOnly:'演習のみ',
     pending:'イベント発生を待っています', processing:'模擬イベントを処理中…', completed:'完了',
-    risk:'歴史の津波警報・停電は時系列のみです。危険エリア、避難所、経路を推定表示しません。',
+    risk:'歴史の津波警報は演習用の模擬情報として Safety Core に入力されます。停電は時系列の背景情報のみです。危険エリア、避難所、安全な経路は推定表示しません。',
     error:'演習エラー', mapNotice:'安全な経路・避難所の認証なし',
     mapRiskTitle:'位置とリスク',mapRiskUnknown:'安全性：判定不能',tsunamiWarningSummary:'津波警報（歴史演習） · 避難安全性は未判定',
   },
@@ -50,7 +51,7 @@ const ui = {
     details:'Exercise details (AI / Safety Core)', ai:'AI / Safety Core',
     consult:'Historic source',actions:'Action plan',source:'Simulated source',status:'Status', simulationOnly:'Simulation only',
     pending:'Waiting for a simulated event',processing:'Processing simulated event…',completed:'Completed',
-    risk:'Tsunami and outage entries are historical context only. No inferred hazards, shelters or safe routes are displayed.',
+    risk:'Historical tsunami warnings enter the Safety Core as simulated exercise data; the power outage is historical background only. No inferred hazard zones, shelters or safe routes are displayed.',
     error:'Exercise error',mapNotice:'No verified shelter or safe route',
     mapRiskTitle:'Location & risk',mapRiskUnknown:'Safety: undetermined',tsunamiWarningSummary:'Historic tsunami warning · safety not verified',
   },
@@ -63,7 +64,7 @@ const ui = {
     details:'演練詳細（AI／Safety Core）', ai:'AI／Safety Core',
     consult:'歷史來源',actions:'行動計劃',source:'模擬來源',status:'狀態', simulationOnly:'僅限演練',
     pending:'等待模擬事件發生',processing:'正在處理模擬事件…',completed:'已完成',
-    risk:'海嘯警報及停電只是歷史背景，不會推算危險區域、避難所或安全路線。',
+    risk:'歷史海嘯警報會以模擬演練資料輸入 Safety Core；只有停電屬歷史背景。不會推算危險區域、避難所或安全路線。',
     error:'演習出現錯誤',mapNotice:'沒有已核實避難所或安全路線',
     mapRiskTitle:'定位與災害風險',mapRiskUnknown:'安全性：無法判定',tsunamiWarningSummary:'歷史海嘯警報已發生 · 尚未確認避難安全',
   },
@@ -138,7 +139,12 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
 
   const errorLine=error?<p role="alert" className="error">{t.error}: {error}</p>:null;
   const fix=geo.location?{lat:geo.location.lat,lng:geo.location.lng,accuracy_m:geo.location.accuracy_m,captured_at:geo.location.captured_at,manual:geo.location.source==='MANUAL_EXERCISE'}:null;
-  const hero=!doneEvent?t.awaiting:config.conditions?adviceText[advice?.decision??'UNKNOWN']:byCategory('NOW').join(' · ')||t.waiting;
+  // Live's priority: the Safety Core instruction leads under a distress level or a tsunami NOW; Gemini stays a supplementary reference.
+  const hero=exerciseHeroText({started:doneEvent,distress:state?.snapshot.distress,now:wallTime,language,
+    planNowIntent:state?.snapshot.plan_actions.find(a=>a.plan_id===plan?.id&&a.category==='NOW')?.intent_id,
+    safetyCoreNowText:byCategory('NOW').join(' · '),adviceText:config.conditions?adviceText[advice?.decision??'UNKNOWN']:null,
+    messages:{awaiting:t.awaiting,waiting:t.waiting}});
+  const officialLevel=!!state?.snapshot.distress&&officialAlert(state.snapshot.distress,wallTime,language)!==null;
   const basis=doneEvent&&current
     ?`${current.kind==='EARTHQUAKE'?t.earthquake:current.label[language]} · ${current.at_jst.slice(11,16)} · ${config.title}${current.fed_to_safety_core?'':' · '+t.unsupported}`
     :`${config.title}${upcoming?` · ${t.nextEvent} ${upcoming.at_jst.slice(11,16)} ${upcoming.label[language]}`:''}`;
@@ -184,7 +190,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
         <p className="now-meta">{t.warning} · {t.safety}</p>
         <Disclosure summary={t.details}><p className="now-meta">{t.ai} · {ai}</p></Disclosure>
       </div>
-      :<div data-testid="simulation-now"><NowScreen language={language} hero={hero} heroTone={warningLabel?'danger':error||!connected?'warn':'normal'} basis={basis}
+      :<div data-testid="simulation-now"><NowScreen language={language} hero={hero} heroTone={warningLabel||officialLevel?'danger':error||!connected?'warn':'normal'} basis={basis}
         next={doneEvent?byCategory('NEXT'):[]} avoid={doneEvent?byCategory('AVOID'):[]}
         updatedLabel={`${t.clock} ${timeText.slice(0,16)} JST`} note={liveMessages[language].notSafetyVerdict} exercise openBasis={tab==='events'} basisDetails={basisDetails} help={help}/></div>;
 

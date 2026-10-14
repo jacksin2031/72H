@@ -349,7 +349,9 @@ export const liveSnapshotSchema = z.object({
   const evidenceIds = new Set(snapshot.evidence.map(item => item.id));
   const destinationIds = new Set(snapshot.destinations.map(item => item.id));
   const planIds = new Set(snapshot.plans.map(item => item.id));
-  const sourceKeys = new Set([snapshot.source.source_key, snapshot.destination_source.source_key, snapshot.route_source.source_key]);
+  // Every projected official source (earthquake and tsunami) may back evidence.
+  const sourceKeys = new Set([snapshot.source.source_key, snapshot.destination_source.source_key, snapshot.route_source.source_key,
+    ...snapshot.official_sources.map(source => source.source_key)]);
   const areas = new Map(snapshot.area_catalog.map(area => [area.id, area]));
   if (areas.size !== snapshot.area_catalog.length) ctx.addIssue({ code: 'custom', message: 'Duplicate area ID' });
   for (const area of snapshot.area_catalog) {
