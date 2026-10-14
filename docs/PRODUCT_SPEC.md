@@ -1,5 +1,15 @@
 # 72H Product Specification v0.1
 
+## Nationwide designated-place reference (2026-10-13)
+
+The user requested nationwide shelters. [NATIONWIDE_SHELTERS.md](NATIONWIDE_SHELTERS.md)
+records the local implementation and validation: all published GSI national
+shelter/emergency-site CSV records across 47 prefectures, lazy region loading,
+designation filters and an explicit More reference-map entry. This is a static
+public directory, not current opening evidence or movement authorization.
+The Ishinomaki tsunami coverage boundary and Safety Core remain unchanged.
+No deployment is introduced by this request.
+
 ## Authorized P1.2 simplified consumer settings (2026-10-09)
 
 The approved local milestone is defined in

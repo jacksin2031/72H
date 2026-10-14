@@ -34,3 +34,14 @@
   .official-hazard-panel{border-left:0;border-top:1px solid #405565;padding:16px}
   .japan-official-page .sim-map-information{bottom:10px}
 }
+.national-shelter-panel{padding:18px;border-bottom:1px solid #304640;color:#e1ece6;min-width:0}
+.national-shelter-panel h1{font-size:1.15rem;margin:0 0 12px}.national-shelter-panel p{line-height:1.6;overflow-wrap:anywhere}
+.shelter-select,.national-shelter-filters label{display:grid;gap:6px;margin:12px 0;min-width:0}
+.national-shelter-panel select,.national-shelter-panel input{width:100%;min-width:0;max-width:100%;min-height:44px;padding:10px;border:1px solid #466355;border-radius:8px;background:#142a23;color:#e1ece6;font:inherit}
+.national-shelter-panel button{min-height:44px;padding:10px;background:#22503a;color:#edf5ee;border:1px solid #51775d;border-radius:8px;font:inherit;text-align:left;cursor:pointer}
+.national-shelter-list{list-style:none;padding:0;margin:0}.national-shelter-list>li{padding:14px 0;border-bottom:1px solid #304640}
+.national-shelter-list>li>button{width:100%;overflow-wrap:anywhere}.national-shelter-list details{margin-top:8px}.national-shelter-list dl>div{display:flex;gap:12px;justify-content:space-between}.national-shelter-list dd{margin:0}
+.national-shelter-sources{margin-top:16px}.national-shelter-sources a,.national-shelter-list a{color:#aed2be}
+.national-shelter-panel summary{min-height:44px;display:list-item;line-height:1.5;padding:10px 0;cursor:pointer}.national-shelter-panel :focus-visible{outline:3px solid #c9e1ff;outline-offset:3px}
+.japan-official-sidebar{min-width:0;overflow:auto;background:#102021}.japan-official-sidebar>.official-hazard-panel{width:auto;max-height:none;overflow:visible}
+@media(min-width:900px){.japan-official-sidebar{max-height:calc(100dvh - 62px)}}

@@ -70,18 +70,18 @@ const mapText={
 export function SimulationReferenceMap({
   language,compact=false,showInformation=true,epicenter=null,userLocation=null,referencePoint=null,officialPack=null,showInundation=false,showPlaces=false,focusPoint=null,onReferencePoint,onPlace,protectDeviceLocation=true,seismicOrigins=[],seismicTime=null,
   disasterReference=null,forecastLinePack=null,referenceConnected=false,referenceNow=0,showForecastLines=false,
-  intensityRegionPack=null,showIntensityRegions=false,referencePlaces,referenceRoute=null,
+  intensityRegionPack=null,showIntensityRegions=false,referencePlaces,viewBounds=null,referenceRoute=null,
 }:{
   language:Language; compact?:boolean;showInformation?:boolean;epicenter?:Epicenter|null;userLocation?:LocationFix|null;
   referencePoint?:{lat:number;lng:number}|null;
   officialPack?:HazardPack|null;showInundation?:boolean;showPlaces?:boolean;focusPoint?:{lat:number;lng:number;zoom?:number}|null;
+  referencePlaces?:OfficialPlace[];viewBounds?:[number,number,number,number]|null;
   onReferencePoint?:(point:{lat:number;lng:number})=>void;onPlace?:(place:OfficialPlace)=>void;
   protectDeviceLocation?:boolean;
   seismicOrigins?:readonly Epicenter[];seismicTime?:number|null;
   disasterReference?:DisasterMapReference|null;forecastLinePack?:ForecastLinePack|null;
   referenceConnected?:boolean;referenceNow?:number;showForecastLines?:boolean;
   intensityRegionPack?:IntensityRegionPack|null;showIntensityRegions?:boolean;
-  referencePlaces?:OfficialPlace[];
   referenceRoute?:import('@/lib/evacuation-road-graph').RoadCandidate|null;
 }){
   const host=useRef<HTMLDivElement>(null);
@@ -314,32 +314,42 @@ export function SimulationReferenceMap({
   },[status,seismicTime,seismicOrigins,waveData]);
 
   useEffect(()=>{
-    const map=mapRef.current;if(status!=='ready'||!map||(!officialPack&&!referencePlaces))return;
+    const map=mapRef.current;if(status!=='ready'||!map||(!officialPack&&referencePlaces===undefined))return;
     const places=referencePlaces??officialPack?.places??[];
+    const byId=new Map(places.map(p=>[p.id,p]));
     if(showInundation&&officialPack){
       map.addSource('official-inundation',{type:'geojson',data:officialPack.inundation});
       map.addLayer({id:'official-inundation-fill',type:'fill',source:'official-inundation',paint:{'fill-color':'#e9ac66','fill-opacity':0.38}});
       map.addLayer({id:'official-inundation-edge',type:'line',source:'official-inundation',paint:{'line-color':'#ffd19a','line-width':1}});
     }
     if(showPlaces){
-      map.addSource('official-places',{type:'geojson',data:{type:'FeatureCollection',features:places.map(p=>({
+      map.addSource('official-places',{type:'geojson',cluster:true,clusterRadius:40,clusterMaxZoom:12,data:{type:'FeatureCollection',features:places.map(p=>({
         type:'Feature',geometry:{type:'Point',coordinates:[p.lng,p.lat]},properties:{id:p.id,kind:p.kind},
       }))}});
-      map.addLayer({id:'official-places-points',type:'circle',source:'official-places',paint:{'circle-radius':5,
+      map.addLayer({id:'official-places-clusters',type:'circle',source:'official-places',filter:['has','point_count'],paint:{'circle-radius':['step',['get','point_count'],10,100,16,1000,22],'circle-color':'#80b9a2','circle-opacity':0.8,'circle-stroke-color':'#122230','circle-stroke-width':2}});
+      map.addLayer({id:'official-places-points',type:'circle',source:'official-places',filter:['!', ['has','point_count']],paint:{'circle-radius':5,
         'circle-color':['match',['get','kind'],'EMERGENCY_SITE','#afcbed','#aeb4bd'],'circle-stroke-color':'#122230','circle-stroke-width':1.5}});
     }
     const choose=(event:import('maplibre-gl').MapMouseEvent)=>{
-      const hit=showPlaces?map.queryRenderedFeatures(event.point,{layers:['official-places-points']})[0]:null;
-      const place=hit?places.find(p=>p.id===hit.properties.id):null;
+      const hit=showPlaces&&places.length?map.queryRenderedFeatures(event.point,{layers:['official-places-points','official-places-clusters']})[0]:null;
+      if(hit?.properties?.point_count){
+        const point=hit.geometry as {type:'Point';coordinates:[number,number]};
+        map.easeTo({center:point.coordinates,zoom:Math.min(17,map.getZoom()+2),duration:0});return;
+      }
+      const place=hit?byId.get(hit.properties.id):null;
       if(place)onPlace?.(place);else onReferencePoint?.({lat:event.lngLat.lat,lng:event.lngLat.lng});
     };
     map.on('click',choose);
     return()=>{
       map.off('click',choose);
-      for(const id of ['official-places-points','official-inundation-edge','official-inundation-fill'])if(map.getLayer(id))map.removeLayer(id);
+      for(const id of ['official-places-points','official-places-clusters','official-inundation-edge','official-inundation-fill'])if(map.getLayer(id))map.removeLayer(id);
       for(const id of ['official-places','official-inundation'])if(map.getSource(id))map.removeSource(id);
     };
   },[status,officialPack,referencePlaces,showInundation,showPlaces,onReferencePoint,onPlace]);
+
+  useEffect(()=>{
+    if(status==='ready'&&viewBounds)mapRef.current?.fitBounds([[viewBounds[0],viewBounds[1]],[viewBounds[2],viewBounds[3]]],{padding:{top:130,bottom:180,left:30,right:70},maxZoom:12,duration:0});
+  },[status,viewBounds]);
 
   useEffect(()=>{
     const map=mapRef.current;

@@ -55,7 +55,7 @@ export function officialPlaceLocation(place:Pick<OfficialPlace,'lat'|'lng'>,sele
 export type HazardAssessment={status:'INSIDE_KNOWN'|'OUTSIDE_KNOWN'|'BOUNDARY_UNCERTAIN'|'UNKNOWN';reason:string;
   depth_labels:string[];safe_location_verified:false;route_authorized:false};
 
-async function checkedJson(path:string,expected:string,max:number,signal?:AbortSignal){
+export async function checkedJson(path:string,expected:string,max:number,signal?:AbortSignal){
   // Revalidate browser HTTP caches after a pack update; offline SW still serves
   // only the public asset snapshot, whose bytes are checked below.
   const response=await fetch(path,{cache:'no-cache',signal});

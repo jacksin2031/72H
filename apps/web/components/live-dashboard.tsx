@@ -598,10 +598,9 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
   if (locationSync && view !== 'more' && !criticalProtection) return <LocationSyncGate state={locationSync} messages={messages} retry={onRetryLocation} canRetry={canStart && !busy} chooseArea={onChooseArea} />;
   if (!snapshot || !projection) return <>
     <LocationOnboarding language={language} messages={messages} location={deviceLocation} busy={busy} canStart={canStart} submit={onProfile} />
-    {view === 'more' && <details className="more-lab-entry"><summary>{messages.testToolsLabel}</summary>
+    {view === 'more' && <><Link className="reference-map-link" href="/map">{language === 'ja' ? '全国の避難場所・参考地図' : language === 'en' ? 'Japan evacuation places & reference map' : '全日本避難場所及參考地圖'} →</Link><details className="more-lab-entry"><summary>{messages.testToolsLabel}</summary>
       <Link href="/disaster-test">{messages.disasterTestDestination} →</Link>
-      <Link href="/map">{language === 'ja' ? '日本全国の参考地図' : language === 'en' ? 'All Japan reference map' : '全日本參考地圖'} →</Link>
-    </details>}
+    </details></>}
   </>;
   const urgent = ['SAFETY_CHECK', 'EMERGENCY_PROTECT', 'SURVIVAL', 'MAP_ASSISTED'].includes(projection.presentation.mode)
     || ['SHELTER_IN_PLACE', 'EVACUATE'].includes(snapshot.spatial_guidance.current_action_kind);
@@ -710,9 +709,9 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
             <span>{label}</span><UiIcon name="arrow" />
           </button>)}
         </nav>
+        <Link className="reference-map-link" href="/map">{language === 'ja' ? '全国の避難場所・参考地図' : language === 'en' ? 'Japan evacuation places & reference map' : '全日本避難場所及參考地圖'} →</Link>
         <details className="more-lab-entry"><summary>{messages.testToolsLabel}</summary>
       <Link href="/disaster-test">{messages.disasterTestDestination} →</Link>
-          <Link href="/map">{language === 'ja' ? '日本全国の参考地図' : language === 'en' ? 'All Japan reference map' : '全日本參考地圖'} →</Link>
         </details>
         <footer className="more-emergency-footer">
           <p><a href="tel:119">119</a> · <a href="tel:110">110</a> · <Link href="/dashboard">72H</Link></p>
@@ -819,6 +818,7 @@ function DesktopPreparedness({ view, snapshot, language, messages, projection, l
         <section className="emergency-contact"><h2>{messages.emergencyGuide}</h2><p>{messages.builtInGuide}</p><a href="tel:119">119</a> · <a href="tel:110">110</a></section>
       </div>}
     </>}
+    <Link className="reference-map-link" href="/map">{language === 'ja' ? '全国の避難場所・参考地図' : language === 'en' ? 'Japan evacuation places & reference map' : '全日本避難場所及參考地圖'} →</Link>
     <JudgeFooter messages={messages} />
   </div>;
 }

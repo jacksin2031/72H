@@ -57,19 +57,20 @@ function LiveTsunamiReference({language}:{language:Language}){
   </section>;
 }
 
-export function OfficialHazardPanel({language,pack,loading,error,point,showInundation,showPlaces,onInundation,onPlaces,onRetry,onGPS,onClear,onFocus,onPlace,gpsState,liveReference,placesReference}:{
+export function OfficialHazardPanel({language,pack,loading,error,point,showInundation,showPlaces,onInundation,onPlaces,onRetry,onGPS,onClear,onFocus,onPlace,gpsState,liveReference,placesReference,includePlaceList=true}:{
   language:Language;pack:HazardPack|null;loading:boolean;error:boolean;point:HazardLocation|null;
   showInundation:boolean;showPlaces:boolean;onInundation:(v:boolean)=>void;onPlaces:(v:boolean)=>void;
   onRetry:()=>void;onGPS:()=>void;onClear:()=>void;onFocus:()=>void;onPlace:(p:OfficialPlace)=>void;gpsState:string;
   liveReference?:ReactNode;
   placesReference?:ReactNode;
+  includePlaceList?:boolean;
 }){
   const t=hazardText[language];const [filter,setFilter]=useState(false),[search,setSearch]=useState(''),[limit,setLimit]=useState(12),[now,setNow]=useState(()=>Date.now());
   useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),15000);return()=>clearInterval(timer);},[]);
   const assessment=useMemo(()=>pack?assessOfficialHazards(pack,point,Date.now()):null,[pack,point,now]);
   const places=pack?.places.filter(p=>(!filter||isTsunamiDesignated(p))&&`${p.name} ${p.address??''}`.includes(search.trim()))??[];
   return <aside className="official-hazard-panel" aria-label={t.title}>
-    <h1>{t.title}</h1><p>{t.scope}</p><p className="hazard-safety">{t.caution}</p>
+    {includePlaceList?<h1>{t.title}</h1>:<h2>{language==='ja'?'石巻の津波浸水想定':language==='en'?'Ishinomaki inundation scenario':'石卷海嘯浸水想定'}</h2>}<p>{t.scope}</p><p className="hazard-safety">{t.caution}</p>
     {liveReference??<LiveTsunamiReference language={language}/>}
     {loading&&<p role="status">{t.loading}</p>}{error&&<p role="alert">{t.error}</p>}
     {!pack&&<button onClick={onRetry} disabled={loading}>{t.retry}</button>}
@@ -94,7 +95,7 @@ export function OfficialHazardPanel({language,pack,loading,error,point,showInund
         {pack.manifest.scenario&&<ScenarioDetails language={language} manifest={pack.manifest}/>}
         {pack.manifest.sources.map(source=><div key={source.id}><a href={source.url} target="_blank" rel="noopener noreferrer">{source.title}</a><p>{t.basis}: {source.basis_date??'—'} · {t.retrieved}: {source.retrieved_at}</p><p>{source.notes}</p></div>)}
       </details>
-      {!placesReference&&<section><h2>{t.list} · {places.length}</h2><label className="hazard-filter"><input type="checkbox" checked={filter} onChange={e=>{setFilter(e.target.checked);setLimit(12);}}/>{t.filter}</label>
+      {includePlaceList&&!placesReference&&<section><h2>{t.list} · {places.length}</h2><label className="hazard-filter"><input type="checkbox" checked={filter} onChange={e=>{setFilter(e.target.checked);setLimit(12);}}/>{t.filter}</label>
         <input className="hazard-search" type="search" aria-label={t.search} placeholder={t.search} value={search} maxLength={80} onChange={e=>{setSearch(e.target.value);setLimit(12);}}/>
         <ul className="hazard-place-list">{places.slice(0,limit).map(place=><li key={place.id}>
           <button onClick={()=>onPlace(place)}>{place.name}</button><p>{place.kind==='EMERGENCY_SITE'?t.emergency:t.shelter} · {place.address}</p>

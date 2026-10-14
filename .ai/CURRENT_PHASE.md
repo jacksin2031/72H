@@ -130,6 +130,15 @@ new evidence, plans, API events or movement permission. Local tests, typecheck,
 build and browser acceptance passed; evidence is in
 `docs/VNEXT_TIME_DRIVEN_SEISMIC_WAVES.md`. No deployment is claimed.
 
+## Nationwide shelter reference (2026-10-13 JST)
+
+User requested nationwide shelters before further UI simplification.
+Local reference-data delivery on `codex/japan-shelters`: COMPLETE;
+199,273 published GSI designation records across 47 prefectures.
+Evidence and remaining gates: `docs/NATIONWIDE_SHELTERS.md`.
+This extends the designation directory only, not national tsunami geometry,
+facility-opening verification, safe destinations, movement authorization or deployment.
+
 ## All-branch source consolidation (2026-10-11 JST)
 
 User authorized integrating all branches. All 24 initial local branch tips and

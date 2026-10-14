@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import './prepare-map-worker.mjs';
 import './prepare-area-worker.mjs';
 import './prepare-hazard-pack.mjs';
+import './prepare-japan-shelters.mjs';
 import './prepare-forecast-lines.mjs';
 import './prepare-intensity-regions.mjs';
 import './prepare-designated-places.mjs';

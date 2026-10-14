@@ -7,6 +7,7 @@ import { resolve } from 'node:path';
 import { webcrypto } from 'node:crypto';
 import { documentedEpicenters } from '../lib/geospatial-exposure';
 import { SimulationReferenceMap } from '../components/simulation-reference-map';
+import type {OfficialPlace} from '../lib/official-hazards';
 import { tohokuWaveOrigins, type WavefrontData } from '../lib/seismic-wavefront';
 import {REFERENCE_VECTOR_LAYERS} from '../lib/reference-map-style';
 import {mapFixture,linePack,now} from './fixtures/disaster-map';
@@ -50,6 +51,20 @@ afterEach(async () => {
 });
 
 describe('isolated simulation reference map', () => {
+  it('renders regional designation points without an inundation pack and removes them when the selection clears',async()=>{
+    const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
+    vi.stubGlobal('crypto',webcrypto);vi.stubGlobal('fetch',vi.fn(async()=>new Response(bytes)));
+    const place:OfficialPlace={id:'SHELTER_TEST',name:'Test only',address:null,lat:26.2,lng:127.7,kind:'SHELTER',notes:'',source_id:'shelters',open_status:'UNKNOWN',
+      hazards:{flood:'UNKNOWN',landslide:'UNKNOWN',storm_surge:'UNKNOWN',earthquake:'UNKNOWN',tsunami:'UNKNOWN',large_fire:'UNKNOWN',inland_flood:'UNKNOWN',volcano:'UNKNOWN'}};
+    mapHarness.operations=[];container=document.createElement('div');document.body.append(container);root=createRoot(container);
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" referencePlaces={[place]} showPlaces/>));
+    await act(async()=>{await new Promise(r=>setTimeout(r,50));});
+    expect(mapHarness.operations).toContain('add-source:official-places');
+    expect(mapHarness.operations).toContain('add-layer:official-places-points');
+    expect(mapHarness.operations).not.toContain('add-source:official-inundation');
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" referencePlaces={[]} showPlaces/>));
+    expect(mapHarness.operations).toContain('remove-source:official-places');
+  });
   it('removes the local reference route when cleared without restoring online GPS tiles',async()=>{
     const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
     vi.stubGlobal('crypto',webcrypto);vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)})));

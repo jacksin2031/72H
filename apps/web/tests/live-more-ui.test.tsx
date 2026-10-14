@@ -60,6 +60,9 @@ describe('mobile More and Plan navigation', () => {
   it('keeps the disaster simulator behind a collapsed diagnostics disclosure, not a fifth primary setting', async () => {
     const page = await mount(sceneProps());
     expect(page.querySelectorAll('.more-destination')).toHaveLength(4);
+    const reference=page.querySelector<HTMLAnchorElement>('a.reference-map-link[href="/map"]');
+    expect(reference).not.toBeNull();
+    expect(reference!.closest('details')).toBeNull();
     const details = page.querySelector<HTMLDetailsElement>('.more-lab-entry');
     expect(details?.open).toBe(false);
     expect(details?.querySelector('summary')?.textContent).toBe('Testing & diagnostics');
