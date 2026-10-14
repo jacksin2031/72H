@@ -10,6 +10,9 @@ export function useTheme() {
       if (saved === 'dark' || saved === 'system' || saved === 'contrast') setTheme(saved);
     } catch { /* In-memory settings remain usable. */ }
   }, []);
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
   const chooseTheme = (value: string) => {
     if (value !== 'dark' && value !== 'system' && value !== 'contrast') return;
     setTheme(value);
