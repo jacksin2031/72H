@@ -6,6 +6,8 @@ import type { DeviceLocation } from '../lib/use-device-location';
 import { movementLiveSnapshot } from './live-fixtures';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+// LiveDashboard's first render imports the whole dashboard graph; under a full parallel run on a slow disk it exceeds the 5 s default.
+vi.setConfig({ testTimeout: 20_000 });
 
 vi.mock('../lib/device-role', () => ({ useDeviceRole: () => 'mobile' }));
 vi.mock('../lib/use-power', async () => {
