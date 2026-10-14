@@ -26,6 +26,7 @@ it('shows all 47 prefectures without fetching every pack or asking for GPS',asyn
   expect(container!.textContent).toContain('目前開放及路線：未核實');
   expect(container!.textContent).toContain('指定避難所');
   expect(container!.querySelector('.national-shelter-list')).toBeNull();
+  expect(container!.querySelector('h1,h2')).toBeNull(); // sheet content: the Section supplies the title
 });
 it('loads selected-region points, bounds and a paged accessible list while preserving designation roles',async()=>{
   const {onPlaces,onRegion,onPlace}=await render();

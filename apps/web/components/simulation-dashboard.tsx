@@ -8,8 +8,7 @@ import { seismicOriginsForMilestones, seismicWaveEndMs } from '@/lib/seismic-wav
 import { useSimulationSession, type SimulationLaunch } from '@/lib/simulation-session';
 import { mockLiveRequest, type MockLiveResponse } from '@/lib/mock-live-envelope';
 import { SimulationScreens, type SimulationSection } from './simulation-screens';
-import './simulation-flat-ui.css';
-import './simulation-map-ui.css';
+import { AppShell, Button, StatusBand } from './ui';
 
 type Phase = 'waiting' | 'processing' | 'running' | 'completed' | 'failed';
 type Section = SimulationSection;
@@ -155,9 +154,9 @@ function Playback({ config }: { config: SimulationLaunch }) {
 export function SimulationDashboard() {
   const { launch } = useSimulationSession();
   const router = useRouter();
-  if (!launch) return <main className="sim-unavailable" data-testid="simulation-expired">
-    <h1>72H · SIMULATION</h1><p>演習工作階段已結束。重新進入測試設定即可開始。</p>
-    <button type="button" onClick={()=>router.replace('/disaster-test')}>返回災難測試 / Back</button>
-  </main>;
+  if (!launch) return <AppShell tab="more" language="zh-TW" band={<StatusBand tone="exercise" label="演練 / Exercise" />}>
+    <div data-testid="simulation-expired"><h1 className="now-hero">演練已結束 / Exercise ended</h1><p className="now-meta">演習工作階段已結束。重新進入測試設定即可開始。</p>
+      <Button variant="primary" onClick={()=>router.replace('/disaster-test')}>返回災難測試 / Back</Button></div>
+  </AppShell>;
   return <Playback config={launch} />;
 }

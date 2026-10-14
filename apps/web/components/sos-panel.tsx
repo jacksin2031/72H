@@ -3,6 +3,7 @@ import {useEffect,useRef,useState} from 'react';
 import type {DistressTag,Language} from '../lib/contracts';
 import {NET119_URL,buildSosMessage,smsHref,sosText} from '../lib/distress';
 import type {SosProfile} from '../lib/emergency-contacts';
+import {Button,Disclosure} from './ui';
 
 type Alarm={ctx:AudioContext;osc:OscillatorNode;timer:ReturnType<typeof setInterval>};
 type SosLocation={lat:number;lng:number;accuracy_m:number|null}|null;
@@ -74,23 +75,24 @@ export function SosPanel({language,profile,tags,location,pinned}:{language:Langu
  const phones=profile.contacts.map(c=>c.phone);
  const canShare=typeof navigator!=='undefined'&&typeof navigator.share==='function';
  const share=()=>{void navigator.share({text:buildMessage()}).catch(()=>{/* user cancelled */});};
- return <section className={`sos-panel${pinned?' pinned':''}`} aria-labelledby="sos-title">
-  <h2 id="sos-title">{t.title}</h2>
+ return <section className={`sos-panel${pinned?' pinned':''}`} data-testid="sos-panel" aria-labelledby="sos-title">
+  <h2 id="sos-title" className="ui-section-title">{t.title}</h2>
   <div className="sos-actions">
-   <a className="button primary" href="tel:119">{t.call119}</a>
-   <a className="button primary" href="tel:110">{t.call110}</a>
+   <a className="ui-btn ui-btn-danger" href="tel:119">{t.call119}</a>
+   <a className="ui-btn ui-btn-danger" href="tel:110">{t.call110}</a>
    {phones.length>0
-    ?<a className="button" href={smsHref(phones,message)} onClick={e=>{e.currentTarget.href=smsHref(phones,buildMessage());}}>{t.message}</a>
-    :canShare?<button type="button" onClick={share}>{t.share}</button>
+    ?<a className="ui-btn ui-btn-secondary" href={smsHref(phones,message)} onClick={e=>{e.currentTarget.href=smsHref(phones,buildMessage());}}>{t.message}</a>
+    :canShare?<Button variant="secondary" onClick={share}>{t.share}</Button>
     :<pre className="sos-message">{message}</pre>}
    {active
-    ?<button type="button" className="danger" onClick={stopAll}>{t.stop}</button>
-    :<button type="button" onClick={()=>void start()}>{t.alarm}</button>}
+    ?<Button variant="danger" onClick={stopAll}>{t.stop}</Button>
+    :<Button variant="secondary" onClick={()=>void start()}>{t.alarm}</Button>}
    {online
-    ?<a href={NET119_URL} target="_blank" rel="noreferrer noopener">{t.net119}</a>
-    :<span aria-disabled="true">{t.net119} — {t.needsNetwork}</span>}
+    ?<a className="ui-btn ui-btn-secondary" href={NET119_URL} target="_blank" rel="noreferrer noopener">{t.net119}</a>
+    :<span className="now-meta" aria-disabled="true">{t.net119} — {t.needsNetwork}</span>}
   </div>
-  <p>{t.battery}</p>
+  <p className="now-meta">{t.privacy}</p>
+  <Disclosure summary={t.learnMore}><p className="now-meta">{t.privacyMore}</p></Disclosure>
   {flashing&&<div data-testid="sos-flash" aria-hidden="true" style={{position:'fixed',inset:0,zIndex:2147483647,background:flashOn?'#fff':'#000',pointerEvents:'none'}}/>}
  </section>;
 }

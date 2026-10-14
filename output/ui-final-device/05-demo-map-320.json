@@ -1,0 +1,623 @@
+{
+  "url": "http://localhost:3036/demo",
+  "action": "inspect",
+  "snapshot": "- status:\n  - strong: 演習 · 津波警報\n  - timer: 25:00\n- main:\n  - button \"助けが必要\"\n  - region \"日本全国の参考地図\":\n    - link \"© 国土地理院\":\n      - /url: https://maps.gsi.go.jp/development/ichiran.html\n    - text: ·\n    - link \"Natural Earth\":\n      - /url: https://www.naturalearthdata.com/about/terms-of-use/\n    - button \"拡大\"\n    - button \"縮小\"\n    - button \"日本全国を表示\"\n  - paragraph: これは安全の判定ではありません。現地の状況と公式の指示に従ってください。\n  - 'button \"現在地: Ishinomaki\"'\n- button \"次の更新 →\"\n- button \"再開\"\n- button \"最初から\"\n- combobox \"Replay speed\":\n  - option \"1×\" [selected]\n  - option \"2×\"\n  - option \"4×\"\n- text: 2 / 4\n- navigation \"メイン\":\n  - button \"今\"\n  - button \"地図\"\n  - link \"その他\":\n    - /url: /more\n- alert",
+  "metrics": {
+    "width": 320,
+    "height": 568,
+    "dpr": 2.625,
+    "scrollWidth": 320,
+    "lang": "ja",
+    "text": "演習 · 津波警報\n·\n25:00\n助けが必要\n© 国土地理院 · Natural Earth\n\nこれは安全の判定ではありません。現地の状況と公式の指示に従ってください。\n\n現在地: Ishinomaki\n次の更新 →\n再開\n最初から\n1×\n2×\n4×\n2 / 4\n今\n地図\nその他",
+    "controls": [
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "助けが必要",
+        "href": null,
+        "rect": {
+          "x": 135.99404907226562,
+          "y": 56,
+          "width": 112.00595092773438,
+          "height": 48,
+          "top": 56,
+          "right": 248,
+          "bottom": 104,
+          "left": 135.99404907226562
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "CANVAS",
+        "role": "region",
+        "name": "Map",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 44,
+          "width": 320,
+          "height": 366.0952453613281,
+          "top": 44,
+          "right": 320,
+          "bottom": 410.0952453613281,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0px none rgb(255, 255, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "© 国土地理院",
+        "href": "https://maps.gsi.go.jp/development/ichiran.html",
+        "rect": {
+          "x": 17,
+          "y": 121.14286041259766,
+          "width": 60.33928680419922,
+          "height": 11.428571701049805,
+          "top": 121.14286041259766,
+          "right": 77.33928680419922,
+          "bottom": 132.57143211364746,
+          "left": 17
+        },
+        "display": "inline",
+        "border": "0px none rgb(230, 255, 241)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "Natural Earth",
+        "href": "https://www.naturalearthdata.com/about/terms-of-use/",
+        "rect": {
+          "x": 84.91667175292969,
+          "y": 121.14286041259766,
+          "width": 58.44047546386719,
+          "height": 11.428571701049805,
+          "top": 121.14286041259766,
+          "right": 143.35714721679688,
+          "bottom": 132.57143211364746,
+          "left": 84.91667175292969
+        },
+        "display": "inline",
+        "border": "0px none rgb(230, 255, 241)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "拡大",
+        "href": null,
+        "rect": {
+          "x": 260,
+          "y": 60,
+          "width": 48,
+          "height": 48,
+          "top": 60,
+          "right": 308,
+          "bottom": 108,
+          "left": 260
+        },
+        "display": "grid",
+        "border": "0.761905px solid rgb(82, 98, 114)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "縮小",
+        "href": null,
+        "rect": {
+          "x": 260,
+          "y": 116,
+          "width": 48,
+          "height": 48,
+          "top": 116,
+          "right": 308,
+          "bottom": 164,
+          "left": 260
+        },
+        "display": "grid",
+        "border": "0.761905px solid rgb(82, 98, 114)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "日本全国を表示",
+        "href": null,
+        "rect": {
+          "x": 260,
+          "y": 172,
+          "width": 48,
+          "height": 48,
+          "top": 172,
+          "right": 308,
+          "bottom": 220,
+          "left": 260
+        },
+        "display": "grid",
+        "border": "0.761905px solid rgb(82, 98, 114)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "現在地: Ishinomaki",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 354.23809814453125,
+          "width": 320,
+          "height": 56,
+          "top": 354.23809814453125,
+          "right": 320,
+          "bottom": 410.23809814453125,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "現在地を一度確認",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "inline-block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "現在の行動を再説明",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "inline-block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "災害種別から避難経路を検討 →",
+        "href": "/map#evacuation-routes",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "Miyagi Tsunami ReplayOsaka Earthquake ReplayTokyo Earthquake Replay",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "新しいデモを開始 →",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "JMA ↗",
+        "href": "https://www.jma.go.jp/jma/kishou/know/jishin/eew/kunren/kunren.html",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "NTT EAST ↗",
+        "href": "https://www.ntt-east.co.jp/saigai/voice171s/pla",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "CRITICAL 重要な地域イベント（デモ）",
+        "href": "/dashboard",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "既読にする",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "自動省電力緊急省電力最低限の表示",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "助けが必要",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "通知 · 0",
+        "href": "/notifications",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "119",
+        "href": "tel:119",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "110",
+        "href": "tel:110",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": false
+      },
+      {
+        "tag": "DIV",
+        "role": null,
+        "name": "次の更新 →\n再開\n最初から\n1×\n2×\n4×\n2 / 4",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 410.23809814453125,
+          "width": 320,
+          "height": 93.76190948486328,
+          "top": 410.23809814453125,
+          "right": 320,
+          "bottom": 504.00000762939453,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "次の更新 →",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 419,
+          "width": 91.98809814453125,
+          "height": 48,
+          "top": 419,
+          "right": 111.98809814453125,
+          "bottom": 467,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "再開",
+        "href": null,
+        "rect": {
+          "x": 115.98809814453125,
+          "y": 419,
+          "width": 40.00595474243164,
+          "height": 48,
+          "top": 419,
+          "right": 155.9940528869629,
+          "bottom": 467,
+          "left": 115.98809814453125
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "最初から",
+        "href": null,
+        "rect": {
+          "x": 159.99404907226562,
+          "y": 419,
+          "width": 72.00595092773438,
+          "height": 48,
+          "top": 419,
+          "right": 232,
+          "bottom": 467,
+          "left": 159.99404907226562
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "1×\n2×\n4×",
+        "href": null,
+        "rect": {
+          "x": 236,
+          "y": 419,
+          "width": 63.23809814453125,
+          "height": 48,
+          "top": 419,
+          "right": 299.23809814453125,
+          "bottom": 467,
+          "left": 236
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "今",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 106.66667175292969,
+          "bottom": 568,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "地図",
+        "href": null,
+        "rect": {
+          "x": 106.66667175292969,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 213.33334350585938,
+          "bottom": 568,
+          "left": 106.66667175292969
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "その他",
+        "href": "/more",
+        "rect": {
+          "x": 213.33334350585938,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 320.00001525878906,
+          "bottom": 568,
+          "left": 213.33334350585938
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      }
+    ]
+  }
+}

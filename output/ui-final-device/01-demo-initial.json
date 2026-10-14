@@ -1,0 +1,110 @@
+{
+  "url": "http://localhost:3036/demo",
+  "action": "inspect",
+  "snapshot": "- status:\n  - strong: 演習\n- main:\n  - heading \"演習\" [level=2]\n  - heading \"Demo / Judge Mode\" [level=1]\n  - paragraph: シナリオのプロフィールと検証済み情報から行動計画を見直します。参考地点は端末の現在地ではありません。\n  - text: シナリオ設定\n  - combobox \"シナリオ設定\":\n    - option \"Miyagi Tsunami Replay\" [selected]\n    - option \"Osaka Earthquake Replay\"\n    - option \"Tokyo Earthquake Replay\"\n  - button \"デモを開始 →\"\n- navigation \"メイン\":\n  - link \"今\":\n    - /url: /dashboard\n  - link \"地図\":\n    - /url: /map\n  - link \"その他\":\n    - /url: /more\n- alert",
+  "metrics": {
+    "width": 411,
+    "height": 830,
+    "dpr": 2.625,
+    "scrollWidth": 411,
+    "lang": "ja",
+    "text": "演習\n演習\nDemo / Judge Mode\n\nシナリオのプロフィールと検証済み情報から行動計画を見直します。参考地点は端末の現在地ではありません。\n\nシナリオ設定\nMiyagi Tsunami Replay\nOsaka Earthquake Replay\nTokyo Earthquake Replay\nデモを開始 →\n今\n地図\nその他",
+    "controls": [
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "Miyagi Tsunami Replay\nOsaka Earthquake Replay\nTokyo Earthquake Replay",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 269,
+          "width": 371.4285888671875,
+          "height": 48,
+          "top": 269,
+          "right": 391.4285888671875,
+          "bottom": 317,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "デモを開始 →",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 329,
+          "width": 371.4285888671875,
+          "height": 52,
+          "top": 329,
+          "right": 391.4285888671875,
+          "bottom": 381,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "今",
+        "href": "/dashboard",
+        "rect": {
+          "x": 0,
+          "y": 767.2380981445312,
+          "width": 137.14285278320312,
+          "height": 63.23809814453125,
+          "top": 767.2380981445312,
+          "right": 137.14285278320312,
+          "bottom": 830.4761962890625,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "地図",
+        "href": "/map",
+        "rect": {
+          "x": 137.14285278320312,
+          "y": 767.2380981445312,
+          "width": 137.14285278320312,
+          "height": 63.23809814453125,
+          "top": 767.2380981445312,
+          "right": 274.28570556640625,
+          "bottom": 830.4761962890625,
+          "left": 137.14285278320312
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "その他",
+        "href": "/more",
+        "rect": {
+          "x": 274.28570556640625,
+          "y": 767.2380981445312,
+          "width": 137.14285278320312,
+          "height": 63.23809814453125,
+          "top": 767.2380981445312,
+          "right": 411.4285583496094,
+          "bottom": 830.4761962890625,
+          "left": 274.28570556640625
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      }
+    ]
+  }
+}

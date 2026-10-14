@@ -1,7 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { UiIcon, type IconName } from './ui-icon';
+import { UiIcon } from './ui-icon';
+import { AppShell, Button, Disclosure, ListRow, StatusBand } from './ui';
+import { MORE_ROW_LABELS, MORE_ROW_ORDER, MoreScreen, type MoreRowKey } from './more-screen';
+import { ExerciseSubpage } from './exercise-subpage';
+import packageInfo from '../package.json';
+import { HelpOverlay } from './help-overlay';
+import { NowScreen } from './now-screen';
+import { noActiveAlertsAllowed, nowHeroText, officialAlert, statusBandSpec } from '@/lib/now-status';
+import { formatCountdown } from '@/lib/distress-guidance';
+import { shouldOpenBasis, tabForView } from '@/lib/app-tabs';
 import { OfficialSourceReview } from './official-source-review';
 import {PlanExplanationPanel} from './plan-explanation-panel';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -47,7 +56,7 @@ export function LiveHeaderStatus({ hasSession, busy, networkLabel, messages }: {
   hasSession: boolean; busy: boolean; networkLabel: string; messages: Record<string, string>;
 }) {
   return <div className="live-topbar-state"><strong>{hasSession ? messages.monitor : busy ? messages.refreshing : messages.setupRequired}</strong>
-    {hasSession && <span>{networkLabel}</span>}
+    {hasSession && <><span aria-hidden="true"> · </span><span>{networkLabel}</span></>}
   </div>;
 }
 
@@ -84,6 +93,7 @@ export function buildManualRouteSearchOrigin(label: string, lat: number, lng: nu
   return { label: label.trim(), lat, lng, area_ids: [], observed_at: null, source: 'USER_SELECTED' };
 }
 
+const APP_VERSION: string = packageInfo.version;
 const accessibilityChoices = [
   ['MOBILITY_SUPPORT', 'accessibilityMobility'],
   ['VISION_SUPPORT', 'accessibilityVision'],
@@ -542,46 +552,171 @@ function LocationSyncGate({ state, messages, retry, canRetry, chooseArea }: {
   </section>;
 }
 
-export function MobileScene({ view, snapshot, language, chooseLanguage, messages, projection, deviceLocation, locationResolving, onHomeMapReady, power, level, override, choose, theme, chooseTheme,
-  busy, onProfile, onProfileUpdate, onRefresh, onRouteSearch, link, now, connection, check, setCheck, notifications, dismissNotification, sessionLost,
-  canStart, locationSync, onRetryLocation, onLocalLocationChecked, onChooseArea }: {
-  view: string; snapshot: LiveSnapshot | null; language: Language; chooseLanguage?: (value: Language) => void; messages: Record<string, string>;
-  projection: ReturnType<typeof projectLiveSnapshot> | null; deviceLocation: ReturnType<typeof useDeviceLocation>; locationResolving: boolean;
-  onHomeMapReady: (ready: boolean) => void;
-  power: ReturnType<typeof usePower>['power']; level: number | null; override: string; choose: (value: string) => void;
-  theme: string; chooseTheme: (value: string) => void; busy: boolean; onProfile: (profile: LiveProfileSeed) => void; onProfileUpdate: (profile: LiveProfileSeed) => Promise<boolean>; onRefresh: () => void;
-  onRouteSearch: (origin: Location, destinationId: string) => Promise<boolean>; link: string | null; now: number; connection: Connection;
-  check: SafetyCheckState; setCheck: Dispatch<SetStateAction<SafetyCheckState>>; notifications: Notification[]; dismissNotification: (id: string) => void; sessionLost: boolean;
-  canStart: boolean; locationSync: LocationSyncState | null; onRetryLocation: () => void; onLocalLocationChecked: () => void; onChooseArea: (location: OnboardingLocation) => void;
+const CRITICAL_PROTECTION_MODES = ['SAFETY_CHECK', 'EMERGENCY_PROTECT'];
+
+/**
+ * Whether the scene for this role/view renders NowScreen (which hosts the "I need help" entry).
+ * Mirrors the branch order in MobileScene and DesktopPreparedness; LiveDashboard uses it to keep
+ * the help entry at the top of <main> everywhere else, so it is never lost or duplicated.
+ */
+export function liveNowScreenVisible({ role, view, hasData, mode, locationSync }: {
+  role: string; view: string; hasData: boolean; mode: string | undefined; locationSync: boolean;
 }) {
-  const [morePanel, setMorePanel] = useState<'home' | 'personal' | 'display' | 'offline' | 'privacy'>('home');
+  if (!hasData || tabForView(view) !== 'now') return false;
+  if (role === 'desktop') return !locationSync;
+  if (role === 'mobile') return !locationSync || (view === 'dashboard' && CRITICAL_PROTECTION_MODES.includes(mode ?? ''));
+  return false;
+}
+
+/** HH:MM in Japan time; prefixed with M/D when it is not from the same Japan day as `now`, so old data never reads as today's. */
+function clockTime(value: string | null, language: Language, now: number) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '—';
+  const time = date.toLocaleTimeString(language, { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  const day = (item: Date) => item.toLocaleDateString('en-CA', { timeZone: 'Asia/Tokyo' });
+  if (now > 0 && day(date) === day(new Date(now))) return time;
+  return `${date.toLocaleDateString(language, { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })} ${time}`;
+}
+
+/** Mounts children only after the nearest <details> has been opened (keeps closed disclosures free of network work). */
+function WhenOpen({ children }: { children: ReactNode }) {
+  const marker = useRef<HTMLSpanElement>(null);
+  const [opened, setOpened] = useState(false);
+  useEffect(() => {
+    const details = marker.current?.closest('details');
+    if (!details) { setOpened(true); return; }
+    const sync = () => { if (details.open) setOpened(true); };
+    sync(); details.addEventListener('toggle', sync);
+    return () => details.removeEventListener('toggle', sync);
+  }, []);
+  return <><span ref={marker} hidden />{opened && children}</>;
+}
+
+type LiveProjectionValue = ReturnType<typeof projectLiveSnapshot>;
+
+/** One rule for what the primary instruction may say: under critical protection with a pending/failed
+ * location update, a movement (EVACUATE) instruction is suppressed everywhere it could appear (hero, band). */
+export function liveGuidance(view: string, snapshot: LiveSnapshot, projection: LiveProjectionValue, locationSync: boolean) {
+  const criticalProtection = view === 'dashboard' && CRITICAL_PROTECTION_MODES.includes(projection.presentation.mode);
+  const locationGateOverride = locationSync && criticalProtection;
+  const suppressMovementAction = locationGateOverride && snapshot.spatial_guidance.current_action_kind === 'EVACUATE';
+  return { criticalProtection, locationGateOverride, suppressMovementAction,
+    primaryAction: suppressMovementAction ? null : projection.presentation.primaryAction };
+}
+
+/** The hero text; the takeover band uses the same function so the two can never disagree. */
+export function liveHeroText({ snapshot, projection, primaryAction, connection, messages, now = Date.parse(snapshot.situation.updated_at), language = snapshot.profile.preferred_language }: {
+  snapshot: LiveSnapshot; projection: LiveProjectionValue; primaryAction: LiveProjectionValue['presentation']['primaryAction'];
+  connection: Connection; messages: Record<string, string>; now?:number; language?:Language;
+}) {
+  const critical = CRITICAL_PROTECTION_MODES.includes(projection.presentation.mode);
+  // "No active alerts" is a claim about the world: only with a current source, a live verified connection,
+  // no plan, no active event and no distress level.
+  const noAlerts = noActiveAlertsAllowed({hasPlan:!!projection.plan,activeEventCount:snapshot.situation.active_event_ids.length,distressLevel:snapshot.distress.level,
+    connection,networkState:projection.networkState,primarySourceCurrent:isPrimarySourceCurrent(snapshot,projection)});
+  return nowHeroText({actionText:primaryAction?.text,alert:connection==='online'&&projection.networkState==='ONLINE_VERIFIED'?officialAlert(snapshot.distress,now,language):null,
+    language,critical,noAlerts,messages:messages as {emergency:string;noActiveAlerts:string;pending:string}});
+}
+
+export function liveTakeoverBandLabel({ view, snapshot, projection, locationSync, connection, messages }: {
+  view: string; snapshot: LiveSnapshot; projection: LiveProjectionValue; locationSync: boolean; connection: Connection; messages: Record<string, string>;
+}) {
+  return liveHeroText({ snapshot, projection, connection, messages, primaryAction: liveGuidance(view, snapshot, projection, locationSync).primaryAction });
+}
+
+export function liveStatusBand({snapshot,projection,connection,now,language,messages}:{snapshot:LiveSnapshot;projection:LiveProjectionValue;connection:Connection;now:number;language:Language;messages:Record<string,string>}){
+  const alert = connection === 'online' && projection.networkState === 'ONLINE_VERIFIED' ? officialAlert(snapshot.distress,now,language) : null;
+  const bandSpec = statusBandSpec({alert,criticalEventName:snapshot.events.findLast(e=>snapshot.situation.active_event_ids.includes(e.id))?.event_type === 'EARTHQUAKE' ? messages.eventEARTHQUAKE : null,
+    critical:connection === 'online' && projection.networkState === 'ONLINE_VERIFIED' && (CRITICAL_PROTECTION_MODES.includes(projection.presentation.mode) || projection.mapGate),
+    offline:connection !== 'online' || projection.networkState.startsWith('OFFLINE') || projection.networkState === 'RECONNECTING',
+    stale:projection.stale || snapshot.distress.level === 'OFFICIAL_STALE' || projection.networkState !== 'ONLINE_VERIFIED',
+    labels:{offline:`${messages.nowOfflineVerified} ${clockTime(snapshot.situation.latest_evidence_at,language,now)}`,stale:messages.bandStale,officialAlert:messages.bandOfficialAlert}});
+  return bandSpec;
+}
+
+function LiveNow({ view, snapshot, projection, primaryAction, language, messages, connection, now, power, busy, refresh, canRefresh, help,
+  locationGateOverride = false, hideNext = false, deviceLocation, locationResolving = false, onRouteSearch }: {
+  view: string; snapshot: LiveSnapshot; projection: LiveProjectionValue; primaryAction: LiveProjectionValue['presentation']['primaryAction'];
+  language: Language; messages: Record<string, string>; connection: Connection; now: number; power: ReturnType<typeof usePower>['power'];
+  busy: boolean; refresh?: () => void; canRefresh: boolean; help: ReactNode; locationGateOverride?: boolean; hideNext?: boolean;
+  deviceLocation: ReturnType<typeof useDeviceLocation>; locationResolving?: boolean; onRouteSearch: (origin: Location, destinationId: string) => Promise<boolean>;
+}) {
+  const currentPlan = projection.plan;
+  const actions = snapshot.plan_actions.filter(action => action.plan_id === currentPlan?.id && !projection.invalidActionIds.includes(action.id));
+  const texts = (category: 'NEXT' | 'AVOID') => actions.filter(action => action.category === category).map(action => action.text);
+  const critical = CRITICAL_PROTECTION_MODES.includes(projection.presentation.mode);
+  const activeEvent = snapshot.events.findLast(event => snapshot.situation.active_event_ids.includes(event.id));
+  const hero = liveHeroText({ snapshot, projection, primaryAction, connection, messages, now, language });
+  const unverified = projection.stale || projection.networkState !== 'ONLINE_VERIFIED';
+  const heroTone = critical ? 'danger' : connection !== 'online' || unverified ? 'warn' : 'normal';
+  const published = snapshot.source.last_published_at;
+  const sourceLabel = [snapshot.source.source_name, activeEvent ? messages[`event${activeEvent.event_type}`] : ''].filter(Boolean).join(' ');
+  const basis = published ? messages.basisPublished.replace('{source}', sourceLabel).replace('{time}', clockTime(published, language, now)) : null;
+  // "Updated" only for verified, current data; otherwise say when it was last verified.
+  const updatedPrefix = connection === 'offline' ? messages.nowOfflineVerified : unverified ? messages.nowLastVerified : messages.nowUpdated;
+  const updatedLabel = `${updatedPrefix} ${clockTime(snapshot.situation.latest_evidence_at, language, now)}`;
+  // While a location update is pending under critical protection, older plan/route details stay hidden (same rule as the map).
+  const basisDetails = locationGateOverride
+    ? <SourceSummary snapshot={snapshot} language={language} messages={messages} projection={projection} />
+    : <>
+      <PlanHistory snapshot={snapshot} projection={projection} language={language} messages={messages} now={now} />
+      <SourceReview snapshot={snapshot} language={language} messages={messages} projection={projection}
+        now={now} connection={connection} refresh={refresh} busy={busy} canRefresh={canRefresh} />
+      <WhenOpen><PlanExplanationPanel snapshot={snapshot} language={language} enabled={connection === 'online' && power.allowNonCriticalNetwork} /></WhenOpen>
+      <details className="plan-tools"><summary>{messages.planTools}</summary>
+        <WhenOpen><section className="advanced-plan-panel"><h2>{messages.advancedPlanTitle}</h2>
+          <p className="route-candidate-warning" role="note">{messages.routeAttribution}</p>
+          <RoutePreview snapshot={snapshot} projectedRoute={projection.route} language={language} messages={messages} busy={busy} connection={connection} now={now}
+            location={deviceLocation} locationResolving={locationResolving} power={power} search={onRouteSearch} />
+        </section></WhenOpen>
+      </details>
+    </>;
+  return <NowScreen language={language} hero={hero} heroTone={heroTone} basis={basis} next={hideNext ? [] : texts('NEXT')} avoid={texts('AVOID')}
+    updatedLabel={updatedLabel} note={messages.notSafetyVerdict} exercise={false} openBasis={shouldOpenBasis(view)} basisDetails={basisDetails} help={help} />;
+}
+
+const themeChoices = ['dark', 'system', 'contrast'] as const;
+const languageChoices = [['ja', '日本語'], ['en', 'English'], ['zh-TW', '繁體中文']] as const;
+const moreCopy = {
+  'zh-TW': { learnMore: '了解更多', version: '版本', privacyShort: '精確座標只在此裝置上使用。' },
+  ja: { learnMore: '詳しく見る', version: 'バージョン', privacyShort: '正確な座標はこの端末内でのみ使います。' },
+  en: { learnMore: 'Learn more', version: 'Version', privacyShort: 'Exact coordinates stay on this device.' },
+} as const;
+
+/** The More tab: a plain list of nine settings rows; each opens a subpage that renders the existing component for that setting. */
+export function MoreHub({ view, snapshot, projection, language, chooseLanguage, messages, deviceLocation, power, level, override, choose, theme, chooseTheme, busy,
+  onProfileUpdate, onRefresh, link, now, connection, check, setCheck, notifications, dismissNotification, sessionLost, canStart, locationSync,
+  onRetryLocation, onLocalLocationChecked, onChooseArea, fullSafetyCheck = false }: {
+  /** Desktop has no Now-screen check controls, so its More hosts the full set; mobile keeps them on Now. */
+  fullSafetyCheck?: boolean;
+  view: string; snapshot: LiveSnapshot; projection: NonNullable<ReturnType<typeof projectLiveSnapshot>>; language: Language;
+  chooseLanguage?: (value: Language) => void; messages: Record<string, string>; deviceLocation: ReturnType<typeof useDeviceLocation>;
+  power: ReturnType<typeof usePower>['power']; level: number | null; override: string; choose: (value: string) => void;
+  theme: string; chooseTheme: (value: string) => void; busy: boolean; onProfileUpdate: (profile: LiveProfileSeed) => Promise<boolean>; onRefresh: () => void;
+  link: string | null; now: number; connection: Connection; check: SafetyCheckState; setCheck: Dispatch<SetStateAction<SafetyCheckState>>;
+  notifications: Notification[]; dismissNotification: (id: string) => void; sessionLost: boolean; canStart: boolean; locationSync: LocationSyncState | null;
+  onRetryLocation: () => void; onLocalLocationChecked: () => void; onChooseArea: (location: OnboardingLocation) => void;
+}) {
+  const [sub, setSub] = useState<MoreRowKey | null>(view === 'notifications' ? 'notifications' : null);
   const [profileEditing, setProfileEditing] = useState(false);
-  const [sosSetupOpen, setSosSetupOpen] = useState(false);
-  useEffect(() => { try { if (localStorage.getItem(SOS_ONBOARDED_KEY) !== '1') setSosSetupOpen(true); } catch { /* storage unavailable */ } }, []);
-  const [planPanel, setPlanPanel] = useState<'current' | 'history' | 'advanced'>('current');
   const [localGpsCheckedAt, setLocalGpsCheckedAt] = useState<number | null>(null);
+  const host = useRef<HTMLDivElement>(null);
+  const returnToRow = useRef(-1);
   const localOnlyLocation = connection === 'offline' || (typeof navigator !== 'undefined' && !navigator.onLine);
-  const sharedAreaSource = snapshot?.profile.current_location.source;
-  const sharedAreaObservedAt = snapshot?.profile.current_location.observed_at;
+  const sharedAreaSource = snapshot.profile.current_location.source;
+  const sharedAreaObservedAt = snapshot.profile.current_location.observed_at;
   useEffect(() => {
     if (localGpsCheckedAt === null) return;
     const syncedAt = Date.parse(sharedAreaObservedAt ?? '');
     if (sharedAreaSource === 'GPS' && Number.isFinite(syncedAt) && syncedAt >= localGpsCheckedAt) setLocalGpsCheckedAt(null);
   }, [localGpsCheckedAt, sharedAreaObservedAt, sharedAreaSource]);
-  const moreTriggerPanel = useRef<'personal' | 'display' | 'offline' | 'privacy' | null>(null);
-  const focusMoreAfterBack = useRef(false);
-  const planTriggerPanel = useRef<'history' | 'advanced' | null>(null);
-  const focusPlanAfterBack = useRef(false);
   useEffect(() => {
-    if (morePanel !== 'home' || !focusMoreAfterBack.current) return;
-    focusMoreAfterBack.current = false;
-    if (moreTriggerPanel.current) document.querySelector<HTMLButtonElement>(`[data-more-panel="${moreTriggerPanel.current}"]`)?.focus();
-  }, [morePanel]);
-  useEffect(() => {
-    if (planPanel !== 'current' || !focusPlanAfterBack.current) return;
-    focusPlanAfterBack.current = false;
-    if (planTriggerPanel.current) document.querySelector<HTMLButtonElement>(`[data-plan-panel="${planTriggerPanel.current}"]`)?.focus();
-  }, [planPanel]);
+    if (sub !== null || returnToRow.current < 0) return;
+    const index = returnToRow.current;
+    returnToRow.current = -1;
+    host.current?.querySelectorAll<HTMLElement>('.ui-row')[index]?.focus();
+  }, [sub]);
   const checkLocation = () => {
     if (connection === 'offline' || !navigator.onLine) {
       void deviceLocation.locate().then(fix => {
@@ -592,21 +727,14 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
     }
     setLocalGpsCheckedAt(null); onRetryLocation();
   };
-  const criticalProtection = view === 'dashboard' && !!snapshot && !!projection
-    && ['SAFETY_CHECK', 'EMERGENCY_PROTECT'].includes(projection.presentation.mode);
-  const locationGateOverride = !!locationSync && criticalProtection;
-  if (locationSync && view !== 'more' && !criticalProtection) return <LocationSyncGate state={locationSync} messages={messages} retry={onRetryLocation} canRetry={canStart && !busy} chooseArea={onChooseArea} />;
-  if (!snapshot || !projection) return <>
-    <LocationOnboarding language={language} messages={messages} location={deviceLocation} busy={busy} canStart={canStart} submit={onProfile} />
-    {view === 'more' && <><Link className="reference-map-link" href="/map">{language === 'ja' ? '全国の避難場所・参考地図' : language === 'en' ? 'Japan evacuation places & reference map' : '全日本避難場所及參考地圖'} →</Link><details className="more-lab-entry"><summary>{messages.testToolsLabel}</summary>
-      <Link href="/disaster-test">{messages.disasterTestDestination} →</Link>
-    </details></>}
-  </>;
-  const urgent = ['SAFETY_CHECK', 'EMERGENCY_PROTECT', 'SURVIVAL', 'MAP_ASSISTED'].includes(projection.presentation.mode)
-    || ['SHELTER_IN_PLACE', 'EVACUATE'].includes(snapshot.spatial_guidance.current_action_kind);
-  const currentPlan = projection.plan;
-  const activeActions = snapshot.plan_actions.filter(action => action.plan_id === currentPlan?.id && !projection.invalidActionIds.includes(action.id));
-  const route = projection.route;
+  const copy = moreCopy[language];
+  const themeLabel = (value: string) => value === 'dark' ? adaptiveMessages[language].dark : value === 'system' ? adaptiveMessages[language].system : adaptiveMessages[language].contrast;
+  const rows = MORE_ROW_ORDER.map((key, index) => ({
+    key, label: MORE_ROW_LABELS[key][language],
+    value: key === 'language' ? languageChoices.find(([value]) => value === language)?.[1] : key === 'appearance' ? themeLabel(theme) : undefined,
+    onClick: () => { returnToRow.current = index; setSub(key); },
+  }));
+
   const areaPresentation = projectLocationPresentation(snapshot.profile.current_location, deviceLocation, now);
   const freshnessLabel = areaPresentation.area.freshness === 'CURRENT' ? messages.locationFreshCurrent
     : areaPresentation.area.freshness === 'AGING' ? messages.locationFreshAging
@@ -615,11 +743,107 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
     : areaPresentation.area.source === 'USER_SELECTED' ? messages.areaSourceSelected : messages.areaSourceUnknown;
   const showDevicePoint = !!areaPresentation.devicePoint && (areaPresentation.devicePoint.source === 'LAST_KNOWN'
     || areaPresentation.area.source !== 'GPS' || areaPresentation.area.observedAt !== areaPresentation.devicePoint.observedAt);
+
+  const locationSubpage = profileEditing
+    ? <ProfileForm key={snapshot.session_id} language={language} busy={busy} submit={onProfileUpdate} initial={snapshot.profile}
+      startLabel={messages.saveProfile} title={messages.profileSummaryTitle} copy={messages.profileUpdated} messages={messages} preserveCurrentArea
+      draftKey={`72h-live-profile-draft:${snapshot.session_id}`} onSaved={() => setProfileEditing(false)} />
+    : <>
+      <section className="more-location-card" aria-labelledby="more-location-title">
+        <div className="more-area-summary"><small id="more-location-title">{messages.locationAreaHeading}</small><h2>{areaPresentation.area.label}</h2>
+          <details className="more-location-meta">
+            <summary>{areaSourceLabel} · {freshnessLabel}<span className="sr-only"> · {messages.locationDetails}</span></summary>
+            <p>{messages.locationCheckedAt}: {displayTime(areaPresentation.area.observedAt, language)}</p>
+            {areaPresentation.area.accuracyM !== null && <p>{messages.locationAccuracy}: ±{Math.round(areaPresentation.area.accuracyM)} m</p>}
+            {showDevicePoint && areaPresentation.devicePoint && <p className="device-point-provenance">
+              {areaPresentation.devicePoint.source === 'GPS' ? messages.locationDeviceGps : messages.locationDeviceLastKnown} · {displayTime(areaPresentation.devicePoint.observedAt, language)} · {messages.locationAccuracy}: ±{Math.round(areaPresentation.devicePoint.accuracyM)} m
+            </p>}
+          </details>
+        </div>
+        <button className="primary" type="button" disabled={busy || deviceLocation.busy || !deviceLocation.ready || (!localOnlyLocation && !canStart)} onClick={checkLocation}>
+          {deviceLocation.busy ? messages.locationResolving : messages.locationLocate}
+        </button>
+        {localGpsCheckedAt !== null && <p className="location-local-only" role="status">{messages.locationGpsLocalOnly} · {displayTime(new Date(localGpsCheckedAt).toISOString(), language)}</p>}
+        {deviceLocation.failed && localGpsCheckedAt === null && <p role="status">{deviceLocation.permissionDenied ? messages.locationPermissionDenied : messages.locationUnavailable}</p>}
+        {locationSync && <p className="location-sync-inline" role="status">{locationSync.phase === 'pending' ? messages.locationSyncPending : messages.locationSyncFailed}</p>}
+        <AreaFallbackPicker messages={messages} disabled={busy || !canStart} buttonLabel={messages.changeArea} secondary
+          onConfirm={selection => { setSub(null); onChooseArea(selection); }} />
+      </section>
+      <p>{copy.privacyShort}</p>
+      <DeviceLocationControls location={deviceLocation} language={language} showLocate={false} />
+      <Disclosure summary={copy.learnMore}><p>{messages.locationPrivacy}</p></Disclosure>
+      <section className="settings-panel more-personal-panel"><h2>{messages.personalDestination}</h2>
+        <dl className="personal-summary"><div><dt>{messages.currentAreaLabel}</dt><dd>{snapshot.profile.current_location.label}</dd></div>
+          <div><dt>{messages.accommodationAreaLabel}</dt><dd>{snapshot.profile.accommodation_location.label}</dd></div>
+          <div><dt>{messages.partySize}</dt><dd>{snapshot.profile.party_size}</dd></div>
+          <div><dt>{messages.accessibilityNeeds}</dt><dd>{snapshot.profile.accessibility_constraints.length
+            ? snapshot.profile.accessibility_constraints.map(item => messages[accessibilityChoices.find(([value]) => value === item)?.[1] ?? ''] ?? item).join(' · ')
+            : messages.noAccessibilityNeeds}</dd></div>
+        </dl>
+        <Button variant="secondary" onClick={() => setProfileEditing(true)}>{messages.editPersonal}</Button>
+        <SafetyCheckControls check={check} setCheck={setCheck} messages={messages} consentOnly={!fullSafetyCheck} />
+      </section>
+    </>;
+
+  const subpages: Record<MoreRowKey, ReactNode> = {
+    language: <>{languageChoices.map(([value, label]) => <ListRow key={value} label={label} selected={language === value} trailing={language === value ? '✓' : 'none'} onClick={() => chooseLanguage?.(value)} />)}</>,
+    appearance: <><p>{messages.textScaleHelp}</p>{themeChoices.map(value => <ListRow key={value} label={themeLabel(value)} selected={theme === value} trailing={theme === value ? '✓' : 'none'} onClick={() => chooseTheme(value)} />)}</>,
+    power: <PowerControls language={language} power={power} level={level} override={override} choose={choose} />,
+    contacts: <EmergencyContactsSetup language={language} onDone={() => setSub(null)} />,
+    privacy: locationSubpage,
+    notifications: <NotificationsScene notifications={notifications} messages={messages} dismiss={dismissNotification} />,
+    sources: <SourceReview snapshot={snapshot} language={language} messages={messages} projection={projection} now={now} connection={connection}
+      refresh={onRefresh} busy={busy} canRefresh={canStart && !sessionLost} />,
+    exercise: <ExerciseSubpage language={language} />,
+    about: <>
+      <ListRow label={copy.version} value={APP_VERSION} trailing="none" />
+      <OfflineReadinessPanel messages={messages} snapshot={snapshot} projection={projection} language={language} now={now} consumerOnly />
+      {link && <HandoffCard link={link} messages={messages} />}
+      <section className="emergency-contact"><h2>{messages.emergencyGuide}</h2><p>{messages.builtInGuide}</p><p><a href="tel:119">119</a> · <a href="tel:110">110</a></p></section>
+      <details><summary>{messages.emergencyBasicsTitle}</summary><p>{messages.emergencyBasicsText}</p></details>
+    </>,
+  };
+  return <div ref={host}><MoreScreen language={language} rows={rows} subpage={sub ? subpages[sub] : null} onBack={() => setSub(null)} /></div>;
+}
+
+
+export function MobileScene({ view, snapshot, language, chooseLanguage, messages, projection, deviceLocation, locationResolving, onHomeMapReady, power, level, override, choose, theme, chooseTheme,
+  busy, onProfile, onProfileUpdate, onRefresh, onRouteSearch, link, now, connection, check, setCheck, notifications, dismissNotification, sessionLost,
+  canStart, locationSync, onRetryLocation, onLocalLocationChecked, onChooseArea, help }: {
+  view: string; snapshot: LiveSnapshot | null; language: Language; chooseLanguage?: (value: Language) => void; messages: Record<string, string>;
+  projection: ReturnType<typeof projectLiveSnapshot> | null; deviceLocation: ReturnType<typeof useDeviceLocation>; locationResolving: boolean;
+  onHomeMapReady: (ready: boolean) => void;
+  power: ReturnType<typeof usePower>['power']; level: number | null; override: string; choose: (value: string) => void;
+  theme: string; chooseTheme: (value: string) => void; busy: boolean; onProfile: (profile: LiveProfileSeed) => void; onProfileUpdate: (profile: LiveProfileSeed) => Promise<boolean>; onRefresh: () => void;
+  onRouteSearch: (origin: Location, destinationId: string) => Promise<boolean>; link: string | null; now: number; connection: Connection;
+  check: SafetyCheckState; setCheck: Dispatch<SetStateAction<SafetyCheckState>>; notifications: Notification[]; dismissNotification: (id: string) => void; sessionLost: boolean;
+  canStart: boolean; locationSync: LocationSyncState | null; onRetryLocation: () => void; onLocalLocationChecked: () => void; onChooseArea: (location: OnboardingLocation) => void;
+  /** The "I need help" entry, placed in NowScreen's help slot on the Now views. */
+  help?: ReactNode;
+}) {
+  const [sosSetupOpen, setSosSetupOpen] = useState(false);
+  useEffect(() => { try { if (localStorage.getItem(SOS_ONBOARDED_KEY) !== '1') setSosSetupOpen(true); } catch { /* storage unavailable */ } }, []);
+  const nowView = tabForView(view) === 'now';
+  const guidance = snapshot && projection ? liveGuidance(view, snapshot, projection, !!locationSync) : null;
+  const criticalProtection = !!guidance?.criticalProtection;
+  const locationGateOverride = !!guidance?.locationGateOverride;
+  if (locationSync && view !== 'more' && !criticalProtection) return <LocationSyncGate state={locationSync} messages={messages} retry={onRetryLocation} canRetry={canStart && !busy} chooseArea={onChooseArea} />;
+  if (!snapshot || !projection) return <>
+    <LocationOnboarding language={language} messages={messages} location={deviceLocation} busy={busy} canStart={canStart} submit={onProfile} />
+    {view === 'more' && <><Link className="demo-entry-link" href="/demo">{language === 'ja' ? '演習とデモ' : language === 'en' ? 'Exercises & demo' : '演練與示範'} →</Link><Link className="reference-map-link" href="/map">{language === 'ja' ? '全国の避難場所・参考地図' : language === 'en' ? 'Japan evacuation places & reference map' : '全日本避難場所及參考地圖'} →</Link><details className="more-lab-entry"><summary>{messages.testToolsLabel}</summary>
+      <Link href="/disaster-test">{messages.disasterTestDestination} →</Link>
+    </details></>}
+  </>;
+  const urgent = ['SAFETY_CHECK', 'EMERGENCY_PROTECT', 'SURVIVAL', 'MAP_ASSISTED'].includes(projection.presentation.mode)
+    || ['SHELTER_IN_PLACE', 'EVACUATE'].includes(snapshot.spatial_guidance.current_action_kind);
+  const currentPlan = projection.plan;
+  const activeActions = snapshot.plan_actions.filter(action => action.plan_id === currentPlan?.id && !projection.invalidActionIds.includes(action.id));
+  const route = projection.route;
   const routeDestination = route ? snapshot.destinations.find(item => item.id === route.destination_id) : null;
-  const suppressMovementAction = locationGateOverride && snapshot.spatial_guidance.current_action_kind === 'EVACUATE';
+  const suppressMovementAction = !!guidance?.suppressMovementAction;
   const presentedState = locationGateOverride ? {
     ...projection.presentation,
-    ...(suppressMovementAction ? { primaryAction: null } : {}),
+    primaryAction: guidance?.primaryAction ?? null,
     showMap: false,
     showRoute: false,
     showDestination: false,
@@ -634,144 +858,60 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
     </section> : undefined;
   const checkControls = <SafetyCheckControls check={check} setCheck={setCheck} messages={messages} />;
   return <>
-    {urgent && view !== 'dashboard' && <section className="emergency-takeover" role="status"><strong>{projection.primaryAction?.text || messages.emergency}</strong>
+    {urgent && !nowView && <section className="emergency-takeover" role="status"><strong>{projection.primaryAction?.text || messages.emergency}</strong>
       <p>{projection.presentation.mode === 'MAP_ASSISTED' ? messages.mapLabel : messages.emergencyDetail}</p><Link href="/dashboard">{messages.home} →</Link>
     </section>}
-    {view === 'dashboard' && <>
+    {nowView && <>
+      <LiveNow view={view} snapshot={snapshot} projection={projection} primaryAction={presentedState.primaryAction} language={language} messages={messages}
+        connection={connection} now={now} power={power} busy={busy} refresh={onRefresh} canRefresh={canStart && !sessionLost} help={help}
+        locationGateOverride={locationGateOverride} hideNext={suppressMovementAction}
+        deviceLocation={deviceLocation} locationResolving={locationResolving} onRouteSearch={onRouteSearch} />
       {!locationGateOverride && snapshot.spatial_guidance.current_action_kind === 'EVACUATE' && !projection.mapGate && <p className="map-gate-notice" role="status">{messages.mapGateClosed}</p>}
       {locationGateOverride && <p className="location-sync-inline" role="status">{locationSync?.phase === 'pending' ? messages.locationSyncPending : messages.locationSyncFailed}</p>}
-      <AdaptiveHome presentation={presentedState} snapshot={snapshot} language={language}
+      <AdaptiveHome embedded presentation={presentedState} snapshot={snapshot} language={language}
         networkState={projection.networkState} planStatus={projection.planStatus} notifications={notifications.length} actions={activeActions}
         mapSurface={mapSurface} checkControls={checkControls} powerMode={power.mode} location={deviceLocation} mapClosed={false} now={now} />
       {shouldShowSosSetup({ view, open: sosSetupOpen, urgent, criticalProtection }) && <EmergencyContactsSetup language={language} onDone={() => setSosSetupOpen(false)} />}
     </>}
-    {view === 'plan' && <section className="live-plan-scene"><h1>{messages.planReview}</h1>
-      {planPanel !== 'current' && <button type="button" className="more-back" onClick={() => {
-        focusPlanAfterBack.current = true; setPlanPanel('current');
-      }}>{messages.backToPlan}</button>}
-      {planPanel === 'current' && <>
-        <PlanExplanationPanel snapshot={snapshot} language={language} enabled={connection==='online'&&power.allowNonCriticalNetwork}/>
-        <details className="plan-tools">
-          <summary>{messages.planTools}</summary>
-          <nav className="plan-subviews" aria-label={messages.planReview}>
-            <button type="button" data-plan-panel="history" onClick={() => { planTriggerPanel.current = 'history'; setPlanPanel('history'); }}>{messages.planHistoryOpen}</button>
-            <button type="button" data-plan-panel="advanced" onClick={() => { planTriggerPanel.current = 'advanced'; setPlanPanel('advanced'); }}>{messages.advancedPlanOpen}</button>
-          </nav>
-        </details>
-        {activeActions.length === 0 ? <p className="plan-empty-state" role="status">{messages.noPlan}</p>
-          : <div className="action-grid live-action-grid">{(['NOW', 'NEXT', 'AVOID'] as const).filter(category =>
-            activeActions.some(action => action.category === category)).map(category => <section className="action-panel" key={category}>
-            <small>{messages[category] ?? category}</small>{activeActions.filter(action => action.category === category).map(action => <article key={action.id}><h2>{action.text}</h2>
-              <p>{action.reason}</p>{action.evidence_ids.map(id => <Link key={id} href="/sources">{language === 'ja' ? '根拠を確認' : language === 'zh-TW' ? '檢視依據' : 'Review evidence'} →</Link>)}</article>)}
-          </section>)}</div>}
-        <p>{messages.lastVerified}: {displayTime(snapshot.situation.latest_evidence_at, language)}</p>
-        {snapshot.plan_evaluations.findLast(item => item.plan_id === currentPlan?.id)?.reason && <p>{snapshot.plan_evaluations.findLast(item => item.plan_id === currentPlan?.id)?.reason}</p>}
-        {urgent && <div className="emergency-contact"><h2>{messages.emergencyContacts}</h2><p>{messages.emergencyContactText}</p><a href="tel:119">119</a> · <a href="tel:110">110</a></div>}
-      </>}
-      {planPanel === 'history' && <PlanHistory snapshot={snapshot} projection={projection} language={language} messages={messages} now={now} />}
-      {planPanel === 'advanced' && <section className="advanced-plan-panel"><h2>{messages.advancedPlanTitle}</h2>
-        <p className="route-candidate-warning" role="note">{messages.routeAttribution}</p>
-        <RoutePreview snapshot={snapshot} projectedRoute={projection.route} language={language} messages={messages} busy={busy} connection={connection} now={now} location={deviceLocation} locationResolving={locationResolving} power={power} search={onRouteSearch} />
-      </section>}
-    </section>}
-    {view === 'notifications' && <NotificationsScene notifications={notifications} messages={messages} dismiss={dismissNotification} />}
-    {view === 'sources' && <SourceReview snapshot={snapshot} language={language} messages={messages} projection={projection}
-      now={now} connection={connection} refresh={onRefresh} busy={busy} canRefresh={canStart && !sessionLost} />}
-    {view === 'more' && <section className="live-more-scene"><h1>{messages.more}</h1>
-      {morePanel === 'home' && <>
-        <section className="more-location-card" aria-labelledby="more-location-title">
-          <div className="more-area-summary"><small id="more-location-title">{messages.locationAreaHeading}</small><h2>{areaPresentation.area.label}</h2>
-            <details className="more-location-meta">
-              <summary>{areaSourceLabel} · {freshnessLabel}<span className="sr-only"> · {messages.locationDetails}</span></summary>
-              <p>{messages.locationCheckedAt}: {displayTime(areaPresentation.area.observedAt, language)}</p>
-              {areaPresentation.area.accuracyM !== null && <p>{messages.locationAccuracy}: ±{Math.round(areaPresentation.area.accuracyM)} m</p>}
-              {showDevicePoint && areaPresentation.devicePoint && <p className="device-point-provenance">
-                {areaPresentation.devicePoint.source === 'GPS' ? messages.locationDeviceGps : messages.locationDeviceLastKnown} · {displayTime(areaPresentation.devicePoint.observedAt, language)} · {messages.locationAccuracy}: ±{Math.round(areaPresentation.devicePoint.accuracyM)} m
-              </p>}
-            </details>
-          </div>
-          <button className="primary" type="button" disabled={busy || deviceLocation.busy || !deviceLocation.ready || (!localOnlyLocation && !canStart)} onClick={checkLocation}>
-            {deviceLocation.busy ? messages.locationResolving : messages.locationLocate}
-          </button>
-          {localGpsCheckedAt !== null && <p className="location-local-only" role="status">{messages.locationGpsLocalOnly} · {displayTime(new Date(localGpsCheckedAt).toISOString(), language)}</p>}
-          {deviceLocation.failed && localGpsCheckedAt === null && <p role="status">{deviceLocation.permissionDenied ? messages.locationPermissionDenied : messages.locationUnavailable}</p>}
-          {locationSync && <p className="location-sync-inline" role="status">{locationSync.phase === 'pending' ? messages.locationSyncPending : messages.locationSyncFailed}</p>}
-          <AreaFallbackPicker messages={messages} disabled={busy || !canStart} buttonLabel={messages.changeArea}
-            onConfirm={selection => { setMorePanel('home'); onChooseArea(selection); }} />
-        </section>
-        <nav className="more-destinations" aria-label={messages.more}>
-          {([
-            ['personal', messages.personalDestination], ['display', messages.displayDestination],
-            ['offline', messages.offlineDestination], ['privacy', messages.privacyDestination],
-          ] as const).map(([panel, label]) => <button key={panel} type="button" className="more-destination" data-more-panel={panel} onClick={() => {
-            moreTriggerPanel.current = panel; setMorePanel(panel);
-          }}>
-            <span>{label}</span><UiIcon name="arrow" />
-          </button>)}
-        </nav>
-        <Link className="reference-map-link" href="/map">{language === 'ja' ? '全国の避難場所・参考地図' : language === 'en' ? 'Japan evacuation places & reference map' : '全日本避難場所及參考地圖'} →</Link>
-        <details className="more-lab-entry"><summary>{messages.testToolsLabel}</summary>
-      <Link href="/disaster-test">{messages.disasterTestDestination} →</Link>
-        </details>
-        <footer className="more-emergency-footer">
-          <p><a href="tel:119">119</a> · <a href="tel:110">110</a> · <Link href="/dashboard">72H</Link></p>
-          <details><summary>{messages.emergencyBasicsTitle}</summary><p>{messages.emergencyBasicsText}</p></details>
-        </footer>
-      </>}
-      {morePanel !== 'home' && <button type="button" className="more-back" onClick={() => {
-        focusMoreAfterBack.current = true; setMorePanel('home');
-      }}>{messages.backToMore}</button>}
-      {morePanel === 'personal' && <section className="settings-panel more-personal-panel"><h2>{messages.personalDestination}</h2>
-        {!profileEditing ? <>
-          <dl className="personal-summary"><div><dt>{messages.currentAreaLabel}</dt><dd>{snapshot.profile.current_location.label}</dd></div>
-            <div><dt>{messages.accommodationAreaLabel}</dt><dd>{snapshot.profile.accommodation_location.label}</dd></div>
-            <div><dt>{messages.partySize}</dt><dd>{snapshot.profile.party_size}</dd></div>
-            <div><dt>{messages.accessibilityNeeds}</dt><dd>{snapshot.profile.accessibility_constraints.length
-              ? snapshot.profile.accessibility_constraints.map(item => messages[accessibilityChoices.find(([value]) => value === item)?.[1] ?? ''] ?? item).join(' · ')
-              : messages.noAccessibilityNeeds}</dd></div>
-          </dl>
-          <button className="primary" type="button" onClick={() => setProfileEditing(true)}>{messages.editPersonal}</button>
-        </> : <ProfileForm key={snapshot.session_id} language={language} busy={busy} submit={onProfileUpdate} initial={snapshot.profile}
-          startLabel={messages.saveProfile} title={messages.profileSummaryTitle} copy={messages.profileUpdated} messages={messages} preserveCurrentArea
-          draftKey={`72h-live-profile-draft:${snapshot.session_id}`} onSaved={() => setProfileEditing(false)} />}
-        <SafetyCheckControls check={check} setCheck={setCheck} messages={messages} consentOnly />
-      </section>}
-      {morePanel === 'display' && <section className="settings-panel"><h2>{messages.displayDestination}</h2>
-        <p>{messages.textScaleHelp}</p>
-        <label className="settings-language">{messages.language}
-          <select aria-label={messages.language} value={language} onChange={event => chooseLanguage?.(event.target.value as Language)}>
-            <option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option>
-          </select>
-        </label>
-        <label>{messages.appearance}<select value={theme} onChange={event => chooseTheme(event.target.value)}>
-          <option value="dark">{adaptiveMessages[language].dark}</option><option value="system">{adaptiveMessages[language].system}</option><option value="contrast">{adaptiveMessages[language].contrast}</option>
-        </select></label>
-        <PowerControls language={language} power={power} level={level} override={override} choose={choose} />
-      </section>}
-      {morePanel === 'offline' && <><OfflineReadinessPanel messages={messages} snapshot={snapshot} projection={projection} language={language} now={now} consumerOnly />
-        <section className="emergency-contact"><h2>{messages.emergencyGuide}</h2><p>{messages.builtInGuide}</p><p><a href="tel:119">119</a> · <a href="tel:110">110</a></p></section>
-      </>}
-      {morePanel === 'privacy' && <section className="settings-panel"><h2>{messages.privacyDestination}</h2>
-        <p>{messages.locationPrivacy}</p><DeviceLocationControls location={deviceLocation} language={language} showLocate={false} />
-      </section>}
-    </section>}
+    {(view === 'more' || view === 'notifications') && <MoreHub key={view} view={view} snapshot={snapshot} projection={projection} language={language} chooseLanguage={chooseLanguage}
+      messages={messages} deviceLocation={deviceLocation} power={power} level={level} override={override} choose={choose} theme={theme} chooseTheme={chooseTheme}
+      busy={busy} onProfileUpdate={onProfileUpdate} onRefresh={onRefresh} link={null} now={now} connection={connection} check={check} setCheck={setCheck}
+      notifications={notifications} dismissNotification={dismissNotification} sessionLost={sessionLost} canStart={canStart} locationSync={locationSync}
+      onRetryLocation={onRetryLocation} onLocalLocationChecked={onLocalLocationChecked} onChooseArea={onChooseArea} />}
     {view === 'more' && snapshot.spatial_guidance.current_action_kind === 'EVACUATE' && !projection.mapGate && <p className="muted">{messages.mapGateClosed}</p>}
-    {view !== 'dashboard' && urgent && <section className="emergency-contact"><h2>{messages.emergencyContacts}</h2><p>{messages.emergencyContactText}</p><a href="tel:119">119</a> · <a href="tel:110">110</a></section>}
+    {urgent && !(nowView && ['SURVIVAL', 'SAFETY_CHECK', 'EMERGENCY_PROTECT'].includes(projection.presentation.mode)) && <section className="emergency-contact"><h2>{messages.emergencyContacts}</h2><p>{messages.emergencyContactText}</p><a href="tel:119">119</a> · <a href="tel:110">110</a></section>}
     <time className="sr-only" dateTime={new Date(now).toISOString()} />
   </>;
 }
 
 function DesktopPreparedness({ view, snapshot, language, messages, projection, link, busy, power, location, connection, now, refresh, onProfile, onProfileUpdate,
-  onRouteSearch, check, setCheck, notifications, dismissNotification, sessionLost, onChooseArea, canUpdateLocation }: {
+  onRouteSearch, check, setCheck, notifications, dismissNotification, sessionLost, onChooseArea, canUpdateLocation, chooseLanguage, level, override, choose, theme, chooseTheme, onRetryLocation, onLocalLocationChecked, help }: {
   view: string; snapshot: LiveSnapshot | null; language: Language; messages: Record<string, string>;
   projection: ReturnType<typeof projectLiveSnapshot> | null; link: string | null; busy: boolean; power: ReturnType<typeof usePower>['power'];
   location: ReturnType<typeof useDeviceLocation>; connection: Connection; now: number; refresh: () => void; onProfile: (profile: LiveProfileSeed) => void;
-  onProfileUpdate: (profile: LiveProfileSeed) => void; onRouteSearch: (origin: Location, destinationId: string) => Promise<boolean>; check: SafetyCheckState;
+  onProfileUpdate: (profile: LiveProfileSeed) => Promise<boolean>; onRouteSearch: (origin: Location, destinationId: string) => Promise<boolean>; check: SafetyCheckState;
   setCheck: Dispatch<SetStateAction<SafetyCheckState>>; notifications: Notification[]; dismissNotification: (id: string) => void; sessionLost: boolean;
   onChooseArea: (location: OnboardingLocation) => void; canUpdateLocation: boolean;
+  chooseLanguage: (value: Language) => void; level: number | null; override: string; choose: (value: string) => void;
+  theme: string; chooseTheme: (value: string) => void; onRetryLocation: () => void; onLocalLocationChecked: () => void;
+  /** The "I need help" entry, placed in NowScreen's help slot on the Now views. */
+  help?: ReactNode;
 }) {
-  const currentPlan = projection?.plan;
-  const currentActions = snapshot?.plan_actions.filter(item => item.plan_id === currentPlan?.id && !projection?.invalidActionIds.includes(item.id)) ?? [];
+  if (tabForView(view) === 'more' && snapshot && projection) return <div className="desktop-preparedness">
+    <MoreHub key={view} view={view} snapshot={snapshot} projection={projection} language={language} chooseLanguage={chooseLanguage}
+      messages={messages} deviceLocation={location} power={power} level={level} override={override} choose={choose} theme={theme} chooseTheme={chooseTheme}
+      busy={busy} onProfileUpdate={onProfileUpdate} onRefresh={refresh} link={link} now={now} connection={connection} check={check} setCheck={setCheck}
+      notifications={notifications} dismissNotification={dismissNotification} sessionLost={sessionLost} canStart={canUpdateLocation} locationSync={null}
+      onRetryLocation={onRetryLocation} onLocalLocationChecked={onLocalLocationChecked} onChooseArea={onChooseArea} fullSafetyCheck />
+  </div>;
+  if (tabForView(view) === 'now' && snapshot && projection) return <div className="desktop-preparedness">
+    <LiveNow view={view} snapshot={snapshot} projection={projection} primaryAction={projection.presentation.primaryAction} language={language} messages={messages}
+      connection={connection} now={now} power={power} busy={busy} refresh={refresh} canRefresh={canUpdateLocation && !sessionLost} help={help}
+      deviceLocation={location} onRouteSearch={onRouteSearch} />
+    <section className="emergency-contact"><h2>{messages.emergencyGuide}</h2><p>{messages.builtInGuide}</p><a href="tel:119">119</a> · <a href="tel:110">110</a></section>
+    <Link className="reference-map-link" href="/map">{language === 'ja' ? '全国の避難場所・参考地図' : language === 'en' ? 'Japan evacuation places & reference map' : '全日本避難場所及參考地圖'} →</Link>
+    <JudgeFooter messages={messages} />
+  </div>;
   return <div className="desktop-preparedness">
     <header className="desktop-preparedness-heading"><div><p className="eyebrow">72H · {messages.preparedness}</p><h1>{messages.review}</h1></div>
       {snapshot && projection && <div className="desktop-status"><strong>{isPrimarySourceCurrent(snapshot, projection) ? messages.sourceFresh : messages.sourceStale}</strong><span>{displayTime(snapshot.situation.latest_evidence_at, language)}</span></div>}
@@ -791,32 +931,6 @@ function DesktopPreparedness({ view, snapshot, language, messages, projection, l
         </section>
         <SourceSummary snapshot={snapshot} language={language} messages={messages} projection={projection} />
       </div>
-      {(view === 'dashboard' || view === 'plan') && <section className="desktop-plan-review"><h2>{messages.planReview}</h2>
-        {currentPlan ? <><p>{messages.planCreated}: {displayTime(currentPlan.created_at, language)} · {messages.planExpires}: {displayTime(currentPlan.expires_at, language)}</p>
-        {currentActions.map(action => <article key={action.id}><strong>{messages[action.category] ?? action.category}</strong><h3>{action.text}</h3><p>{action.reason}</p></article>)}
-        </> : <p>{messages.noPlan}</p>}
-        <p>{messages.preparedness}</p>
-      </section>}
-      {view === 'sources' && <SourceReview snapshot={snapshot} language={language} messages={messages} projection={projection}
-        now={now} connection={connection} refresh={refresh} busy={busy} canRefresh={canUpdateLocation && !sessionLost} />}
-      {view === 'notifications' && <NotificationsScene notifications={notifications} messages={messages} dismiss={dismissNotification} />}
-      {view === 'more' && <section className="desktop-settings"><h2>{messages.settings}</h2><ProfileForm language={language} busy={busy} submit={onProfileUpdate} initial={snapshot.profile}
-        startLabel={messages.saveProfile} title={messages.setup} copy={messages.profileUpdated} messages={messages} preserveCurrentArea />
-        <section className="settings-panel"><h2>{messages.currentLocation}</h2><p>{messages.locationUpdateIntro}</p>
-          <AreaFallbackPicker messages={messages} disabled={busy || !canUpdateLocation} onConfirm={onChooseArea} />
-        </section>
-        <SafetyCheckControls check={check} setCheck={setCheck} messages={messages} />
-        <RoutePreview snapshot={snapshot} projectedRoute={projection.route} language={language} messages={messages} busy={busy} connection={connection} now={now} location={location} power={power} search={onRouteSearch} />
-        <HandoffCard link={link} messages={messages} />
-        <OfflineReadinessPanel messages={messages} />
-        <PlanHistory snapshot={snapshot} projection={projection} language={language} messages={messages} now={now} />
-        <section className="emergency-contact"><h2>{messages.emergencyGuide}</h2><p>{messages.builtInGuide}</p><a href="tel:119">119</a> · <a href="tel:110">110</a></section>
-        {!sessionLost && <button type="button" disabled={busy} onClick={refresh}>{busy ? messages.refreshing : messages.retry}</button>}
-      </section>}
-      {(view === 'dashboard' || view === 'plan') && <div className="desktop-readiness-grid">
-        <OfflineReadinessPanel messages={messages} /><PlanHistory snapshot={snapshot} projection={projection} language={language} messages={messages} now={now} />
-        <section className="emergency-contact"><h2>{messages.emergencyGuide}</h2><p>{messages.builtInGuide}</p><a href="tel:119">119</a> · <a href="tel:110">110</a></section>
-      </div>}
     </>}
     <Link className="reference-map-link" href="/map">{language === 'ja' ? '全国の避難場所・参考地図' : language === 'en' ? 'Japan evacuation places & reference map' : '全日本避難場所及參考地圖'} →</Link>
     <JudgeFooter messages={messages} />
@@ -1254,30 +1368,49 @@ export function LiveDashboard({ view }: { view: string }) {
   const networkLabel = connection === 'offline' ? messages.offline
     : connection === 'reconnecting' || projection?.networkState === 'RECONNECTING' ? messages.reconnecting
       : projection?.networkState === 'ONLINE_VERIFIED' && snapshot && isPrimarySourceCurrent(snapshot, projection) ? messages.sourceFresh : messages.sourceStale;
-  const nav = [
-    { key: 'dashboard', label: messages.home, icon: 'home' as IconName },
-    { key: 'plan', label: messages.plan, icon: 'plan' as IconName },
-    { key: 'more', label: messages.more, icon: 'more' as IconName },
-  ];
-  const desktopNav = [
-    { key: 'dashboard', label: messages.home }, { key: 'plan', label: messages.plan },
-    { key: 'sources', label: messages.source }, { key: 'notifications', label: messages.notifications },
-    { key: 'more', label: messages.more },
-  ];
   const canUseNetwork = (typeof navigator === 'undefined' || navigator.onLine) && connection !== 'offline' && power.power.allowNonCriticalNetwork && !busy;
   const chooseLanguage = (next: Language) => {
     setLanguage(next);
     try { localStorage.setItem('72h-language', next); } catch { /* In-memory fallback. */ }
   };
+  // The "I need help" entry is reachable in every presentation and power mode, including urgent takeovers and SURVIVAL:
+  // - the full button sits in NowScreen's help slot on the Now views, otherwise first in <main>;
+  // - the panel (DistressEntry) always renders at ONE stable position (first in <main>) so it never remounts and loses state;
+  // - a compact pinned control appears when the panel is closed and the slot button is off screen or absent.
+  const helpInNow = liveNowScreenVisible({ role, view: role === 'mobile' ? mobileView : view, hasData: !!snapshot && !!projection,
+    mode: projection?.presentation.mode, locationSync: !!locationSync });
+  const [helpSlotButton, setHelpSlotButton] = useState<HTMLButtonElement | null>(null);
+  const [helpSlotInView, setHelpSlotInView] = useState(false);
+  const distressPanel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!helpSlotButton) { setHelpSlotInView(false); return; }
+    if (typeof IntersectionObserver === 'undefined') { setHelpSlotInView(true); return; }
+    const observer = new IntersectionObserver(entries => setHelpSlotInView(entries.some(entry => entry.isIntersecting)));
+    observer.observe(helpSlotButton);
+    return () => observer.disconnect();
+  }, [helpSlotButton]);
+  useEffect(() => {
+    if (!distressOpen) return;
+    const panel = distressPanel.current;
+    panel?.scrollIntoView?.({ block: 'start' });
+    panel?.focus({ preventScroll: true });
+  }, [distressOpen]);
+  const toggleDistress = () => setDistressOpen(open => !open);
+  const helpButton = (slot: boolean) => <Button variant="danger" className="distress-entry-button" aria-expanded={distressOpen}
+    ref={slot ? setHelpSlotButton : undefined} onClick={toggleDistress}>{sosText[language].title}</Button>;
+  const helpEntry = helpButton(true);
+  const showHelpPin = !distressOpen && !(helpInNow && helpSlotInView);
   const mainContent = role === 'unknown' ? <div className="device-role-pending" role="status">{messages.loading}</div>
     : role === 'desktop'
       ? locationSync
         ? <LocationSyncGate state={locationSync} messages={messages} retry={() => void retryLocationUpdate()} canRetry={canUseNetwork} chooseArea={chooseLocationArea} />
         : <DesktopPreparedness view={view} snapshot={snapshot} language={language} messages={messages} projection={projection}
         link={link} busy={busy} power={power.power} location={deviceLocation} connection={connection} now={now}
-        refresh={() => void refresh()} onProfile={profile => void begin(profile)} onProfileUpdate={profile => void updateProfile(profile)} onRouteSearch={searchRoute}
+        refresh={() => void refresh()} onProfile={profile => void begin(profile)} onProfileUpdate={profile => updateProfile(profile)} onRouteSearch={searchRoute}
         check={check} setCheck={setCheck} notifications={notifications} dismissNotification={id => setNotifications(items => items.filter(item => item.id !== id))} sessionLost={sessionLost}
-        onChooseArea={chooseLocationArea} canUpdateLocation={canUseNetwork} />
+        onChooseArea={chooseLocationArea} canUpdateLocation={canUseNetwork} help={helpInNow ? helpEntry : null}
+        chooseLanguage={chooseLanguage} level={power.level} override={power.override} choose={power.choose} theme={theme} chooseTheme={chooseTheme}
+        onRetryLocation={() => void retryLocationUpdate()} onLocalLocationChecked={() => setLocationGate({ phase: 'failed', update: null })} />
       : <MobileScene view={mobileView} snapshot={snapshot} language={language} chooseLanguage={chooseLanguage} messages={messages} projection={projection}
         deviceLocation={deviceLocation} locationResolving={locationResolving} onHomeMapReady={onHomeMapReady}
         power={power.power} level={power.level} override={power.override} choose={power.choose}
@@ -1286,19 +1419,21 @@ export function LiveDashboard({ view }: { view: string }) {
         notifications={notifications} dismissNotification={id => setNotifications(items => items.filter(item => item.id !== id))} sessionLost={sessionLost}
         canStart={canUseNetwork}
         locationSync={locationSync} onRetryLocation={() => void retryLocationUpdate()}
-        onLocalLocationChecked={() => setLocationGate({ phase: 'failed', update: null })} onChooseArea={chooseLocationArea} />;
+        onLocalLocationChecked={() => setLocationGate({ phase: 'failed', update: null })} onChooseArea={chooseLocationArea} help={helpInNow ? helpEntry : null} />;
 
-  return <div className={`live-shell theme-${theme} power-${power.power.mode.toLowerCase()} role-${role} ${snapshot ? 'has-live-session' : 'no-live-session'}`}>
-    {!criticalMobileTakeover && <header className="live-topbar"><Link className="live-brand" href="/dashboard">72<span>H</span></Link>
-      <LiveHeaderStatus hasSession={!!snapshot} busy={busy} networkLabel={networkLabel} messages={messages} />
-      {role === 'desktop' && <nav className="desktop-primary-nav" aria-label={messages.preparedness}>{desktopNav.map(item => <Link key={item.key} href={`/${item.key}`} aria-current={view === item.key ? 'page' : undefined}>{item.label}</Link>)}</nav>}
-      <label className="live-language">{messages.language}<select aria-label={messages.language} value={language} onChange={event => chooseLanguage(event.target.value as Language)}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option></select></label>
-    </header>}
-    <main className="live-main">
-      {/* Reachable in every presentation and power mode, including urgent takeovers and SURVIVAL. */}
-      <button type="button" className="distress-entry-button" aria-expanded={distressOpen} onClick={() => setDistressOpen(open => !open)}>{sosText[language].title}</button>
-      {distressOpen && <DistressEntry snapshot={snapshot} language={language} scope="live" fix={fixFromDevicePosition(deviceLocation.position)} onSnapshot={adoptDistress}
-        refreshLocation={deviceLocation.permissionGranted ? () => void deviceLocation.locate() : undefined} />}
+  const bandSpec = snapshot && projection ? liveStatusBand({snapshot,projection,connection,now,language,messages}) : null;
+  const band = bandSpec ? <StatusBand tone={bandSpec.tone} label={bandSpec.label} countdown={bandSpec.deadlineAt ? formatCountdown(bandSpec.deadlineAt-now) : null}/> : undefined;
+  return <AppShell tab={tabForView(mobileView)} language={language} band={band}>
+    <div className={`live-shell live-main theme-${theme} power-${power.power.mode.toLowerCase()} role-${role} ${snapshot ? 'has-live-session' : 'no-live-session'}`}>
+
+      {distressOpen && <HelpOverlay language={language} onClose={()=>setDistressOpen(false)}><div ref={distressPanel} tabIndex={-1} className="distress-panel-anchor" aria-label={sosText[language].title}>
+        <DistressEntry snapshot={snapshot} language={language} scope="live" fix={fixFromDevicePosition(deviceLocation.position)} onSnapshot={adoptDistress}
+          refreshLocation={deviceLocation.permissionGranted ? () => void deviceLocation.locate() : undefined} />
+      </div></HelpOverlay>}
+      {<button hidden={!showHelpPin} type="button" className="ui-help-pin" aria-label={sosText[language].title} aria-expanded={false}
+        onClick={toggleDistress}>{language === 'ja' ? '助けて' : language === 'en' ? 'Help' : '求助'}</button>}
+      {!criticalMobileTakeover && <LiveHeaderStatus hasSession={!!snapshot} busy={busy} networkLabel={networkLabel} messages={messages} />}
+      {!snapshot && <label className="live-language">{messages.language}<select aria-label={messages.language} value={language} onChange={event => chooseLanguage(event.target.value as Language)}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option></select></label>}
       {error && <p className="error" role="alert">{error}</p>}
       {sessionLost && snapshot && !criticalMobileTakeover && <section className="session-loss-banner" role="status">
         <strong>{messages.sessionLost}</strong><p>{messages.lastVerified}: {displayTime(snapshot.situation.latest_evidence_at, language)}</p>
@@ -1306,12 +1441,7 @@ export function LiveDashboard({ view }: { view: string }) {
       </section>}
       {locationResolving && snapshot && <p className="location-resolution-status" role="status">{messages.locationCheckingArea}</p>}
       {mainContent}
-      {role === 'mobile' && !criticalMobileTakeover && <nav className="mobile-primary-nav" aria-label={language === 'ja' ? 'メイン' : language === 'zh-TW' ? '主選單' : 'Main navigation'}>
-        {nav.map(item => <Link key={item.key} href={`/${item.key}`} aria-current={view === item.key ? 'page' : undefined} className={view === item.key ? 'selected' : ''}>
-          <UiIcon name={item.icon} /><small>{item.label}</small>
-        </Link>)}
-      </nav>}
       {role === 'desktop' && snapshot && <div className="desktop-handoff-link"><Link href="/more">{messages.handoff} →</Link></div>}
-    </main>
-  </div>;
+    </div>
+  </AppShell>;
 }

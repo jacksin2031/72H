@@ -1,0 +1,582 @@
+{
+  "commit": "55312a011ca19b58e5c25fd7eab10101d90e2d29",
+  "build_id": "fke1czrPGxQM_RiWIFCf0",
+  "device": "ASUS_AI2201_A",
+  "capture": "Android Chrome CDP Page.captureScreenshot",
+  "screenshots": [
+    {
+      "file": "01-demo-initial.png",
+      "sha256": "a7c58baa8d71eff3e21fbe70e111079c3deac33953f0b5856430e708b0c5338d",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "ja"
+    },
+    {
+      "file": "02-demo-started.png",
+      "sha256": "b6fcb83c3aaf5bb2ec39a75d069b6dae239259360f638a32c472007e29b5299e",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "ja"
+    },
+    {
+      "file": "03-tsunami-411.png",
+      "sha256": "f0ff468cfc143b01748d755a425fa09b4ef5b3f946c73f33f55dc603479b220c",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "ja"
+    },
+    {
+      "file": "04-tsunami-320.png",
+      "sha256": "1a306c3ac0cbcdbd2d0ba877ee94fec9cc4e6d240fee09a0ada5a0a9657e4fb4",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "ja"
+    },
+    {
+      "file": "05-demo-map-320.png",
+      "sha256": "4210bb7ec7e840371f6645cc948e13fa72fab5c9985edf3a6b4cf126b6fb9001",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "ja"
+    },
+    {
+      "file": "06-demo-help-320.png",
+      "sha256": "f93d3e854b7410d1eda7b6aa330c37e27b28d254da3bc6509a926bcd20753333",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "ja"
+    },
+    {
+      "file": "07-offline-now-320.png",
+      "sha256": "504e1b6df389df5eb2a05dcd226f51ca26d2afcb05bfd6b396575ed57684b475",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "ja"
+    },
+    {
+      "file": "08-offline-map-320.png",
+      "sha256": "e6812c04ee2da1e52ba8a898c54bc6728abcfc3dcd0f935f2ec2ee43dfd221d2",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "ja"
+    },
+    {
+      "file": "09-more-411.png",
+      "sha256": "17171a3bd22c5e16ac680a04b89773993e6a3663b0f52581e0fcf41b6141c8c0",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/more",
+      "html_lang": "ja"
+    },
+    {
+      "file": "10-contacts-411.png",
+      "sha256": "095b52418f9544054224490548ec9b72f81e7dd73ebc6d1eaf5dc19ef90fe2d4",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/more",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "11-contacts-360.png",
+      "sha256": "76854193afe083d23e26f0e5deee8b773af703be5a8b58b0176d060a2f70cdd4",
+      "png_size": [
+        945,
+        1943
+      ],
+      "css_viewport": [
+        360,
+        740
+      ],
+      "url": "http://localhost:3036/more",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "12-location-360.png",
+      "sha256": "7344508cff3ce45e2dc00c5bec1de02cc94c1ff1cc70a6a596fbabf781d82af8",
+      "png_size": [
+        945,
+        1943
+      ],
+      "css_viewport": [
+        360,
+        740
+      ],
+      "url": "http://localhost:3036/more",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "13-sources-411.png",
+      "sha256": "4829eb7e35569bb83f210e024aff3c23f8ad31a60dc0c22720c1d6edb97694dc",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/more",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "14-sources-320.png",
+      "sha256": "d9c6effa2c261ecd799b7a43d526110d35c2abfb9e341d37ccda83bf0f44cfca",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3036/more",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "15-more-exercise-320.png",
+      "sha256": "081eb918762450ef27f0ea0d02c4a3a8035f92185a17dd0ecca6c5f8862d760e",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3036/more",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "16-more-footer-320.png",
+      "sha256": "594f8254668acd531497684eec2af42b8a009df19eeced9c6ea4819c41935462",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3036/more",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "17-more-home-411.png",
+      "sha256": "eba9f5f1f1583faf4fd70780c798a6525d6d1dd1cf9e17fedeb5a7d999276d84",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/more",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "18-power-survival-411.png",
+      "sha256": "79a02b9899774309bfe393612e52288bbff632b5bd53368d8bb87487126b8e21",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/more",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "19-live-survival-411.png",
+      "sha256": "c443dab117f2bac8c5af34e7cf641a8c8f4de73f12c42f8f21985fe2686725ef",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/dashboard",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "20-map-411.png",
+      "sha256": "cca12816b58ae446d0fcddac43794be4d34424dd9666963e312bb59e6caa9937",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/map",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "21-map-320.png",
+      "sha256": "10ba17adf60f89a3bd59da628bfc5e05fc47b70594b3c7c235de484b48ecea30",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3036/map",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "22-map-help-320.png",
+      "sha256": "3f9fd66b9e89ecf2a1f93763eea6e6f4011e92f268c998d6fdb2b99278a8144f",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3036/map",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "23-map-help-closed-320.png",
+      "sha256": "10ba17adf60f89a3bd59da628bfc5e05fc47b70594b3c7c235de484b48ecea30",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3036/map",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "24-offline-survival-320.png",
+      "sha256": "3579c2be3f92a0ff07c7ca81a2b4a8eb76e1087cccffb9088e5c59e88264246e",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3036/dashboard",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "25-offline-more-320.png",
+      "sha256": "b95cfab3e9575a78fde74f8bb8b6ac9a8f6b2b94b465f0bcc70d76c3a007195d",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3036/more",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "26-tsunami-zh-411.png",
+      "sha256": "74416cbcc2462951b3d6d7eeda44051f97fb9e90fcb5a622766067fa6f0f58e3",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "27-replay-empty-411.png",
+      "sha256": "84a4db0dbebfee8717e32dc9e6fcdad77500f8bd8efcec193e13b90174445a7a",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "28-tsunami-zh-411.png",
+      "sha256": "592a241b1e74283acac4f10201b12dc01fba8e89cdec8ee298c2f332a9aa7aea",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "29-tsunami-zh-320.png",
+      "sha256": "c24315bf31ad0c70f396ce825b7128244b19704848fb54a06692e07db7c02718",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "30-major-tsunami-320.png",
+      "sha256": "2fe155e1f36d9fbccf12b186ebf2a99c40fdecdec65aecb8c59341c815bb7590",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "31-user-distress-help-411.png",
+      "sha256": "1c7f8c4ab61a55c3aac44a4891b7db57d4064a683d211f5ed930b7fc06fa4e34",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "32-help-after-escape-411.png",
+      "sha256": "1c7f8c4ab61a55c3aac44a4891b7db57d4064a683d211f5ed930b7fc06fa4e34",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "33-help-close-button-411.png",
+      "sha256": "1f6bff38b46e47884fca5e33980d152e1d40e8aac69dcfcf423cbffcdd147381",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "34-replay-offline-ending-411.png",
+      "sha256": "c48f29d8ac4244a891ecd5f8e74c8b657a4235f9cc5d397418c00aea29889e50",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "35-escape-before-report-open.png",
+      "sha256": "cf1d30236943e511fbc31a08c439da74fd9b81cdb43652da4fa12a3012fe27a8",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "36-escape-before-report-closed.png",
+      "sha256": "373cd6f3ee5a291aa8c233162069165a8862ca4f2b6556bd66cf3135a737fb58",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "37-report-focus-lost.png",
+      "sha256": "fd2123b0a811e0505f4c406d7bf6f6bc4c8e468c782958c5027ab4124006e578",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "38-escape-after-report-failed.png",
+      "sha256": "fd2123b0a811e0505f4c406d7bf6f6bc4c8e468c782958c5027ab4124006e578",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "39-close-after-report-passed.png",
+      "sha256": "c2aebd45802c4a495ed78dbe5a393ff558b4e291711d079e1cbddff41bfe941a",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/demo",
+      "html_lang": "zh-TW"
+    },
+    {
+      "file": "40-map-query-en-411.png",
+      "sha256": "ddbb0a87538211baa6709bbdc78efedaef50d8a7d7d946b44b24261563159d3a",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/map?language=en",
+      "html_lang": "ja"
+    },
+    {
+      "file": "41-map-saved-zh-411.png",
+      "sha256": "18b73c41c7669d763525f4e8451f376a74b31f84f08201dbe5027b530eea6e90",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3036/map",
+      "html_lang": "ja"
+    }
+  ]
+}

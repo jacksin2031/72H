@@ -49,7 +49,7 @@ function LiveTsunamiReference({language}:{language:Language}){
     language==='ja'?{MAJOR_WARNING:'大津波警報',WARNING:'津波警報',ADVISORY:'津波注意報',FORECAST:'津波予報',NONE:'解除／指定警報なし',UNKNOWN:'不明'}:
       {MAJOR_WARNING:'Major tsunami warning',WARNING:'Tsunami warning',ADVISORY:'Tsunami advisory',FORECAST:'Tsunami forecast',NONE:'Cancelled / no specified warning',UNKNOWN:'Unknown'};
   const notice=loading?t.fetching:!data||data.source_status==='UNKNOWN'||data.status==='UNKNOWN'?t.unavailable:current?(data.status==='CANCELLED'?t.cancelled:t.current):t.expired;
-  return <section className="hazard-live"><h2>{t.live}</h2>
+  return <section className="hazard-live"><h3>{t.live}</h3>
     <p role={current&&data?.status==='ACTIVE'?'alert':'status'}>{current&&data?.status==='ACTIVE'?`${data.forecast_areas.filter(a=>a.status==='ACTIVE').map(a=>`${a.area_name} · ${warningNames[a.warning_class]}`).join(' / ')} · `:''}{notice}</p>
     {data&&<details><summary>{t.source}</summary><p>{t.published}: {published??'—'} · {data.source.operation}</p>
       <ul>{data.forecast_areas.map(area=><li key={area.area_code}>{area.area_name} · {warningNames[area.warning_class]} · {area.max_height.value_m!==null?`${area.max_height.value_m} m`:area.max_height.description??'—'}{area.arrival_at?` · ${area.arrival_at}`:''}</li>)}</ul>
@@ -57,9 +57,9 @@ function LiveTsunamiReference({language}:{language:Language}){
   </section>;
 }
 
-export function OfficialHazardPanel({language,pack,loading,error,point,showInundation,showPlaces,onInundation,onPlaces,onRetry,onGPS,onClear,onFocus,onPlace,gpsState,liveReference,placesReference,includePlaceList=true}:{
+/** Sheet content (no own title or card frame): the map screen's Section supplies the heading; layer toggles live in the map chips. */
+export function OfficialHazardPanel({language,pack,loading,error,point,onRetry,onGPS,onClear,onFocus,onPlace,gpsState,liveReference,placesReference,includePlaceList=true}:{
   language:Language;pack:HazardPack|null;loading:boolean;error:boolean;point:HazardLocation|null;
-  showInundation:boolean;showPlaces:boolean;onInundation:(v:boolean)=>void;onPlaces:(v:boolean)=>void;
   onRetry:()=>void;onGPS:()=>void;onClear:()=>void;onFocus:()=>void;onPlace:(p:OfficialPlace)=>void;gpsState:string;
   liveReference?:ReactNode;
   placesReference?:ReactNode;
@@ -69,20 +69,18 @@ export function OfficialHazardPanel({language,pack,loading,error,point,showInund
   useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),15000);return()=>clearInterval(timer);},[]);
   const assessment=useMemo(()=>pack?assessOfficialHazards(pack,point,Date.now()):null,[pack,point,now]);
   const places=pack?.places.filter(p=>(!filter||isTsunamiDesignated(p))&&`${p.name} ${p.address??''}`.includes(search.trim()))??[];
-  return <aside className="official-hazard-panel" aria-label={t.title}>
-    {includePlaceList?<h1>{t.title}</h1>:<h2>{language==='ja'?'石巻の津波浸水想定':language==='en'?'Ishinomaki inundation scenario':'石卷海嘯浸水想定'}</h2>}<p>{t.scope}</p><p className="hazard-safety">{t.caution}</p>
+  return <div className="official-hazard-panel">
+    <h3>{includePlaceList?t.title:language==='ja'?'石巻の津波浸水想定':language==='en'?'Ishinomaki inundation scenario':'石卷海嘯浸水想定'}</h3><p className="hazard-muted">{t.scope}</p><p className="hazard-safety">{t.caution}</p>
     {liveReference??<LiveTsunamiReference language={language}/>}
     {loading&&<p role="status">{t.loading}</p>}{error&&<p role="alert">{t.error}</p>}
     {!pack&&<button onClick={onRetry} disabled={loading}>{t.retry}</button>}
     {pack&&<>
       <p className="hazard-muted">{t.inundation} · {t.basis}: {pack.manifest.sources.find(s=>s.id===pack.inundation.features[0]?.properties.source_id)?.basis_date??'—'}<br/>{t.retrieved}: {[...new Set(pack.manifest.sources.map(s=>s.retrieved_at.slice(0,10)))].join(' / ')} · {t.review}: {pack.manifest.review_due_at.slice(0,10)}</p>
       {(now<Date.parse(pack.manifest.reviewed_at)||now>=Date.parse(pack.manifest.review_due_at))&&<p role="alert" className="hazard-safety">{t.reasons.DATA_REVIEW_EXPIRED}</p>}
-      <div className="hazard-tools"><label><input type="checkbox" checked={showInundation} onChange={e=>onInundation(e.target.checked)}/>{t.inundation}</label>
-        <label><input type="checkbox" checked={showPlaces} onChange={e=>onPlaces(e.target.checked)}/>{t.places}</label></div>
       <div className="hazard-actions"><button onClick={onFocus}>{t.focus}</button><button onClick={onGPS} disabled={gpsState==='requesting'}>{t.gps}</button>{point&&<button onClick={onClear}>{t.clear}</button>}</div>
       <p className="hazard-muted">{t.privacy}</p>{gpsState==='error'&&<p role="alert">{t.reasons.INVALID_OR_EXPIRED_LOCATION}</p>}
       <section className="hazard-query" aria-live="polite" data-testid="official-hazard-assessment">
-        <h2>{assessment?t.statuses[assessment.status]:t.statuses.UNKNOWN}</h2>
+        <h3>{assessment?t.statuses[assessment.status]:t.statuses.UNKNOWN}</h3>
         <p>{point?point.source==='GPS'?t.gpsPoint:t.point:t.choose}</p>
         {point&&<p>{point.lat.toFixed(5)}, {point.lng.toFixed(5)}{point.source==='GPS'?` · ±${Math.round(point.accuracy_m!)} m`:
           point.source==='OFFICIAL_PLACE'?` · ${language==='ja'?'施設位置精度：不明':language==='en'?'Facility position accuracy: unknown':'場所座標精度：未提供'}`:''}</p>}
@@ -95,7 +93,7 @@ export function OfficialHazardPanel({language,pack,loading,error,point,showInund
         {pack.manifest.scenario&&<ScenarioDetails language={language} manifest={pack.manifest}/>}
         {pack.manifest.sources.map(source=><div key={source.id}><a href={source.url} target="_blank" rel="noopener noreferrer">{source.title}</a><p>{t.basis}: {source.basis_date??'—'} · {t.retrieved}: {source.retrieved_at}</p><p>{source.notes}</p></div>)}
       </details>
-      {includePlaceList&&!placesReference&&<section><h2>{t.list} · {places.length}</h2><label className="hazard-filter"><input type="checkbox" checked={filter} onChange={e=>{setFilter(e.target.checked);setLimit(12);}}/>{t.filter}</label>
+      {includePlaceList&&!placesReference&&<section><h3>{t.list} · {places.length}</h3><label className="hazard-filter"><input type="checkbox" checked={filter} onChange={e=>{setFilter(e.target.checked);setLimit(12);}}/>{t.filter}</label>
         <input className="hazard-search" type="search" aria-label={t.search} placeholder={t.search} value={search} maxLength={80} onChange={e=>{setSearch(e.target.value);setLimit(12);}}/>
         <ul className="hazard-place-list">{places.slice(0,limit).map(place=><li key={place.id}>
           <button onClick={()=>onPlace(place)}>{place.name}</button><p>{place.kind==='EMERGENCY_SITE'?t.emergency:t.shelter} · {place.address}</p>
@@ -108,7 +106,7 @@ export function OfficialHazardPanel({language,pack,loading,error,point,showInund
       </section>}
     </>}
     {placesReference}
-  </aside>;
+  </div>;
 }
 
 function ScenarioDetails({language,manifest}:{language:Language;manifest:HazardManifest}){

@@ -1,0 +1,243 @@
+{
+  "url": "http://localhost:3036/more",
+  "action": "goto",
+  "snapshot": "- main:\n  - button \"助けが必要\": 助けて\n  - strong: 準備が必要\n  - text: 言語\n  - combobox \"言語\":\n    - option \"日本語\" [selected]\n    - option \"English\"\n    - option \"繁體中文\"\n  - region \"現在地を確認\":\n    - paragraph: 場所を設定\n    - heading \"現在地を確認\" [level=1]\n    - paragraph: 位置情報を使うと、現在の地域に合った公的情報を確認できます。GPSの取得はボタンを押したときだけ始まります。\n    - group: 位置情報の使い方とプライバシー\n    - region \"緊急時の基本案内\":\n      - heading \"緊急時の基本案内\" [level=2]\n      - paragraph: まず身近な危険から離れて身を守り、自治体などの公的情報を確認してください。救急・消防は119、警察は110です。必要な場合はご自身で電話してください。\n      - paragraph:\n        - link \"119\":\n          - /url: tel:119\n        - text: ·\n        - link \"110\":\n          - /url: tel:110\n    - button \"現在地を確認\"\n    - button \"地域を選んで続ける\"\n  - link \"演習とデモ →\":\n    - /url: /demo\n  - link \"全国の避難場所・参考地図 →\":\n    - /url: /map\n  - group: テスト・診断\n- navigation \"メイン\":\n  - link \"今\":\n    - /url: /dashboard\n  - link \"地図\":\n    - /url: /map\n  - link \"その他\":\n    - /url: /more\n- alert",
+  "metrics": {
+    "width": 411,
+    "height": 830,
+    "dpr": 2.625,
+    "scrollWidth": 411,
+    "lang": "ja",
+    "text": "助けて\n準備が必要\n言語\n日本語\nEnglish\n繁體中文\n\n場所を設定\n\n現在地を確認\n\n位置情報を使うと、現在の地域に合った公的情報を確認できます。GPSの取得はボタンを押したときだけ始まります。\n\n位置情報の使い方とプライバシー\n緊急時の基本案内\n\nまず身近な危険から離れて身を守り、自治体などの公的情報を確認してください。救急・消防は119、警察は110です。必要な場合はご自身で電話してください。\n\n119 · 110\n\n現在地を確認\n地域を選んで続ける\n演習とデモ →全国の避難場所・参考地図 →\nテスト・診断\n今\n地図\nその他",
+    "controls": [
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "助けて",
+        "href": null,
+        "rect": {
+          "x": 311.4226379394531,
+          "y": 706.4761962890625,
+          "width": 80.00595092773438,
+          "height": 48,
+          "top": 706.4761962890625,
+          "right": 391.4285888671875,
+          "bottom": 754.4761962890625,
+          "left": 311.4226379394531
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "日本語\nEnglish\n繁體中文",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 70,
+          "width": 371.4285888671875,
+          "height": 48,
+          "top": 70,
+          "right": 391.4285888671875,
+          "bottom": 118,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "119",
+        "href": "tel:119",
+        "rect": {
+          "x": 20,
+          "y": 538.27978515625,
+          "width": 72,
+          "height": 56,
+          "top": 538.27978515625,
+          "right": 92,
+          "bottom": 594.27978515625,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "110",
+        "href": "tel:110",
+        "rect": {
+          "x": 104.11904907226562,
+          "y": 538.27978515625,
+          "width": 72,
+          "height": 56,
+          "top": 538.27978515625,
+          "right": 176.11904907226562,
+          "bottom": 594.27978515625,
+          "left": 104.11904907226562
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "現在地を確認",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 610.27978515625,
+          "width": 371.4285888671875,
+          "height": 52,
+          "top": 610.27978515625,
+          "right": 391.4285888671875,
+          "bottom": 662.27978515625,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "地域を選んで続ける",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 670.27978515625,
+          "width": 159.20237731933594,
+          "height": 48,
+          "top": 670.27978515625,
+          "right": 179.20237731933594,
+          "bottom": 718.27978515625,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "演習とデモ →",
+        "href": "/demo",
+        "rect": {
+          "x": 20,
+          "y": 760.9464721679688,
+          "width": 99.97618865966797,
+          "height": 18.666667938232422,
+          "top": 760.9464721679688,
+          "right": 119.97618865966797,
+          "bottom": 779.6131401062012,
+          "left": 20
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "全国の避難場所・参考地図 →",
+        "href": "/map",
+        "rect": {
+          "x": 119.9761962890625,
+          "y": 746.27978515625,
+          "width": 211.9761962890625,
+          "height": 48,
+          "top": 746.27978515625,
+          "right": 331.952392578125,
+          "bottom": 794.27978515625,
+          "left": 119.9761962890625
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "/disaster-test",
+        "rect": {
+          "x": 20,
+          "y": 844.9464721679688,
+          "width": 275.3333435058594,
+          "height": 18.666667938232422,
+          "top": 844.9464721679688,
+          "right": 295.3333435058594,
+          "bottom": 863.6131401062012,
+          "left": 20
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "今",
+        "href": "/dashboard",
+        "rect": {
+          "x": 0,
+          "y": 767.2380981445312,
+          "width": 137.14285278320312,
+          "height": 63.23809814453125,
+          "top": 767.2380981445312,
+          "right": 137.14285278320312,
+          "bottom": 830.4761962890625,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "地図",
+        "href": "/map",
+        "rect": {
+          "x": 137.14285278320312,
+          "y": 767.2380981445312,
+          "width": 137.14285278320312,
+          "height": 63.23809814453125,
+          "top": 767.2380981445312,
+          "right": 274.28570556640625,
+          "bottom": 830.4761962890625,
+          "left": 137.14285278320312
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "その他",
+        "href": "/more",
+        "rect": {
+          "x": 274.28570556640625,
+          "y": 767.2380981445312,
+          "width": 137.14285278320312,
+          "height": 63.23809814453125,
+          "top": 767.2380981445312,
+          "right": 411.4285583496094,
+          "bottom": 830.4761962890625,
+          "left": 274.28570556640625
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      }
+    ]
+  }
+}

@@ -38,6 +38,9 @@ async function mount(p:Props){
 const button=(host:HTMLElement,text:string)=>[...host.querySelectorAll('button')].find(b=>b.textContent?.trim()===text);
 const primary=(host:HTMLElement)=>host.querySelector<HTMLElement>('[data-testid="distress-primary"]')!;
 const settle=()=>act(async()=>{await new Promise(r=>setTimeout(r,5));});
+const sosEl=(host:HTMLElement)=>host.querySelector('[data-testid=sos-panel]')!;
+const sosAfterPrimary=(host:HTMLElement)=>!!(primary(host).compareDocumentPosition(sosEl(host))&Node.DOCUMENT_POSITION_FOLLOWING);
+const sosDirectlyUnder=(host:HTMLElement)=>!!primary(host).nextElementSibling?.querySelector('[data-testid=sos-panel]');
 
 it('works offline with the seven buttons: local level-1 text, no extract, recording disabled with a reason',async()=>{
   nav({onLine:false});const fetchMock=vi.fn();vi.stubGlobal('fetch',fetchMock);
@@ -127,13 +130,12 @@ it('reads the instruction aloud once per level change, on replay, and never afte
   expect(speak).toHaveBeenCalledTimes(2);
 });
 
-it('pins SOS above the primary instruction when needed, below otherwise',async()=>{
+it('D1: the instruction is always first; SOS sits directly under it when needed, lower otherwise',async()=>{
   nav({onLine:false});vi.stubGlobal('fetch',vi.fn());
-  const before=(host:HTMLElement)=>!!(host.querySelector('.sos-panel')!.compareDocumentPosition(primary(host))&Node.DOCUMENT_POSITION_FOLLOWING);
   let {host}=await mount(props({snapshot:{distress:status({level:'USER_REPORTED'}),replay:{id:'r1'}},sosProfile:{...empty,needsAssistance:true}}));
-  expect(before(host)).toBe(true);
+  expect(sosDirectlyUnder(host)).toBe(true);expect(sosAfterPrimary(host)).toBe(true);
   ({host}=await mount(props()));
-  expect(before(host)).toBe(false);
+  expect(sosDirectlyUnder(host)).toBe(false);expect(sosAfterPrimary(host)).toBe(true);
 });
 
 const advice=(over:Record<string,unknown>)=>({advice:{candidate_order:[],excluded:[],suggest_sos:false,emphasis_clause_ids:[],raised_level:false,rejected_fields:[],mode:'GEMINI',reason_code:null,...over},snapshot:{next:true}});
@@ -175,8 +177,8 @@ it('does not ask the AI for advice at level NONE, and reports buttons online wit
   await act(async()=>button(host,tags.TRAPPED)!.click());await act(async()=>button(host,t.send)!.click());
   const report=fetchMock.mock.calls.find(c=>c[0]==='/api/replay/r1/distress')!;
   expect(JSON.parse(String(report[1]!.body))).toEqual({tags:['TRAPPED'],input_mode:'BUTTON'});
-  // TRAPPED pins SOS above the instruction immediately, even before the server answers.
-  expect(host.querySelector('.sos-panel')!.compareDocumentPosition(primary(host))&Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  // TRAPPED puts SOS directly under the instruction immediately, even before the server answers.
+  expect(sosDirectlyUnder(host)).toBe(true);
 });
 
 it('shows a microphone-unavailable line when permission is denied',async()=>{
@@ -308,7 +310,7 @@ it('explains vertical evacuation when every reachable site was excluded on the r
 });
 it('keeps SOS pinned on this device for a critical report\'s 60-minute lifetime, even after a reload',async()=>{
   nav({onLine:false});vi.stubGlobal('fetch',vi.fn());
-  const pinnedAbove=(host:HTMLElement)=>!!(host.querySelector('.sos-panel')!.compareDocumentPosition(primary(host))&Node.DOCUMENT_POSITION_FOLLOWING);
+  const pinnedAbove=sosDirectlyUnder;
   const {host}=await mount(props());
   await act(async()=>button(host,tags.TRAPPED)!.click());await act(async()=>button(host,t.send)!.click());
   expect(Number(localStorage.getItem('72h-sos-pinned-until:replay'))).toBe(NOW+60*60_000);
@@ -319,7 +321,7 @@ it('keeps SOS pinned on this device for a critical report\'s 60-minute lifetime,
 });
 it('F5: an exercise (replay / mock-live) SOS pin never pins SOS in live, and vice versa',async()=>{
   nav({onLine:false});vi.stubGlobal('fetch',vi.fn());
-  const pinnedAbove=(host:HTMLElement)=>!!(host.querySelector('.sos-panel')!.compareDocumentPosition(primary(host))&Node.DOCUMENT_POSITION_FOLLOWING);
+  const pinnedAbove=sosDirectlyUnder;
   const {host}=await mount(props({scope:'replay'}));
   await act(async()=>button(host,tags.TRAPPED)!.click());await act(async()=>button(host,t.send)!.click());
   expect(pinnedAbove((await mount(props({scope:'replay',now:NOW+10*60_000}))).host)).toBe(true);
@@ -356,4 +358,37 @@ it('shows the exercise label at every level for replay and mock-live, never for 
   expect(host.querySelector('[data-testid="distress-exercise"]')).toBeTruthy();
   ({host}=await mount(props({scope:'live',now:undefined,snapshot:{distress:status(),session_id:'l1'}})));
   expect(host.querySelector('[data-testid="distress-exercise"]')).toBeNull();
+});
+
+// Task 6 (D1): an AI suggestion never reorders the panel.
+const reportsOf=(...t:DistressTag[])=>[{id:'d1',tags:t,input_mode:'BUTTON' as const,reported_at:new Date(NOW).toISOString(),source:'USER_REPORTED' as const}];
+async function renderOfficialWithAdvice(over:Record<string,unknown>){
+  nav({});vi.stubGlobal('fetch',vi.fn(async()=>json(advice(over))));
+  const {host}=await mount(props({snapshot:{distress:tsunami(15),replay:{id:'r1'}}}));
+  await vi.waitFor(()=>expect(host.querySelector('[data-testid="distress-sos-ai"]')).toBeTruthy());
+  return host;
+}
+async function renderWithConfirmedTags(tagList:DistressTag[]){
+  nav({onLine:false});vi.stubGlobal('fetch',vi.fn());
+  const {host}=await mount(props({snapshot:{distress:status({level:'USER_REPORTED',reports:reportsOf(...tagList)}),replay:{id:'r1'}}}));
+  return host;
+}
+it('keeps the primary instruction first even when AI suggests SOS (D1)',async()=>{
+  const h=await renderOfficialWithAdvice({suggest_sos:true});
+  const text=h.querySelector('.distress-primary-text')!;const sos=h.querySelector('[data-testid=sos-panel]')!;
+  expect(text.compareDocumentPosition(sos)&Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(sosDirectlyUnder(h)).toBe(false);
+  expect(h.querySelector('[data-testid="distress-sos-ai"]')!.textContent).toBe(t.aiSuggestion);
+  expect(h.textContent).toContain(t.sosSuggested);
+});
+it('places SOS directly under the instruction only for self-reported TRAPPED',async()=>{
+  const h=await renderWithConfirmedTags(['TRAPPED']);
+  const text=h.querySelector('.distress-primary-text')!;const next=text.closest('[data-distress=primary]')!.nextElementSibling;
+  expect(next?.querySelector('[data-testid=sos-panel]')).not.toBeNull();
+});
+it('has exactly one not-a-guarantee note, directly inside the primary block',async()=>{
+  const h=await renderWithConfirmedTags(['TRAPPED']);
+  expect(h.querySelectorAll('[data-testid="distress-disclaimer"]')).toHaveLength(1);
+  expect(primary(h).contains(h.querySelector('[data-testid="distress-disclaimer"]'))).toBe(true);
+  expect(h.textContent!.split(t.notGuaranteed).length-1).toBe(1);
 });

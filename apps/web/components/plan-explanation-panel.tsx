@@ -4,7 +4,6 @@ import Link from 'next/link';
 import type {Language} from '@/lib/contracts';
 import {boundedText} from '@/lib/disaster-map';
 import {EXPLAINABLE_DECISIONS,acceptPlanExplanation,explanationText,planExplanationKey,type ExplanationSnapshot,type PlanExplanation} from '@/lib/plan-explanation';
-import './plan-explanation.css';
 
 export function PlanExplanationPanel({snapshot,language,scope='live',accessKey,enabled=true}:{snapshot:ExplanationSnapshot&{session_id?:string;session?:{id:string};replay?:{id:string}};
  language:Language;scope?:'live'|'replay'|'mock-live';accessKey?:string;enabled?:boolean}){

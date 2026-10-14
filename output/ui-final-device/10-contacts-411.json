@@ -1,0 +1,319 @@
+{
+  "url": "http://localhost:3036/more",
+  "action": "click",
+  "snapshot": "- status:\n  - strong: 離線 · 最後確認 —\n- main:\n  - button \"需要協助\": 求助\n  - strong: 持續關注中\n  - text: 重新連線中 · 驗證尚未完成\n  - button \"‹ 返回\"\n  - region \"設定緊急聯絡人（選填）\":\n    - heading \"設定緊急聯絡人（選填）\" [level=2]\n    - paragraph: 聯絡人只存在這支手機，不會上傳。電量低時請先節省電力。\n    - text: 名字\n    - textbox \"名字\"\n    - text: 電話\n    - textbox \"電話\"\n    - text: 名字\n    - textbox \"名字\"\n    - text: 電話\n    - textbox \"電話\"\n    - text: 名字\n    - textbox \"名字\"\n    - text: 電話\n    - textbox \"電話\"\n    - checkbox \"我行動不便\"\n    - text: 我行動不便\n    - checkbox \"我需要協助撤離\"\n    - text: 我需要協助撤離\n    - button \"試播警報聲\"\n    - button \"儲存\"\n    - button \"略過\"\n  - time\n- navigation \"主選單\":\n  - link \"現在\":\n    - /url: /dashboard\n  - link \"地圖\":\n    - /url: /map\n  - link \"更多\":\n    - /url: /more\n- alert",
+  "metrics": {
+    "width": 411,
+    "height": 830,
+    "dpr": 2.625,
+    "scrollWidth": 411,
+    "lang": "zh-TW",
+    "text": "離線 · 最後確認 —\n求助\n持續關注中\n·\n重新連線中 · 驗證尚未完成\n‹ 返回\n設定緊急聯絡人（選填）\n\n聯絡人只存在這支手機，不會上傳。電量低時請先節省電力。\n\n名字\n電話\n名字\n電話\n名字\n電話\n我行動不便\n我需要協助撤離\n試播警報聲\n儲存\n略過\n現在\n地圖\n更多",
+    "controls": [
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "求助",
+        "href": null,
+        "rect": {
+          "x": 327.4226379394531,
+          "y": 706.4761962890625,
+          "width": 64.00595092773438,
+          "height": 48,
+          "top": 706.4761962890625,
+          "right": 391.4285888671875,
+          "bottom": 754.4761962890625,
+          "left": 327.4226379394531
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "‹ 返回",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 89,
+          "width": 56.93452453613281,
+          "height": 48,
+          "top": 89,
+          "right": 76.93452453613281,
+          "bottom": 137,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 318.2797546386719,
+          "width": 179.71429443359375,
+          "height": 48,
+          "top": 318.2797546386719,
+          "right": 199.71429443359375,
+          "bottom": 366.2797546386719,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": false
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 211.71429443359375,
+          "y": 318.2797546386719,
+          "width": 179.71429443359375,
+          "height": 48,
+          "top": 318.2797546386719,
+          "right": 391.4285888671875,
+          "bottom": 366.2797546386719,
+          "left": 211.71429443359375
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": false
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 406.2797546386719,
+          "width": 179.71429443359375,
+          "height": 48,
+          "top": 406.2797546386719,
+          "right": 199.71429443359375,
+          "bottom": 454.2797546386719,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": false
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 211.71429443359375,
+          "y": 406.2797546386719,
+          "width": 179.71429443359375,
+          "height": 48,
+          "top": 406.2797546386719,
+          "right": 391.4285888671875,
+          "bottom": 454.2797546386719,
+          "left": 211.71429443359375
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": false
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 494.27978515625,
+          "width": 179.71429443359375,
+          "height": 48,
+          "top": 494.27978515625,
+          "right": 199.71429443359375,
+          "bottom": 542.27978515625,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": false
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 211.71429443359375,
+          "y": 494.27978515625,
+          "width": 179.71429443359375,
+          "height": 48,
+          "top": 494.27978515625,
+          "right": 391.4285888671875,
+          "bottom": 542.27978515625,
+          "left": 211.71429443359375
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": false
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 568.27978515625,
+          "width": 20,
+          "height": 20,
+          "top": 568.27978515625,
+          "right": 40,
+          "bottom": 588.27978515625,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": false
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 616.27978515625,
+          "width": 20,
+          "height": 20,
+          "top": 616.27978515625,
+          "right": 40,
+          "bottom": 636.27978515625,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "試播警報聲",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 662.27978515625,
+          "width": 96.00595092773438,
+          "height": 48,
+          "top": 662.27978515625,
+          "right": 116.00595092773438,
+          "bottom": 710.27978515625,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "儲存",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 718.27978515625,
+          "width": 371.4285888671875,
+          "height": 52,
+          "top": 718.27978515625,
+          "right": 391.4285888671875,
+          "bottom": 770.27978515625,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "略過",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 778.27978515625,
+          "width": 48.00595474243164,
+          "height": 48,
+          "top": 778.27978515625,
+          "right": 68.00595474243164,
+          "bottom": 826.27978515625,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "現在",
+        "href": "/dashboard",
+        "rect": {
+          "x": 0,
+          "y": 767.2380981445312,
+          "width": 137.14285278320312,
+          "height": 63.23809814453125,
+          "top": 767.2380981445312,
+          "right": 137.14285278320312,
+          "bottom": 830.4761962890625,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "地圖",
+        "href": "/map",
+        "rect": {
+          "x": 137.14285278320312,
+          "y": 767.2380981445312,
+          "width": 137.14285278320312,
+          "height": 63.23809814453125,
+          "top": 767.2380981445312,
+          "right": 274.28570556640625,
+          "bottom": 830.4761962890625,
+          "left": 137.14285278320312
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "更多",
+        "href": "/more",
+        "rect": {
+          "x": 274.28570556640625,
+          "y": 767.2380981445312,
+          "width": 137.14285278320312,
+          "height": 63.23809814453125,
+          "top": 767.2380981445312,
+          "right": 411.4285583496094,
+          "bottom": 830.4761962890625,
+          "left": 274.28570556640625
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      }
+    ]
+  }
+}

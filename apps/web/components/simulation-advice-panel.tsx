@@ -2,7 +2,6 @@
 import type { Language } from '@/lib/contracts';
 import { simulationAdviceText, type SimulationAssessment } from '@/lib/simulation-advice';
 import { simulationConditionText } from './simulation-location-controls';
-import './simulation-advice.css';
 
 export function SimulationAdvicePanel({advice,language,stale=false,cannotMove=false,executionMode}:{advice:SimulationAssessment|null;language:Language;stale?:boolean;cannotMove?:boolean;executionMode?:SimulationAssessment['ai_mode']}){
   const t=simulationAdviceText[language],c:Record<string,string>=simulationConditionText[language];

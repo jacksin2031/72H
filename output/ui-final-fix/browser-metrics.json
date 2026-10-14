@@ -1,0 +1,446 @@
+[
+  {
+    "name": "demo-map-320",
+    "result": {
+      "attribution": {
+        "bottom": 138,
+        "height": 22,
+        "left": 10,
+        "right": 248,
+        "top": 116,
+        "width": 238,
+        "x": 10,
+        "y": 116
+      },
+      "controls": {
+        "bottom": 504,
+        "height": 121,
+        "left": 0,
+        "right": 320,
+        "top": 383,
+        "width": 320,
+        "x": 0,
+        "y": 383
+      },
+      "loaded": true,
+      "overflow": false,
+      "pin": {
+        "bottom": 315,
+        "height": 48,
+        "left": 188,
+        "right": 300,
+        "top": 267,
+        "width": 112,
+        "x": 188,
+        "y": 267
+      },
+      "sheet": {
+        "bottom": 383,
+        "height": 56,
+        "left": 0,
+        "right": 320,
+        "top": 327,
+        "width": 320,
+        "x": 0,
+        "y": 327
+      },
+      "width": 320,
+      "zoom": {
+        "bottom": 220,
+        "height": 160,
+        "left": 260,
+        "right": 308,
+        "top": 60,
+        "width": 48,
+        "x": 260,
+        "y": 60
+      }
+    },
+    "phase": "INVESTIGATION - superseded by final measurements and screenshots"
+  },
+  {
+    "name": "tsunami-now-320",
+    "result": {
+      "basis": "根拠：気象庁 津波警報 · 発表 14:49",
+      "controls": {
+        "bottom": 504,
+        "height": 121,
+        "left": 0,
+        "right": 305,
+        "top": 383,
+        "width": 305,
+        "x": 0,
+        "y": 383
+      },
+      "help": {
+        "bottom": 356,
+        "height": 52,
+        "left": 20,
+        "right": 285,
+        "top": 304,
+        "width": 265,
+        "x": 20,
+        "y": 304
+      },
+      "hero": "今すぐ上の階・高い場所へ。水から離れてください。",
+      "noteVisible": true,
+      "overflow": false,
+      "timer": "25:00"
+    }
+  },
+  {
+    "name": "contacts-360",
+    "result": {
+      "checkboxes": [
+        {
+          "box": {
+            "bottom": 1028.2734375,
+            "height": 20,
+            "left": 20,
+            "right": 40,
+            "top": 1008.2734375,
+            "width": 20,
+            "x": 20,
+            "y": 1008.2734375
+          },
+          "labelDisplay": "flex"
+        },
+        {
+          "box": {
+            "bottom": 1076.2734375,
+            "height": 20,
+            "left": 20,
+            "right": 40,
+            "top": 1056.2734375,
+            "width": 20,
+            "x": 20,
+            "y": 1056.2734375
+          },
+          "labelDisplay": "flex"
+        }
+      ],
+      "overflow": false,
+      "visibleHelp": 1
+    }
+  },
+  {
+    "name": "sources-360",
+    "result": [
+      {
+        "description": {
+          "bottom": 616,
+          "height": 21,
+          "left": 20,
+          "right": 325,
+          "top": 595,
+          "width": 305,
+          "x": 20,
+          "y": 595
+        },
+        "display": "grid",
+        "link": {
+          "bottom": 591,
+          "height": 48,
+          "left": 20,
+          "right": 325,
+          "top": 543,
+          "width": 305,
+          "x": 20,
+          "y": 543
+        }
+      },
+      {
+        "description": {
+          "bottom": 701,
+          "height": 21,
+          "left": 20,
+          "right": 325,
+          "top": 680,
+          "width": 305,
+          "x": 20,
+          "y": 680
+        },
+        "display": "grid",
+        "link": {
+          "bottom": 676,
+          "height": 48,
+          "left": 20,
+          "right": 325,
+          "top": 628,
+          "width": 305,
+          "x": 20,
+          "y": 628
+        }
+      },
+      {
+        "description": {
+          "bottom": 786,
+          "height": 21,
+          "left": 20,
+          "right": 325,
+          "top": 765,
+          "width": 305,
+          "x": 20,
+          "y": 765
+        },
+        "display": "grid",
+        "link": {
+          "bottom": 761,
+          "height": 48,
+          "left": 20,
+          "right": 325,
+          "top": 713,
+          "width": 305,
+          "x": 20,
+          "y": 713
+        }
+      }
+    ]
+  },
+  {
+    "name": "more-footer-360",
+    "result": {
+      "lastParagraph": {
+        "bottom": 678.5,
+        "height": 48,
+        "left": 20,
+        "right": 325,
+        "top": 630.5,
+        "width": 305,
+        "x": 20,
+        "y": 630.5
+      },
+      "mainPadding": "80px",
+      "overflow": false,
+      "pin": {
+        "bottom": 564,
+        "height": 48,
+        "left": 261,
+        "right": 325,
+        "top": 516,
+        "width": 64,
+        "x": 261,
+        "y": 516
+      }
+    },
+    "phase": "INVESTIGATION - superseded by final measurements and screenshots"
+  },
+  {
+    "name": "map-360",
+    "result": {
+      "attribution": {
+        "bottom": 94,
+        "height": 22,
+        "left": 10,
+        "right": 288,
+        "top": 72,
+        "width": 278,
+        "x": 10,
+        "y": 72
+      },
+      "canvas": {
+        "bottom": 576,
+        "height": 576,
+        "left": 0,
+        "right": 360,
+        "top": 0,
+        "width": 360,
+        "x": 0,
+        "y": 0
+      },
+      "overflow": false,
+      "pin": {
+        "bottom": 508,
+        "height": 48,
+        "left": 222.5234375,
+        "right": 340,
+        "top": 460,
+        "width": 117.4765625,
+        "x": 222.5234375,
+        "y": 460
+      },
+      "sheet": {
+        "bottom": 576,
+        "height": 56,
+        "left": 0,
+        "right": 360,
+        "top": 520,
+        "width": 360,
+        "x": 0,
+        "y": 520
+      },
+      "title": "All Japan reference map",
+      "zoom": {
+        "bottom": 176,
+        "height": 160,
+        "left": 300,
+        "right": 348,
+        "top": 16,
+        "width": 48,
+        "x": 300,
+        "y": 16
+      }
+    },
+    "phase": "INVESTIGATION - superseded by final measurements and screenshots"
+  },
+  {
+    "name": "map-final-360",
+    "result": {
+      "chips": {
+        "bottom": 508,
+        "height": 71,
+        "left": 0,
+        "right": 360,
+        "top": 437,
+        "width": 360,
+        "x": 0,
+        "y": 437
+      },
+      "overflow": false,
+      "pin": {
+        "bottom": 60,
+        "height": 48,
+        "left": 170.5234375,
+        "right": 288,
+        "top": 12,
+        "width": 117.4765625,
+        "x": 170.5234375,
+        "y": 12
+      },
+      "region": {
+        "bottom": 60,
+        "height": 48,
+        "left": 20,
+        "right": 152,
+        "top": 12,
+        "width": 132,
+        "x": 20,
+        "y": 12
+      },
+      "zoom": {
+        "bottom": 176,
+        "height": 160,
+        "left": 300,
+        "right": 348,
+        "top": 16,
+        "width": 48,
+        "x": 300,
+        "y": 16
+      }
+    }
+  },
+  {
+    "name": "more-footer-final-360",
+    "result": {
+      "last": {
+        "bottom": 678.5,
+        "height": 48,
+        "left": 20,
+        "right": 325,
+        "top": 630.5,
+        "width": 305,
+        "x": 20,
+        "y": 630.5
+      },
+      "pin": {
+        "bottom": 564,
+        "height": 48,
+        "left": 261,
+        "right": 325,
+        "top": 516,
+        "width": 64,
+        "x": 261,
+        "y": 516
+      },
+      "scrollHeight": 1037,
+      "scrollY": 198.5,
+      "viewport": 640
+    },
+    "phase": "INVESTIGATION - superseded by final measurements and screenshots"
+  },
+  {
+    "name": "more-footer-scrolled-360",
+    "result": {
+      "last": {
+        "bottom": 678.5,
+        "height": 48,
+        "left": 20,
+        "right": 325,
+        "top": 630.5,
+        "width": 305,
+        "x": 20,
+        "y": 630.5
+      },
+      "pin": {
+        "bottom": 564,
+        "height": 48,
+        "left": 261,
+        "right": 325,
+        "top": 516,
+        "width": 64,
+        "x": 261,
+        "y": 516
+      },
+      "scrollHeight": 1037,
+      "scrollY": 198.5,
+      "viewport": 640
+    },
+    "phase": "INVESTIGATION - superseded by final measurements and screenshots"
+  },
+  {
+    "name": "offline-replay-tabs",
+    "result": {
+      "canvas": true,
+      "help": true,
+      "mapScreen": true
+    }
+  },
+  {
+    "name": "more-footer-clicked-320",
+    "result": {
+      "last": {
+        "bottom": 408,
+        "height": 48,
+        "left": 20,
+        "right": 285,
+        "top": 360,
+        "width": 265,
+        "x": 20,
+        "y": 360
+      },
+      "padding": "80px",
+      "pin": {
+        "bottom": 492,
+        "height": 48,
+        "left": 221,
+        "right": 285,
+        "top": 444,
+        "width": 64,
+        "x": 221,
+        "y": 444
+      },
+      "scrollY": 453,
+      "viewport": 568
+    }
+  },
+  {
+    "name": "offline-map-final-320",
+    "result": {
+      "band": "演習 · オフライン · 最終確認 14:50",
+      "bandClass": "ui-band ui-band-warn",
+      "canvas": true,
+      "help": {
+        "bottom": 104,
+        "height": 48,
+        "left": 136,
+        "right": 248,
+        "top": 56,
+        "width": 112,
+        "x": 136,
+        "y": 56
+      },
+      "loaded": true,
+      "overflow": false
+    }
+  }
+]

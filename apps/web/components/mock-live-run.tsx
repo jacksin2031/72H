@@ -213,7 +213,7 @@ export function MockLiveRun({ input, language, accessKey }: { input: DisasterTes
       {!realtimeValid && <p className="lab-drill-warning" role="alert">{t.longGap}</p>}
       {!preludeValid && <p className="lab-drill-warning" role="alert">{t.preludeInvalid}</p>}
     </fieldset>}
-    <button className="primary sim-launch" data-testid="launch-full-simulation" type="button" disabled={!enabled} onClick={start}>
+    <button className="ui-btn ui-btn-primary" data-testid="launch-full-simulation" type="button" disabled={!enabled} onClick={start}>
       {language === 'ja' ? 'シミュレーション開始 → ホーム画面' : language === 'en' ? 'Start full simulation → Home' : '開始整體模擬 → 進入主畫面'}
     </button>
     {!accessKey.trim() && <p className="lab-muted">{t.missing}</p>}

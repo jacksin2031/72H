@@ -1,0 +1,301 @@
+{
+  "url": "http://localhost:3036/more",
+  "action": "click",
+  "snapshot": "- status:\n  - strong: 離線 · 最後確認 —\n- main:\n  - button \"需要協助\": 求助\n  - strong: 持續關注中\n  - text: 重新連線中 · 驗證尚未完成\n  - button \"‹ 返回\"\n  - text: 演練\n  - link \"示範\":\n    - /url: /demo\n  - link \"模擬\":\n    - /url: /simulation\n  - link \"災害測試\":\n    - /url: /disaster-test\n  - combobox \"歷史地震\":\n    - option \"顯示歷史震央\" [selected]\n    - option \"2011 · 東日本\"\n    - option \"1995 · 神戶 / 神戸\"\n    - option \"2016 · 熊本\"\n    - option \"2018 · 北海道\"\n    - option \"2024 · 能登\"\n  - region \"全日本參考地圖\":\n    - link \"© 国土地理院\":\n      - /url: https://maps.gsi.go.jp/development/ichiran.html\n    - text: ·\n    - link \"Natural Earth\":\n      - /url: https://www.naturalearthdata.com/about/terms-of-use/\n  - paragraph: 歷史震央僅作演練參考，不是目前的災害資訊。\n  - time\n- navigation \"主選單\":\n  - link \"現在\":\n    - /url: /dashboard\n  - link \"地圖\":\n    - /url: /map\n  - link \"更多\":\n    - /url: /more\n- alert",
+  "metrics": {
+    "width": 320,
+    "height": 568,
+    "dpr": 2.625,
+    "scrollWidth": 320,
+    "lang": "zh-TW",
+    "text": "離線 · 最後確認 —\n求助\n持續關注中\n·\n重新連線中 · 驗證尚未完成\n‹ 返回\n演練\n示範\n模擬\n災害測試\n顯示歷史震央\n2011 · 東日本\n1995 · 神戶 / 神戸\n2016 · 熊本\n2018 · 北海道\n2024 · 能登\n© 国土地理院 · Natural Earth\n\n歷史震央僅作演練參考，不是目前的災害資訊。\n\n現在\n地圖\n更多",
+    "controls": [
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "求助",
+        "href": null,
+        "rect": {
+          "x": 235.99404907226562,
+          "y": 444,
+          "width": 64.00595092773438,
+          "height": 48,
+          "top": 444,
+          "right": 300,
+          "bottom": 492,
+          "left": 235.99404907226562
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "‹ 返回",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 89,
+          "width": 56.93452453613281,
+          "height": 48,
+          "top": 89,
+          "right": 76.93452453613281,
+          "bottom": 137,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "示範",
+        "href": "/demo",
+        "rect": {
+          "x": 20,
+          "y": 173.40476989746094,
+          "width": 280,
+          "height": 48.761905670166016,
+          "top": 173.40476989746094,
+          "right": 300,
+          "bottom": 222.16667556762695,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "模擬",
+        "href": "/simulation",
+        "rect": {
+          "x": 20,
+          "y": 222.1666717529297,
+          "width": 280,
+          "height": 48.761905670166016,
+          "top": 222.1666717529297,
+          "right": 300,
+          "bottom": 270.9285774230957,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "災害測試",
+        "href": "/disaster-test",
+        "rect": {
+          "x": 20,
+          "y": 270.9285888671875,
+          "width": 280,
+          "height": 48.761905670166016,
+          "top": 270.9285888671875,
+          "right": 300,
+          "bottom": 319.6904945373535,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "顯示歷史震央\n2011 · 東日本\n1995 · 神戶 / 神戸\n2016 · 熊本\n2018 · 北海道\n2024 · 能登",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 319.69049072265625,
+          "width": 172.1904754638672,
+          "height": 48,
+          "top": 319.69049072265625,
+          "right": 192.1904754638672,
+          "bottom": 367.69049072265625,
+          "left": 20
+        },
+        "display": "inline-block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "CANVAS",
+        "role": "region",
+        "name": "Map",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 379.69049072265625,
+          "width": 280,
+          "height": 240,
+          "top": 379.69049072265625,
+          "right": 300,
+          "bottom": 619.6904907226562,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0px none rgb(255, 255, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "© 国土地理院",
+        "href": "https://maps.gsi.go.jp/development/ichiran.html",
+        "rect": {
+          "x": 30,
+          "y": 599.857177734375,
+          "width": 54.26785659790039,
+          "height": 10.666666984558105,
+          "top": 599.857177734375,
+          "right": 84.26785659790039,
+          "bottom": 610.5238447189331,
+          "left": 30
+        },
+        "display": "inline",
+        "border": "0px none rgb(241, 255, 246)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "Natural Earth",
+        "href": "https://www.naturalearthdata.com/about/terms-of-use/",
+        "rect": {
+          "x": 91.08333587646484,
+          "y": 599.857177734375,
+          "width": 52.55952453613281,
+          "height": 10.666666984558105,
+          "top": 599.857177734375,
+          "right": 143.64286041259766,
+          "bottom": 610.5238447189331,
+          "left": 91.08333587646484
+        },
+        "display": "inline",
+        "border": "0px none rgb(241, 255, 246)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "現在",
+        "href": "/dashboard",
+        "rect": {
+          "x": 0,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 106.66667175292969,
+          "bottom": 568,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "地圖",
+        "href": "/map",
+        "rect": {
+          "x": 106.66667175292969,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 213.33334350585938,
+          "bottom": 568,
+          "left": 106.66667175292969
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "更多",
+        "href": "/more",
+        "rect": {
+          "x": 213.33334350585938,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 320.00001525878906,
+          "bottom": 568,
+          "left": 213.33334350585938
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      }
+    ]
+  },
+  "layout": [
+    {
+      "tag": "MAIN",
+      "name": "求助\n持續關注中\n·\n重新連線中 · 驗證尚未完成\n‹ 返回\n演練\n示範\n模擬\n災害測試\n顯示歷史震央\n2011 · 東日本\n1995 · 神戶 / 神戸\n2016 · 熊本\n2018 · 北海道\n2024 · 能登\n© 国土地理院 · Natural Earth\n\n歷史震央僅作",
+      "class": "ui-main",
+      "rect": {
+        "x": 0,
+        "y": 56,
+        "width": 320,
+        "height": 723.6904907226562,
+        "top": 56,
+        "right": 320,
+        "bottom": 779.6904907226562,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "80px"
+    },
+    {
+      "tag": "LABEL",
+      "name": "顯示歷史震央\n2011 · 東日本\n1995 · 神戶 / 神戸\n2016 · 熊本\n2018 · 北海道\n2024 · 能登",
+      "class": "exercise-history-picker",
+      "rect": {
+        "x": 20,
+        "y": 334.3571472167969,
+        "width": 172.1904754638672,
+        "height": 18.666667938232422,
+        "top": 334.3571472167969,
+        "right": 192.1904754638672,
+        "bottom": 353.0238151550293,
+        "left": 20
+      },
+      "display": "inline",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "歷史震央僅作演練參考，不是目前的災害資訊。",
+      "class": "ui-note",
+      "rect": {
+        "x": 20,
+        "y": 635.6904907226562,
+        "width": 280,
+        "height": 48,
+        "top": 635.6904907226562,
+        "right": 300,
+        "bottom": 683.6904907226562,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    }
+  ],
+  "focus": {
+    "tag": "BODY",
+    "text": "離線 · 最後確認 —\n求助\n持續關注中\n·\n重新連線中 · 驗證尚未完成\n‹ 返回\n演練\n示範\n模擬\n災害測試\n顯示歷史震央\n2011 · 東日本\n1995 · 神戶 / 神戸\n2016 · 熊本\n2018 · 北海道\n2024 · 能登\n© 国土地理院 · Natural Earth\n\n歷史震央僅作演練參考，不是目前的災害資訊。\n\n現在\n地圖\n更多",
+    "aria": null
+  }
+}

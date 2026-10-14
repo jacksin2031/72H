@@ -1,0 +1,316 @@
+/* apps/web/components/ui/ui.css — the only place allowed to use border-radius (plus map styles). */
+.ui-section{padding:var(--sp-5) 0;}
+.ui-section+.ui-section{padding-top:var(--sp-6)}
+.ui-section-title{margin:0 0 var(--sp-3);font-size:var(--fs-meta);font-weight:600;color:var(--text-2);letter-spacing:.02em}
+.ui-row{display:flex;align-items:center;gap:var(--sp-3);width:100%;min-height:48px;padding:var(--sp-3) 0;background:none;border:0;border-bottom:1px solid var(--line);color:var(--text);font:inherit;text-align:left;text-decoration:none;cursor:pointer}
+div.ui-row{cursor:default}
+.ui-row[aria-current=true]{font-weight:700}
+.ui-row[aria-current=true] .ui-row-tail{color:var(--text)}
+.ui-row-label{flex:1;min-width:0;overflow-wrap:anywhere}
+.ui-row-value{color:var(--text-2);font-size:var(--fs-meta)}
+.ui-row-tail{color:var(--text-2);display:inline-flex}
+.ui-btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 var(--sp-4);border:0;border-radius:var(--radius);font:inherit;font-weight:600;cursor:pointer;transition:opacity var(--motion)}
+.ui-btn:disabled{opacity:.45;cursor:default}
+.ui-btn-primary,.ui-btn-danger{width:100%;min-height:52px}
+.ui-btn-primary{background:var(--text);color:var(--bg)}
+.ui-btn-danger{background:var(--danger);color:var(--bg)}
+.ui-btn-secondary{background:none;color:var(--info);padding:0 var(--sp-2)}
+.ui-tag{display:inline-flex;align-items:center;min-height:24px;padding:0 var(--sp-2);border-radius:999px;font-size:var(--fs-meta);font-weight:600}
+.ui-tag-exercise{color:var(--bg);background:var(--exercise)}
+.ui-tag-ai{color:var(--info);background:color-mix(in srgb,var(--info) 16%,transparent)}
+.ui-tag-warn{color:var(--bg);background:var(--warn)}
+.ui-tag-danger{color:var(--bg);background:var(--danger)}
+.ui-disclosure summary{min-height:48px;display:flex;align-items:center;color:var(--text-2);font-size:var(--fs-meta);cursor:pointer;list-style:none}
+.ui-disclosure summary::-webkit-details-marker{display:none}
+.ui-disclosure summary::after{content:"›";margin-left:var(--sp-2);transition:transform var(--motion)}
+.ui-disclosure[open] summary::after{transform:rotate(90deg)}
+.ui-disclosure-body{padding-bottom:var(--sp-4)}
+.ui-band{overflow-wrap:anywhere;flex-wrap:wrap;padding-block:var(--sp-2);position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);min-height:44px;padding:0 var(--gutter);font-weight:700}
+.ui-band-danger{background:var(--danger);color:var(--bg)}
+.ui-band-warn{background:var(--warn);color:var(--bg)}
+.ui-band-exercise{background:var(--exercise);color:var(--bg)}
+.ui-sheet{position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:15;background:var(--bg);border-radius:var(--radius) var(--radius) 0 0;max-height:70vh;overflow:auto}
+.ui-sheet-head{display:flex;flex-direction:column;align-items:center;gap:var(--sp-2);width:100%;min-height:56px;padding:var(--sp-2) var(--gutter);background:none;border:0;color:var(--text);font:inherit;cursor:pointer}
+.ui-sheet :focus-visible{outline-offset:-2px} /* the sheet scrolls (overflow:auto): an inset ring is never clipped */
+.ui-sheet-grip{width:36px;height:4px;border-radius:2px;background:var(--line)}
+.ui-sheet-body{padding:0 var(--gutter) var(--sp-5)}
+.ui-app{min-height:100dvh;background:var(--bg);color:var(--text);padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+.ui-main{max-width:var(--content-max);margin:0 auto;padding:0 var(--gutter) var(--sp-6)}
+.ui-tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(3,1fr);height:calc(64px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:var(--bg);border-top:1px solid var(--line)}
+.ui-tabs a,.ui-tabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:48px;color:var(--text-2);font-size:var(--fs-meta);text-decoration:none}
+.ui-tabs button{background:none;border:0;font:inherit;font-size:var(--fs-meta);cursor:pointer}
+.ui-tabs a[aria-current=page],.ui-tabs button[aria-current=page]{color:var(--text);font-weight:700}
+.ui-exercise-controls{position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:25;display:flex;gap:var(--sp-2);justify-content:center;padding:var(--sp-2) var(--gutter);background:var(--bg);border-top:1px solid var(--line)}
+.ui-main-full{max-width:none;padding:0}
+.ui-app{--band-h:0px;--controls-h:64px}.ui-app-has-band{--band-h:44px}
+.ui-app-has-controls{padding-bottom:calc(64px + var(--controls-h,64px) + env(safe-area-inset-bottom))}
+.ui-exercise-controls{flex-wrap:wrap;align-items:center;justify-content:flex-start;min-height:64px;height:auto;overflow-x:visible}
+.ui-exercise-controls>*{flex:0 0 auto}
+.ui-exercise-controls select{min-height:48px;padding:0 var(--sp-3);border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);color:var(--text)}
+.ui-exercise-meta{color:var(--text-2);font-size:var(--fs-meta);font-variant-numeric:tabular-nums;white-space:nowrap}
+/* Now screen (Task 5): one cardless column, max width from .ui-main. */
+.now-hero{margin:var(--sp-4) 0 var(--sp-2);font-size:var(--fs-hero);font-weight:700;line-height:1.25}
+.now-hero-danger{color:var(--text)}
+.now-hero-warn{color:var(--warn)}
+.now-meta{margin:0;color:var(--text-2);font-size:var(--fs-meta)}
+.now-basis{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2)}
+.now-basis>.now-meta{flex-basis:100%}
+.now-basis .ui-disclosure{flex-basis:auto}
+.now-help{margin:var(--sp-3) 0}
+.now-list{margin:0;padding-left:1.2em}
+.now-list li+li{margin-top:var(--sp-2)}
+/* Pinned help control: shown when the full "I need help" button is off screen or absent; sits just above the tabs. */
+.ui-help-pin{position:fixed;right:var(--gutter);bottom:calc(64px + env(safe-area-inset-bottom) + var(--sp-3));z-index:31;display:inline-flex;align-items:center;justify-content:center;min-width:48px;min-height:48px;padding:0 var(--sp-4);border:0;border-radius:999px;background:var(--danger);color:var(--bg);font:inherit;font-weight:700;cursor:pointer}
+.ui-app-has-controls .ui-help-pin{bottom:calc(64px + var(--controls-h,64px) + env(safe-area-inset-bottom) + var(--sp-3))}
+/* Distress / SOS panel (Task 6): cardless, one column; no card chrome or shadows. */
+.distress-panel{margin:var(--sp-5) 0;overflow-wrap:anywhere}
+.distress-panel a{color:var(--info)}
+.distress-exercise{margin:0 0 var(--sp-3)}
+.distress-primary{padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+.distress-primary-text{margin:0 0 var(--sp-3);font-size:var(--fs-hero);line-height:1.25;font-weight:700;color:var(--text)}
+.distress-primary p{margin:var(--sp-2) 0}
+.distress-stale{color:var(--warn);font-weight:600}
+.distress-countdown{font-size:var(--fs-body)}
+.distress-countdown strong{font-size:var(--fs-hero);font-variant-numeric:tabular-nums;color:var(--warn)}
+.distress-link{display:inline-flex;align-items:center;min-height:48px}
+.distress-speech,.distress-voice{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center;margin:var(--sp-3) 0}
+.distress-voice p{flex-basis:100%}
+.distress-sos{padding:var(--sp-4) 0;border-bottom:1px solid var(--line)}
+.distress-ai-note{margin:0 0 var(--sp-3)}
+.sos-actions{display:flex;flex-direction:column;gap:var(--sp-2);margin:var(--sp-3) 0}
+a.ui-btn{text-decoration:none}
+a.ui-btn-danger{color:var(--bg)}
+a.ui-btn-secondary{color:var(--info)}
+.sos-message{margin:0;white-space:pre-wrap;font:inherit;font-size:var(--fs-meta);color:var(--text-2)}
+.distress-tags{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin:var(--sp-4) 0}
+.ui-chip{min-height:48px;padding:0 var(--sp-4);border:1px solid var(--line);border-radius:999px;background:none;color:var(--text);font:inherit;cursor:pointer}
+.ui-chip[aria-pressed=true]{background:var(--text);color:var(--bg);border-color:var(--text);font-weight:600}
+.distress-textarea{display:block;width:100%;min-height:5rem;margin:var(--sp-2) 0;padding:var(--sp-2);font:inherit;background:none;color:var(--text);border:1px solid var(--line);border-radius:var(--radius)}
+.distress-pending{margin:var(--sp-4) 0;padding:0;border:0;min-width:0}
+.distress-pending legend{padding:0;color:var(--warn);font-size:var(--fs-meta);font-weight:600}
+.distress-pending label{display:flex;gap:var(--sp-2);align-items:center;min-height:48px}
+.distress-pending input{width:1.4rem;height:1.4rem}
+/* Screen-reader-only text (map page h1). */
+.ui-visually-hidden,.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+/* Bottom sheet: closed content may stay mounted (hidden) so panel state survives. */
+.ui-sheet-held[hidden]{display:none}
+/* Pinned help vs bottom sheet (Task 7): sit above the sheet peek (56px) while closed; move to the top while the sheet is open so it never covers the sheet header or content. */
+.ui-app:has(.ui-sheet) .ui-help-pin{bottom:calc(64px + env(safe-area-inset-bottom) + 56px + var(--sp-3))}
+.ui-app:has(.ui-sheet[data-open]) .ui-help-pin{top:calc(var(--band-h,0px) + var(--sp-3));bottom:auto}
+/* Map screen (Task 7): full-bleed map, one chip row, one legend line, one sheet. */
+.map-screen{position:fixed;inset:0 0 calc(64px + env(safe-area-inset-bottom)) 0;background:var(--bg)}
+.map-canvas,.map-canvas>*{position:absolute;inset:0}
+.ui-app-has-band .map-screen{top:var(--band-h)}
+.ui-app-has-controls .map-screen{bottom:calc(64px + var(--controls-h,64px) + env(safe-area-inset-bottom))}
+.ui-app-has-controls .ui-sheet{bottom:calc(64px + var(--controls-h,64px) + env(safe-area-inset-bottom))}
+.map-region{position:absolute;top:var(--sp-3);left:var(--gutter);right:72px;z-index:5}
+.map-region select{min-height:48px;max-width:100%;padding:0 var(--sp-3);border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);color:var(--text);font:inherit}
+.map-chips{position:absolute;left:0;right:0;bottom:68px;z-index:6;display:flex;gap:var(--sp-2);overflow-x:auto;padding:var(--sp-1) var(--gutter)} /* block padding keeps the 2px+2px focus ring unclipped */
+.map-chips .ui-chip{flex:0 0 auto;background:var(--bg)}
+.map-chips .ui-chip[aria-pressed=true]{background:var(--text)}
+.map-legend{position:absolute;left:var(--gutter);right:var(--gutter);bottom:128px;z-index:6;margin:0;padding:var(--sp-1) var(--sp-2);background:color-mix(in srgb,var(--bg) 85%,transparent);color:var(--text-2);font-size:var(--fs-meta)}
+.map-canvas .sim-map-footnote{top:72px;bottom:auto;right:72px}
+.map-screen .ui-sheet{color:var(--text)}
+/* Sheet content (former card panels): plain text, rows and inputs; no frames. */
+.ui-sheet-body h3{margin:var(--sp-4) 0 var(--sp-2);font-size:var(--fs-body)}
+.ui-sheet-body h4{margin:var(--sp-3) 0 var(--sp-1);font-size:var(--fs-meta)}
+.ui-sheet-body p{margin:var(--sp-2) 0;overflow-wrap:anywhere}
+.ui-sheet-body a{color:var(--info)}
+.ui-sheet-body label{display:grid;gap:var(--sp-1);margin:var(--sp-3) 0;color:var(--text-2);font-size:var(--fs-meta)}
+.ui-sheet-body select,.ui-sheet-body input[type=search]{width:100%;min-height:48px;padding:0 var(--sp-3);border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);color:var(--text);font:inherit}
+.ui-sheet-body label.hazard-filter{display:flex;align-items:center;gap:var(--sp-2);min-height:48px}
+.ui-sheet-body button:not(.ui-btn):not(.ui-chip){min-height:48px;padding:0 var(--sp-2);background:none;border:0;color:var(--info);font:inherit;text-align:left;cursor:pointer}
+.ui-sheet-body button:disabled{opacity:.45;cursor:default}
+.ui-sheet-body details summary{min-height:48px;display:flex;align-items:center;color:var(--text-2);font-size:var(--fs-meta);cursor:pointer}
+.hazard-safety{color:var(--warn);font-weight:600}
+.hazard-muted{color:var(--text-2);font-size:var(--fs-meta)}
+.hazard-place-list,.national-shelter-list,.evacuation-checks{list-style:none;margin:0;padding:0}
+.hazard-place-list>li,.national-shelter-list>li,.evacuation-checks>li{padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+.hazard-place-list dl>div,.national-shelter-list dl>div,.evacuation-checks>li{display:flex;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
+.hazard-place-list dd,.national-shelter-list dd{margin:0}
+.hazard-observation-list{max-height:320px;overflow:auto}
+.hazard-warning-key{display:flex;flex-wrap:wrap;gap:var(--sp-1) var(--sp-3);font-size:var(--fs-meta)}
+.hazard-warning-key>span{display:inline-flex;align-items:center;gap:var(--sp-1)}
+.hazard-warning-key i{display:inline-block;width:10px;height:10px;flex:0 0 10px}
+.evacuation-route-panel article{padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+/* Exercise map risk panel (inside the shared map sheet). */
+.sim-risk-panel{text-align:left}
+.sim-risk-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-2)}
+.sim-risk-header h2{margin:0;font-size:var(--fs-title)}
+.sim-risk-exercise{color:var(--exercise);font-size:var(--fs-meta);font-weight:700}
+.sim-risk-gps{display:flex;gap:var(--sp-2);align-items:center;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+.sim-risk-gps p{margin:0;font-size:var(--fs-meta)}
+.sim-risk-gps button{min-height:48px;padding:0 var(--sp-3);border:0;border-radius:var(--radius);background:var(--text);color:var(--bg);font:inherit;font-weight:700}
+.sim-risk-gps button:disabled{opacity:.45}
+.sim-risk-entry{padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+.sim-risk-entry h3{display:flex;align-items:center;flex-wrap:wrap;gap:var(--sp-2);margin:0 0 var(--sp-2);font-size:var(--fs-body)}
+.sim-risk-entry p{margin:var(--sp-1) 0;font-size:var(--fs-meta)}
+.sim-risk-entry p strong{font-size:var(--fs-title);font-variant-numeric:tabular-nums}
+.sim-risk-entry a{display:inline-flex;align-items:center;min-height:48px;color:var(--info)}
+.sim-risk-entry small{display:block;color:var(--text-2)}
+.sim-risk-unknown{color:var(--warn);font-size:var(--fs-meta);white-space:nowrap}
+.sim-risk-limits,.sim-risk-alert{color:var(--warn);font-weight:700}
+.sim-risk-tsunami-on{border-left:4px solid var(--warn);padding-left:var(--sp-2)}
+.sim-risk-privacy{color:var(--text-2);font-size:var(--fs-meta)}
+/* Map markers and the out-of-coverage note (ported from simulation-geo.css; used by /map and exercise maps). */
+.sim-map-geo-note{position:absolute;z-index:5;top:40px;left:var(--sp-2);right:var(--sp-2);max-width:calc(100% - 16px);padding:var(--sp-1) var(--sp-2);background:var(--bg);color:var(--text);font-size:var(--fs-meta);line-height:1.4;pointer-events:none}
+.sim-map-geo-note span{color:var(--warn)}
+.sim-geo-marker{display:grid;place-items:center;width:24px;height:24px;border:3px solid var(--text);border-radius:50%;background:var(--info);color:var(--bg);font-size:15px;font-weight:800;line-height:1}
+.sim-geo-epicenter{background:var(--danger)}
+.more-title{margin:var(--sp-5) 0 var(--sp-3);font-size:var(--fs-title);font-weight:600}
+.more-sub{display:flex;flex-direction:column;gap:var(--sp-3)}
+.more-sub>.ui-btn{align-self:flex-start}
+/* Base controls (Task 9: replaces the retired globals.css rules). Zero specificity via :where(), so every component class wins;
+   only native controls without their own styling fall back to this: text-only buttons, framed fields, 48px targets. */
+:where(.ui-app) :where(button:not([class*=maplibregl])){min-height:48px;padding:0 var(--sp-2);background:none;border:0;color:var(--info);font-weight:600;text-align:left;cursor:pointer}
+:where(.ui-app) :where(button:disabled){opacity:.45;cursor:default}
+:where(.ui-app) :where(select,textarea,input:not([type=checkbox]):not([type=radio]):not([type=range])){min-height:48px;max-width:100%;padding:0 var(--sp-3);border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);color:var(--text)}
+:where(.ui-app) :where(input[type=checkbox],input[type=radio]){width:24px;height:24px;flex:0 0 auto;accent-color:var(--text)}
+:where(.ui-app) :where(input[type=range]){width:100%;min-height:48px;accent-color:var(--text)}
+:where(.ui-app) :where(summary){min-height:48px;padding:var(--sp-3) 0;cursor:pointer}
+:where(.ui-app) :where(h1){font-size:var(--fs-title);font-weight:600}
+:where(.ui-app) :where(h2,h3){font-size:var(--fs-body);font-weight:600}
+:where(.ui-app) :where(code){font-size:var(--fs-meta);overflow-wrap:anywhere}
+.ui-icon{display:block;width:24px;height:24px;flex:0 0 24px}
+/* Legacy primary class kept as a hook by live components and tests; it renders exactly like the shared primary button. */
+.primary{display:inline-flex;align-items:center;justify-content:center;width:100%;min-height:52px;padding:0 var(--sp-4);border:0;border-radius:var(--radius);background:var(--text);color:var(--bg);font:inherit;font-weight:600;text-decoration:none;cursor:pointer}
+.primary:disabled{opacity:.45;cursor:default}
+/* Plain-text status helpers used by live sub-panels (no frames; colour = state only). */
+.muted,.desktop-role-note,.desktop-footer{color:var(--text-2);font-size:var(--fs-meta)}
+.error{color:var(--danger);font-weight:600}
+.power-warning,.freshness-warning,.location-freshness-warning,.route-candidate-warning,.session-loss-banner,.offline-banner strong,.check-required h2,.plan-history-stale{color:var(--warn)}
+.power-warning{display:flex;align-items:center;flex-wrap:wrap;gap:var(--sp-2)}
+.invalid{opacity:.65}
+.invalid h3{text-decoration:line-through}
+.badge{display:inline-flex;align-items:center;min-height:24px;padding:0 var(--sp-2);border-radius:999px;font-size:var(--fs-meta);color:var(--text-2);background:color-mix(in srgb,var(--text) 8%,transparent)}
+.badge.warn{color:var(--warn)}
+.section-head,.situation-header,.desktop-preparedness-heading,.live-source-summary>div:first-child{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-2) var(--sp-3)}
+.situation-header>div{min-width:0;overflow-wrap:anywhere}
+.situation-header p{margin:var(--sp-1) 0;color:var(--text-2);font-size:var(--fs-meta)}
+.notification-badge{display:inline-flex;align-items:center;justify-content:center;gap:var(--sp-1);min-width:48px;min-height:48px;color:var(--text)}
+.source-indicator{display:inline-block;width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:var(--warn)}
+.source-indicator.source-current{background:var(--ok)}
+/* Lists inside sub-panels: rows separated by one line, never cards. */
+.record-list article,.plan-history article,.desktop-plan-review article,.live-notifications article,.notifications article,.official-source-grid article,.official-report,.plan-sheet article{padding:var(--sp-3) 0;border-bottom:1px solid var(--line);min-width:0;overflow-wrap:anywhere}
+.live-notifications article,.notifications article{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-2)}
+.offline-readiness small,.plan-history small{display:block;color:var(--text-2);font-size:var(--fs-meta)}
+.official-source-review,.official-source-grid{display:grid;gap:var(--sp-3);min-width:0}
+.official-source-review dl,.location-confirmation dl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:var(--sp-2) var(--sp-3);margin:0}
+.official-source-review dt,.location-confirmation dt,.personal-summary dt{color:var(--text-2);font-size:var(--fs-meta)}
+.official-source-review dd,.location-confirmation dd,.personal-summary dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.personal-summary{display:grid;gap:var(--sp-2);margin:var(--sp-3) 0}
+.personal-summary>div{padding:var(--sp-2) 0;border-bottom:1px solid var(--line)}
+@media (max-width:440px){.official-source-review dl,.location-confirmation dl{grid-template-columns:minmax(0,1fr)}}
+/* Forms: one column, labels above fields. */
+.live-profile-form,.route-search-form,.location-area-picker,.scenario-picker,.more-location-card{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-3)}
+.live-profile-form label,.route-search-form label,.scenario-picker label,.location-area-picker label{display:grid;gap:var(--sp-1);color:var(--text-2);font-size:var(--fs-meta)}
+.onboarding-fields,.route-coordinate-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-3);min-width:0;margin:0;padding:0;border:0}
+@media (max-width:520px){.onboarding-fields,.route-coordinate-fields{grid-template-columns:minmax(0,1fr)}}
+.route-consent,.location-retain-choice,.accessibility-choices label,.lab-check{display:flex;align-items:center;gap:var(--sp-2);min-height:48px}
+.onboarding-actions,.location-onboarding-actions,.handoff-actions,.check-buttons,.lab-agent-actions,.lab-preset-buttons{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin:var(--sp-3) 0}
+.location-onboarding,.location-sync-gate{max-width:var(--content-max);margin:0 auto;padding:var(--sp-4) 0;min-width:0;overflow-wrap:anywhere}
+.location-onboarding h1,.location-sync-gate h1,.live-onboarding h1{font-size:var(--fs-title);line-height:1.3}
+.location-privacy-note,.live-onboarding>p,.onboarding-progress{color:var(--text-2);font-size:var(--fs-meta)}
+.onboarding-emergency a,.emergency-contact a{display:inline-flex;align-items:center;justify-content:center;min-width:72px;min-height:56px;font-size:var(--fs-title);font-weight:700}
+.device-location label,.power-controls label{display:grid;gap:var(--sp-1);margin:var(--sp-3) 0}
+.power-controls span{display:block;margin-top:var(--sp-2)}
+.reference-map-link,.session-loss-banner a{display:inline-flex;align-items:center;min-height:48px}
+.plan-tools>summary,.more-location-meta summary,.home-location-provenance summary,.home-emergency-basics summary{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-1) var(--sp-3);color:var(--text-2)}
+/* Map block (EmergencyMap): a bounded map plus plain caption lines. */
+.map-section{position:relative;min-width:0}
+.map-meta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-2);padding:var(--sp-2) 0}
+.emergency-map{position:relative;height:300px;border-radius:var(--radius);overflow:hidden;background:var(--bg);isolation:isolate}
+.map-section .map-legend{position:static;display:flex;flex-wrap:wrap;gap:var(--sp-3);padding:var(--sp-2) 0;background:none}
+.map-section .map-legend>span{display:inline-flex;align-items:center;gap:var(--sp-1)}
+.map-swatch{display:inline-block;width:12px;height:12px;flex:0 0 12px;border-radius:3px;background:var(--text-2)}
+.map-reference-list{display:grid;gap:var(--sp-2);margin:0;padding:var(--sp-2) 0;list-style:none;font-size:var(--fs-meta)}
+.map-reference-list li{display:flex;align-items:flex-start;gap:var(--sp-2);min-width:0;overflow-wrap:anywhere}
+.map-reference-list .map-swatch{margin-top:.35em;border-radius:50%}
+.map-reference-list .destination{border-radius:3px;background:var(--warn)}
+.map-pin{display:grid;place-items:center;width:20px;height:20px;border:2px solid var(--text);border-radius:50%;background:var(--text-2);font-size:0}
+.map-pin.origin::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--text)}
+.map-pin.destination{border-radius:4px;background:var(--warn)}
+.map-pin.device{width:16px;height:16px;border:3px solid var(--text);background:var(--info)}
+.map-route-point{display:grid;place-items:center;width:22px;height:22px;border:2px solid var(--bg);border-radius:50%;background:var(--warn);color:var(--bg);font-size:11px;font-weight:800}
+/* Earthquake indicator: a static or animated ripple next to plain text. */
+.earthquake-indicator{display:flex;align-items:center;gap:var(--sp-4);margin:0;padding:var(--sp-3) 0}
+.earthquake-indicator>div{min-width:0;overflow-wrap:anywhere}
+.earthquake-indicator time,.earthquake-indicator p{display:block;margin:var(--sp-1) 0 0;color:var(--text-2);font-size:var(--fs-meta)}
+.earthquake-ripple{position:relative;display:grid;place-items:center;width:64px;height:64px;flex:0 0 64px;overflow:hidden;border-radius:50%}
+.earthquake-ripple i,.earthquake-ripple b{position:absolute;width:16px;height:16px;border:1px solid var(--warn);border-radius:50%}
+.earthquake-ripple b{width:8px;height:8px;border:0;background:var(--warn)}
+.earthquake-ripple i{animation:earthquake-expand 3.6s linear infinite}
+.earthquake-ripple i:nth-child(2){animation-delay:-1.2s}
+.earthquake-ripple i:nth-child(3){animation-delay:-2.4s}
+@keyframes earthquake-expand{0%{transform:scale(.5);opacity:0}15%{opacity:.8}100%{transform:scale(3.8);opacity:0}}
+.is-static .earthquake-ripple i{animation:none;opacity:.65}
+.is-static .earthquake-ripple i:nth-child(1){transform:scale(1.3)}
+.is-static .earthquake-ripple i:nth-child(2){transform:scale(2.3)}
+.is-static .earthquake-ripple i:nth-child(3){transform:scale(3.3)}
+@media (prefers-reduced-motion:reduce){.earthquake-ripple i{opacity:.65}.earthquake-ripple i:nth-child(1){transform:scale(1.3)}.earthquake-ripple i:nth-child(2){transform:scale(2.3)}.earthquake-ripple i:nth-child(3){transform:scale(3.3)}}
+/* Exercise screens (Task 9): same Now / Map / More components as Live; only these small helpers are exercise-specific. */
+.ui-exercise-list{margin:0;padding:0;list-style:none}
+.ui-exercise-list>li{padding:var(--sp-3) 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.ui-exercise-list>li[data-event-state=processed]{color:var(--text-2)}
+.ui-exercise-list small{display:block;color:var(--text-2);font-size:var(--fs-meta)}
+.ui-exercise-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-3)}
+.ui-exercise-fields>label,.ui-exercise-fields>div{display:grid;gap:var(--sp-1);min-width:0;color:var(--text-2);font-size:var(--fs-meta)}
+@media (max-width:380px){.ui-exercise-fields{grid-template-columns:minmax(0,1fr)}}
+.sim-advice-panel,.sim-location-controls,.plan-explanation-panel,.lab-agent-drill,.lab-mock-live{margin:var(--sp-4) 0;overflow-wrap:anywhere}
+.sim-advice-panel h2,.plan-explanation-panel h2,.lab-agent-drill h2,.lab-mock-live h3{margin:0 0 var(--sp-2);font-size:var(--fs-body)}
+.sim-advice-panel small,.plan-explanation-panel small{display:block;color:var(--text-2);font-size:var(--fs-meta)}
+.sim-advice-panel strong{display:block;margin:var(--sp-2) 0;font-size:var(--fs-title)}
+.sim-advice-panel ul{padding-left:1.2em;font-size:var(--fs-meta)}
+.sim-condition-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:var(--sp-3);margin:var(--sp-3) 0}
+.sim-condition-fields label,.lab-history-select,.lab-history-window label,.lab-agent-key{display:grid;gap:var(--sp-1);min-width:0;color:var(--text-2);font-size:var(--fs-meta)}
+.lab-history-window{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-3);margin:var(--sp-3) 0}
+@media (max-width:420px){.lab-history-window{grid-template-columns:minmax(0,1fr)}}
+.lab-history-timing{min-width:0;margin:var(--sp-3) 0;padding:0;border:0}
+.lab-history-timing legend{padding:0;font-weight:600}
+.lab-history-timing>label{display:flex;align-items:center;gap:var(--sp-2);min-height:48px}
+.lab-history-details ol{padding-left:1.2em}
+.lab-history-details li{padding:var(--sp-2) 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.lab-history-details li small,.lab-history-details li a{display:block}
+.lab-muted,.lab-history-date{color:var(--text-2);font-size:var(--fs-meta)}
+.lab-drill-warning,.lab-history-caution{color:var(--warn);font-weight:600}
+.lab-agent-results,.lab-drill-action{padding:var(--sp-3) 0;border-top:1px solid var(--line);overflow-wrap:anywhere}
+.now-meta-warn{color:var(--warn)}
+.live-language{display:grid;gap:var(--sp-1);margin:var(--sp-3) 0;color:var(--text-2);font-size:var(--fs-meta)}
+/* Exercise map (/demo Map tab): the EmergencyMap block fills MapScreen's map slot; its caption lines scroll above the sheet peek. */
+.map-canvas .map-section{display:flex;flex-direction:column;overflow-y:auto;padding:var(--sp-2) var(--gutter) calc(56px + var(--sp-3));background:var(--bg)}
+.map-canvas .emergency-map{flex:1 0 240px;height:auto}
+/* Compact reference map on More → 演練與示範: its children are absolutely positioned, so the box needs its own height. */
+.exercise-map{position:relative;height:clamp(240px,40dvh,360px);margin:var(--sp-3) 0;border-radius:var(--radius);overflow:hidden}
+/* Survival power mode keeps record lists out of the minimal screen (as before the globals.css removal). */
+.power-survival .record-list{display:none}
+
+/* Final device fixes: reserve scroll room for fixed help and keep native form rows aligned. */
+.ui-app:has(.ui-help-pin:not([hidden])) .ui-main:not(.ui-main-full){padding-bottom:calc(48px + var(--sp-6))}
+.ui-help-overlay{position:fixed;inset:0;z-index:40;background:var(--bg);color:var(--text);overflow-y:auto;overscroll-behavior:contain;padding:var(--sp-3) var(--gutter) calc(var(--sp-6) + env(safe-area-inset-bottom))}
+.ui-help-overlay>.distress-panel{max-width:var(--content-max);margin:var(--sp-3) auto}
+.emergency-contacts-setup{margin:var(--sp-5) 0}
+.sos-contact-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-3);margin:var(--sp-3) 0}
+.sos-contact-row label{display:grid;gap:var(--sp-1);min-width:0}
+.sos-contact-row input{width:100%;min-width:0}
+.ui-app label:has(>input[type=checkbox]){display:flex;align-items:center;gap:var(--sp-2);min-height:48px}
+.ui-app label>input[type=checkbox]{width:20px;height:20px;margin:0;flex:0 0 20px}
+.live-source-links p{display:grid;gap:var(--sp-1);margin:var(--sp-3) 0}
+.live-source-links a,.official-source-review a{display:inline-flex;align-items:center;min-height:48px;color:var(--info);overflow-wrap:anywhere}
+.live-source-links small{display:block;color:var(--text-2);font-size:var(--fs-meta)}
+.live-topbar-state{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-1);margin:var(--sp-3) 0;font-size:var(--fs-meta)}
+.check-buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));gap:var(--sp-2);margin:var(--sp-3) 0}
+.check-buttons button{min-height:48px;padding:var(--sp-2);border:1px solid var(--line);border-radius:var(--radius);background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--text);text-align:center}
+@media(max-width:380px){.sos-contact-row{grid-template-columns:minmax(0,1fr)}.ui-exercise-controls{column-gap:var(--sp-1)}.ui-exercise-controls .ui-btn{padding-inline:var(--sp-1)}}
+
+.ui-help-pin[hidden]{display:none}
+
+/* Measured sheet peek + exercise controls: the help pin never shares their row. */
+.ui-app:has(.ui-sheet) .ui-help-pin{bottom:calc(64px + env(safe-area-inset-bottom) + var(--sheet-peek-h,56px) + var(--sp-3))}
+.ui-app-has-controls:has(.ui-sheet) .ui-help-pin{bottom:calc(64px + var(--controls-h,64px) + env(safe-area-inset-bottom) + var(--sheet-peek-h,56px) + var(--sp-3))}
+.ui-app:has(.ui-sheet[data-open]) .ui-help-pin{top:calc(var(--band-h,0px) + 72px);bottom:auto}
+.map-chips{bottom:calc(var(--sheet-peek-h,56px) + 12px)}
+.map-legend{bottom:calc(var(--sheet-peek-h,56px) + 72px)}
+
+/* Map help has its own top row beside the region picker; it never covers chips, legend, sheet or zoom. */
+.ui-app:has(.map-screen) .ui-help-pin{top:calc(var(--band-h,0px) + var(--sp-3));bottom:auto;right:72px;left:auto;max-width:128px}
+.ui-app:has(.map-screen) .map-region{right:calc(72px + 128px + var(--sp-2))}

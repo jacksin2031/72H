@@ -63,8 +63,9 @@ export function JapanShelterPanel({language,onPlaces,onPlace,onRegion}:{language
   const pref=catalog?.prefectures.find(p=>p.code===prefecture);
   const selectedCity=pref?.municipalities.find(c=>c.code===filters.municipality);
   const changeFilters=(patch:Partial<JapanShelterFilters>)=>{setFilters(value=>({...value,...patch}));setLimit(12);};
-  return <section className="national-shelter-panel" aria-labelledby="national-shelter-title">
-    <h1 id="national-shelter-title">{t.title}</h1>
+  // Sheet content: the map screen's Section supplies the heading; this sub-heading names the nationwide directory.
+  return <div className="national-shelter-panel">
+    <h3>{t.title}</h3>
     <p className="hazard-safety">{t.caution}</p>
     {catalog&&<p>{t.snapshot} · 47 {t.prefecture} · {catalog.total_count.toLocaleString(language)} {t.records}</p>}
     <label className="shelter-select">{t.prefecture}<select data-testid="shelter-prefecture" value={prefecture} disabled={!catalog}
@@ -110,5 +111,5 @@ export function JapanShelterPanel({language,onPlaces,onPlace,onRegion}:{language
         <p>{t.retrieved}: {new Date(catalog.sources[0].retrieved_at).toLocaleString(language,{timeZone:'Asia/Tokyo'})}</p>
         <a href={catalog.license_url} target="_blank" rel="noopener noreferrer">国土地理院コンテンツ利用規約</a></>}
     </details>
-  </section>;
+  </div>;
 }

@@ -1,0 +1,263 @@
+{
+  "base_commit": "55312a011ca19b58e5c25fd7eab10101d90e2d29",
+  "build_id": "eJ7607JesxP2kORxlj_QF",
+  "product_blobs": {
+    "apps/web/components/help-overlay.tsx": "e92a5407c4da701db92a085672ee266ad7f56f5f",
+    "apps/web/app/map/page.tsx": "3bd63427191134601892713f13f87084184e428d"
+  },
+  "device": "ASUS_AI2201_A",
+  "screenshots": [
+    {
+      "file": "01-map-query-en-411.png",
+      "sha256": "2185233828c3fe478f9e5faa13039d63393bdc0c71e5a9d87553aa1572a0d695",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3038/map?language=en",
+      "html_lang": "en",
+      "focus": {
+        "tag": "BODY",
+        "text": "All Japan reference map\nI need help\n© 国土地理院 · Natural Earth\nView all Japan\n北海道\n東北\n東京 / Tokyo\n中部\n近畿\n中國・四國\n九州\n沖繩 / 沖縄\n八重山\n小笠原\n南鳥島\nInundation\nP",
+        "aria": null,
+        "insideDialog": false
+      },
+      "dialogs": 0
+    },
+    {
+      "file": "02-map-default-ja-411.png",
+      "sha256": "ba8e71780610fe0d803499ee7fd3b5b9035cd384aea897fccbadebb5b9b2feb9",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3038/map",
+      "html_lang": "ja",
+      "focus": {
+        "tag": "BODY",
+        "text": "日本全国の参考地図\n助けが必要\n© 国土地理院 · Natural Earth\n日本全国を表示\n北海道\n東北\n東京 / Tokyo\n中部\n近畿\n中國・四國\n九州\n沖繩 / 沖縄\n八重山\n小笠原\n南鳥島\n浸水想定\n避難場所\n津波予報区\n震度地域\n\n浸水想定：公式の静的想定・リアルタ",
+        "aria": null,
+        "insideDialog": false
+      },
+      "dialogs": 0
+    },
+    {
+      "file": "03-map-saved-zh-411.png",
+      "sha256": "2416104e5a34f52c723c1e3eb75016ce0379d8c12d15dc915f8fd2aaa68154b6",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3038/map",
+      "html_lang": "zh-TW",
+      "focus": {
+        "tag": "BODY",
+        "text": "全日本參考地圖\n需要協助\n© 国土地理院 · Natural Earth\n顯示全日本\n北海道\n東北\n東京 / Tokyo\n中部\n近畿\n中國・四國\n九州\n沖繩 / 沖縄\n八重山\n小笠原\n南鳥島\n浸水想定\n避難場所\n海嘯預報區\n震度地域\n\n浸水想定：官方靜態想定，非即時 · 避難場所",
+        "aria": null,
+        "insideDialog": false
+      },
+      "dialogs": 0
+    },
+    {
+      "file": "04-map-query-over-saved-411.png",
+      "sha256": "52bddd3787b6bd0931c1249eb74b7c655868aded1c6903fdbbc891c31189d8f9",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3038/map?language=en",
+      "html_lang": "en",
+      "focus": {
+        "tag": "BODY",
+        "text": "All Japan reference map\nI need help\n© 国土地理院 · Natural Earth\nView all Japan\n北海道\n東北\n東京 / Tokyo\n中部\n近畿\n中國・四國\n九州\n沖繩 / 沖縄\n八重山\n小笠原\n南鳥島\nInundation\nP",
+        "aria": null,
+        "insideDialog": false
+      },
+      "dialogs": 0
+    },
+    {
+      "file": "05-tsunami-411.png",
+      "sha256": "8cac133823fe31f80bd25ae66e057219db8bd19bfe6a8d3c9eec326eedf99425",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3038/demo",
+      "html_lang": "zh-TW",
+      "focus": {
+        "tag": "BODY",
+        "text": "演練 · 津波警報\n·\n25:00\n現在往上走／往高處去，遠離水。\n\n依據：氣象廳 津波警報 · 發布 下午02:49\n\n演練\n依據\n\n這不是安全判定；請依現場狀況與官方指示行動。\n\n需要協助\n\n更新 下午02:50\n\n確認必要準備\n\n目前沒有已驗證的移動指示。\n\nIshinom",
+        "aria": null,
+        "insideDialog": false
+      },
+      "dialogs": 0
+    },
+    {
+      "file": "06-report-focus-kept-411.png",
+      "sha256": "f24c13669931f4fdd317d4e1c3d674c3eed5a60f2752121adbbc1b7c3dbbc31d",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3038/demo",
+      "html_lang": "zh-TW",
+      "focus": {
+        "tag": "DIV",
+        "text": "關閉\n\n演練／模擬\n\n立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）\n\n依據：氣象廳 津波警報 · 發布 14:49\n\n剩餘時間 25:00\n\n沒有可靠的目前位置。\n\n重播\n靜音\n\n這是建議，不代表一定沒有危險。請依現場與官方指示判斷。\n\n需要協助\n撥打 119\n撥",
+        "aria": "需要協助",
+        "insideDialog": true
+      },
+      "dialogs": 1
+    },
+    {
+      "file": "07-tab-inside-help-411.png",
+      "sha256": "db0f69b34a084aabac8581c4607d591b61ede752c138e545926f55093cfce8a6",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3038/demo",
+      "html_lang": "zh-TW",
+      "focus": {
+        "tag": "BUTTON",
+        "text": "關閉",
+        "aria": null,
+        "insideDialog": true
+      },
+      "dialogs": 1
+    },
+    {
+      "file": "08-escape-after-report-411.png",
+      "sha256": "33bdea03f7d935641533b44047223a9d01acfd1443ec6f94e9449f487b1fc48d",
+      "png_size": [
+        1080,
+        2369
+      ],
+      "css_viewport": [
+        411,
+        830
+      ],
+      "url": "http://localhost:3038/demo",
+      "html_lang": "zh-TW",
+      "focus": {
+        "tag": "BUTTON",
+        "text": "需要協助",
+        "aria": null,
+        "insideDialog": false
+      },
+      "dialogs": 0
+    },
+    {
+      "file": "09-report-focus-kept-320.png",
+      "sha256": "abf6952b92fc5ca3e60b6f3ae7c4b9be532b96daf344f13ee80e1789c6955762",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3038/demo",
+      "html_lang": "zh-TW",
+      "focus": {
+        "tag": "DIV",
+        "text": "關閉\n\n演練／模擬\n\n立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）\n\n依據：氣象廳 津波警報 · 發布 14:49\n\n剩餘時間 25:00\n\n沒有可靠的目前位置。\n\n重播\n靜音\n\n這是建議，不代表一定沒有危險。請依現場與官方指示判斷。\n\n需要協助\n撥打 119\n撥",
+        "aria": "需要協助",
+        "insideDialog": true
+      },
+      "dialogs": 1
+    },
+    {
+      "file": "10-escape-after-report-320.png",
+      "sha256": "5f02df9073f5f17bf1d1cc24ef2731b11adb42700b12b921a1464e52ec972f5c",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3038/demo",
+      "html_lang": "zh-TW",
+      "focus": {
+        "tag": "BUTTON",
+        "text": "需要協助",
+        "aria": null,
+        "insideDialog": false
+      },
+      "dialogs": 0
+    },
+    {
+      "file": "11-demo-map-help-320.png",
+      "sha256": "63429950f2804c74f34f9f969f3e41f49fa106cdaf42a8f8157fc2548c48988b",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3038/demo",
+      "html_lang": "zh-TW",
+      "focus": {
+        "tag": "DIV",
+        "text": "關閉\n\n演練／模擬\n\n立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）\n\n依據：氣象廳 津波警報 · 發布 14:49\n\n剩餘時間 25:00\n\n沒有可靠的目前位置。\n\n重播\n靜音\n\n這是建議，不代表一定沒有危險。請依現場與官方指示判斷。\n\n需要協助\n撥打 119\n撥",
+        "aria": "需要協助",
+        "insideDialog": true
+      },
+      "dialogs": 1
+    },
+    {
+      "file": "12-demo-map-help-closed-320.png",
+      "sha256": "18d0fa07c8472b6e02adccc0a7ee1fec8007978c99443ec2e38925389a92518f",
+      "png_size": [
+        840,
+        1491
+      ],
+      "css_viewport": [
+        320,
+        568
+      ],
+      "url": "http://localhost:3038/demo",
+      "html_lang": "zh-TW",
+      "focus": {
+        "tag": "BODY",
+        "text": "演練 · 津波警報\n·\n25:00\n需要協助\n© 国土地理院 · Natural Earth\n\n這不是安全判定；請依現場狀況與官方指示行動。\n\n目前位置: Ishinomaki\n下一則更新 →\n繼續\n重新開始\n1×\n2×\n4×\n2 / 4\n現在\n地圖\n更多",
+        "aria": null,
+        "insideDialog": false
+      },
+      "dialogs": 0
+    }
+  ]
+}

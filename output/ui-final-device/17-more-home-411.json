@@ -1,0 +1,303 @@
+{
+  "url": "http://localhost:3036/more",
+  "action": "click",
+  "snapshot": "- status:\n  - strong: 離線 · 最後確認 —\n- main:\n  - button \"需要協助\": 求助\n  - strong: 持續關注中\n  - text: 重新連線中 · 驗證尚未完成\n  - heading \"更多\" [level=1]\n  - button \"語言 繁體中文\"\n  - button \"外觀 深色\"\n  - button \"電量模式\"\n  - button \"緊急聯絡人\"\n  - button \"位置與隱私\"\n  - button \"通知\"\n  - button \"資訊來源\"\n  - button \"演練與示範\"\n  - button \"關於\"\n  - time\n- navigation \"主選單\":\n  - link \"現在\":\n    - /url: /dashboard\n  - link \"地圖\":\n    - /url: /map\n  - link \"更多\":\n    - /url: /more\n- alert",
+  "metrics": {
+    "width": 411,
+    "height": 830,
+    "dpr": 2.625,
+    "scrollWidth": 411,
+    "lang": "zh-TW",
+    "text": "離線 · 最後確認 —\n求助\n持續關注中\n·\n重新連線中 · 驗證尚未完成\n更多\n語言\n繁體中文\n外觀\n深色\n電量模式\n緊急聯絡人\n位置與隱私\n通知\n資訊來源\n演練與示範\n關於\n現在\n地圖\n更多",
+    "controls": [
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "求助",
+        "href": null,
+        "rect": {
+          "x": 327.04168701171875,
+          "y": 706.0952758789062,
+          "width": 64.00595092773438,
+          "height": 48,
+          "top": 706.0952758789062,
+          "right": 391.0476379394531,
+          "bottom": 754.0952758789062,
+          "left": 327.04168701171875
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "語言\n繁體中文",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 143,
+          "width": 371.0476379394531,
+          "height": 48.761905670166016,
+          "top": 143,
+          "right": 391.0476379394531,
+          "bottom": 191.76190567016602,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "外觀\n深色",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 191.76190185546875,
+          "width": 371.0476379394531,
+          "height": 48.761905670166016,
+          "top": 191.76190185546875,
+          "right": 391.0476379394531,
+          "bottom": 240.52380752563477,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "電量模式",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 240.52381896972656,
+          "width": 371.0476379394531,
+          "height": 48.761905670166016,
+          "top": 240.52381896972656,
+          "right": 391.0476379394531,
+          "bottom": 289.2857246398926,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "緊急聯絡人",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 289.28570556640625,
+          "width": 371.0476379394531,
+          "height": 48.761905670166016,
+          "top": 289.28570556640625,
+          "right": 391.0476379394531,
+          "bottom": 338.04761123657227,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "位置與隱私",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 338.0476379394531,
+          "width": 371.0476379394531,
+          "height": 48.761905670166016,
+          "top": 338.0476379394531,
+          "right": 391.0476379394531,
+          "bottom": 386.80954360961914,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "通知",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 386.8095397949219,
+          "width": 371.0476379394531,
+          "height": 48.761905670166016,
+          "top": 386.8095397949219,
+          "right": 391.0476379394531,
+          "bottom": 435.5714454650879,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "資訊來源",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 435.5714416503906,
+          "width": 371.0476379394531,
+          "height": 48.761905670166016,
+          "top": 435.5714416503906,
+          "right": 391.0476379394531,
+          "bottom": 484.33334732055664,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "演練與示範",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 484.3333435058594,
+          "width": 371.0476379394531,
+          "height": 48.761905670166016,
+          "top": 484.3333435058594,
+          "right": 391.0476379394531,
+          "bottom": 533.0952491760254,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "關於",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 533.0952758789062,
+          "width": 371.0476379394531,
+          "height": 48.761905670166016,
+          "top": 533.0952758789062,
+          "right": 391.0476379394531,
+          "bottom": 581.8571815490723,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "現在",
+        "href": "/dashboard",
+        "rect": {
+          "x": 0,
+          "y": 766.857177734375,
+          "width": 137.01190185546875,
+          "height": 63.23809814453125,
+          "top": 766.857177734375,
+          "right": 137.01190185546875,
+          "bottom": 830.0952758789062,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "地圖",
+        "href": "/map",
+        "rect": {
+          "x": 137.01190185546875,
+          "y": 766.857177734375,
+          "width": 137.01785278320312,
+          "height": 63.23809814453125,
+          "top": 766.857177734375,
+          "right": 274.0297546386719,
+          "bottom": 830.0952758789062,
+          "left": 137.01190185546875
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "更多",
+        "href": "/more",
+        "rect": {
+          "x": 274.0297546386719,
+          "y": 766.857177734375,
+          "width": 137.01190185546875,
+          "height": 63.23809814453125,
+          "top": 766.857177734375,
+          "right": 411.0416564941406,
+          "bottom": 830.0952758789062,
+          "left": 274.0297546386719
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      }
+    ]
+  },
+  "layout": [
+    {
+      "tag": "MAIN",
+      "name": "求助\n持續關注中\n·\n重新連線中 · 驗證尚未完成\n更多\n語言\n繁體中文\n外觀\n深色\n電量模式\n緊急聯絡人\n位置與隱私\n通知\n資訊來源\n演練與示範\n關於",
+      "class": "ui-main",
+      "rect": {
+        "x": 0,
+        "y": 56,
+        "width": 411.0476379394531,
+        "height": 605.857177734375,
+        "top": 56,
+        "right": 411.0476379394531,
+        "bottom": 661.857177734375,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "80px"
+    },
+    {
+      "tag": "H1",
+      "name": "更多",
+      "class": "more-title",
+      "rect": {
+        "x": 20,
+        "y": 101,
+        "width": 371.0476379394531,
+        "height": 30,
+        "top": 101,
+        "right": 391.0476379394531,
+        "bottom": 131,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    }
+  ],
+  "focus": {
+    "tag": "BUTTON",
+    "text": "演練與示範",
+    "aria": null
+  }
+}

@@ -51,8 +51,12 @@ describe('full-app simulation clock and isolated launch', () => {
     const request=vi.spyOn(mockEnvelope,'mockLiveRequest').mockResolvedValue(response);
     el=document.createElement('div');document.body.append(el);root=createRoot(el);
     await act(async()=>root!.render(<SimulationProvider><Bootstrap launch={launch}/></SimulationProvider>));
-    expect(el.querySelector('.sim-v2-complete')).not.toBeNull();
+    expect(el.querySelector('[data-testid=simulation-complete]')).not.toBeNull();
     expect(request).toHaveBeenCalledTimes(2);
+    // The wave legend belongs to the exercise map: switch to the Map tab in place (the session keeps running).
+    const mapTab=[...el.querySelectorAll<HTMLButtonElement>('nav.ui-tabs button')].find(b=>b.textContent==='地図')!;
+    await act(async()=>mapTab.click());
+    expect(el.querySelector('[data-testid=simulation-map-screen]')).not.toBeNull();
     await act(async()=>{await vi.advanceTimersByTimeAsync(30_000);});
     expect(el.querySelector('[data-testid=simulation-clock]')?.textContent).toContain('14:46:30');
     expect(el.querySelector('[data-testid=seismic-wave-legend]')?.getAttribute('data-wave-count')).toBe('2');
@@ -76,11 +80,16 @@ describe('full-app simulation clock and isolated launch', () => {
     root = createRoot(el);
     await act(async () => root!.render(<SimulationProvider><Bootstrap /></SimulationProvider>));
     expect(el.querySelector('[data-testid="simulation-dashboard"]')).not.toBeNull();
-    expect(el.querySelector('[data-testid="simulation-countdown"]')?.textContent).toContain('01:00:00');
+    expect(el.querySelector('.ui-band-exercise [role=timer]')?.textContent).toContain('01:00:00');
+    // U2: the exercise Now screen is the shared NowScreen with the 演練 tag; AI / Safety Core details sit in the last basis Disclosure.
+    expect(el.querySelector('[data-now=hero]')).not.toBeNull();
+    expect(el.querySelector('[data-now=basis] .ui-tag-exercise')?.textContent).toBe('演習');
+    expect(el.querySelector('#basis > .ui-disclosure-body')?.lastElementChild?.id).toBe('exercise-details');
+    expect(el.querySelector('nav.ui-tabs button[aria-current=page]')?.textContent).toBe('今');
     expect(el.querySelector('a[href^="tel:"]')).toBeNull();
     await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
     expect(requests.mock.calls.filter(([path]) => String(path).includes('/api/mock-live/'))).toHaveLength(0);
-    expect(el.querySelector('[data-testid="simulation-countdown"]')?.textContent).toContain('00:10:00');
+    expect(el.querySelector('.ui-band-exercise [role=timer]')?.textContent).toContain('00:10:00');
     await act(async () => { await vi.advanceTimersByTimeAsync(1010); });
     expect(requests.mock.calls.filter(([path]) => String(path).includes('/api/mock-live/'))).toHaveLength(1);
     expect(requests.mock.calls.some(([path]) => path === '/api/mock-live/start')).toBe(true);

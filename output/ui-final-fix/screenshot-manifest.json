@@ -1,0 +1,65 @@
+{
+  "build_id": "fke1czrPGxQM_RiWIFCf0",
+  "files": [
+    {
+      "name": "contacts-360.png",
+      "sha256": "e7e67a5059e3ecee996469ed6a7344d396fc25c2fdc703ca1e91f870ee61820a",
+      "bytes": 31734
+    },
+    {
+      "name": "demo-empty-320.png",
+      "sha256": "6b64edc5b728690784dcaf6597210b519346c7d6899d586444f22fd1582a2304",
+      "bytes": 19354
+    },
+    {
+      "name": "demo-map-320.png",
+      "sha256": "e0278808f1b34d1360c375d52f59cd3b9aff9ec220b44595a3eaa95de4ff6eef",
+      "bytes": 22201
+    },
+    {
+      "name": "location-checkbox-360.png",
+      "sha256": "b1403e3553a13f750ee5bda65d0eddf461ee43305778cfb25040cbb310bdd008",
+      "bytes": 27849
+    },
+    {
+      "name": "map-360.png",
+      "sha256": "daa56c69b65a08337cce8ad11a405991e80454e534b80832b10ad52a6ed3df1e",
+      "bytes": 36740
+    },
+    {
+      "name": "more-footer-320.png",
+      "sha256": "5822a33a55b372b87cc921c15995efec5b9d50da48cc46b153af1eaff46a239f",
+      "bytes": 17364
+    },
+    {
+      "name": "more-footer-360.png",
+      "sha256": "65c52b44f446e5a19b0166ab28338bd80999e03d7b5295402adbb102b9ed829c",
+      "bytes": 18171
+    },
+    {
+      "name": "offline-map-320.png",
+      "sha256": "eed4099c4507cab60e51f6667fa63fd9cb8fb5ab9a7d1f272dad3552e9788d25",
+      "bytes": 23228
+    },
+    {
+      "name": "offline-now-320.png",
+      "sha256": "eebccb549ac97cf9205dde9f2447e4cd1a5367cbfbfe86b8d610e851cbde2356",
+      "bytes": 26295
+    },
+    {
+      "name": "sources-360.png",
+      "sha256": "869557fd1f25bd21672b027d42ec94253ec2b3b769728a3ee6a5f97c9aad0401",
+      "bytes": 33190
+    },
+    {
+      "name": "tsunami-now-320.png",
+      "sha256": "6e13fb52a334630a58b8e76f97ebd2aa6a00efa464405a510ce9ce76481f4336",
+      "bytes": 22760
+    },
+    {
+      "name": "tsunami-now-360.png",
+      "sha256": "5105ab71e7fcdba24bb2f4ea7e48f04225b34c0f8c68d2dda7152025756f2dcd",
+      "bytes": 27074
+    }
+  ]
+}

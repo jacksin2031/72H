@@ -1,0 +1,12 @@
+/* apps/web/app/tokens.css — mirrors lib/design-tokens.ts (tested); no web fonts. */
+:root,[data-theme="dark"]{--bg:#0B0D10;--text:#F2F4F6;--text-2:#9AA3AD;--line:rgba(255,255,255,.08);--danger:#FF5A52;--warn:#FFB020;--ok:#3DDC97;--info:#6CB6FF;--exercise:#B49CFF;--focus:#FFD84D;color-scheme:dark}
+[data-theme="contrast"]{--bg:#FFFFFF;--text:#0B0D10;--text-2:#3D4651;--line:rgba(0,0,0,.14);--danger:#C4120A;--warn:#8A5A00;--ok:#0B7A4B;--info:#0A58B0;--exercise:#5B3DC4;--focus:#0B57D0;color-scheme:light}
+@media (prefers-color-scheme: light){[data-theme="system"]{--bg:#FFFFFF;--text:#0B0D10;--text-2:#3D4651;--line:rgba(0,0,0,.14);--danger:#C4120A;--warn:#8A5A00;--ok:#0B7A4B;--info:#0A58B0;--exercise:#5B3DC4;--focus:#0B57D0;color-scheme:light}}
+:root{--font:system-ui,"Hiragino Sans","Noto Sans JP","PingFang TC","Noto Sans TC",sans-serif;
+  --fs-hero:28px;--fs-title:20px;--fs-body:16px;--fs-meta:14px;
+  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:24px;--sp-6:32px;--sp-7:48px;
+  --gutter:20px;--content-max:640px;--radius:12px;--motion:150ms}
+@media (min-width:600px){:root{--fs-hero:32px}}
+@media (prefers-reduced-motion: reduce){:root{--motion:0ms}*{animation:none!important;transition:none!important}}
+html{background:var(--bg);color:var(--text);font-family:var(--font);font-size:var(--fs-body);line-height:1.5}
+body{margin:0;background:var(--bg);color:var(--text)}

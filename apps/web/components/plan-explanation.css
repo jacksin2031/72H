@@ -1,5 +1,0 @@
-.plan-explanation-panel{margin:1rem 0;padding:1rem;border:1px solid #426259;border-radius:16px;background:var(--surface,#152824);color:var(--text,#e1e9e4);overflow-wrap:anywhere}
-.plan-explanation-panel h2{font-size:1.15rem;margin:0 0 .5rem}.plan-explanation-panel small{display:block;line-height:1.5;color:var(--muted,#b3c8c1)}
-.plan-explanation-panel p{line-height:1.6}.plan-explanation-panel details{margin:1rem 0}.plan-explanation-panel summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
-.plan-explanation-panel button,.plan-explanation-panel>a{display:block;min-height:44px;width:100%;margin:.5rem 0;padding:.65rem;border:1px solid #668278;border-radius:10px;background:transparent;color:inherit;text-align:center;font-size:1rem;box-sizing:border-box}
-.plan-explanation-panel button:disabled{opacity:.5}

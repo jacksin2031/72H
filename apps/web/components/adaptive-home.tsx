@@ -10,10 +10,12 @@ import { vnextMessages } from '../lib/vnext-i18n';
 import { projectLocationPresentation } from '../lib/location-presentation';
 
 export function AdaptiveHome({ presentation, snapshot, language, networkState, planStatus, notifications,
-  actions, mapSurface, checkControls, powerMode, location, mapClosed, now = Date.now() }: {
+  actions, mapSurface, checkControls, powerMode, location, mapClosed, now = Date.now(), embedded = false }: {
   presentation: PresentationProjection; snapshot: Snapshot | LiveSnapshot; language: Language; networkState: string;
   planStatus: string; notifications: number; actions: Action[]; mapSurface?: ReactNode; checkControls?: ReactNode;
   powerMode: string; location: DeviceLocation; mapClosed: boolean; now?: number;
+  /** Hosted under NowScreen: the primary action, plan sheet and evidence links are rendered there instead. */
+  embedded?: boolean;
 }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsTrigger = useRef<HTMLButtonElement>(null);
@@ -76,12 +78,12 @@ export function AdaptiveHome({ presentation, snapshot, language, networkState, p
   return <section className={`adaptive-home presentation-${mode.toLowerCase()}`} data-presentation-mode={mode}>
 
     <header className="situation-header">
-      <div><h1>{mode === 'EMERGENCY_PROTECT' ? t.protect : mode === 'SAFETY_CHECK' ? vt.check : survival ? t.survival : mode === 'MAP_ASSISTED' ? t.movement : mode === 'TEXT_WITH_DETAILS' ? t.prepare : t.monitoring}</h1>
+      <div>{React.createElement(embedded ? 'h2' : 'h1', null, mode === 'EMERGENCY_PROTECT' ? t.protect : mode === 'SAFETY_CHECK' ? vt.check : survival ? t.survival : mode === 'MAP_ASSISTED' ? t.movement : mode === 'TEXT_WITH_DETAILS' ? t.prepare : t.monitoring)}
         {!offline && !stale && <p>{mode === 'MAP_ASSISTED' ? t.movementDetail : t.summary}</p>}</div>
       {!urgentMode && <Link className="notification-badge" href="/notifications" aria-label={`${t.notifications} · ${notifications}`}><UiIcon name="bell" />{presentation.showNotificationsBadge && <span>{notifications}</span>}</Link>}
     </header>
     {(offline || stale) && <p className="freshness-warning" role="status">{t.lastVerified}: {verifiedTime} · {stale ? t.stale : t.cached}</p>}
-    <section className="now-card" aria-labelledby="primary-now"><small id="primary-now">NOW</small><h2>{action?.text || t.pending}</h2></section>
+    {!embedded && <section className="now-card" aria-labelledby="primary-now"><small id="primary-now">NOW</small><h2>{action?.text || t.pending}</h2></section>}
     {!urgentMode && <details className="home-location-provenance" aria-label={t.currentPlace}>
       <summary><strong>{locationPresentation.area.label}</strong><span>{areaSource} · {areaFreshness}</span></summary>
       <div className="home-location-details">
@@ -95,7 +97,7 @@ export function AdaptiveHome({ presentation, snapshot, language, networkState, p
           </small>}
       </div>
     </details>}
-    {presentation.showEvidenceInline && action && <p className="inline-evidence">{evidenceLinks(action.evidence_ids)}</p>}
+    {!embedded && presentation.showEvidenceInline && action && <p className="inline-evidence">{evidenceLinks(action.evidence_ids)}</p>}
     {presentation.showSafetyCheck && checkControls}
     {presentation.showPowerWarning && <p className="power-warning" role="status"><UiIcon name="warning" />{powerMode === 'SURVIVAL' ? t.survival : powerMode === 'EMERGENCY_POWER' ? t.emergencyPower : t.conserve} {!urgentMode && <>· <Link href="/more">{t.power}</Link></>}</p>}
     {presentation.showMap && <>
@@ -107,8 +109,8 @@ export function AdaptiveHome({ presentation, snapshot, language, networkState, p
     {survival && <><p>{t.lastVerified}: {verifiedTime}</p><p>{t.position}: {location.position ? `${vt.locationStates[location.state]} · ${new Date(location.position.captured_at).toLocaleString(language, { timeZone: 'Asia/Tokyo' })}` : t.noPosition}</p></>}
     {(survival || mode === 'SAFETY_CHECK' || mode === 'EMERGENCY_PROTECT') && <section className="emergency-contact"><h2>{t.emergency}</h2><p>{t.emergencyDetail}</p><a href="tel:119">119</a> · <a href="tel:110">110</a></section>}
     {!urgentMode && <details className="home-emergency-basics"><summary>{t.emergencyBasics}</summary><p>{t.emergencyDetail}</p><p><a href="tel:119">119</a> · <a href="tel:110">110</a></p></details>}
-    {!urgentMode && <button ref={detailsTrigger} type="button" className="plan-sheet-trigger" onClick={() => setDetailsOpen(true)}>{t.details}</button>}
-    {!urgentMode && detailsOpen && <div className="plan-sheet-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setDetailsOpen(false); }}>
+    {!urgentMode && !embedded && <button ref={detailsTrigger} type="button" className="plan-sheet-trigger" onClick={() => setDetailsOpen(true)}>{t.details}</button>}
+    {!urgentMode && !embedded && detailsOpen && <div className="plan-sheet-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setDetailsOpen(false); }}>
       <section className="plan-sheet" role="dialog" aria-modal="true" aria-labelledby="plan-sheet-title" tabIndex={-1}>
         <header><h2 id="plan-sheet-title">{t.details}</h2><button ref={closeButton} type="button" onClick={() => setDetailsOpen(false)} aria-label={t.closeDetails}><UiIcon name="close" /></button></header>
         {action && <><p>{action.reason}</p>{evidenceLinks(action.evidence_ids)}</>}

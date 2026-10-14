@@ -124,7 +124,7 @@ export function AgentDrillPanel({ input, language }: { input: DisasterTestInput;
     <MockLiveRun input={input} language={language} accessKey={key} />
     <details className="lab-legacy-replay"><summary>Replay / P1.5 — {t.run}</summary>
     <div className="lab-agent-actions">
-      <button className="primary" type="button" disabled={busy || !key.trim() || input.kind !== 'EARTHQUAKE'} onClick={() => void run()}>{t.run}</button>
+      <button className="ui-btn ui-btn-secondary" type="button" disabled={busy || !key.trim() || input.kind !== 'EARTHQUAKE'} onClick={() => void run()}>{t.run}</button>
       {busy && <button type="button" onClick={stop}>{t.stop}</button>}
     </div>
     {busy && <p role="status">{t.executing} · {t.step} {progress}</p>}
