@@ -752,7 +752,7 @@ export function MoreHub({ view, snapshot, projection, language, chooseLanguage, 
         {localGpsCheckedAt !== null && <p className="location-local-only" role="status">{messages.locationGpsLocalOnly} · {displayTime(new Date(localGpsCheckedAt).toISOString(), language)}</p>}
         {deviceLocation.failed && localGpsCheckedAt === null && <p role="status">{deviceLocation.permissionDenied ? messages.locationPermissionDenied : messages.locationUnavailable}</p>}
         {locationSync && <p className="location-sync-inline" role="status">{locationSync.phase === 'pending' ? messages.locationSyncPending : messages.locationSyncFailed}</p>}
-        <AreaFallbackPicker messages={messages} disabled={busy || !canStart} buttonLabel={messages.changeArea}
+        <AreaFallbackPicker messages={messages} disabled={busy || !canStart} buttonLabel={messages.changeArea} secondary
           onConfirm={selection => { setSub(null); onChooseArea(selection); }} />
       </section>
       <p>{copy.privacyShort}</p>

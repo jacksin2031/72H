@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import type { Language, Snapshot } from '@/lib/contracts';
 import { projectContinuity } from '@/lib/continuity';
 import { deriveNotifications, deriveSeverity, initialSafetyCheck, reduceSafetyCheck, safetyCheckSchema, type Notification, type PowerProjection, type SafetyCheckState } from '@/lib/vnext';
@@ -16,13 +16,16 @@ import { PowerControls } from './power-controls';
 import type { DeviceLocation } from '@/lib/use-device-location';
 import { DeviceLocationControls } from './device-location';
 
-export function VNextExperience({ snapshot, language, now, connection, verificationAnchor, power, level, override, choose, deviceLocation, view = 'dashboard', showLocalTrace = false }: {
+/** check / setCheck: when the caller owns the safety-check state (the /demo Now screen renders the controls and feeds the hero),
+ * this component still restores, persists and advances it, but does not render a second copy of the controls. */
+export function VNextExperience({ snapshot, language, now, connection, verificationAnchor, power, level, override, choose, deviceLocation, view = 'dashboard', showLocalTrace = false, check: ownerCheck, setCheck: ownerSetCheck }: {
   snapshot: Snapshot; language: Language; now: number; connection: 'online' | 'offline' | 'reconnecting';
   power: PowerProjection; level: number | null; override: string; choose: (value: string) => void;
   view?: string;
   showLocalTrace?: boolean;
   verificationAnchor?: Snapshot | null;
   deviceLocation: DeviceLocation;
+  check?: SafetyCheckState; setCheck?: Dispatch<SetStateAction<SafetyCheckState>>;
 }) {
   const t = vnextMessages[language];
   const at = adaptiveMessages[language];
@@ -31,7 +34,10 @@ export function VNextExperience({ snapshot, language, now, connection, verificat
   useEffect(() => { setManualMapOpen(false); setMapClosed(false); }, [snapshot.replay.id]);
   const projection = projectContinuity(snapshot, now, connection);
   const severity = deriveSeverity(snapshot, now);
-  const [check, setCheck] = useState(initialSafetyCheck);
+  const [localCheck, setLocalCheck] = useState(initialSafetyCheck);
+  const controlled = !!ownerCheck && !!ownerSetCheck;
+  const check = ownerCheck ?? localCheck;
+  const setCheck = ownerSetCheck ?? setLocalCheck;
   const [localTrace, setLocalTrace] = useState<LocalCheckTrace>([]);
   const previousCheck = useRef<SafetyCheckState | null>(null);
   const [restored, setRestored] = useState(false);
@@ -94,12 +100,7 @@ export function VNextExperience({ snapshot, language, now, connection, verificat
   useEffect(() => { if (session.current) try { localStorage.setItem('72h-notification-ledger', JSON.stringify({ session: session.current, seen: [...seen.current], items: notifications })); } catch { setStorageUnavailable(true); } }, [notifications]);
 
   const usable = snapshot.plan_actions.filter(a => a.plan_id === projection.plan?.id && a.status === 'ACTIVE' && !projection.invalidActionIds.includes(a.id) && !['INVALIDATED', 'EXPIRED', 'SUPERSEDED', 'DRAFT'].includes(projection.planStatus));
-  const checkControls = <section className={`check-card ${check.status === 'AWAITING_RESPONSE' ? 'check-required' : ''}`}>
-    <label><input type="checkbox" checked={check.consent} onChange={e => setCheck(state => reduceSafetyCheck(state, { type: 'CONSENT', enabled: e.target.checked }))} /> {t.consent}</label>
-    {currentCheckVisible && <><h2>{t.check}</h2><p role="status">{check.status === 'UNRESPONSIVE_UNKNOWN' ? t.silence : check.status} · {check.attempts}/3</p>
-      {['AWAITING_RESPONSE', 'UNRESPONSIVE_UNKNOWN'].includes(check.status) && <div className="check-buttons">{(['SAFE_CONFIRMED', 'NEEDS_ASSISTANCE', 'CANNOT_MOVE'] as const).map((response, index) => <button key={response} onClick={() => setCheck(state => reduceSafetyCheck(state, { type: 'RESPOND', response, now: Date.now() }))}>{[t.safe, t.help, t.cannotMove][index]}</button>)}</div>}</>}
-    <p className="muted">{t.checkLimit}</p>
-  </section>;
+  const checkControls = <ReplaySafetyCheck check={check} setCheck={setCheck} language={language} visible={currentCheckVisible} />;
   const activeCheckControls = <section className="check-card check-required" aria-label={t.check}><h2>{t.check}</h2>
     <p role="status">{check.status === 'UNRESPONSIVE_UNKNOWN' ? t.silence : check.status === 'NEEDS_ASSISTANCE' ? t.help : check.status === 'CANNOT_MOVE' ? t.cannotMove : t.check}</p>
     {['AWAITING_RESPONSE', 'UNRESPONSIVE_UNKNOWN'].includes(check.status) && <div className="check-buttons">{(['SAFE_CONFIRMED', 'NEEDS_ASSISTANCE', 'CANNOT_MOVE'] as const).map((response, index) => <button key={response} onClick={() => setCheck(state => reduceSafetyCheck(state, { type: 'RESPOND', response, now: Date.now() }))}>{[t.safe, t.help, t.cannotMove][index]}</button>)}</div>}
@@ -127,7 +128,7 @@ export function VNextExperience({ snapshot, language, now, connection, verificat
     </>}
     {['demo', 'trace'].includes(view) && <>
       <div className="vnext-status"><div><small>{t.severity}</small><strong>{severity.level} · {severity.actionState}</strong><p>{t.severityDetail}</p></div><div><small>{t.savedPlan}</small><strong>{projection.plan?.version ?? '—'} · {projection.planStatus}</strong><p>{projection.networkState}</p></div></div>
-      {checkControls}<details><summary>{t.notifications} · {notifications.length}</summary>{inbox}</details>{powerControls}
+      {!controlled && checkControls}<details><summary>{t.notifications} · {notifications.length}</summary>{inbox}</details>{powerControls}
       {showLocalTrace && <section className="record-list"><h2>{t.check} · Local trace</h2>{[...localTrace].reverse().map(e => <article key={e.id}><h3>{e.event_type}</h3><p>{e.status} · {e.attempts}/3 · {e.timestamp}</p></article>)}</section>}
     </>}
     {storageUnavailable && <p className="error" role="status">{t.mapUnavailable} · local storage unavailable</p>}
@@ -138,4 +139,16 @@ export function VNextExperience({ snapshot, language, now, connection, verificat
       checkControls={activeCheckControls} powerMode={power.mode} location={deviceLocation} mapClosed={mapClosed} />
     {storageUnavailable && <p className="error" role="status">{t.mapUnavailable} · local storage unavailable</p>}
   </>;
+}
+
+/** Safety-check consent and responses for the replay (the same controls on /demo's Now screen and in the settings panel). */
+export function ReplaySafetyCheck({ check, setCheck, language, visible }: { check: SafetyCheckState; setCheck: Dispatch<SetStateAction<SafetyCheckState>>; language: Language; visible: boolean }) {
+  const t = vnextMessages[language];
+  const statusText = check.status === 'UNRESPONSIVE_UNKNOWN' ? t.silence : check.status === 'NEEDS_ASSISTANCE' ? t.help : check.status === 'CANNOT_MOVE' ? t.cannotMove : check.status === 'SAFE_CONFIRMED' ? t.safe : t.check;
+  return <section className={`check-card ${check.status === 'AWAITING_RESPONSE' ? 'check-required' : ''}`} data-testid="replay-safety-check">
+    <label><input type="checkbox" checked={check.consent} onChange={e => setCheck(state => reduceSafetyCheck(state, { type: 'CONSENT', enabled: e.target.checked }))} /> {t.consent}</label>
+    {visible && <><h2>{t.check}</h2><p role="status">{statusText} · {check.attempts}/3</p>
+      {['AWAITING_RESPONSE', 'UNRESPONSIVE_UNKNOWN'].includes(check.status) && <div className="check-buttons">{(['SAFE_CONFIRMED', 'NEEDS_ASSISTANCE', 'CANNOT_MOVE'] as const).map((response, index) => <button key={response} type="button" onClick={() => setCheck(state => reduceSafetyCheck(state, { type: 'RESPOND', response, now: Date.now() }))}>{[t.safe, t.help, t.cannotMove][index]}</button>)}</div>}</>}
+    <p className="muted">{t.checkLimit}</p>
+  </section>;
 }

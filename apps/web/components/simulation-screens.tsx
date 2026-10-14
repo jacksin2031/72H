@@ -179,7 +179,6 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
         <ListRow label={t.actions} value={config.title} trailing="none"/>
         <p className="now-meta">{t.warning} · {t.safety}</p>
         <Disclosure summary={t.details}><p className="now-meta">{t.ai} · {ai}</p></Disclosure>
-        <Button variant="secondary" onClick={leave}>{t.close}</Button>
       </div>
       :<div data-testid="simulation-now"><NowScreen language={language} hero={hero} heroTone={warningLabel?'danger':error||!connected?'warn':'normal'} basis={basis}
         next={doneEvent?byCategory('NEXT'):[]} avoid={doneEvent?byCategory('AVOID'):[]}

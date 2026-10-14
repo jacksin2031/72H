@@ -28,3 +28,10 @@ it('localises the picker label',async()=>{
   await render('en');
   expect(host.querySelector('select[aria-label="Historical earthquake"]')).not.toBeNull();
 });
+it('gives the compact reference map a height-bearing frame (its children are all absolutely positioned)',async()=>{
+  await render();
+  expect(host.querySelector('.exercise-map [data-testid=map]')).not.toBeNull();
+  const {readFileSync}=await import('node:fs');const {resolve}=await import('node:path');
+  const css=readFileSync(resolve(__dirname,'../components/ui/ui.css'),'utf8');
+  expect(css).toMatch(/\.exercise-map\{[^}]*position:relative[^}]*height:clamp\(/);
+});

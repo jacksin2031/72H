@@ -161,3 +161,7 @@
 .sim-map-information .sim-map-maplabel strong{font-size:11px}
 .sim-map-information .sim-map-attribution{font-size:9px}
 }
+/* EmergencyMap legend swatches mirror the map's own paint colours (moved from ui.css: literal map colours live only here). */
+.map-swatch.land{background:#29343f}
+.map-swatch.ocean{background:#0b131e}
+.map-swatch.coast{height:3px;background:#a3b6c7}

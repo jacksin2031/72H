@@ -117,7 +117,8 @@ export function DisasterTestLab() {
     {input.mobility === 'CANNOT_MOVE' && <p><strong>{t.cannotMove}</strong></p>}
     <p className="now-meta now-meta-warn" data-testid="safety-gates">{t.mapBlocked} · {t.map}: {t.disabled} · {t.notify}: {t.no}</p>
   </>;
-  return <AppShell tab="more" language={language} band={<StatusBand tone="exercise" label={exerciseLabel[language]} />}>
+  return <AppShell tab="more" language={language} band={<StatusBand tone="exercise" label={exerciseLabel[language]} />}
+    exerciseControls={<Button variant="secondary" onClick={() => { setInput(defaultDisasterTest); setAnswer(''); }}>{t.reset}</Button>}>
     <div data-testid="disaster-test-lab">
       <p className="now-meta"><strong>{t.title}</strong> · {t.preview}</p>
       <div data-testid="simulation-now" data-local-preview="true">
@@ -157,7 +158,6 @@ export function DisasterTestLab() {
           </select></label>
         </div>
         <p className="now-meta">{t.threshold}</p>
-        <Button variant="secondary" onClick={() => { setInput(defaultDisasterTest); setAnswer(''); }}>{t.reset}</Button>
       </Section>
       <AgentDrillPanel input={input} language={language} />
     </div>

@@ -26,6 +26,14 @@ vi.mock('../lib/continuity', async orig => ({
   ...await orig<typeof import('../lib/continuity')>(),
   loadSnapshot: async () => null, saveSnapshot: async () => {},
 }));
+const seenChecks = vi.hoisted(() => [] as { consent: boolean }[]);
+vi.mock('../lib/adaptive-ui', async orig => {
+  const real = await orig<typeof import('../lib/adaptive-ui')>();
+  return { ...real, derivePresentation: (...args: Parameters<typeof real.derivePresentation>) => { seenChecks.push(args[4]); return real.derivePresentation(...args); } };
+});
+// The exercise map: a light stand-in that records the synthetic earthquake it is given.
+const mapCalls = vi.hoisted(() => [] as unknown[]);
+vi.mock('../components/emergency-map', () => ({ EmergencyMap: (p: { earthquake: unknown }) => { mapCalls.push(p.earthquake); return <section className="map-section" data-testid="emergency-map-stub" />; } }));
 import { Dashboard } from '../components/dashboard';
 
 let root: Root | null = null;
@@ -108,4 +116,44 @@ it('"next update" drives the screen through the replay API state, not a hard-cod
   expect(page.querySelector('[data-now=next]')?.textContent).toContain('Stay where you are until transport is verified');
   expect(page.querySelector('[data-now=next]')?.textContent).not.toContain('Wait for verified transport updates');
   expect(page.querySelector('.error')).toBeNull();
+});
+
+it('/demo Now and Map tabs switch in place (no navigation), the Map tab shows the exercise map with the synthetic event, and the band stays', async () => {
+  served = activeSnapshot();
+  served.events = [{ id: 'quake', event_type: 'EARTHQUAKE', occurred_at: served.replay.current_time, affected_areas: ['Tokyo'], affected_area_ids: ['JP-13'], source_name: 'Synthetic JMA', raw_reference: 'synthetic' }];
+  served.situation = { ...served.situation, active_event_ids: ['quake'] };
+  const page = await mount('demo');
+  const tabs = page.querySelector('nav.ui-tabs')!;
+  // 今 and 地図 are in-place buttons; only その他 is a link (to /more).
+  expect([...tabs.querySelectorAll('button')].map(b => b.textContent)).toEqual(['今', '地図']);
+  expect([...tabs.querySelectorAll('a')].map(a => a.getAttribute('href'))).toEqual(['/more']);
+  const [now, map] = [...tabs.querySelectorAll<HTMLButtonElement>('button')];
+  expect(now.getAttribute('aria-current')).toBe('page');
+  await act(async () => map.click());
+  expect(map.getAttribute('aria-current')).toBe('page');
+  expect(page.querySelector('[data-testid=exercise-map] .map-screen [data-testid=emergency-map-stub]')).not.toBeNull();
+  expect(mapCalls.at(-1)).toEqual({ id: 'quake', occurredAt: served.replay.current_time, synthetic: true });
+  expect(page.querySelector('.ui-band-exercise')?.textContent).toBe('演習');
+  expect(page.querySelector('.ui-exercise-controls')).not.toBeNull();
+  await act(async () => now.click());
+  expect(page.querySelector('[data-testid=exercise-map]')).toBeNull();
+  expect(page.querySelector('[data-now=hero]')?.closest('[hidden]')).toBeNull();
+  expect(page.querySelector('.ui-band-exercise')?.textContent).toBe('演習');
+});
+
+it('/demo shows the safety check on the Now screen (as Live), not in the agent-log disclosure, and the hero is derived from that same check', async () => {
+  const page = await mount('demo');
+  const checks = page.querySelectorAll('[data-testid=replay-safety-check]');
+  expect(checks).toHaveLength(1);
+  expect(checks[0].closest('#exercise-details')).toBeNull();
+  expect(checks[0].closest('#basis')).toBeNull();
+  // Below the Now screen, like Live's AdaptiveHome slot.
+  expect(page.querySelector('.now')!.compareDocumentPosition(checks[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  seenChecks.length = 0;
+  const consent = checks[0].querySelector<HTMLInputElement>('input[type=checkbox]')!;
+  await act(async () => consent.click());
+  expect(consent.checked).toBe(true);
+  // Every presentation derived after the change (hero and the disclosure alike) sees the consented check.
+  expect(seenChecks.length).toBeGreaterThan(0);
+  expect(seenChecks.every(check => check.consent)).toBe(true);
 });

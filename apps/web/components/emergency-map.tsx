@@ -8,6 +8,7 @@ import type { DeviceLocation } from '@/lib/use-device-location';
 import { vnextMessages } from '@/lib/vnext-i18n';
 import { EarthquakeIndicator } from './earthquake-indicator';
 import { mapGeographyManifestSchema, verifyMapGeography, type MapGeographyManifest } from '@/lib/map-geography';
+import './simulation-map-ui.css';
 
 export function EmergencyMap({ language, conserve, profile, location, locationResolving = false, onHomeMapReady, route, routeDestination, routeOrigin, originRef, earthquake }: {
   language: Language; conserve: boolean; profile?: Snapshot['profile']; location: DeviceLocation; locationResolving?: boolean; route?: RoutePresentation | null;

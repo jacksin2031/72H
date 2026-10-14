@@ -25,7 +25,7 @@ export function ExerciseSubpage({language}:{language:Language}){
       <option value="tohoku-2011">2011 · 東日本</option><option value="kobe-1995">1995 · 神戶 / 神戸</option>
       <option value="kumamoto-2016">2016 · 熊本</option><option value="iburi-2018">2018 · 北海道</option><option value="noto-2024">2024 · 能登</option>
     </select></label>
-    <SimulationReferenceMap language={language} protectDeviceLocation compact legend="none" epicenter={documentedEpicenters[historicCase]??null}/>
+    <div className="exercise-map" data-testid="exercise-map-frame"><SimulationReferenceMap language={language} protectDeviceLocation compact legend="none" epicenter={documentedEpicenters[historicCase]??null}/></div>
     <p className="ui-note">{t.mapNote}</p>
   </div>;
 }

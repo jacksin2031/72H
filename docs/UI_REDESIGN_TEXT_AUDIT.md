@@ -107,3 +107,7 @@ The exercise screens now use the same AppShell, NowScreen, MapScreen and ListRow
 | /disaster-test explanation paragraph, simulated-fresh note, 119/110 note | visible paragraphs | move into the basis details | unchanged |
 | /disaster-test safety gates `避難地図・移動許可は常に無効…` | grey box | keep visible as one warn meta line under the safety check | unchanged |
 | /disaster-test Replay / P1.5 run button | primary | secondary (the page's one primary is the full simulation launch) | unchanged text |
+| /demo 計画の履歴 / 情報源 badges and action prefixes (fix round 1) | raw codes: `ACTIVE` / `INVALIDATED` / `EXPIRED`, `VERIFIED_OFFICIAL` / `CONFLICTING` / `STALE`, `NOW` / `NEXT` / `AVOID`, source authority `A0–A4` | replace with existing localized labels; authority code removed from the visible line | 有効 / 失効 / 期限切れ / 不明 (messages.active / invalid / stale / unknown); いま行うこと / 次に確認すること / 避けること |
+| /demo safety check (fix round 1) | inside 演習の詳細 Disclosure, status shown as raw enum (`AWAITING_RESPONSE · 0/3`) | move under the Now screen (Live's position); status uses existing words | 安否確認 / 無事です / 助けが必要 / 今は動けません / 応答なし・状態は不明です。 (vnextMessages) |
+| /demo Map tab (fix round 1) | live /map link | in-place exercise map (synthetic quake) with sheet peek and location section | Peek: `現在地: <profile location>`; section title 現在地 |
+| /disaster-test reset (fix round 1) | button at the end of 情境設定 | move into the exercise bar | すべて初期化 / Reset / 重設 (unchanged) |

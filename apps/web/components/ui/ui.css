@@ -104,7 +104,7 @@ a.ui-btn-secondary{color:var(--info)}
 .ui-app-has-controls .ui-sheet{bottom:calc(64px + 64px + env(safe-area-inset-bottom))}
 .map-region{position:absolute;top:var(--sp-3);left:var(--gutter);right:72px;z-index:5}
 .map-region select{min-height:48px;max-width:100%;padding:0 var(--sp-3);border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);color:var(--text);font:inherit}
-.map-chips{position:absolute;left:0;right:0;bottom:72px;z-index:6;display:flex;gap:var(--sp-2);overflow-x:auto;padding:0 var(--gutter)}
+.map-chips{position:absolute;left:0;right:0;bottom:68px;z-index:6;display:flex;gap:var(--sp-2);overflow-x:auto;padding:var(--sp-1) var(--gutter)} /* block padding keeps the 2px+2px focus ring unclipped */
 .map-chips .ui-chip{flex:0 0 auto;background:var(--bg)}
 .map-chips .ui-chip[aria-pressed=true]{background:var(--text)}
 .map-legend{position:absolute;left:var(--gutter);right:var(--gutter);bottom:128px;z-index:6;margin:0;padding:var(--sp-1) var(--sp-2);background:color-mix(in srgb,var(--bg) 85%,transparent);color:var(--text-2);font-size:var(--fs-meta)}
@@ -222,9 +222,6 @@ a.ui-btn-secondary{color:var(--info)}
 .map-section .map-legend{position:static;display:flex;flex-wrap:wrap;gap:var(--sp-3);padding:var(--sp-2) 0;background:none}
 .map-section .map-legend>span{display:inline-flex;align-items:center;gap:var(--sp-1)}
 .map-swatch{display:inline-block;width:12px;height:12px;flex:0 0 12px;border-radius:3px;background:var(--text-2)}
-.map-swatch.land{background:#29343f}
-.map-swatch.ocean{background:#0b131e}
-.map-swatch.coast{height:3px;background:#a3b6c7}
 .map-reference-list{display:grid;gap:var(--sp-2);margin:0;padding:var(--sp-2) 0;list-style:none;font-size:var(--fs-meta)}
 .map-reference-list li{display:flex;align-items:flex-start;gap:var(--sp-2);min-width:0;overflow-wrap:anywhere}
 .map-reference-list .map-swatch{margin-top:.35em;border-radius:50%}
@@ -278,3 +275,10 @@ a.ui-btn-secondary{color:var(--info)}
 .lab-agent-results,.lab-drill-action{padding:var(--sp-3) 0;border-top:1px solid var(--line);overflow-wrap:anywhere}
 .now-meta-warn{color:var(--warn)}
 .live-language{display:grid;gap:var(--sp-1);margin:var(--sp-3) 0;color:var(--text-2);font-size:var(--fs-meta)}
+/* Exercise map (/demo Map tab): the EmergencyMap block fills MapScreen's map slot; its caption lines scroll above the sheet peek. */
+.map-canvas .map-section{display:flex;flex-direction:column;overflow-y:auto;padding:var(--sp-2) var(--gutter) calc(56px + var(--sp-3));background:var(--bg)}
+.map-canvas .emergency-map{flex:1 0 240px;height:auto}
+/* Compact reference map on More → 演練與示範: its children are absolutely positioned, so the box needs its own height. */
+.exercise-map{position:relative;height:clamp(240px,40dvh,360px);margin:var(--sp-3) 0;border-radius:var(--radius);overflow:hidden}
+/* Survival power mode keeps record lists out of the minimal screen (as before the globals.css removal). */
+.power-survival .record-list{display:none}

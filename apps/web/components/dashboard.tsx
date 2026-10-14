@@ -1,6 +1,11 @@
 'use client';
 
 import { AppShell, Button, Disclosure, Section, StatusBand } from './ui';
+import { MapScreen } from './map-screen';
+import { EmergencyMap } from './emergency-map';
+import { AdaptiveHome } from './adaptive-home';
+import { DeviceLocationControls } from './device-location';
+import type { AppTab } from '@/lib/app-tabs';
 import { NowScreen } from './now-screen';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { snapshotSchema, type Language, type Snapshot } from '@/lib/contracts';
@@ -11,9 +16,9 @@ import { derivePresentation } from '@/lib/adaptive-ui';
 import { emergencyPack } from '@/lib/emergency-pack';
 import { usePower } from '@/lib/use-power';
 import { vnextMessages } from '@/lib/vnext-i18n';
-import { initialSafetyCheck, sourceAuthority } from '@/lib/vnext';
+import { initialSafetyCheck, type SafetyCheckState } from '@/lib/vnext';
 import { distressText, sosText } from '@/lib/distress';
-import { VNextExperience } from './vnext-experience';
+import { ReplaySafetyCheck, VNextExperience } from './vnext-experience';
 import { useDeviceLocation } from '@/lib/use-device-location';
 import { ScenarioPicker } from './scenario-picker';
 import { PlanExplanationPanel } from './plan-explanation-panel';
@@ -43,6 +48,9 @@ export function Dashboard({ view }: { view: string }) {
   const [storageError, setStorageError] = useState(false);
   const [sessionMissing, setSessionMissing] = useState(false);
   const [distressOpen, setDistressOpen] = useState(false);
+  // Owned here so the hero and the Now-screen safety check use the same state (VNextExperience restores, persists and advances it).
+  const [check, setCheck] = useState<SafetyCheckState>(initialSafetyCheck);
+  const [tab, setTab] = useState<AppTab>('now');
   const requestPending = useRef(false);
   const envelope = useRef<CacheEnvelope | null>(null);
   const offlineBase = useRef<Snapshot | null>(null);
@@ -192,7 +200,7 @@ export function Dashboard({ view }: { view: string }) {
   </AppShell>;
 
   // Same field mapping as Live's Now screen (hero / basis / next / avoid / updated), fed by the replayed snapshot.
-  const presentation = derivePresentation(snapshot, continuityTime, connection, battery.power, initialSafetyCheck());
+  const presentation = derivePresentation(snapshot, continuityTime, connection, battery.power, check);
   const current = projection.plan;
   const usable = snapshot.plan_actions.filter(a => a.plan_id === current?.id && a.status === 'ACTIVE' && !projection.invalidActionIds.includes(a.id));
   const texts = (category: 'NEXT' | 'AVOID') => usable.filter(a => a.category === category).map(a => a.text);
@@ -208,6 +216,8 @@ export function Dashboard({ view }: { view: string }) {
   const updatedPrefix = connection === 'offline' ? lm.nowOfflineVerified : unverified ? lm.nowLastVerified : lm.nowUpdated;
   const updatedLabel = `${updatedPrefix} ${time(snapshot.situation.latest_evidence_at, language)}`;
   const survival = battery.power.mode === 'SURVIVAL';
+  const statusLabel = (status: string) => status === 'ACTIVE' ? t.active : status === 'EXPIRED' ? t.stale : ['INVALIDATED', 'PARTIALLY_INVALID', 'SUPERSEDED'].includes(status) ? t.invalid : t.unknown;
+  const categoryLabel = (category: string) => category === 'NOW' ? t.now : category === 'NEXT' ? t.nextActions : t.avoid;
 
   const basisDetails = <>
     <p className="now-meta">{t.demoDetail} {t.noMovement}</p>
@@ -215,13 +225,13 @@ export function Dashboard({ view }: { view: string }) {
       <Section title={t.plan}><div className="plan-history">{snapshot.plans.map(p => {
         const pe = snapshot.plan_evaluations.findLast(e => e.plan_id === p.id);
         const historical = projectContinuity({ ...snapshot, situation: { ...snapshot.situation, current_plan_id: p.id } }, continuityTime, connection);
-        return <article key={p.id}><div className="section-head"><h3>Plan v{p.version}</h3><span className="badge">{historical.planStatus}</span></div>
+        return <article key={p.id}><div className="section-head"><h3>Plan v{p.version}</h3><span className="badge">{statusLabel(historical.planStatus)}</span></div>
           <small>{time(p.created_at, language)} → {t.expires}: {time(p.expires_at, language)}</small>{pe?.reason && <p>{pe.reason}</p>}
-          {snapshot.plan_actions.filter(a => a.plan_id === p.id).map(a => <p key={a.id} className={historical.invalidActionIds.includes(a.id) ? 'invalid' : ''}><b>{a.category}</b> · {a.text}{historical.invalidActionIds.includes(a.id) && ` · ${t.invalid}`}</p>)}</article>;
+          {snapshot.plan_actions.filter(a => a.plan_id === p.id).map(a => <p key={a.id} className={historical.invalidActionIds.includes(a.id) ? 'invalid' : ''}><b>{categoryLabel(a.category)}</b> · {a.text}{historical.invalidActionIds.includes(a.id) && ` · ${t.invalid}`}</p>)}</article>;
       })}{!snapshot.plans.length && <p className="now-meta">{t.empty}</p>}</div></Section>
       <Section title={t.sources}><div className="record-list">{projection.evidence.map(e => <article key={e.id}>
-        <div className="section-head"><h3>{e.source_name}</h3><span className={`badge ${e.conflict || e.trust_status === 'CONFLICTING' || e.trust_status === 'UNVERIFIED' || e.freshness_status !== 'CURRENT' ? 'warn' : ''}`}>{e.conflict || e.trust_status === 'CONFLICTING' ? 'CONFLICTING' : e.freshness_status === 'CURRENT' ? e.trust_status : e.freshness_status}</span></div>
-        <p>{e.summary}</p><p className="muted">{sourceAuthority(e)} · {time(e.published_at, language)} · {t.expires}: {time(e.expires_at, language)} · {t.sourceAge}: {Math.max(0, Math.floor((continuityTime - Date.parse(e.published_at)) / 60_000))} min</p>
+        <div className="section-head"><h3>{e.source_name}</h3><span className={`badge ${e.conflict || e.trust_status === 'CONFLICTING' || e.trust_status === 'UNVERIFIED' || e.freshness_status !== 'CURRENT' ? 'warn' : ''}`}>{e.conflict || e.trust_status === 'CONFLICTING' ? t.unknown : e.freshness_status !== 'CURRENT' ? t.stale : e.trust_status === 'UNVERIFIED' ? t.unknown : t.active}</span></div>
+        <p>{e.summary}</p><p className="muted">{time(e.published_at, language)} · {t.expires}: {time(e.expires_at, language)} · {t.sourceAge}: {Math.max(0, Math.floor((continuityTime - Date.parse(e.published_at)) / 60_000))} min</p>
         <p className="muted">{e.conflict || e.trust_status === 'CONFLICTING' ? t.conflicting : e.trust_status === 'UNVERIFIED' ? t.unverified : t.verified}</p></article>)}
         {!snapshot.evidence.length && <p className="now-meta">{t.empty}</p>}</div></Section>
       <Section title={t.progress}><ol className="ui-exercise-list">{snapshot.scenario_events.map((e, i) => <li key={e.id} data-event-state={i < snapshot.replay.current_event_index ? 'processed' : 'pending'}>
@@ -237,7 +247,7 @@ export function Dashboard({ view }: { view: string }) {
       {emergencyPack.sources.map(s => <p key={s.url}><a href={s.url} target="_blank" rel="noreferrer">{s.name} ↗</a></p>)}</Section>
     <Disclosure summary={xc.details} defaultOpen={view === 'trace'} id="exercise-details">
       <p className="now-meta">{xc.planning}: {snapshot.replay.planning_mode === 'GEMINI_ADK' ? t.ai : snapshot.replay.planning_mode === 'GEMINI_ADK_FALLBACK' ? t.modelFallback : t.fallback} · {projection.planStatus} · {projection.networkState}</p>
-      <VNextExperience snapshot={snapshot} language={language} now={continuityTime} connection={connection} verificationAnchor={verificationAnchor.current} power={battery.power} level={battery.level} override={battery.override} choose={battery.choose} view="demo" showLocalTrace={view === 'trace'} deviceLocation={deviceLocation} />
+      <VNextExperience snapshot={snapshot} language={language} now={continuityTime} connection={connection} verificationAnchor={verificationAnchor.current} power={battery.power} level={battery.level} override={battery.override} choose={battery.choose} view="demo" showLocalTrace={view === 'trace'} deviceLocation={deviceLocation} check={check} setCheck={setCheck} />
       <Section title={t.trace}><div className="record-list">{[...snapshot.trace].reverse().map(e => <article key={e.id}><div className="section-head"><h3>{e.event_type}</h3><small>{time(e.timestamp, language)}</small></div>
         <p>{e.public_summary}</p><p className="muted">{e.agent} · {e.status} · {e.input_refs.join(', ')} → {e.output_refs.join(', ')}</p></article>)}
         {!snapshot.trace.length && <p className="now-meta">{t.empty}</p>}</div></Section>
@@ -248,9 +258,26 @@ export function Dashboard({ view }: { view: string }) {
     {distressOpen && <DistressEntry snapshot={snapshot} language={language} scope="replay" fix={fixFromDevicePosition(deviceLocation.position)} now={continuityTime} onSnapshot={adoptDistress}
       refreshLocation={deviceLocation.permissionGranted ? () => void deviceLocation.locate() : undefined} />}
   </>;
-  return <AppShell tab="now" language={language} band={band} exerciseControls={exerciseControls}>
+  // Same position as Live: the safety check sits right under the Now screen (AdaptiveHome embedded); consent stays reachable
+  // here because the exercise has no More settings of its own.
+  const safetyCheck = <ReplaySafetyCheck check={check} setCheck={setCheck} language={language} visible={presentation.showSafetyCheck} />;
+  const exerciseMap = <MapScreen language={language} layers={[]} legend={null} region={null} routeSection={null}
+    map={<EmergencyMap language={language} conserve={battery.power.mode !== 'NORMAL'} profile={snapshot.profile} location={deviceLocation}
+      earthquake={activeEvent ? { id: activeEvent.id, occurredAt: activeEvent.occurred_at, synthetic: true } : null} />}
+    peek={`${t.location}: ${snapshot.profile.current_location.label}`}
+    sections={[{ title: t.location, content: <DeviceLocationControls location={deviceLocation} language={language} /> }]} />;
+  return <AppShell tab={tab} language={language} band={band} exerciseControls={exerciseControls} fullBleed={tab === 'map'}
+    onTab={setTab} localTabs={['now', 'map']}>
     {status}
-    <NowScreen language={language} hero={hero} heroTone={heroTone} basis={basis} next={texts('NEXT')} avoid={texts('AVOID')}
-      updatedLabel={updatedLabel} exercise openBasis={view === 'trace'} basisDetails={basisDetails} help={help} />
+    {tab === 'map' && <div data-testid="exercise-map">{battery.power.allowMap ? exerciseMap : <p className="now-meta">{vnextMessages[language].mapUnavailable}</p>}</div>}
+    {/* The Now screen stays mounted (hidden) on the Map tab, so safety-check timers and an open help panel keep their state. */}
+    <div hidden={tab === 'map'}>
+      <NowScreen language={language} hero={hero} heroTone={heroTone} basis={basis} next={texts('NEXT')} avoid={texts('AVOID')}
+        updatedLabel={updatedLabel} exercise openBasis={view === 'trace'} basisDetails={basisDetails} help={help} />
+      <AdaptiveHome embedded presentation={presentation} snapshot={snapshot} language={language} networkState={projection.networkState}
+        planStatus={projection.planStatus} notifications={0} actions={usable} checkControls={safetyCheck} powerMode={battery.power.mode}
+        location={deviceLocation} mapClosed={false} now={continuityTime} />
+      {!presentation.showSafetyCheck && safetyCheck}
+    </div>
   </AppShell>;
 }

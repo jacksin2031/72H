@@ -42,8 +42,10 @@ function selectedPath(id: string, catalog: AreaEntry[]) {
   return { area_ids: ids, label };
 }
 
-export function AreaFallbackPicker({ messages, disabled = false, buttonLabel, onConfirm }: {
+/** secondary: the confirm is not the screen's primary action (More → location already has one primary). */
+export function AreaFallbackPicker({ messages, disabled = false, buttonLabel, onConfirm, secondary = false }: {
   messages: Record<string, string>;
+  secondary?: boolean;
   disabled?: boolean;
   buttonLabel?: string;
   onConfirm: (location: OnboardingLocation) => void;
@@ -88,7 +90,7 @@ export function AreaFallbackPicker({ messages, disabled = false, buttonLabel, on
         <option value="">{messages.locationPrefectureOnly}</option>
         {municipalities.map(entry => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
       </select>
-      <button type="button" className="primary location-primary-action" disabled={disabled || !prefectureId} onClick={confirm}>{messages.locationConfirmArea}</button>
+      <button type="button" className={secondary ? 'ui-btn ui-btn-secondary location-primary-action' : 'primary location-primary-action'} disabled={disabled || !prefectureId} onClick={confirm}>{messages.locationConfirmArea}</button>
     </>}
   </section>;
 }

@@ -1,5 +1,5 @@
 /* apps/web/app/globals.css — reset and focus only. Colours, type and spacing come from tokens.css; components style themselves in components/ui/ui.css. */
 *,*::before,*::after{box-sizing:border-box}
-button,input,select,textarea{font:inherit;color:inherit}
+:where(button,input,select,textarea){font:inherit;color:inherit} /* zero specificity: ui.css base and component rules always win */
 a{color:var(--info)}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}

@@ -66,6 +66,12 @@ describe('cardless guard',()=>{
     for(const f of files.filter(f=>!LEGACY_CSS_ALLOWLIST.includes(f)))
       expect(source(f),f).not.toMatch(/(^|[},\s])button:hover[^{]*\{[^}]*background/);
   });
+  it('the globals reset has zero specificity, so the ui.css base button rule (info colour, weight) applies to unclassed buttons',()=>{
+    const globals=source('app/globals.css');
+    expect(globals).toMatch(/:where\(button,input,select,textarea\)\{font:inherit;color:inherit\}/);
+    expect(globals,'element-specificity control rule').not.toMatch(/(^|\})\s*(button|input|select|textarea)\b[^{]*\{[^}]*(color|font)/);
+    expect(source('components/ui/ui.css')).toMatch(/:where\(\.ui-app\) :where\(button[^{]*\{[^}]*color:var\(--info\)[^}]*font-weight:600/);
+  });
   it('tokens win: no stylesheet resets body font-family, font-size or line-height outside tokens.css',()=>{
     for(const f of files.filter(f=>f!=='app/tokens.css'))
       expect(source(f),f).not.toMatch(/(^|[},\s])body\s*\{[^}]*(font-family|font-size|line-height)/);
