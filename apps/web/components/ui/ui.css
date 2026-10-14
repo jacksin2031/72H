@@ -52,3 +52,6 @@ div.ui-row{cursor:default}
 .now-help{margin:var(--sp-5) 0}
 .now-list{margin:0;padding-left:1.2em}
 .now-list li+li{margin-top:var(--sp-2)}
+/* Pinned help control: shown when the full "I need help" button is off screen or absent; sits just above the tabs. */
+.ui-help-pin{position:fixed;right:var(--gutter);bottom:calc(64px + env(safe-area-inset-bottom) + var(--sp-3));z-index:31;display:inline-flex;align-items:center;justify-content:center;min-width:48px;min-height:48px;padding:0 var(--sp-4);border:0;border-radius:999px;background:var(--danger);color:var(--bg);font:inherit;font-weight:700;cursor:pointer}
+.ui-app-has-controls .ui-help-pin{bottom:calc(64px + 120px + env(safe-area-inset-bottom) + var(--sp-3))}

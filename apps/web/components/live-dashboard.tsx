@@ -586,9 +586,40 @@ function WhenOpen({ children }: { children: ReactNode }) {
   return <><span ref={marker} hidden />{opened && children}</>;
 }
 
+type LiveProjectionValue = ReturnType<typeof projectLiveSnapshot>;
+
+/** One rule for what the primary instruction may say: under critical protection with a pending/failed
+ * location update, a movement (EVACUATE) instruction is suppressed everywhere it could appear (hero, band). */
+export function liveGuidance(view: string, snapshot: LiveSnapshot, projection: LiveProjectionValue, locationSync: boolean) {
+  const criticalProtection = view === 'dashboard' && CRITICAL_PROTECTION_MODES.includes(projection.presentation.mode);
+  const locationGateOverride = locationSync && criticalProtection;
+  const suppressMovementAction = locationGateOverride && snapshot.spatial_guidance.current_action_kind === 'EVACUATE';
+  return { criticalProtection, locationGateOverride, suppressMovementAction,
+    primaryAction: suppressMovementAction ? null : projection.presentation.primaryAction };
+}
+
+/** The hero text; the takeover band uses the same function so the two can never disagree. */
+export function liveHeroText({ snapshot, projection, primaryAction, connection, messages }: {
+  snapshot: LiveSnapshot; projection: LiveProjectionValue; primaryAction: LiveProjectionValue['presentation']['primaryAction'];
+  connection: Connection; messages: Record<string, string>;
+}) {
+  const critical = CRITICAL_PROTECTION_MODES.includes(projection.presentation.mode);
+  // "No active alerts" is a claim about the world: only with a current source, a live verified connection,
+  // no plan, no active event and no distress level.
+  const noAlerts = !projection.plan && snapshot.situation.active_event_ids.length === 0 && snapshot.distress.level === 'NONE'
+    && connection === 'online' && projection.networkState === 'ONLINE_VERIFIED' && isPrimarySourceCurrent(snapshot, projection);
+  return primaryAction?.text || (critical ? messages.emergency : noAlerts ? messages.noActiveAlerts : messages.pending);
+}
+
+export function liveTakeoverBandLabel({ view, snapshot, projection, locationSync, connection, messages }: {
+  view: string; snapshot: LiveSnapshot; projection: LiveProjectionValue; locationSync: boolean; connection: Connection; messages: Record<string, string>;
+}) {
+  return liveHeroText({ snapshot, projection, connection, messages, primaryAction: liveGuidance(view, snapshot, projection, locationSync).primaryAction });
+}
+
 function LiveNow({ view, snapshot, projection, primaryAction, language, messages, connection, now, power, busy, refresh, canRefresh, help,
   locationGateOverride = false, hideNext = false, deviceLocation, locationResolving = false, onRouteSearch }: {
-  view: string; snapshot: LiveSnapshot; projection: ReturnType<typeof projectLiveSnapshot>; primaryAction: ReturnType<typeof projectLiveSnapshot>['primaryAction'];
+  view: string; snapshot: LiveSnapshot; projection: LiveProjectionValue; primaryAction: LiveProjectionValue['presentation']['primaryAction'];
   language: Language; messages: Record<string, string>; connection: Connection; now: number; power: ReturnType<typeof usePower>['power'];
   busy: boolean; refresh?: () => void; canRefresh: boolean; help: ReactNode; locationGateOverride?: boolean; hideNext?: boolean;
   deviceLocation: ReturnType<typeof useDeviceLocation>; locationResolving?: boolean; onRouteSearch: (origin: Location, destinationId: string) => Promise<boolean>;
@@ -598,15 +629,15 @@ function LiveNow({ view, snapshot, projection, primaryAction, language, messages
   const texts = (category: 'NEXT' | 'AVOID') => actions.filter(action => action.category === category).map(action => action.text);
   const critical = CRITICAL_PROTECTION_MODES.includes(projection.presentation.mode);
   const activeEvent = snapshot.events.findLast(event => snapshot.situation.active_event_ids.includes(event.id));
-  // "No active alerts" is a claim about the world: only with a current source, a live connection, no plan and no active event.
-  const noAlerts = !currentPlan && snapshot.situation.active_event_ids.length === 0 && connection === 'online'
-    && projection.networkState === 'ONLINE_VERIFIED' && isPrimarySourceCurrent(snapshot, projection);
-  const hero = primaryAction?.text || (critical ? messages.emergency : noAlerts ? messages.noActiveAlerts : messages.pending);
-  const heroTone = critical ? 'danger' : connection !== 'online' || projection.stale || projection.networkState !== 'ONLINE_VERIFIED' ? 'warn' : 'normal';
+  const hero = liveHeroText({ snapshot, projection, primaryAction, connection, messages });
+  const unverified = projection.stale || projection.networkState !== 'ONLINE_VERIFIED';
+  const heroTone = critical ? 'danger' : connection !== 'online' || unverified ? 'warn' : 'normal';
   const published = snapshot.source.last_published_at;
   const sourceLabel = [snapshot.source.source_name, activeEvent ? messages[`event${activeEvent.event_type}`] : ''].filter(Boolean).join(' ');
   const basis = published ? messages.basisPublished.replace('{source}', sourceLabel).replace('{time}', clockTime(published, language, now)) : null;
-  const updatedLabel = `${connection === 'offline' ? messages.nowOfflineVerified : messages.nowUpdated} ${clockTime(snapshot.situation.latest_evidence_at, language, now)}`;
+  // "Updated" only for verified, current data; otherwise say when it was last verified.
+  const updatedPrefix = connection === 'offline' ? messages.nowOfflineVerified : unverified ? messages.nowLastVerified : messages.nowUpdated;
+  const updatedLabel = `${updatedPrefix} ${clockTime(snapshot.situation.latest_evidence_at, language, now)}`;
   // While a location update is pending under critical protection, older plan/route details stay hidden (same rule as the map).
   const basisDetails = locationGateOverride
     ? <SourceSummary snapshot={snapshot} language={language} messages={messages} projection={projection} />
@@ -672,9 +703,9 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
     }
     setLocalGpsCheckedAt(null); onRetryLocation();
   };
-  const criticalProtection = view === 'dashboard' && !!snapshot && !!projection
-    && CRITICAL_PROTECTION_MODES.includes(projection.presentation.mode);
-  const locationGateOverride = !!locationSync && criticalProtection;
+  const guidance = snapshot && projection ? liveGuidance(view, snapshot, projection, !!locationSync) : null;
+  const criticalProtection = !!guidance?.criticalProtection;
+  const locationGateOverride = !!guidance?.locationGateOverride;
   if (locationSync && view !== 'more' && !criticalProtection) return <LocationSyncGate state={locationSync} messages={messages} retry={onRetryLocation} canRetry={canStart && !busy} chooseArea={onChooseArea} />;
   if (!snapshot || !projection) return <>
     <LocationOnboarding language={language} messages={messages} location={deviceLocation} busy={busy} canStart={canStart} submit={onProfile} />
@@ -696,10 +727,10 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
   const showDevicePoint = !!areaPresentation.devicePoint && (areaPresentation.devicePoint.source === 'LAST_KNOWN'
     || areaPresentation.area.source !== 'GPS' || areaPresentation.area.observedAt !== areaPresentation.devicePoint.observedAt);
   const routeDestination = route ? snapshot.destinations.find(item => item.id === route.destination_id) : null;
-  const suppressMovementAction = locationGateOverride && snapshot.spatial_guidance.current_action_kind === 'EVACUATE';
+  const suppressMovementAction = !!guidance?.suppressMovementAction;
   const presentedState = locationGateOverride ? {
     ...projection.presentation,
-    ...(suppressMovementAction ? { primaryAction: null } : {}),
+    primaryAction: guidance?.primaryAction ?? null,
     showMap: false,
     showRoute: false,
     showDestination: false,
@@ -826,7 +857,7 @@ function DesktopPreparedness({ view, snapshot, language, messages, projection, l
   help?: ReactNode;
 }) {
   if (tabForView(view) === 'now' && snapshot && projection) return <div className="desktop-preparedness">
-    <LiveNow view={view} snapshot={snapshot} projection={projection} primaryAction={projection.primaryAction} language={language} messages={messages}
+    <LiveNow view={view} snapshot={snapshot} projection={projection} primaryAction={projection.presentation.primaryAction} language={language} messages={messages}
       connection={connection} now={now} power={power} busy={busy} refresh={refresh} canRefresh={canUpdateLocation && !sessionLost} help={help}
       deviceLocation={location} onRouteSearch={onRouteSearch} />
     <section className="emergency-contact"><h2>{messages.emergencyGuide}</h2><p>{messages.builtInGuide}</p><a href="tel:119">119</a> · <a href="tel:110">110</a></section>
@@ -1308,15 +1339,33 @@ export function LiveDashboard({ view }: { view: string }) {
     setLanguage(next);
     try { localStorage.setItem('72h-language', next); } catch { /* In-memory fallback. */ }
   };
-  // Reachable in every presentation and power mode, including urgent takeovers and SURVIVAL:
-  // inside NowScreen's help slot on the Now views, otherwise first in <main>.
-  const helpEntry = <>
-    <Button variant="danger" className="distress-entry-button" aria-expanded={distressOpen} onClick={() => setDistressOpen(open => !open)}>{sosText[language].title}</Button>
-    {distressOpen && <DistressEntry snapshot={snapshot} language={language} scope="live" fix={fixFromDevicePosition(deviceLocation.position)} onSnapshot={adoptDistress}
-      refreshLocation={deviceLocation.permissionGranted ? () => void deviceLocation.locate() : undefined} />}
-  </>;
+  // The "I need help" entry is reachable in every presentation and power mode, including urgent takeovers and SURVIVAL:
+  // - the full button sits in NowScreen's help slot on the Now views, otherwise first in <main>;
+  // - the panel (DistressEntry) always renders at ONE stable position (first in <main>) so it never remounts and loses state;
+  // - a compact pinned control appears when the panel is closed and the slot button is off screen or absent.
   const helpInNow = liveNowScreenVisible({ role, view: role === 'mobile' ? mobileView : view, hasData: !!snapshot && !!projection,
     mode: projection?.presentation.mode, locationSync: !!locationSync });
+  const [helpSlotButton, setHelpSlotButton] = useState<HTMLButtonElement | null>(null);
+  const [helpSlotInView, setHelpSlotInView] = useState(false);
+  const distressPanel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!helpSlotButton) { setHelpSlotInView(false); return; }
+    if (typeof IntersectionObserver === 'undefined') { setHelpSlotInView(true); return; }
+    const observer = new IntersectionObserver(entries => setHelpSlotInView(entries.some(entry => entry.isIntersecting)));
+    observer.observe(helpSlotButton);
+    return () => observer.disconnect();
+  }, [helpSlotButton]);
+  useEffect(() => {
+    if (!distressOpen) return;
+    const panel = distressPanel.current;
+    panel?.scrollIntoView?.({ block: 'start' });
+    panel?.focus({ preventScroll: true });
+  }, [distressOpen]);
+  const toggleDistress = () => setDistressOpen(open => !open);
+  const helpButton = (slot: boolean) => <Button variant="danger" className="distress-entry-button" aria-expanded={distressOpen}
+    ref={slot ? setHelpSlotButton : undefined} onClick={toggleDistress}>{sosText[language].title}</Button>;
+  const helpEntry = helpButton(true);
+  const showHelpPin = !distressOpen && !(helpInNow && helpSlotInView);
   const mainContent = role === 'unknown' ? <div className="device-role-pending" role="status">{messages.loading}</div>
     : role === 'desktop'
       ? locationSync
@@ -1336,10 +1385,17 @@ export function LiveDashboard({ view }: { view: string }) {
         locationSync={locationSync} onRetryLocation={() => void retryLocationUpdate()}
         onLocalLocationChecked={() => setLocationGate({ phase: 'failed', update: null })} onChooseArea={chooseLocationArea} help={helpInNow ? helpEntry : null} />;
 
-  const takeoverBand = criticalMobileTakeover ? <StatusBand tone="danger" label={projection?.primaryAction?.text || messages.emergency} /> : undefined;
+  const takeoverBand = criticalMobileTakeover && snapshot && projection ? <StatusBand tone="danger" label={liveTakeoverBandLabel({
+    view: mobileView, snapshot, projection, locationSync: !!locationSync, connection, messages })} /> : undefined;
   return <AppShell tab={tabForView(view)} language={language} band={takeoverBand}>
     <div className={`live-shell live-main theme-${theme} power-${power.power.mode.toLowerCase()} role-${role} ${snapshot ? 'has-live-session' : 'no-live-session'}`}>
-      {!helpInNow && helpEntry}
+      {!helpInNow && helpButton(false)}
+      {distressOpen && <div ref={distressPanel} tabIndex={-1} className="distress-panel-anchor" aria-label={sosText[language].title}>
+        <DistressEntry snapshot={snapshot} language={language} scope="live" fix={fixFromDevicePosition(deviceLocation.position)} onSnapshot={adoptDistress}
+          refreshLocation={deviceLocation.permissionGranted ? () => void deviceLocation.locate() : undefined} />
+      </div>}
+      {showHelpPin && <button type="button" className="ui-help-pin" aria-label={sosText[language].title} aria-expanded={false}
+        onClick={toggleDistress}>{language === 'ja' ? '助けて' : language === 'en' ? 'Help' : '求助'}</button>}
       {!criticalMobileTakeover && <LiveHeaderStatus hasSession={!!snapshot} busy={busy} networkLabel={networkLabel} messages={messages} />}
       {(view === 'more' || !snapshot) && <label className="live-language">{messages.language}<select aria-label={messages.language} value={language} onChange={event => chooseLanguage(event.target.value as Language)}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option></select></label>}
       {error && <p className="error" role="alert">{error}</p>}

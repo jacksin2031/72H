@@ -2,7 +2,7 @@
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { liveNowScreenVisible, MobileScene } from '../components/live-dashboard';
+import { liveNowScreenVisible, liveTakeoverBandLabel, MobileScene } from '../components/live-dashboard';
 import { liveMessages } from '../lib/live-i18n';
 import { liveMoreMessages } from '../lib/live-more-i18n';
 import { projectLiveSnapshot } from '../lib/live-presentation';
@@ -374,6 +374,42 @@ describe('Now screen in the live mobile scene', () => {
     const page = await mount({ ...props, projection, help: <button type="button" className="help-probe">I need help</button> });
     expect(page.querySelector('[data-now="hero"]')?.classList.contains('now-hero-danger')).toBe(true);
     expect(page.querySelector('[data-now="help"] .help-probe')).not.toBeNull();
+  });
+
+  it('gives the takeover band the same protective text as the hero when a location gate suppresses an evacuation instruction', async () => {
+    const props = withPlan(sceneProps({ view: 'dashboard', connection: 'online' }));
+    const shelterText = 'Go to the designated shelter shown in the current plan.';
+    expect(props.snapshot!.spatial_guidance.current_action_kind).toBe('EVACUATE');
+    const projection = { ...props.projection!, presentation: { ...props.projection!.presentation, mode: 'EMERGENCY_PROTECT' as const } };
+    const band = (locationSync: boolean) => liveTakeoverBandLabel({ view: 'dashboard', snapshot: props.snapshot!, projection,
+      locationSync, connection: 'online', messages: props.messages });
+    expect(band(false)).toBe(shelterText);
+    const page = await mount({ ...props, projection, locationSync: { phase: 'pending', update: null } });
+    const hero = page.querySelector('[data-now="hero"]')!.textContent;
+    expect(hero).toBe('Protect yourself first');
+    expect(band(true)).toBe(hero);
+    expect(band(true)).not.toContain(shelterText);
+  });
+
+  it('says "last verified" rather than "updated" when online but not verified or stale', async () => {
+    const props = withPlan(sceneProps({ view: 'dashboard', connection: 'online' }));
+    const page = await mount({ ...props, projection: { ...props.projection!, networkState: 'RECONNECTING' as const } });
+    expect(page.querySelector('[data-now="updated"]')?.textContent).toBe('Last verified 11:59');
+    await act(async () => { root!.render(<MobileScene {...props} projection={{ ...props.projection!, stale: true }} />); });
+    expect(page.querySelector('[data-now="updated"]')?.textContent).toBe('Last verified 11:59');
+  });
+
+  it('does not say "No active alerts" while a distress level is active', async () => {
+    const props = sceneProps({ view: 'dashboard', connection: 'online' });
+    const snapshot = props.snapshot!;
+    snapshot.plans = []; snapshot.plan_actions = [];
+    snapshot.situation = { ...snapshot.situation, current_plan_id: null, active_event_ids: [] };
+    const projection = projectLiveSnapshot(snapshot, LIVE_NOW, 'online', derivePower(75, false));
+    const page = await mount({ ...props, snapshot, projection });
+    expect(page.querySelector('[data-now="hero"]')?.textContent).toBe('No active alerts');
+    const reported = { ...snapshot, distress: { ...snapshot.distress, level: 'USER_REPORTED' as const } };
+    await act(async () => { root!.render(<MobileScene {...props} snapshot={reported} projection={projectLiveSnapshot(reported, LIVE_NOW, 'online', derivePower(75, false))} />); });
+    expect(page.querySelector('[data-now="hero"]')?.textContent).not.toBe('No active alerts');
   });
 
   it('does not render the Now screen on More', async () => {
