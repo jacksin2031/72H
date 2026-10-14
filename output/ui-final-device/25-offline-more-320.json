@@ -1,0 +1,411 @@
+{
+  "url": "http://localhost:3036/more",
+  "action": "click",
+  "snapshot": "- alert\n- status:\n  - strong: 離線 · 最後確認 —\n- main:\n  - button \"需要協助\": 求助\n  - strong: 持續關注中\n  - text: 離線 · 顯示已儲存資訊\n  - status:\n    - strong: 請先保護自己\n    - paragraph: 遠離附近危險，並查看官方更新。\n    - link \"首頁 →\":\n      - /url: /dashboard\n  - heading \"更多\" [level=1]\n  - button \"語言 繁體中文\"\n  - button \"外觀 深色\"\n  - button \"電量模式\"\n  - button \"緊急聯絡人\"\n  - button \"位置與隱私\"\n  - button \"通知\"\n  - button \"資訊來源\"\n  - button \"演練與示範\"\n  - button \"關於\"\n  - heading \"緊急聯絡\" [level=2]\n  - paragraph: 救護／消防 119 · 警察 110。有需要時請自行撥打。\n  - link \"119\":\n    - /url: tel:119\n  - text: ·\n  - link \"110\":\n    - /url: tel:110\n  - time\n- navigation \"主選單\":\n  - link \"現在\":\n    - /url: /dashboard\n  - link \"地圖\":\n    - /url: /map\n  - link \"更多\":\n    - /url: /more",
+  "metrics": {
+    "width": 320,
+    "height": 568,
+    "dpr": 2.625,
+    "scrollWidth": 320,
+    "lang": "zh-TW",
+    "text": "離線 · 最後確認 —\n求助\n持續關注中\n·\n離線 · 顯示已儲存資訊\n請先保護自己\n\n遠離附近危險，並查看官方更新。\n\n首頁 →\n更多\n語言\n繁體中文\n外觀\n深色\n電量模式\n緊急聯絡人\n位置與隱私\n通知\n資訊來源\n演練與示範\n關於\n緊急聯絡\n\n救護／消防 119 · 警察 110。有需要時請自行撥打。\n\n119 · 110\n現在\n地圖\n更多",
+    "controls": [
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "求助",
+        "href": null,
+        "rect": {
+          "x": 235.99404907226562,
+          "y": 444,
+          "width": 64.00595092773438,
+          "height": 48,
+          "top": 444,
+          "right": 300,
+          "bottom": 492,
+          "left": 235.99404907226562
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "首頁 →",
+        "href": "/dashboard",
+        "rect": {
+          "x": 20,
+          "y": 171.6666717529297,
+          "width": 51.976192474365234,
+          "height": 18.666667938232422,
+          "top": 171.6666717529297,
+          "right": 71.97619247436523,
+          "bottom": 190.3333396911621,
+          "left": 20
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "語言\n繁體中文",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 259,
+          "width": 280,
+          "height": 48.761905670166016,
+          "top": 259,
+          "right": 300,
+          "bottom": 307.761905670166,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "外觀\n深色",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 307.76190185546875,
+          "width": 280,
+          "height": 48.761905670166016,
+          "top": 307.76190185546875,
+          "right": 300,
+          "bottom": 356.52380752563477,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "電量模式",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 356.5238037109375,
+          "width": 280,
+          "height": 48.761905670166016,
+          "top": 356.5238037109375,
+          "right": 300,
+          "bottom": 405.2857093811035,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "緊急聯絡人",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 405.2857360839844,
+          "width": 280,
+          "height": 48.761905670166016,
+          "top": 405.2857360839844,
+          "right": 300,
+          "bottom": 454.0476417541504,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "位置與隱私",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 454.0476379394531,
+          "width": 280,
+          "height": 48.761905670166016,
+          "top": 454.0476379394531,
+          "right": 300,
+          "bottom": 502.80954360961914,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "通知",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 502.8095397949219,
+          "width": 280,
+          "height": 48.761905670166016,
+          "top": 502.8095397949219,
+          "right": 300,
+          "bottom": 551.5714454650879,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "資訊來源",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 551.5714111328125,
+          "width": 280,
+          "height": 48.761905670166016,
+          "top": 551.5714111328125,
+          "right": 300,
+          "bottom": 600.3333168029785,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "演練與示範",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 600.3333740234375,
+          "width": 280,
+          "height": 48.761905670166016,
+          "top": 600.3333740234375,
+          "right": 300,
+          "bottom": 649.0952796936035,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "關於",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 649.0952758789062,
+          "width": 280,
+          "height": 48.761905670166016,
+          "top": 649.0952758789062,
+          "right": 300,
+          "bottom": 697.8571815490723,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "119",
+        "href": "tel:119",
+        "rect": {
+          "x": 20,
+          "y": 815.1369018554688,
+          "width": 72,
+          "height": 56,
+          "top": 815.1369018554688,
+          "right": 92,
+          "bottom": 871.1369018554688,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "110",
+        "href": "tel:110",
+        "rect": {
+          "x": 104.11904907226562,
+          "y": 815.1369018554688,
+          "width": 72,
+          "height": 56,
+          "top": 815.1369018554688,
+          "right": 176.11904907226562,
+          "bottom": 871.1369018554688,
+          "left": 104.11904907226562
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "現在",
+        "href": "/dashboard",
+        "rect": {
+          "x": 0,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 106.66667175292969,
+          "bottom": 568,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "地圖",
+        "href": "/map",
+        "rect": {
+          "x": 106.66667175292969,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 213.33334350585938,
+          "bottom": 568,
+          "left": 106.66667175292969
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "更多",
+        "href": "/more",
+        "rect": {
+          "x": 213.33334350585938,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 320.00001525878906,
+          "bottom": 568,
+          "left": 213.33334350585938
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      }
+    ]
+  },
+  "layout": [
+    {
+      "tag": "MAIN",
+      "name": "求助\n持續關注中\n·\n離線 · 顯示已儲存資訊\n請先保護自己\n\n遠離附近危險，並查看官方更新。\n\n首頁 →\n更多\n語言\n繁體中文\n外觀\n深色\n電量模式\n緊急聯絡人\n位置與隱私\n通知\n資訊來源\n演練與示範\n關於\n緊急聯絡\n\n救護／消防 119 · 警察 110。有需要時請自行撥打。",
+      "class": "ui-main",
+      "rect": {
+        "x": 0,
+        "y": 56,
+        "width": 320,
+        "height": 895.1369018554688,
+        "top": 56,
+        "right": 320,
+        "bottom": 951.1369018554688,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "80px"
+    },
+    {
+      "tag": "P",
+      "name": "遠離附近危險，並查看官方更新。",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 129,
+        "width": 280,
+        "height": 24,
+        "top": 129,
+        "right": 300,
+        "bottom": 153,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H1",
+      "name": "更多",
+      "class": "more-title",
+      "rect": {
+        "x": 20,
+        "y": 217,
+        "width": 280,
+        "height": 30,
+        "top": 217,
+        "right": 300,
+        "bottom": 247,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "緊急聯絡",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 711.1369018554688,
+        "width": 280,
+        "height": 24,
+        "top": 711.1369018554688,
+        "right": 300,
+        "bottom": 735.1369018554688,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "救護／消防 119 · 警察 110。有需要時請自行撥打。",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 751.1369018554688,
+        "width": 280,
+        "height": 48,
+        "top": 751.1369018554688,
+        "right": 300,
+        "bottom": 799.1369018554688,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    }
+  ],
+  "focus": {
+    "tag": "BODY",
+    "text": "離線 · 最後確認 —\n求助\n持續關注中\n·\n離線 · 顯示已儲存資訊\n請先保護自己\n\n遠離附近危險，並查看官方更新。\n\n首頁 →\n更多\n語言\n繁體中文\n外觀\n深色\n電量模式\n緊急聯絡人\n位置與隱私\n通知\n資訊來源\n演練與示範\n關於\n緊急聯絡\n\n救護／消防 119 · 警察 110。有需要時請自行撥打。\n\n119 · 110\n現在\n地圖\n更多",
+    "aria": null
+  }
+}

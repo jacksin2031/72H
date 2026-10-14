@@ -1,0 +1,2039 @@
+{
+  "url": "http://localhost:3036/demo",
+  "action": "click",
+  "snapshot": "- status:\n  - strong: 演練 · 大津波警報\n  - timer: 05:00\n- main:\n  - heading \"現在往上走／往高處去，遠離水。\" [level=1]\n  - paragraph: 依據：氣象廳 大津波警報 · 發布 下午02:51\n  - text: 演練\n  - group: 依據 ›\n  - paragraph: 這不是安全判定；請依現場狀況與官方指示行動。\n  - button \"需要協助\"\n  - paragraph: 更新 下午02:52\n  - heading \"確認必要準備\" [level=2]\n  - paragraph: 目前沒有已驗證的移動指示。\n  - link \"通知 · 0\":\n    - /url: /notifications\n  - group \"資訊適用地區\":\n    - strong: Ishinomaki\n    - text: 自行選擇的地區 · 位置確認已超過 10 分鐘\n  - group: 緊急基本指引\n  - checkbox \"同意在相關重大事件後收到安全確認（僅此裝置）\" [checked]\n  - text: 同意在相關重大事件後收到安全確認（僅此裝置）\n  - paragraph: 本程式不會聯絡救援單位，確認僅於程式執行期間運作。\n- button \"下一則更新 →\"\n- button \"繼續\"\n- button \"重新開始\"\n- combobox \"Replay speed\":\n  - option \"1×\" [selected]\n  - option \"2×\"\n  - option \"4×\"\n- text: 3 / 4\n- navigation \"主選單\":\n  - button \"現在\"\n  - button \"地圖\"\n  - link \"更多\":\n    - /url: /more\n- alert",
+  "metrics": {
+    "width": 411,
+    "height": 830,
+    "dpr": 2.625,
+    "scrollWidth": 411,
+    "lang": "zh-TW",
+    "text": "演練 · 大津波警報\n·\n05:00\n現在往上走／往高處去，遠離水。\n\n依據：氣象廳 大津波警報 · 發布 下午02:51\n\n演練\n依據\n\n這不是安全判定；請依現場狀況與官方指示行動。\n\n需要協助\n\n更新 下午02:52\n\n確認必要準備\n\n目前沒有已驗證的移動指示。\n\nIshinomaki\n自行選擇的地區 · 位置確認已超過 10 分鐘\n緊急基本指引\n同意在相關重大事件後收到安全確認（僅此裝置）\n\n本程式不會聯絡救援單位，確認僅於程式執行期間運作。\n\n下一則更新 →\n繼續\n重新開始\n1×\n2×\n4×\n3 / 4\n現在\n地圖\n更多",
+    "controls": [
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "需要協助",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "none",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 12807.619140625,
+          "width": 40.21428680419922,
+          "height": 192,
+          "top": 12807.619140625,
+          "right": 112.2202377319336,
+          "bottom": 12999.619140625,
+          "left": 72.00595092773438
+        },
+        "display": "inline-block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "/map#evacuation-routes",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 13002.2861328125,
+          "width": 35.976192474365234,
+          "height": 138.6666717529297,
+          "top": 13002.2861328125,
+          "right": 107.98214340209961,
+          "bottom": 13140.95280456543,
+          "left": 72.00595092773438
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "情境設定",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 13493.619140625,
+          "width": 203.8095245361328,
+          "height": 48,
+          "top": 13493.619140625,
+          "right": 275.8154754638672,
+          "bottom": 13541.619140625,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 13553.619140625,
+          "width": 40.21428680419922,
+          "height": 168,
+          "top": 13553.619140625,
+          "right": 112.2202377319336,
+          "bottom": 13721.619140625,
+          "left": 72.00595092773438
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "https://www.jma.go.jp/jma/kishou/know/jishin/eew/kunren/kunren.html",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 15560.2861328125,
+          "width": 33.375,
+          "height": 42.66666793823242,
+          "top": 15560.2861328125,
+          "right": 105.38095092773438,
+          "bottom": 15602.952800750732,
+          "left": 72.00595092773438
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "https://www.ntt-east.co.jp/saigai/voice171s/pla",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 15624.2861328125,
+          "width": 38.26785659790039,
+          "height": 66.66666412353516,
+          "top": 15624.2861328125,
+          "right": 110.27380752563477,
+          "bottom": 15690.952796936035,
+          "left": 72.00595092773438
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "/plan",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 16739.1796875,
+          "width": 40.21428680419922,
+          "height": 139.90476989746094,
+          "top": 16739.1796875,
+          "right": 112.2202377319336,
+          "bottom": 16879.08445739746,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 16887.083984375,
+          "width": 40.21428680419922,
+          "height": 96,
+          "top": 16887.083984375,
+          "right": 112.2202377319336,
+          "bottom": 16983.083984375,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "/plan",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 17007.845703125,
+          "width": 40.21428680419922,
+          "height": 226.90476989746094,
+          "top": 17007.845703125,
+          "right": 112.2202377319336,
+          "bottom": 17234.75047302246,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 17242.75,
+          "width": 40.21428680419922,
+          "height": 96,
+          "top": 17242.75,
+          "right": 112.2202377319336,
+          "bottom": 17338.75,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "/dashboard",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 17363.51171875,
+          "width": 40.21428680419922,
+          "height": 187.90476989746094,
+          "top": 17363.51171875,
+          "right": 112.2202377319336,
+          "bottom": 17551.41648864746,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 17559.41796875,
+          "width": 40.21428680419922,
+          "height": 96,
+          "top": 17559.41796875,
+          "right": 112.2202377319336,
+          "bottom": 17655.41796875,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "/dashboard",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 17680.1796875,
+          "width": 40.21428680419922,
+          "height": 157.90476989746094,
+          "top": 17680.1796875,
+          "right": 112.2202377319336,
+          "bottom": 17838.08445739746,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 17846.083984375,
+          "width": 40.21428680419922,
+          "height": 96,
+          "top": 17846.083984375,
+          "right": 112.2202377319336,
+          "bottom": 17942.083984375,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "/dashboard",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 17966.845703125,
+          "width": 40.21428680419922,
+          "height": 184.90476989746094,
+          "top": 17966.845703125,
+          "right": 112.2202377319336,
+          "bottom": 18151.75047302246,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 18159.75,
+          "width": 40.21428680419922,
+          "height": 96,
+          "top": 18159.75,
+          "right": 112.2202377319336,
+          "bottom": 18255.75,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "電量模式",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 16668.619140625,
+          "width": 109.71428680419922,
+          "height": 48,
+          "top": 16668.619140625,
+          "right": 181.7202377319336,
+          "bottom": 16716.619140625,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "需要協助",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 248,
+          "width": 371.0476379394531,
+          "height": 52,
+          "top": 248,
+          "right": 391.0476379394531,
+          "bottom": 300,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "通知 · 0",
+        "href": "/notifications",
+        "rect": {
+          "x": 343.0476379394531,
+          "y": 346.7797546386719,
+          "width": 48,
+          "height": 48,
+          "top": 346.7797546386719,
+          "right": 391.0476379394531,
+          "bottom": 394.7797546386719,
+          "left": 343.0476379394531
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "tel:119",
+        "rect": {
+          "x": 20,
+          "y": 591.2261962890625,
+          "width": 26.98214340209961,
+          "height": 18.666667938232422,
+          "top": 591.2261962890625,
+          "right": 46.98214340209961,
+          "bottom": 609.8928642272949,
+          "left": 20
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "tel:110",
+        "rect": {
+          "x": 59.101192474365234,
+          "y": 591.2261962890625,
+          "width": 26.98214340209961,
+          "height": 18.666667938232422,
+          "top": 591.2261962890625,
+          "right": 86.08333587646484,
+          "bottom": 609.8928642272949,
+          "left": 59.101192474365234
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 546.5595092773438,
+          "width": 20,
+          "height": 20,
+          "top": 546.5595092773438,
+          "right": 40,
+          "bottom": 566.5595092773438,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": true
+      },
+      {
+        "tag": "DIV",
+        "role": null,
+        "name": "下一則更新 →\n繼續\n重新開始\n1×\n2×\n4×\n3 / 4",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 701.3333740234375,
+          "width": 411.0476379394531,
+          "height": 64.76190948486328,
+          "top": 701.3333740234375,
+          "right": 411.0476379394531,
+          "bottom": 766.0952835083008,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "下一則更新 →",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 710.0952758789062,
+          "width": 115.98809814453125,
+          "height": 48,
+          "top": 710.0952758789062,
+          "right": 135.98809814453125,
+          "bottom": 758.0952758789062,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "繼續",
+        "href": null,
+        "rect": {
+          "x": 143.98809814453125,
+          "y": 710.0952758789062,
+          "width": 48.00595474243164,
+          "height": 48,
+          "top": 710.0952758789062,
+          "right": 191.9940528869629,
+          "bottom": 758.0952758789062,
+          "left": 143.98809814453125
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "重新開始",
+        "href": null,
+        "rect": {
+          "x": 199.99404907226562,
+          "y": 710.0952758789062,
+          "width": 80.00595092773438,
+          "height": 48,
+          "top": 710.0952758789062,
+          "right": 280,
+          "bottom": 758.0952758789062,
+          "left": 199.99404907226562
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "1×\n2×\n4×",
+        "href": null,
+        "rect": {
+          "x": 288,
+          "y": 710.0952758789062,
+          "width": 63.23809814453125,
+          "height": 48,
+          "top": 710.0952758789062,
+          "right": 351.23809814453125,
+          "bottom": 758.0952758789062,
+          "left": 288
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "現在",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 766.857177734375,
+          "width": 137.01190185546875,
+          "height": 63.23809814453125,
+          "top": 766.857177734375,
+          "right": 137.01190185546875,
+          "bottom": 830.0952758789062,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "地圖",
+        "href": null,
+        "rect": {
+          "x": 137.01190185546875,
+          "y": 766.857177734375,
+          "width": 137.01785278320312,
+          "height": 63.23809814453125,
+          "top": 766.857177734375,
+          "right": 274.0297546386719,
+          "bottom": 830.0952758789062,
+          "left": 137.01190185546875
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "更多",
+        "href": "/more",
+        "rect": {
+          "x": 274.0297546386719,
+          "y": 766.857177734375,
+          "width": 137.01190185546875,
+          "height": 63.23809814453125,
+          "top": 766.857177734375,
+          "right": 411.0416564941406,
+          "bottom": 830.0952758789062,
+          "left": 274.0297546386719
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      }
+    ]
+  },
+  "layout": [
+    {
+      "tag": "MAIN",
+      "name": "現在往上走／往高處去，遠離水。\n\n依據：氣象廳 大津波警報 · 發布 下午02:51\n\n演練\n依據\n\n這不是安全判定；請依現場狀況與官方指示行動。\n\n需要協助\n\n更新 下午02:52\n\n確認必要準備\n\n目前沒有已驗證的移動指示。\n\nIshinomaki\n自行選擇的地區 · 位置確",
+      "class": "ui-main",
+      "rect": {
+        "x": 0,
+        "y": 60,
+        "width": 411.0476379394531,
+        "height": 601.5595092773438,
+        "top": 60,
+        "right": 411.0476379394531,
+        "bottom": 661.5595092773438,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "32px"
+    },
+    {
+      "tag": "H1",
+      "name": "現在往上走／往高處去，遠離水。",
+      "class": "now-hero now-hero-danger",
+      "rect": {
+        "x": 20,
+        "y": 60,
+        "width": 371.0476379394531,
+        "height": 70,
+        "top": 60,
+        "right": 391.0476379394531,
+        "bottom": 130,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "依據：氣象廳 大津波警報 · 發布 下午02:51",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": 138,
+        "width": 371.0476379394531,
+        "height": 21,
+        "top": 138,
+        "right": 391.0476379394531,
+        "bottom": 159,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "now-meta",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 215,
+        "width": 40.21428680419922,
+        "height": 336,
+        "top": 215,
+        "right": 112.2202377319336,
+        "bottom": 551,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 575,
+        "width": 40.21428680419922,
+        "height": 42,
+        "top": 575,
+        "right": 112.2202377319336,
+        "bottom": 617,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 955,
+        "width": 40.21428680419922,
+        "height": 672,
+        "top": 955,
+        "right": 112.2202377319336,
+        "bottom": 1627,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "invalid",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 1643,
+        "width": 40.21428680419922,
+        "height": 504,
+        "top": 1643,
+        "right": 112.2202377319336,
+        "bottom": 2147,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "invalid",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 2163,
+        "width": 40.21428680419922,
+        "height": 456,
+        "top": 2163,
+        "right": 112.2202377319336,
+        "bottom": 2619,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "invalid",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 2635,
+        "width": 40.21428680419922,
+        "height": 432,
+        "top": 2635,
+        "right": 112.2202377319336,
+        "bottom": 3067,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 3421.761962890625,
+        "width": 40.21428680419922,
+        "height": 672,
+        "top": 3421.761962890625,
+        "right": 112.2202377319336,
+        "bottom": 4093.761962890625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "invalid",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 4109.76220703125,
+        "width": 40.21428680419922,
+        "height": 504,
+        "top": 4109.76220703125,
+        "right": 112.2202377319336,
+        "bottom": 4613.76220703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "invalid",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 4629.76220703125,
+        "width": 40.21428680419922,
+        "height": 456,
+        "top": 4629.76220703125,
+        "right": 112.2202377319336,
+        "bottom": 5085.76220703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "invalid",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 5101.76220703125,
+        "width": 40.21428680419922,
+        "height": 432,
+        "top": 5101.76220703125,
+        "right": 112.2202377319336,
+        "bottom": 5533.76220703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "invalid",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 5888.52392578125,
+        "width": 40.21428680419922,
+        "height": 504,
+        "top": 5888.52392578125,
+        "right": 112.2202377319336,
+        "bottom": 6392.52392578125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "invalid",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 6408.52392578125,
+        "width": 40.21428680419922,
+        "height": 456,
+        "top": 6408.52392578125,
+        "right": 112.2202377319336,
+        "bottom": 6864.52392578125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "invalid",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 6880.52392578125,
+        "width": 40.21428680419922,
+        "height": 432,
+        "top": 6880.52392578125,
+        "right": 112.2202377319336,
+        "bottom": 7312.52392578125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 7397.28564453125,
+        "width": 40.21428680419922,
+        "height": 42,
+        "top": 7397.28564453125,
+        "right": 112.2202377319336,
+        "bottom": 7439.28564453125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 7729.28564453125,
+        "width": 40.21428680419922,
+        "height": 384,
+        "top": 7729.28564453125,
+        "right": 112.2202377319336,
+        "bottom": 8113.28564453125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 8129.28564453125,
+        "width": 40.21428680419922,
+        "height": 210,
+        "top": 8129.28564453125,
+        "right": 112.2202377319336,
+        "bottom": 8339.28564453125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 8353.2861328125,
+        "width": 40.21428680419922,
+        "height": 105,
+        "top": 8353.2861328125,
+        "right": 112.2202377319336,
+        "bottom": 8458.2861328125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 8763.0478515625,
+        "width": 40.21428680419922,
+        "height": 480,
+        "top": 8763.0478515625,
+        "right": 112.2202377319336,
+        "bottom": 9243.0478515625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 9259.0478515625,
+        "width": 40.21428680419922,
+        "height": 210,
+        "top": 9259.0478515625,
+        "right": 112.2202377319336,
+        "bottom": 9469.0478515625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 9483.0478515625,
+        "width": 40.21428680419922,
+        "height": 105,
+        "top": 9483.0478515625,
+        "right": 112.2202377319336,
+        "bottom": 9588.0478515625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 9892.8095703125,
+        "width": 40.21428680419922,
+        "height": 504,
+        "top": 9892.8095703125,
+        "right": 112.2202377319336,
+        "bottom": 10396.8095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 10412.8095703125,
+        "width": 40.21428680419922,
+        "height": 210,
+        "top": 10412.8095703125,
+        "right": 112.2202377319336,
+        "bottom": 10622.8095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 10636.8095703125,
+        "width": 40.21428680419922,
+        "height": 105,
+        "top": 10636.8095703125,
+        "right": 112.2202377319336,
+        "bottom": 10741.8095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 10824.5712890625,
+        "width": 40.21428680419922,
+        "height": 42,
+        "top": 10824.5712890625,
+        "right": 112.2202377319336,
+        "bottom": 10866.5712890625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 11869.619140625,
+        "width": 40.21428680419922,
+        "height": 72,
+        "top": 11869.619140625,
+        "right": 112.2202377319336,
+        "bottom": 11941.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 12091.619140625,
+        "width": 40.21428680419922,
+        "height": 264,
+        "top": 12091.619140625,
+        "right": 112.2202377319336,
+        "bottom": 12355.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 12371.619140625,
+        "width": 40.21428680419922,
+        "height": 312,
+        "top": 12371.619140625,
+        "right": 112.2202377319336,
+        "bottom": 12683.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 12823.619140625,
+        "width": 40.21428680419922,
+        "height": 384,
+        "top": 12823.619140625,
+        "right": 112.2202377319336,
+        "bottom": 13207.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 13223.619140625,
+        "width": 40.21428680419922,
+        "height": 240,
+        "top": 13223.619140625,
+        "right": 112.2202377319336,
+        "bottom": 13463.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 13183.619140625,
+        "width": 40.21428680419922,
+        "height": 42,
+        "top": 13183.619140625,
+        "right": 112.2202377319336,
+        "bottom": 13225.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "now-meta",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 13237.619140625,
+        "width": 40.21428680419922,
+        "height": 231,
+        "top": 13237.619140625,
+        "right": 112.2202377319336,
+        "bottom": 13468.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "LABEL",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 13468.619140625,
+        "width": 40.21428680419922,
+        "height": 73,
+        "top": 13468.619140625,
+        "right": 112.2202377319336,
+        "bottom": 13541.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "grid",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 13777.619140625,
+        "width": 40.21428680419922,
+        "height": 63,
+        "top": 13777.619140625,
+        "right": 112.2202377319336,
+        "bottom": 13840.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "now-meta",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 13852.619140625,
+        "width": 40.21428680419922,
+        "height": 273,
+        "top": 13852.619140625,
+        "right": 112.2202377319336,
+        "bottom": 14125.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 14141.619140625,
+        "width": 40.21428680419922,
+        "height": 288,
+        "top": 14141.619140625,
+        "right": 112.2202377319336,
+        "bottom": 14429.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 14445.619140625,
+        "width": 40.21428680419922,
+        "height": 648,
+        "top": 14445.619140625,
+        "right": 112.2202377319336,
+        "bottom": 15093.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 15109.619140625,
+        "width": 40.21428680419922,
+        "height": 432,
+        "top": 15109.619140625,
+        "right": 112.2202377319336,
+        "bottom": 15541.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 15557.619140625,
+        "width": 40.21428680419922,
+        "height": 48,
+        "top": 15557.619140625,
+        "right": 112.2202377319336,
+        "bottom": 15605.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 15621.619140625,
+        "width": 40.21428680419922,
+        "height": 72,
+        "top": 15621.619140625,
+        "right": 112.2202377319336,
+        "bottom": 15693.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "now-meta",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 15862.619140625,
+        "width": 40.21428680419922,
+        "height": 210,
+        "top": 15862.619140625,
+        "right": 112.2202377319336,
+        "bottom": 16072.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 16160.619140625,
+        "width": 40.21428680419922,
+        "height": 192,
+        "top": 16160.619140625,
+        "right": 112.2202377319336,
+        "bottom": 16352.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 16480.619140625,
+        "width": 40.21428680419922,
+        "height": 24,
+        "top": 16480.619140625,
+        "right": 112.2202377319336,
+        "bottom": 16504.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 16641.8984375,
+        "width": 40.21428680419922,
+        "height": 72,
+        "top": 16641.8984375,
+        "right": 112.2202377319336,
+        "bottom": 16713.8984375,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "LABEL",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 16640.619140625,
+        "width": 40.21428680419922,
+        "height": 76,
+        "top": 16640.619140625,
+        "right": 112.2202377319336,
+        "bottom": 16716.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "grid",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 16862.619140625,
+        "width": 40.21428680419922,
+        "height": 336,
+        "top": 16862.619140625,
+        "right": 112.2202377319336,
+        "bottom": 17198.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 17236.619140625,
+        "width": 40.21428680419922,
+        "height": 42,
+        "top": 17236.619140625,
+        "right": 112.2202377319336,
+        "bottom": 17278.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 17494.619140625,
+        "width": 40.21428680419922,
+        "height": 264,
+        "top": 17494.619140625,
+        "right": 112.2202377319336,
+        "bottom": 17758.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 17774.619140625,
+        "width": 40.21428680419922,
+        "height": 378,
+        "top": 17774.619140625,
+        "right": 112.2202377319336,
+        "bottom": 18152.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 18383.380859375,
+        "width": 40.21428680419922,
+        "height": 408,
+        "top": 18383.380859375,
+        "right": 112.2202377319336,
+        "bottom": 18791.380859375,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 18807.380859375,
+        "width": 40.21428680419922,
+        "height": 378,
+        "top": 18807.380859375,
+        "right": 112.2202377319336,
+        "bottom": 19185.380859375,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 19440.142578125,
+        "width": 40.21428680419922,
+        "height": 672,
+        "top": 19440.142578125,
+        "right": 112.2202377319336,
+        "bottom": 20112.142578125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 20128.142578125,
+        "width": 40.21428680419922,
+        "height": 273,
+        "top": 20128.142578125,
+        "right": 112.2202377319336,
+        "bottom": 20401.142578125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 20631.904296875,
+        "width": 40.21428680419922,
+        "height": 672,
+        "top": 20631.904296875,
+        "right": 112.2202377319336,
+        "bottom": 21303.904296875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 21319.904296875,
+        "width": 40.21428680419922,
+        "height": 315,
+        "top": 21319.904296875,
+        "right": 112.2202377319336,
+        "bottom": 21634.904296875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 21889.66796875,
+        "width": 40.21428680419922,
+        "height": 336,
+        "top": 21889.66796875,
+        "right": 112.2202377319336,
+        "bottom": 22225.66796875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 22241.66796875,
+        "width": 40.21428680419922,
+        "height": 336,
+        "top": 22241.66796875,
+        "right": 112.2202377319336,
+        "bottom": 22577.66796875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 22808.4296875,
+        "width": 40.21428680419922,
+        "height": 264,
+        "top": 22808.4296875,
+        "right": 112.2202377319336,
+        "bottom": 23072.4296875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 23088.4296875,
+        "width": 40.21428680419922,
+        "height": 420,
+        "top": 23088.4296875,
+        "right": 112.2202377319336,
+        "bottom": 23508.4296875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 23739.19140625,
+        "width": 40.21428680419922,
+        "height": 408,
+        "top": 23739.19140625,
+        "right": 112.2202377319336,
+        "bottom": 24147.19140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 24163.19140625,
+        "width": 40.21428680419922,
+        "height": 420,
+        "top": 24163.19140625,
+        "right": 112.2202377319336,
+        "bottom": 24583.19140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 24837.953125,
+        "width": 40.21428680419922,
+        "height": 672,
+        "top": 24837.953125,
+        "right": 112.2202377319336,
+        "bottom": 25509.953125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 25525.953125,
+        "width": 40.21428680419922,
+        "height": 315,
+        "top": 25525.953125,
+        "right": 112.2202377319336,
+        "bottom": 25840.953125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 26071.71484375,
+        "width": 40.21428680419922,
+        "height": 672,
+        "top": 26071.71484375,
+        "right": 112.2202377319336,
+        "bottom": 26743.71484375,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 26759.71484375,
+        "width": 40.21428680419922,
+        "height": 357,
+        "top": 26759.71484375,
+        "right": 112.2202377319336,
+        "bottom": 27116.71484375,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 27443.4765625,
+        "width": 40.21428680419922,
+        "height": 480,
+        "top": 27443.4765625,
+        "right": 112.2202377319336,
+        "bottom": 27923.4765625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 27939.4765625,
+        "width": 40.21428680419922,
+        "height": 399,
+        "top": 27939.4765625,
+        "right": 112.2202377319336,
+        "bottom": 28338.4765625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 28569.23828125,
+        "width": 40.21428680419922,
+        "height": 336,
+        "top": 28569.23828125,
+        "right": 112.2202377319336,
+        "bottom": 28905.23828125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 28921.23828125,
+        "width": 40.21428680419922,
+        "height": 462,
+        "top": 28921.23828125,
+        "right": 112.2202377319336,
+        "bottom": 29383.23828125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 29710,
+        "width": 40.21428680419922,
+        "height": 480,
+        "top": 29710,
+        "right": 112.2202377319336,
+        "bottom": 30190,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 30206,
+        "width": 40.21428680419922,
+        "height": 441,
+        "top": 30206,
+        "right": 112.2202377319336,
+        "bottom": 30647,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 30973.76171875,
+        "width": 40.21428680419922,
+        "height": 480,
+        "top": 30973.76171875,
+        "right": 112.2202377319336,
+        "bottom": 31453.76171875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 31469.76171875,
+        "width": 40.21428680419922,
+        "height": 357,
+        "top": 31469.76171875,
+        "right": 112.2202377319336,
+        "bottom": 31826.76171875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "這不是安全判定；請依現場狀況與官方指示行動。",
+      "class": "now-meta now-note",
+      "rect": {
+        "x": 20,
+        "y": 215,
+        "width": 371.0476379394531,
+        "height": 21,
+        "top": 215,
+        "right": 391.0476379394531,
+        "bottom": 236,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "更新 下午02:52",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": 312,
+        "width": 371.0476379394531,
+        "height": 21,
+        "top": 312,
+        "right": 391.0476379394531,
+        "bottom": 333,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "確認必要準備",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 346.2797546386719,
+        "width": 182.00595092773438,
+        "height": 24,
+        "top": 346.2797546386719,
+        "right": 202.00595092773438,
+        "bottom": 370.2797546386719,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "目前沒有已驗證的移動指示。",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 383.5595397949219,
+        "width": 182.00595092773438,
+        "height": 21,
+        "top": 383.5595397949219,
+        "right": 202.00595092773438,
+        "bottom": 404.5595397949219,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 500.5595397949219,
+        "width": 371.0476379394531,
+        "height": 24,
+        "top": 500.5595397949219,
+        "right": 391.0476379394531,
+        "bottom": 524.5595397949219,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 548.5595092773438,
+        "width": 371.0476379394531,
+        "height": 24,
+        "top": 548.5595092773438,
+        "right": 391.0476379394531,
+        "bottom": 572.5595092773438,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 588.5595092773438,
+        "width": 371.0476379394531,
+        "height": 24,
+        "top": 588.5595092773438,
+        "right": 391.0476379394531,
+        "bottom": 612.5595092773438,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "LABEL",
+      "name": "同意在相關重大事件後收到安全確認（僅此裝置）",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 532.5595092773438,
+        "width": 371.0476379394531,
+        "height": 48,
+        "top": 532.5595092773438,
+        "right": 391.0476379394531,
+        "bottom": 580.5595092773438,
+        "left": 20
+      },
+      "display": "flex",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "本程式不會聯絡救援單位，確認僅於程式執行期間運作。",
+      "class": "muted",
+      "rect": {
+        "x": 20,
+        "y": 594.5595092773438,
+        "width": 371.0476379394531,
+        "height": 21,
+        "top": 594.5595092773438,
+        "right": 391.0476379394531,
+        "bottom": 615.5595092773438,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    }
+  ],
+  "focus": {
+    "tag": "BUTTON",
+    "text": "需要協助",
+    "aria": null
+  }
+}

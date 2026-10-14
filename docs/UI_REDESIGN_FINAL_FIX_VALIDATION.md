@@ -52,3 +52,9 @@
 ## 清理
 
 驗證的網路與 viewport 覆寫恢復，臨時 IAB tab 關閉。未改動原來的 8000 / 3000 server 或 adb 設定。只停止本輪 3036／8016 服務；原有 `.superpowers/` 未納入 Git。驗證文件及截圖沒有私人電話／聯絡人或裝置 GPS 座標。
+
+## 後續真機重驗
+
+2026-10-14，對提交 `55312a0` 進行 ROG Phone 6 production 版重驗。原 D1–D6 已測修正通過；發現送出後 Escape／焦點問題 R1，以及地圖 HTML 語言標記 R2，整體驗收為 PARTIAL。詳見 [UI_REDESIGN_FINAL_DEVICE_VALIDATION.md](UI_REDESIGN_FINAL_DEVICE_VALIDATION.md)。以上「真機 NOT RUN」為上一輪本地驗證當時狀態，不覆寫歷史證據。
+
+使用者其後授權修正 R1／R2。兩項已通過 617 個前端測試、TypeScript、production build 及 Android 真機重驗，見 [UI_REDESIGN_FOCUS_LANGUAGE_FIX_VALIDATION.md](UI_REDESIGN_FOCUS_LANGUAGE_FIX_VALIDATION.md)。M5 及其他原有 NOT RUN 邊界保持不變。

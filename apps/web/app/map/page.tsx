@@ -70,6 +70,7 @@ export default function JapanMapPage() {
     geo.clear();setManualPoint(officialPlaceLocation(place));setFocus({lat:place.lat,lng:place.lng});
   },[geo.clear]);
   useEffect(()=>{setLanguage(readPageLanguage('ja'));setLanguageReady(true);},[]);
+  useEffect(()=>{if(languageReady)document.documentElement.lang=language;},[language,languageReady]);
   useEffect(()=>{
     if(process.env.NODE_ENV==='production'&&'serviceWorker' in navigator){
       void navigator.serviceWorker.register('/sw.js').catch(()=>{});

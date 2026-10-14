@@ -1,0 +1,452 @@
+{
+  "url": "http://localhost:3036/demo",
+  "action": "click",
+  "snapshot": "- status:\n  - strong: 演習 · 津波警報\n  - timer: 25:00\n- main:\n  - heading \"今すぐ上の階・高い場所へ。水から離れてください。\" [level=1]\n  - paragraph: 根拠：気象庁 津波警報 · 発表 14:49\n  - text: 演習\n  - group: 根拠 ›\n  - paragraph: これは安全の判定ではありません。現地の状況と公式の指示に従ってください。\n  - button \"助けが必要\"\n  - paragraph: 更新 14:50\n  - heading \"必要な準備を確認\" [level=2]\n  - paragraph: 移動を勧める検証済みの指示はありません。\n  - link \"通知 · 0\":\n    - /url: /notifications\n  - group \"情報対象の地域\":\n    - strong: Ishinomaki\n    - text: 選択した地域 · 位置確認から2〜10分\n  - group: 緊急時の基本案内\n  - checkbox \"重要な地域イベントで安否確認を受け取る（この端末のみ）\"\n  - text: 重要な地域イベントで安否確認を受け取る（この端末のみ）\n  - paragraph: このアプリから救助機関へ連絡は送信されません。確認はアプリ実行中のみ。\n- button \"次の更新 →\"\n- button \"再開\"\n- button \"最初から\"\n- combobox \"Replay speed\":\n  - option \"1×\" [selected]\n  - option \"2×\"\n  - option \"4×\"\n- text: 2 / 4\n- navigation \"メイン\":\n  - button \"今\"\n  - button \"地図\"\n  - link \"その他\":\n    - /url: /more\n- alert",
+  "metrics": {
+    "width": 411,
+    "height": 830,
+    "dpr": 2.625,
+    "scrollWidth": 411,
+    "lang": "ja",
+    "text": "演習 · 津波警報\n·\n25:00\n今すぐ上の階・高い場所へ。水から離れてください。\n\n根拠：気象庁 津波警報 · 発表 14:49\n\n演習\n根拠\n\nこれは安全の判定ではありません。現地の状況と公式の指示に従ってください。\n\n助けが必要\n\n更新 14:50\n\n必要な準備を確認\n\n移動を勧める検証済みの指示はありません。\n\nIshinomaki\n選択した地域 · 位置確認から2〜10分\n緊急時の基本案内\n重要な地域イベントで安否確認を受け取る（この端末のみ）\n\nこのアプリから救助機関へ連絡は送信されません。確認はアプリ実行中のみ。\n\n次の更新 →\n再開\n最初から\n1×\n2×\n4×\n2 / 4\n今\n地図\nその他",
+    "controls": [
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "助けが必要",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "none",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 8048.33349609375,
+          "width": 40.21428680419922,
+          "height": 216,
+          "top": 8048.33349609375,
+          "right": 112.2202377319336,
+          "bottom": 8264.33349609375,
+          "left": 72.00595092773438
+        },
+        "display": "inline-block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "/map#evacuation-routes",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 8267,
+          "width": 35.976192474365234,
+          "height": 162.6666717529297,
+          "top": 8267,
+          "right": 107.98214340209961,
+          "bottom": 8429.66667175293,
+          "left": 72.00595092773438
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "シナリオ設定",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 8803.333984375,
+          "width": 203.8095245361328,
+          "height": 48,
+          "top": 8803.333984375,
+          "right": 275.8154754638672,
+          "bottom": 8851.333984375,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 8863.333984375,
+          "width": 40.21428680419922,
+          "height": 216,
+          "top": 8863.333984375,
+          "right": 112.2202377319336,
+          "bottom": 9079.333984375,
+          "left": 72.00595092773438
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "https://www.jma.go.jp/jma/kishou/know/jishin/eew/kunren/kunren.html",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 11116,
+          "width": 33.375,
+          "height": 42.66666793823242,
+          "top": 11116,
+          "right": 105.38095092773438,
+          "bottom": 11158.666667938232,
+          "left": 72.00595092773438
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "https://www.ntt-east.co.jp/saigai/voice171s/pla",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 11180,
+          "width": 38.26785659790039,
+          "height": 66.66666412353516,
+          "top": 11180,
+          "right": 110.27380752563477,
+          "bottom": 11246.666664123535,
+          "left": 72.00595092773438
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "/dashboard",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 12495.8935546875,
+          "width": 40.21428680419922,
+          "height": 232.90476989746094,
+          "top": 12495.8935546875,
+          "right": 112.2202377319336,
+          "bottom": 12728.798324584961,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 12736.7978515625,
+          "width": 40.21428680419922,
+          "height": 120,
+          "top": 12736.7978515625,
+          "right": 112.2202377319336,
+          "bottom": 12856.7978515625,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "電力モード",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 12401.333984375,
+          "width": 141.71429443359375,
+          "height": 48,
+          "top": 12401.333984375,
+          "right": 213.72024536132812,
+          "bottom": 12449.333984375,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "助けが必要",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 269,
+          "width": 371.4285888671875,
+          "height": 52,
+          "top": 269,
+          "right": 391.4285888671875,
+          "bottom": 321,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "通知 · 0",
+        "href": "/notifications",
+        "rect": {
+          "x": 343.4285888671875,
+          "y": 367.7797546386719,
+          "width": 48,
+          "height": 48,
+          "top": 367.7797546386719,
+          "right": 391.4285888671875,
+          "bottom": 415.7797546386719,
+          "left": 343.4285888671875
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "tel:119",
+        "rect": {
+          "x": 20,
+          "y": 608.2261962890625,
+          "width": 26.98214340209961,
+          "height": 18.666667938232422,
+          "top": 608.2261962890625,
+          "right": 46.98214340209961,
+          "bottom": 626.8928642272949,
+          "left": 20
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "tel:110",
+        "rect": {
+          "x": 59.101192474365234,
+          "y": 608.2261962890625,
+          "width": 26.98214340209961,
+          "height": 18.666667938232422,
+          "top": 608.2261962890625,
+          "right": 86.08333587646484,
+          "bottom": 626.8928642272949,
+          "left": 59.101192474365234
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 539.5595092773438,
+          "width": 20,
+          "height": 20,
+          "top": 539.5595092773438,
+          "right": 40,
+          "bottom": 559.5595092773438,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": false
+      },
+      {
+        "tag": "DIV",
+        "role": null,
+        "name": "次の更新 →\n再開\n最初から\n1×\n2×\n4×\n2 / 4",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 701.7142944335938,
+          "width": 411.4285888671875,
+          "height": 64.76190948486328,
+          "top": 701.7142944335938,
+          "right": 411.4285888671875,
+          "bottom": 766.476203918457,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "次の更新 →",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 710.4761962890625,
+          "width": 99.98809814453125,
+          "height": 48,
+          "top": 710.4761962890625,
+          "right": 119.98809814453125,
+          "bottom": 758.4761962890625,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "再開",
+        "href": null,
+        "rect": {
+          "x": 127.98809814453125,
+          "y": 710.4761962890625,
+          "width": 48.00595474243164,
+          "height": 48,
+          "top": 710.4761962890625,
+          "right": 175.9940528869629,
+          "bottom": 758.4761962890625,
+          "left": 127.98809814453125
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "最初から",
+        "href": null,
+        "rect": {
+          "x": 183.99404907226562,
+          "y": 710.4761962890625,
+          "width": 80.00595092773438,
+          "height": 48,
+          "top": 710.4761962890625,
+          "right": 264,
+          "bottom": 758.4761962890625,
+          "left": 183.99404907226562
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "1×\n2×\n4×",
+        "href": null,
+        "rect": {
+          "x": 272,
+          "y": 710.4761962890625,
+          "width": 63.23809814453125,
+          "height": 48,
+          "top": 710.4761962890625,
+          "right": 335.23809814453125,
+          "bottom": 758.4761962890625,
+          "left": 272
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "今",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 767.2380981445312,
+          "width": 137.14285278320312,
+          "height": 63.23809814453125,
+          "top": 767.2380981445312,
+          "right": 137.14285278320312,
+          "bottom": 830.4761962890625,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "地図",
+        "href": null,
+        "rect": {
+          "x": 137.14285278320312,
+          "y": 767.2380981445312,
+          "width": 137.14285278320312,
+          "height": 63.23809814453125,
+          "top": 767.2380981445312,
+          "right": 274.28570556640625,
+          "bottom": 830.4761962890625,
+          "left": 137.14285278320312
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "その他",
+        "href": "/more",
+        "rect": {
+          "x": 274.28570556640625,
+          "y": 767.2380981445312,
+          "width": 137.14285278320312,
+          "height": 63.23809814453125,
+          "top": 767.2380981445312,
+          "right": 411.4285583496094,
+          "bottom": 830.4761962890625,
+          "left": 274.28570556640625
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      }
+    ]
+  }
+}

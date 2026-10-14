@@ -1,0 +1,205 @@
+{
+  "url": "http://localhost:3036/more",
+  "action": "click",
+  "snapshot": "- status:\n  - strong: 離線 · 最後確認 —\n- main:\n  - button \"需要協助\": 求助\n  - strong: 持續關注中\n  - text: 重新連線中 · 驗證尚未完成\n  - button \"‹ 返回\"\n  - region \"資訊適用地區\":\n    - text: 資訊適用地區\n    - heading \"宮城県\" [level=2]\n    - group: 自行選擇的地區 · 2 分鐘內確認 · 位置詳細\n    - button \"確認目前位置\"\n    - button \"更改地區\"\n  - paragraph: 精確座標只在此裝置上使用。\n  - region \"裝置位置\":\n    - strong: 無法使用位置資訊\n    - checkbox \"同意在此裝置保存最後位置\"\n    - text: 同意在此裝置保存最後位置\n    - paragraph: 精確座標只在此裝置上使用。開始即時工作階段或更新地區時，只會分享地區名稱、地區 ID 與確認時間。同意後，只在此裝置保存最後一個位置最多 7 天，不保留位置歷史。顯示已授權地圖期間，僅在畫面位於前景時更新位置；離開即停止。\n  - group: 了解更多 ›\n  - heading \"本人與家人\" [level=2]\n  - term: 資訊適用地區\n  - definition: 宮城県\n  - term: 住宿或預定地點\n  - definition: 未設定\n  - term: 同行人數\n  - definition: \"1\"\n  - term: 移動或溝通所需協助（自行回報）\n  - definition: 未有登記\n  - button \"編輯設定\"\n  - checkbox \"同意在收到已驗證的重大官方警報後，於此裝置顯示安全確認\"\n  - text: 同意在收到已驗證的重大官方警報後，於此裝置顯示安全確認\n  - paragraph: 回答只保存在此裝置。沒有回覆不代表安全或不安全。\n  - time\n- navigation \"主選單\":\n  - link \"現在\":\n    - /url: /dashboard\n  - link \"地圖\":\n    - /url: /map\n  - link \"更多\":\n    - /url: /more\n- alert",
+  "metrics": {
+    "width": 360,
+    "height": 740,
+    "dpr": 2.625,
+    "scrollWidth": 360,
+    "lang": "zh-TW",
+    "text": "離線 · 最後確認 —\n求助\n持續關注中\n·\n重新連線中 · 驗證尚未完成\n‹ 返回\n資訊適用地區\n宮城県\n自行選擇的地區 · 2 分鐘內確認\n· 位置詳細\n確認目前位置\n更改地區\n\n精確座標只在此裝置上使用。\n\n無法使用位置資訊\n同意在此裝置保存最後位置\n\n精確座標只在此裝置上使用。開始即時工作階段或更新地區時，只會分享地區名稱、地區 ID 與確認時間。同意後，只在此裝置保存最後一個位置最多 7 天，不保留位置歷史。顯示已授權地圖期間，僅在畫面位於前景時更新位置；離開即停止。\n\n了解更多\n本人與家人\n資訊適用地區\n宮城県\n住宿或預定地點\n未設定\n同行人數\n1\n移動或溝通所需協助（自行回報）\n未有登記\n編輯設定\n同意在收到已驗證的重大官方警報後，於此裝置顯示安全確認\n\n回答只保存在此裝置。沒有回覆不代表安全或不安全。\n\n現在\n地圖\n更多",
+    "controls": [
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "求助",
+        "href": null,
+        "rect": {
+          "x": 275.9940490722656,
+          "y": 616.1904907226562,
+          "width": 64.00595092773438,
+          "height": 48,
+          "top": 616.1904907226562,
+          "right": 340,
+          "bottom": 664.1904907226562,
+          "left": 275.9940490722656
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "‹ 返回",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 89,
+          "width": 56.93452453613281,
+          "height": 48,
+          "top": 89,
+          "right": 76.93452453613281,
+          "bottom": 137,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "確認目前位置",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 283.5595397949219,
+          "width": 320,
+          "height": 52,
+          "top": 283.5595397949219,
+          "right": 340,
+          "bottom": 335.5595397949219,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "更改地區",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 347.5595397949219,
+          "width": 320,
+          "height": 48,
+          "top": 347.5595397949219,
+          "right": 340,
+          "bottom": 395.5595397949219,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 525.5595092773438,
+          "width": 20,
+          "height": 20,
+          "top": 525.5595092773438,
+          "right": 40,
+          "bottom": 545.5595092773438,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "編輯設定",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 1098.166748046875,
+          "width": 80.00595092773438,
+          "height": 48,
+          "top": 1098.166748046875,
+          "right": 100.00595092773438,
+          "bottom": 1146.166748046875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 1160.166748046875,
+          "width": 20,
+          "height": 20,
+          "top": 1160.166748046875,
+          "right": 40,
+          "bottom": 1180.166748046875,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": false
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "現在",
+        "href": "/dashboard",
+        "rect": {
+          "x": 0,
+          "y": 676.952392578125,
+          "width": 120,
+          "height": 63.23809814453125,
+          "top": 676.952392578125,
+          "right": 120,
+          "bottom": 740.1904907226562,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "地圖",
+        "href": "/map",
+        "rect": {
+          "x": 120,
+          "y": 676.952392578125,
+          "width": 120,
+          "height": 63.23809814453125,
+          "top": 676.952392578125,
+          "right": 240,
+          "bottom": 740.1904907226562,
+          "left": 120
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "更多",
+        "href": "/more",
+        "rect": {
+          "x": 240,
+          "y": 676.952392578125,
+          "width": 120,
+          "height": 63.23809814453125,
+          "top": 676.952392578125,
+          "right": 360,
+          "bottom": 740.1904907226562,
+          "left": 240
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      }
+    ]
+  }
+}

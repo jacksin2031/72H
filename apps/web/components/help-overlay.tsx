@@ -9,8 +9,16 @@ export function HelpOverlay({language,onClose,children}:{language:Language;onClo
   const panel=useRef<HTMLDivElement>(null),close=useRef(onClose);close.current=onClose;
   useEffect(()=>{
     const previous=document.activeElement as HTMLElement|null;
-    panel.current?.focus();
-    return()=>{if(previous?.isConnected)previous.focus();};
+    const container=panel.current;
+    container?.focus();
+    // A report can remove or disable its focused control. Keep keyboard events
+    // inside the dialog after that update, including asynchronous responses.
+    const observer=new MutationObserver(()=>{
+      const focused=document.activeElement;
+      if(container?.isConnected&&(!container.contains(focused)||focused?.matches(':disabled,[hidden]')))container.focus();
+    });
+    if(container)observer.observe(container,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled','hidden']});
+    return()=>{observer.disconnect();if(previous?.isConnected)previous.focus();};
   },[]);
   return <div className="ui-help-overlay" role="dialog" aria-modal="true" aria-label={sosText[language].title} ref={panel} tabIndex={-1}
     onKeyDown={e=>{

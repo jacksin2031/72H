@@ -2,6 +2,7 @@
 import React,{act} from 'react';
 import {createRoot} from 'react-dom/client';
 import {afterEach,expect,it,vi} from 'vitest';
+(globalThis as typeof globalThis&{IS_REACT_ACT_ENVIRONMENT?:boolean}).IS_REACT_ACT_ENVIRONMENT=true;
 const mapProps:Record<string,unknown>[]=[];
 vi.mock('next/link',()=>({default:({children,...p}:React.ComponentProps<'a'>)=><a {...p}>{children}</a>}));
 vi.mock('@/components/simulation-reference-map',()=>({SimulationReferenceMap:(p:Record<string,unknown>)=>{mapProps.push(p);return null;}}));
@@ -19,7 +20,7 @@ vi.mock('@/lib/continuity',()=>({loadLiveSnapshot:async()=>helpCache.snapshot?{s
 vi.mock('@/components/distress-entry',()=>({DistressEntry:(p:{onSnapshot:(raw:unknown)=>void})=>{helpCache.adopt=p.onSnapshot;return <p data-testid="help-content">help</p>}}));
 import JapanMapPage from '../app/map/page';
 let host:HTMLDivElement;let root:ReturnType<typeof createRoot>;
-afterEach(async()=>{helpCache.snapshot=null;helpCache.saved.length=0;helpCache.adopt=null;history.replaceState({},'', '/');await act(async()=>root.unmount());host.remove();localStorage.clear();mapProps.length=0;});
+afterEach(async()=>{helpCache.snapshot=null;helpCache.saved.length=0;helpCache.adopt=null;history.replaceState({},'', '/');await act(async()=>root.unmount());host.remove();localStorage.clear();mapProps.length=0;document.documentElement.lang='ja';});
 async function render(){
   try{if(!localStorage.getItem('72h-language'))localStorage.setItem('72h-language','zh-TW');}catch{}
   host=document.createElement('div');document.body.append(host);root=createRoot(host);
@@ -118,6 +119,20 @@ it('I2: Map has one help entry, opens accessible help without a session, and ret
   await act(async()=>host.querySelector<HTMLButtonElement>('[role=dialog] button')!.click());
   expect(host.querySelector('[role=dialog]')).toBeNull();
   expect(document.activeElement).toBe(host.querySelector('.ui-help-pin'));
+});
+
+it('sets the document language to the query language even when the saved preference differs',async()=>{
+  localStorage.setItem('72h-language','zh-TW');
+  history.replaceState({},'', '/map?language=en');
+  await render();
+  expect(host.querySelector('h1')?.textContent).toBe('All Japan reference map');
+  expect(document.documentElement.lang).toBe('en');
+});
+it('sets the document language to the saved preference when no query language is provided',async()=>{
+  localStorage.setItem('72h-language','zh-TW');
+  await render();
+  expect(host.querySelector('h1')?.textContent).toBe('全日本參考地圖');
+  expect(document.documentElement.lang).toBe('zh-TW');
 });
 
 it('Map reports persist only a validated same-session response that does not move backwards',async()=>{

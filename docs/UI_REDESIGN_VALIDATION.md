@@ -127,3 +127,7 @@
 ## 7. 最後修正輪（2026-10-14 JST，Codex）
 
 I1–I5、D1–D6、M1–M4 的本地修正及驗證記錄在 [UI_REDESIGN_FINAL_FIX_VALIDATION.md](UI_REDESIGN_FINAL_FIX_VALIDATION.md)。M5 按使用者要求擱置。原始真機 FAIL／NOT RUN 記錄保持不變，本輪尚未真機重驗、未部署。
+
+## 8. 修正後真機重驗（Codex）
+
+提交 `55312a0` 的 production 真機重驗記錄見 [UI_REDESIGN_FINAL_DEVICE_VALIDATION.md](UI_REDESIGN_FINAL_DEVICE_VALIDATION.md)。D1–D6 已測修正通過；另有 R1／R2 及明列 NOT RUN 項目，整體 PARTIAL。保留以上 Claude 原始缺陷與驗收結果，不把歷史 FAIL 改成 PASS。

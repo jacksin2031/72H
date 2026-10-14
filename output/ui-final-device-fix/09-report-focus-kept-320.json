@@ -1,0 +1,2363 @@
+{
+  "url": "http://localhost:3038/demo",
+  "action": "click",
+  "snapshot": "- status:\n  - strong: 演練 · 津波警報\n  - timer: 25:00\n- main:\n  - dialog \"需要協助\":\n    - button \"關閉\"\n    - region \"請選擇你現在的狀況\":\n      - paragraph: 演練／模擬\n      - paragraph: 立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）\n      - paragraph: 依據：氣象廳 津波警報 · 發布 14:49\n      - timer:\n        - text: 剩餘時間\n        - strong: 25:00\n      - paragraph: 沒有可靠的目前位置。\n      - button \"重播\"\n      - button \"靜音\"\n      - paragraph: 這是建議，不代表一定沒有危險。請依現場與官方指示判斷。\n      - region \"需要協助\":\n        - heading \"需要協助\" [level=2]\n        - link \"撥打 119\":\n          - /url: tel:119\n        - link \"撥打 110\":\n          - /url: tel:110\n        - button \"分享我的位置\"\n        - button \"播放警報聲\"\n        - link \"網路 119（需先登錄）\":\n          - /url: https://www.fdma.go.jp/mission/prepare/transmission/transmission002.html\n        - paragraph: 聯絡人只存在這支手機。\n        - group: 了解更多 ›\n      - paragraph: AI 暫時無法使用，以下為內建指引。\n      - group \"請選擇你現在的狀況\":\n        - button \"水淹進來\"\n        - button \"被困住\"\n        - button \"受傷\"\n        - button \"行動不便\"\n        - button \"帶小孩或長者\"\n        - button \"不知道去哪\"\n        - button \"路被擋住\"\n      - button \"送出\" [disabled]\n      - button \"錄音\"\n      - group: 改用文字輸入 ›\n      - group: 更多細節 ›\n  - heading \"現在往上走／往高處去，遠離水。\" [level=1]\n  - paragraph: 依據：氣象廳 津波警報 · 發布 下午02:49\n  - text: 演練\n  - group: 依據 ›\n  - paragraph: 這不是安全判定；請依現場狀況與官方指示行動。\n  - button \"需要協助\" [expanded]\n  - paragraph: 更新 下午02:50\n  - heading \"確認必要準備\" [level=2]\n  - paragraph: 目前沒有已驗證的移動指示。\n  - link \"通知 · 0\":\n    - /url: /notifications\n  - group \"資訊適用地區\":\n    - strong: Ishinomaki\n    - text: 自行選擇的地區 · 位置確認於 2 至 10 分鐘前\n  - group: 緊急基本指引\n  - checkbox \"同意在相關重大事件後收到安全確認（僅此裝置）\"\n  - text: 同意在相關重大事件後收到安全確認（僅此裝置）\n  - paragraph: 本程式不會聯絡救援單位，確認僅於程式執行期間運作。\n- button \"下一則更新 →\"\n- button \"繼續\"\n- button \"重新開始\"\n- combobox \"Replay speed\":\n  - option \"1×\" [selected]\n  - option \"2×\"\n  - option \"4×\"\n- text: 2 / 4\n- navigation \"主選單\":\n  - button \"現在\"\n  - button \"地圖\"\n  - link \"更多\":\n    - /url: /more\n- alert",
+  "metrics": {
+    "width": 320,
+    "height": 568,
+    "dpr": 2.625,
+    "scrollWidth": 320,
+    "lang": "zh-TW",
+    "text": "演練 · 津波警報\n·\n25:00\n關閉\n\n演練／模擬\n\n立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）\n\n依據：氣象廳 津波警報 · 發布 14:49\n\n剩餘時間 25:00\n\n沒有可靠的目前位置。\n\n重播\n靜音\n\n這是建議，不代表一定沒有危險。請依現場與官方指示判斷。\n\n需要協助\n撥打 119\n撥打 110\n分享我的位置\n播放警報聲\n網路 119（需先登錄）\n\n聯絡人只存在這支手機。\n\n了解更多\n\nAI 暫時無法使用，以下為內建指引。\n\n水淹進來\n被困住\n受傷\n行動不便\n帶小孩或長者\n不知道去哪\n路被擋住\n送出\n錄音\n改用文字輸入\n更多細節\n現在往上走／往高處去，遠離水。\n\n依據：氣象廳 津波警報 · 發布 下午02:49\n\n演練\n依據\n\n這不是安全判定；請依現場狀況與官方指示行動。\n\n需要協助\n\n更新 下午02:50\n\n確認必要準備\n\n目前沒有已驗證的移動指示。\n\nIshinomaki\n自行選擇的地區 · 位置確認於 2 至 10 分鐘前\n緊急基本指引\n同意在相關重大事件後收到安全確認（僅此裝置）\n\n本程式不會聯絡救援單位，確認僅於程式執行期間運作。\n\n下一則更新 →\n繼續\n重新開始\n1×\n2×\n4×\n2 / 4\n現在\n地圖\n更多",
+    "controls": [
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "需要協助",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "none",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "DIV",
+        "role": "dialog",
+        "name": "關閉\n\n演練／模擬\n\n立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）\n\n依據：氣象廳 津波警報 · 發布 14:49\n\n剩餘時間 25:00\n\n沒有可靠的目前位置。\n\n重播\n靜音\n\n這是",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 320,
+          "height": 568,
+          "top": 0,
+          "right": 320,
+          "bottom": 568,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "關閉",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": -668,
+          "width": 48.00595474243164,
+          "height": 48,
+          "top": -668,
+          "right": 68.00595474243164,
+          "bottom": -620,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "重播",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": -326.5952453613281,
+          "width": 48.00595474243164,
+          "height": 48,
+          "top": -326.5952453613281,
+          "right": 68.00595474243164,
+          "bottom": -278.5952453613281,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "靜音",
+        "href": null,
+        "rect": {
+          "x": 76.00595092773438,
+          "y": -326.5952453613281,
+          "width": 48.00595474243164,
+          "height": 48,
+          "top": -326.5952453613281,
+          "right": 124.01190567016602,
+          "bottom": -278.5952453613281,
+          "left": 76.00595092773438
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "撥打 119",
+        "href": "tel:119",
+        "rect": {
+          "x": 20,
+          "y": -154.83334350585938,
+          "width": 280,
+          "height": 52,
+          "top": -154.83334350585938,
+          "right": 300,
+          "bottom": -102.83334350585938,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "撥打 110",
+        "href": "tel:110",
+        "rect": {
+          "x": 20,
+          "y": -94.83333587646484,
+          "width": 280,
+          "height": 52,
+          "top": -94.83333587646484,
+          "right": 300,
+          "bottom": -42.833335876464844,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "分享我的位置",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": -34.833335876464844,
+          "width": 280,
+          "height": 48,
+          "top": -34.833335876464844,
+          "right": 300,
+          "bottom": 13.166664123535156,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "播放警報聲",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 21.166667938232422,
+          "width": 280,
+          "height": 48,
+          "top": 21.166667938232422,
+          "right": 300,
+          "bottom": 69.16666793823242,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "網路 119（需先登錄）",
+        "href": "https://www.fdma.go.jp/mission/prepare/transmission/transmission002.html",
+        "rect": {
+          "x": 20,
+          "y": 77.16667175292969,
+          "width": 280,
+          "height": 48,
+          "top": 77.16667175292969,
+          "right": 300,
+          "bottom": 125.16667175292969,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "水淹進來",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 259.9285888671875,
+          "width": 97.5297622680664,
+          "height": 48,
+          "top": 259.9285888671875,
+          "right": 117.5297622680664,
+          "bottom": 307.9285888671875,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "被困住",
+        "href": null,
+        "rect": {
+          "x": 125.5297622680664,
+          "y": 259.9285888671875,
+          "width": 81.5297622680664,
+          "height": 48,
+          "top": 259.9285888671875,
+          "right": 207.0595245361328,
+          "bottom": 307.9285888671875,
+          "left": 125.5297622680664
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "受傷",
+        "href": null,
+        "rect": {
+          "x": 215.0595245361328,
+          "y": 259.9285888671875,
+          "width": 65.5297622680664,
+          "height": 48,
+          "top": 259.9285888671875,
+          "right": 280.5892868041992,
+          "bottom": 307.9285888671875,
+          "left": 215.0595245361328
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "行動不便",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 315.9285888671875,
+          "width": 97.5297622680664,
+          "height": 48,
+          "top": 315.9285888671875,
+          "right": 117.5297622680664,
+          "bottom": 363.9285888671875,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "帶小孩或長者",
+        "href": null,
+        "rect": {
+          "x": 125.5297622680664,
+          "y": 315.9285888671875,
+          "width": 129.52976989746094,
+          "height": 48,
+          "top": 315.9285888671875,
+          "right": 255.05953216552734,
+          "bottom": 363.9285888671875,
+          "left": 125.5297622680664
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "不知道去哪",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 371.9285888671875,
+          "width": 113.5297622680664,
+          "height": 48,
+          "top": 371.9285888671875,
+          "right": 133.5297622680664,
+          "bottom": 419.9285888671875,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "路被擋住",
+        "href": null,
+        "rect": {
+          "x": 141.52976989746094,
+          "y": 371.9285888671875,
+          "width": 97.5297622680664,
+          "height": 48,
+          "top": 371.9285888671875,
+          "right": 239.05953216552734,
+          "bottom": 419.9285888671875,
+          "left": 141.52976989746094
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "送出",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 435.9285888671875,
+          "width": 280,
+          "height": 52,
+          "top": 435.9285888671875,
+          "right": 300,
+          "bottom": 487.9285888671875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "錄音",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 499.9285888671875,
+          "width": 280,
+          "height": 52,
+          "top": 499.9285888671875,
+          "right": 300,
+          "bottom": 551.9285888671875,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 707.9285888671875,
+          "width": 87.23809814453125,
+          "height": 48,
+          "top": 707.9285888671875,
+          "right": 107.23809814453125,
+          "bottom": 755.9285888671875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "/map#evacuation-routes",
+        "rect": {
+          "x": 20,
+          "y": 680.9285888671875,
+          "width": 179.9761962890625,
+          "height": 48,
+          "top": 680.9285888671875,
+          "right": 199.9761962890625,
+          "bottom": 728.9285888671875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 9411.095703125,
+          "width": 40.21428680419922,
+          "height": 192,
+          "top": 9411.095703125,
+          "right": 112.2202377319336,
+          "bottom": 9603.095703125,
+          "left": 72.00595092773438
+        },
+        "display": "inline-block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "/map#evacuation-routes",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 9605.76171875,
+          "width": 35.976192474365234,
+          "height": 138.6666717529297,
+          "top": 9605.76171875,
+          "right": 107.98214340209961,
+          "bottom": 9744.42839050293,
+          "left": 72.00595092773438
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "情境設定",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 10097.095703125,
+          "width": 203.8095245361328,
+          "height": 48,
+          "top": 10097.095703125,
+          "right": 275.8154754638672,
+          "bottom": 10145.095703125,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 10157.095703125,
+          "width": 40.21428680419922,
+          "height": 168,
+          "top": 10157.095703125,
+          "right": 112.2202377319336,
+          "bottom": 10325.095703125,
+          "left": 72.00595092773438
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "https://www.jma.go.jp/jma/kishou/know/jishin/eew/kunren/kunren.html",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 12163.76171875,
+          "width": 33.375,
+          "height": 42.66666793823242,
+          "top": 12163.76171875,
+          "right": 105.38095092773438,
+          "bottom": 12206.428386688232,
+          "left": 72.00595092773438
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "https://www.ntt-east.co.jp/saigai/voice171s/pla",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 12227.76171875,
+          "width": 38.26785659790039,
+          "height": 66.66666412353516,
+          "top": 12227.76171875,
+          "right": 110.27380752563477,
+          "bottom": 12294.428382873535,
+          "left": 72.00595092773438
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "/plan",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 13342.6552734375,
+          "width": 40.21428680419922,
+          "height": 139.90476989746094,
+          "top": 13342.6552734375,
+          "right": 112.2202377319336,
+          "bottom": 13482.560043334961,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 13490.5595703125,
+          "width": 40.21428680419922,
+          "height": 96,
+          "top": 13490.5595703125,
+          "right": 112.2202377319336,
+          "bottom": 13586.5595703125,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "/dashboard",
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 13611.3212890625,
+          "width": 40.21428680419922,
+          "height": 184.90476989746094,
+          "top": 13611.3212890625,
+          "right": 112.2202377319336,
+          "bottom": 13796.226058959961,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 13804.2265625,
+          "width": 40.21428680419922,
+          "height": 96,
+          "top": 13804.2265625,
+          "right": 112.2202377319336,
+          "bottom": 13900.2265625,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "電量模式",
+        "href": null,
+        "rect": {
+          "x": 72.00595092773438,
+          "y": 13272.095703125,
+          "width": 109.71428680419922,
+          "height": 48,
+          "top": 13272.095703125,
+          "right": 181.7202377319336,
+          "bottom": 13320.095703125,
+          "left": 72.00595092773438
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "需要協助",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 269,
+          "width": 280,
+          "height": 52,
+          "top": 269,
+          "right": 300,
+          "bottom": 321,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "通知 · 0",
+        "href": "/notifications",
+        "rect": {
+          "x": 252,
+          "y": 367.7797546386719,
+          "width": 48,
+          "height": 48,
+          "top": 367.7797546386719,
+          "right": 300,
+          "bottom": 415.7797546386719,
+          "left": 252
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "tel:119",
+        "rect": {
+          "x": 20,
+          "y": 660.2261962890625,
+          "width": 26.98214340209961,
+          "height": 18.666667938232422,
+          "top": 660.2261962890625,
+          "right": 46.98214340209961,
+          "bottom": 678.8928642272949,
+          "left": 20
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "tel:110",
+        "rect": {
+          "x": 59.101192474365234,
+          "y": 660.2261962890625,
+          "width": 26.98214340209961,
+          "height": 18.666667938232422,
+          "top": 660.2261962890625,
+          "right": 86.08333587646484,
+          "bottom": 678.8928642272949,
+          "left": 59.101192474365234
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 591.5595092773438,
+          "width": 20,
+          "height": 20,
+          "top": 591.5595092773438,
+          "right": 40,
+          "bottom": 611.5595092773438,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": false
+      },
+      {
+        "tag": "DIV",
+        "role": null,
+        "name": "下一則更新 →\n繼續\n重新開始\n1×\n2×\n4×\n2 / 4",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 383.23809814453125,
+          "width": 320,
+          "height": 120.76190948486328,
+          "top": 383.23809814453125,
+          "right": 320,
+          "bottom": 504.00000762939453,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "下一則更新 →",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 392,
+          "width": 107.98809814453125,
+          "height": 48,
+          "top": 392,
+          "right": 127.98809814453125,
+          "bottom": 440,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "繼續",
+        "href": null,
+        "rect": {
+          "x": 131.98809814453125,
+          "y": 392,
+          "width": 40.00595474243164,
+          "height": 48,
+          "top": 392,
+          "right": 171.9940528869629,
+          "bottom": 440,
+          "left": 131.98809814453125
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "重新開始",
+        "href": null,
+        "rect": {
+          "x": 175.99404907226562,
+          "y": 392,
+          "width": 72.00595092773438,
+          "height": 48,
+          "top": 392,
+          "right": 248,
+          "bottom": 440,
+          "left": 175.99404907226562
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "1×\n2×\n4×",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 448,
+          "width": 63.23809814453125,
+          "height": 48,
+          "top": 448,
+          "right": 83.23809814453125,
+          "bottom": 496,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "現在",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 106.66667175292969,
+          "bottom": 568,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "地圖",
+        "href": null,
+        "rect": {
+          "x": 106.66667175292969,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 213.33334350585938,
+          "bottom": 568,
+          "left": 106.66667175292969
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "更多",
+        "href": "/more",
+        "rect": {
+          "x": 213.33334350585938,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 320.00001525878906,
+          "bottom": 568,
+          "left": 213.33334350585938
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      }
+    ]
+  },
+  "layout": [
+    {
+      "tag": "MAIN",
+      "name": "關閉\n\n演練／模擬\n\n立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）\n\n依據：氣象廳 津波警報 · 發布 14:49\n\n剩餘時間 25:00\n\n沒有可靠的目前位置。\n\n重播\n靜音\n\n這是建議，不代表一定沒有危險。請依現場與官方指示判斷。\n\n需要協助\n撥打 119\n撥",
+      "class": "ui-main",
+      "rect": {
+        "x": 0,
+        "y": 60,
+        "width": 320,
+        "height": 667.5595092773438,
+        "top": 60,
+        "right": 320,
+        "bottom": 727.5595092773438,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "32px"
+    },
+    {
+      "tag": "P",
+      "name": "演練／模擬",
+      "class": "distress-exercise",
+      "rect": {
+        "x": 20,
+        "y": -608,
+        "width": 280,
+        "height": 24.404762268066406,
+        "top": -608,
+        "right": 300,
+        "bottom": -583.5952377319336,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）",
+      "class": "distress-primary-text",
+      "rect": {
+        "x": 20,
+        "y": -551.5952758789062,
+        "width": 280,
+        "height": 105,
+        "top": -551.5952758789062,
+        "right": 300,
+        "bottom": -446.59527587890625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "依據：氣象廳 津波警報 · 發布 14:49",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": -438.5952453613281,
+        "width": 280,
+        "height": 21,
+        "top": -438.5952453613281,
+        "right": 300,
+        "bottom": -417.5952453613281,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "剩餘時間 25:00",
+      "class": "distress-countdown",
+      "rect": {
+        "x": 20,
+        "y": -409.5952453613281,
+        "width": 280,
+        "height": 42,
+        "top": -409.5952453613281,
+        "right": 300,
+        "bottom": -367.5952453613281,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "沒有可靠的目前位置。",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": -359.5952453613281,
+        "width": 280,
+        "height": 21,
+        "top": -359.5952453613281,
+        "right": 300,
+        "bottom": -338.5952453613281,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "這是建議，不代表一定沒有危險。請依現場與官方指示判斷。",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": -266.5952453613281,
+        "width": 280,
+        "height": 42,
+        "top": -266.5952453613281,
+        "right": 300,
+        "bottom": -224.59524536132812,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "需要協助",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 20,
+        "y": -187.83334350585938,
+        "width": 280,
+        "height": 21,
+        "top": -187.83334350585938,
+        "right": 300,
+        "bottom": -166.83334350585938,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "聯絡人只存在這支手機。",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": 137.1666717529297,
+        "width": 280,
+        "height": 21,
+        "top": 137.1666717529297,
+        "right": 300,
+        "bottom": 158.1666717529297,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": 206.1666717529297,
+        "width": 280,
+        "height": 21,
+        "top": 206.1666717529297,
+        "right": 300,
+        "bottom": 227.1666717529297,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "AI 暫時無法使用，以下為內建指引。",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": 222.92857360839844,
+        "width": 280,
+        "height": 21,
+        "top": 222.92857360839844,
+        "right": 300,
+        "bottom": 243.92857360839844,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": 659.9285888671875,
+        "width": 280,
+        "height": 21,
+        "top": 659.9285888671875,
+        "right": 300,
+        "bottom": 680.9285888671875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H1",
+      "name": "現在往上走／往高處去，遠離水。",
+      "class": "now-hero now-hero-danger",
+      "rect": {
+        "x": 20,
+        "y": 60,
+        "width": 280,
+        "height": 70,
+        "top": 60,
+        "right": 300,
+        "bottom": 130,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "依據：氣象廳 津波警報 · 發布 下午02:49",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": 138,
+        "width": 280,
+        "height": 21,
+        "top": 138,
+        "right": 300,
+        "bottom": 159,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "now-meta",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 215,
+        "width": 40.21428680419922,
+        "height": 336,
+        "top": 215,
+        "right": 112.2202377319336,
+        "bottom": 551,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 575,
+        "width": 40.21428680419922,
+        "height": 42,
+        "top": 575,
+        "right": 112.2202377319336,
+        "bottom": 617,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 955,
+        "width": 40.21428680419922,
+        "height": 672,
+        "top": 955,
+        "right": 112.2202377319336,
+        "bottom": 1627,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "invalid",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 1643,
+        "width": 40.21428680419922,
+        "height": 504,
+        "top": 1643,
+        "right": 112.2202377319336,
+        "bottom": 2147,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "invalid",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 2163,
+        "width": 40.21428680419922,
+        "height": 360,
+        "top": 2163,
+        "right": 112.2202377319336,
+        "bottom": 2523,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "invalid",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 2539,
+        "width": 40.21428680419922,
+        "height": 336,
+        "top": 2539,
+        "right": 112.2202377319336,
+        "bottom": 2875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "invalid",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 3229.761962890625,
+        "width": 40.21428680419922,
+        "height": 504,
+        "top": 3229.761962890625,
+        "right": 112.2202377319336,
+        "bottom": 3733.761962890625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "invalid",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 3749.761962890625,
+        "width": 40.21428680419922,
+        "height": 360,
+        "top": 3749.761962890625,
+        "right": 112.2202377319336,
+        "bottom": 4109.761962890625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "invalid",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 4125.76220703125,
+        "width": 40.21428680419922,
+        "height": 336,
+        "top": 4125.76220703125,
+        "right": 112.2202377319336,
+        "bottom": 4461.76220703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 4546.52392578125,
+        "width": 40.21428680419922,
+        "height": 42,
+        "top": 4546.52392578125,
+        "right": 112.2202377319336,
+        "bottom": 4588.52392578125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 4878.52392578125,
+        "width": 40.21428680419922,
+        "height": 384,
+        "top": 4878.52392578125,
+        "right": 112.2202377319336,
+        "bottom": 5262.52392578125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 5278.52392578125,
+        "width": 40.21428680419922,
+        "height": 210,
+        "top": 5278.52392578125,
+        "right": 112.2202377319336,
+        "bottom": 5488.52392578125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 5502.52392578125,
+        "width": 40.21428680419922,
+        "height": 105,
+        "top": 5502.52392578125,
+        "right": 112.2202377319336,
+        "bottom": 5607.52392578125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 5912.28564453125,
+        "width": 40.21428680419922,
+        "height": 480,
+        "top": 5912.28564453125,
+        "right": 112.2202377319336,
+        "bottom": 6392.28564453125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 6408.28564453125,
+        "width": 40.21428680419922,
+        "height": 210,
+        "top": 6408.28564453125,
+        "right": 112.2202377319336,
+        "bottom": 6618.28564453125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 6632.28564453125,
+        "width": 40.21428680419922,
+        "height": 105,
+        "top": 6632.28564453125,
+        "right": 112.2202377319336,
+        "bottom": 6737.28564453125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 6820.0478515625,
+        "width": 40.21428680419922,
+        "height": 42,
+        "top": 6820.0478515625,
+        "right": 112.2202377319336,
+        "bottom": 6862.0478515625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 7841.09521484375,
+        "width": 40.21428680419922,
+        "height": 72,
+        "top": 7841.09521484375,
+        "right": 112.2202377319336,
+        "bottom": 7913.09521484375,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 8063.09521484375,
+        "width": 40.21428680419922,
+        "height": 264,
+        "top": 8063.09521484375,
+        "right": 112.2202377319336,
+        "bottom": 8327.09521484375,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 8343.095703125,
+        "width": 40.21428680419922,
+        "height": 312,
+        "top": 8343.095703125,
+        "right": 112.2202377319336,
+        "bottom": 8655.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 8671.095703125,
+        "width": 40.21428680419922,
+        "height": 288,
+        "top": 8671.095703125,
+        "right": 112.2202377319336,
+        "bottom": 8959.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 8975.095703125,
+        "width": 40.21428680419922,
+        "height": 312,
+        "top": 8975.095703125,
+        "right": 112.2202377319336,
+        "bottom": 9287.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 9427.095703125,
+        "width": 40.21428680419922,
+        "height": 384,
+        "top": 9427.095703125,
+        "right": 112.2202377319336,
+        "bottom": 9811.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 9827.095703125,
+        "width": 40.21428680419922,
+        "height": 384,
+        "top": 9827.095703125,
+        "right": 112.2202377319336,
+        "bottom": 10211.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 10227.095703125,
+        "width": 40.21428680419922,
+        "height": 264,
+        "top": 10227.095703125,
+        "right": 112.2202377319336,
+        "bottom": 10491.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 10507.095703125,
+        "width": 40.21428680419922,
+        "height": 336,
+        "top": 10507.095703125,
+        "right": 112.2202377319336,
+        "bottom": 10843.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 10859.095703125,
+        "width": 40.21428680419922,
+        "height": 312,
+        "top": 10859.095703125,
+        "right": 112.2202377319336,
+        "bottom": 11171.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 11187.095703125,
+        "width": 40.21428680419922,
+        "height": 240,
+        "top": 11187.095703125,
+        "right": 112.2202377319336,
+        "bottom": 11427.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 11443.095703125,
+        "width": 40.21428680419922,
+        "height": 192,
+        "top": 11443.095703125,
+        "right": 112.2202377319336,
+        "bottom": 11635.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 9787.095703125,
+        "width": 40.21428680419922,
+        "height": 42,
+        "top": 9787.095703125,
+        "right": 112.2202377319336,
+        "bottom": 9829.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "now-meta",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 9841.095703125,
+        "width": 40.21428680419922,
+        "height": 231,
+        "top": 9841.095703125,
+        "right": 112.2202377319336,
+        "bottom": 10072.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "LABEL",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 10072.095703125,
+        "width": 40.21428680419922,
+        "height": 73,
+        "top": 10072.095703125,
+        "right": 112.2202377319336,
+        "bottom": 10145.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "grid",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 10381.095703125,
+        "width": 40.21428680419922,
+        "height": 63,
+        "top": 10381.095703125,
+        "right": 112.2202377319336,
+        "bottom": 10444.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "now-meta",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 10456.095703125,
+        "width": 40.21428680419922,
+        "height": 273,
+        "top": 10456.095703125,
+        "right": 112.2202377319336,
+        "bottom": 10729.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 10745.095703125,
+        "width": 40.21428680419922,
+        "height": 288,
+        "top": 10745.095703125,
+        "right": 112.2202377319336,
+        "bottom": 11033.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 11049.095703125,
+        "width": 40.21428680419922,
+        "height": 648,
+        "top": 11049.095703125,
+        "right": 112.2202377319336,
+        "bottom": 11697.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 11713.095703125,
+        "width": 40.21428680419922,
+        "height": 432,
+        "top": 11713.095703125,
+        "right": 112.2202377319336,
+        "bottom": 12145.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 12161.095703125,
+        "width": 40.21428680419922,
+        "height": 48,
+        "top": 12161.095703125,
+        "right": 112.2202377319336,
+        "bottom": 12209.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 12225.095703125,
+        "width": 40.21428680419922,
+        "height": 72,
+        "top": 12225.095703125,
+        "right": 112.2202377319336,
+        "bottom": 12297.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "now-meta",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 12466.095703125,
+        "width": 40.21428680419922,
+        "height": 210,
+        "top": 12466.095703125,
+        "right": 112.2202377319336,
+        "bottom": 12676.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 12764.095703125,
+        "width": 40.21428680419922,
+        "height": 192,
+        "top": 12764.095703125,
+        "right": 112.2202377319336,
+        "bottom": 12956.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 13084.095703125,
+        "width": 40.21428680419922,
+        "height": 24,
+        "top": 13084.095703125,
+        "right": 112.2202377319336,
+        "bottom": 13108.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 13245.375,
+        "width": 40.21428680419922,
+        "height": 72,
+        "top": 13245.375,
+        "right": 112.2202377319336,
+        "bottom": 13317.375,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "LABEL",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 13244.095703125,
+        "width": 40.21428680419922,
+        "height": 76,
+        "top": 13244.095703125,
+        "right": 112.2202377319336,
+        "bottom": 13320.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "grid",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 13466.095703125,
+        "width": 40.21428680419922,
+        "height": 336,
+        "top": 13466.095703125,
+        "right": 112.2202377319336,
+        "bottom": 13802.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 13840.095703125,
+        "width": 40.21428680419922,
+        "height": 42,
+        "top": 13840.095703125,
+        "right": 112.2202377319336,
+        "bottom": 13882.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 14122.095703125,
+        "width": 40.21428680419922,
+        "height": 336,
+        "top": 14122.095703125,
+        "right": 112.2202377319336,
+        "bottom": 14458.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 14474.095703125,
+        "width": 40.21428680419922,
+        "height": 336,
+        "top": 14474.095703125,
+        "right": 112.2202377319336,
+        "bottom": 14810.095703125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 15040.857421875,
+        "width": 40.21428680419922,
+        "height": 264,
+        "top": 15040.857421875,
+        "right": 112.2202377319336,
+        "bottom": 15304.857421875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 15320.857421875,
+        "width": 40.21428680419922,
+        "height": 399,
+        "top": 15320.857421875,
+        "right": 112.2202377319336,
+        "bottom": 15719.857421875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 15950.619140625,
+        "width": 40.21428680419922,
+        "height": 408,
+        "top": 15950.619140625,
+        "right": 112.2202377319336,
+        "bottom": 16358.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 16374.619140625,
+        "width": 40.21428680419922,
+        "height": 399,
+        "top": 16374.619140625,
+        "right": 112.2202377319336,
+        "bottom": 16773.619140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 17028.380859375,
+        "width": 40.21428680419922,
+        "height": 672,
+        "top": 17028.380859375,
+        "right": 112.2202377319336,
+        "bottom": 17700.380859375,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 17716.380859375,
+        "width": 40.21428680419922,
+        "height": 273,
+        "top": 17716.380859375,
+        "right": 112.2202377319336,
+        "bottom": 17989.380859375,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 18220.142578125,
+        "width": 40.21428680419922,
+        "height": 672,
+        "top": 18220.142578125,
+        "right": 112.2202377319336,
+        "bottom": 18892.142578125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 18908.142578125,
+        "width": 40.21428680419922,
+        "height": 315,
+        "top": 18908.142578125,
+        "right": 112.2202377319336,
+        "bottom": 19223.142578125,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 19477.904296875,
+        "width": 40.21428680419922,
+        "height": 336,
+        "top": 19477.904296875,
+        "right": 112.2202377319336,
+        "bottom": 19813.904296875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 19829.904296875,
+        "width": 40.21428680419922,
+        "height": 336,
+        "top": 19829.904296875,
+        "right": 112.2202377319336,
+        "bottom": 20165.904296875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 20396.66796875,
+        "width": 40.21428680419922,
+        "height": 336,
+        "top": 20396.66796875,
+        "right": 112.2202377319336,
+        "bottom": 20732.66796875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 20748.66796875,
+        "width": 40.21428680419922,
+        "height": 462,
+        "top": 20748.66796875,
+        "right": 112.2202377319336,
+        "bottom": 21210.66796875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 21537.4296875,
+        "width": 40.21428680419922,
+        "height": 480,
+        "top": 21537.4296875,
+        "right": 112.2202377319336,
+        "bottom": 22017.4296875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 22033.4296875,
+        "width": 40.21428680419922,
+        "height": 441,
+        "top": 22033.4296875,
+        "right": 112.2202377319336,
+        "bottom": 22474.4296875,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 22801.19140625,
+        "width": 40.21428680419922,
+        "height": 480,
+        "top": 22801.19140625,
+        "right": 112.2202377319336,
+        "bottom": 23281.19140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "muted",
+      "rect": {
+        "x": 72.00595092773438,
+        "y": 23297.19140625,
+        "width": 40.21428680419922,
+        "height": 357,
+        "top": 23297.19140625,
+        "right": 112.2202377319336,
+        "bottom": 23654.19140625,
+        "left": 72.00595092773438
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "這不是安全判定；請依現場狀況與官方指示行動。",
+      "class": "now-meta now-note",
+      "rect": {
+        "x": 20,
+        "y": 215,
+        "width": 280,
+        "height": 42,
+        "top": 215,
+        "right": 300,
+        "bottom": 257,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "更新 下午02:50",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": 333,
+        "width": 280,
+        "height": 21,
+        "top": 333,
+        "right": 300,
+        "bottom": 354,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "確認必要準備",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 367.2797546386719,
+        "width": 182.00595092773438,
+        "height": 24,
+        "top": 367.2797546386719,
+        "right": 202.00595092773438,
+        "bottom": 391.2797546386719,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "目前沒有已驗證的移動指示。",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 404.5595397949219,
+        "width": 182.00595092773438,
+        "height": 21,
+        "top": 404.5595397949219,
+        "right": 202.00595092773438,
+        "bottom": 425.5595397949219,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 545.5595092773438,
+        "width": 280,
+        "height": 24,
+        "top": 545.5595092773438,
+        "right": 300,
+        "bottom": 569.5595092773438,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 593.5595092773438,
+        "width": 280,
+        "height": 48,
+        "top": 593.5595092773438,
+        "right": 300,
+        "bottom": 641.5595092773438,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 657.5595092773438,
+        "width": 280,
+        "height": 24,
+        "top": 657.5595092773438,
+        "right": 300,
+        "bottom": 681.5595092773438,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "LABEL",
+      "name": "同意在相關重大事件後收到安全確認（僅此裝置）",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 577.5595092773438,
+        "width": 280,
+        "height": 48,
+        "top": 577.5595092773438,
+        "right": 300,
+        "bottom": 625.5595092773438,
+        "left": 20
+      },
+      "display": "flex",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "本程式不會聯絡救援單位，確認僅於程式執行期間運作。",
+      "class": "muted",
+      "rect": {
+        "x": 20,
+        "y": 639.5595092773438,
+        "width": 280,
+        "height": 42,
+        "top": 639.5595092773438,
+        "right": 300,
+        "bottom": 681.5595092773438,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    }
+  ],
+  "focus": {
+    "tag": "DIV",
+    "text": "關閉\n\n演練／模擬\n\n立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）\n\n依據：氣象廳 津波警報 · 發布 14:49\n\n剩餘時間 25:00\n\n沒有可靠的目前位置。\n\n重播\n靜音\n\n這是建議，不代表一定沒有危險。請依現場與官方指示判斷。\n\n需要協助\n撥打 119\n撥",
+    "aria": "需要協助",
+    "insideDialog": true
+  },
+  "platform": {
+    "online": true,
+    "dialogs": 1,
+    "swControlled": true,
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36"
+  }
+}

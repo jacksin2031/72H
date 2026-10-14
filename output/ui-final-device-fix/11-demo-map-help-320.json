@@ -1,0 +1,2602 @@
+{
+  "url": "http://localhost:3038/demo",
+  "action": "click",
+  "snapshot": "- status:\n  - strong: 演練 · 津波警報\n  - timer: 25:00\n- main:\n  - dialog \"需要協助\":\n    - button \"關閉\"\n    - region \"請選擇你現在的狀況\":\n      - paragraph: 演練／模擬\n      - paragraph: 立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）\n      - paragraph: 依據：氣象廳 津波警報 · 發布 14:49\n      - timer:\n        - text: 剩餘時間\n        - strong: 25:00\n      - paragraph: 沒有可靠的目前位置。\n      - button \"重播\"\n      - button \"靜音\"\n      - paragraph: 這是建議，不代表一定沒有危險。請依現場與官方指示判斷。\n      - region \"需要協助\":\n        - heading \"需要協助\" [level=2]\n        - link \"撥打 119\":\n          - /url: tel:119\n        - link \"撥打 110\":\n          - /url: tel:110\n        - button \"分享我的位置\"\n        - button \"播放警報聲\"\n        - link \"網路 119（需先登錄）\":\n          - /url: https://www.fdma.go.jp/mission/prepare/transmission/transmission002.html\n        - paragraph: 聯絡人只存在這支手機。\n        - group: 了解更多 ›\n      - paragraph: AI 暫時無法使用，以下為內建指引。\n      - group \"請選擇你現在的狀況\":\n        - button \"水淹進來\"\n        - button \"被困住\"\n        - button \"受傷\"\n        - button \"行動不便\"\n        - button \"帶小孩或長者\"\n        - button \"不知道去哪\"\n        - button \"路被擋住\"\n      - button \"送出\" [disabled]\n      - button \"錄音\"\n      - group: 改用文字輸入 ›\n      - group: 更多細節 ›\n  - region \"全日本參考地圖\":\n    - link \"© 国土地理院\":\n      - /url: https://maps.gsi.go.jp/development/ichiran.html\n    - text: ·\n    - link \"Natural Earth\":\n      - /url: https://www.naturalearthdata.com/about/terms-of-use/\n    - button \"放大\"\n    - button \"縮小\"\n    - button \"顯示全日本\"\n  - paragraph: 這不是安全判定；請依現場狀況與官方指示行動。\n  - 'button \"目前位置: Ishinomaki\"'\n- button \"下一則更新 →\"\n- button \"繼續\"\n- button \"重新開始\"\n- combobox \"Replay speed\":\n  - option \"1×\" [selected]\n  - option \"2×\"\n  - option \"4×\"\n- text: 2 / 4\n- navigation \"主選單\":\n  - button \"現在\"\n  - button \"地圖\"\n  - link \"更多\":\n    - /url: /more\n- alert",
+  "metrics": {
+    "width": 320,
+    "height": 568,
+    "dpr": 2.625,
+    "scrollWidth": 320,
+    "lang": "zh-TW",
+    "text": "演練 · 津波警報\n·\n25:00\n關閉\n\n演練／模擬\n\n立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）\n\n依據：氣象廳 津波警報 · 發布 14:49\n\n剩餘時間 25:00\n\n沒有可靠的目前位置。\n\n重播\n靜音\n\n這是建議，不代表一定沒有危險。請依現場與官方指示判斷。\n\n需要協助\n撥打 119\n撥打 110\n分享我的位置\n播放警報聲\n網路 119（需先登錄）\n\n聯絡人只存在這支手機。\n\n了解更多\n\nAI 暫時無法使用，以下為內建指引。\n\n水淹進來\n被困住\n受傷\n行動不便\n帶小孩或長者\n不知道去哪\n路被擋住\n送出\n錄音\n改用文字輸入\n更多細節\n© 国土地理院 · Natural Earth\n\n這不是安全判定；請依現場狀況與官方指示行動。\n\n目前位置: Ishinomaki\n下一則更新 →\n繼續\n重新開始\n1×\n2×\n4×\n2 / 4\n現在\n地圖\n更多",
+    "controls": [
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "需要協助",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "none",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "DIV",
+        "role": "dialog",
+        "name": "關閉\n\n演練／模擬\n\n立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）\n\n依據：氣象廳 津波警報 · 發布 14:49\n\n剩餘時間 25:00\n\n沒有可靠的目前位置。\n\n重播\n靜音\n\n這是",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 320,
+          "height": 568,
+          "top": 0,
+          "right": 320,
+          "bottom": 568,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "關閉",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 12,
+          "width": 48.00595474243164,
+          "height": 48,
+          "top": 12,
+          "right": 68.00595474243164,
+          "bottom": 60,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "重播",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 353.4047546386719,
+          "width": 48.00595474243164,
+          "height": 48,
+          "top": 353.4047546386719,
+          "right": 68.00595474243164,
+          "bottom": 401.4047546386719,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "靜音",
+        "href": null,
+        "rect": {
+          "x": 76.00595092773438,
+          "y": 353.4047546386719,
+          "width": 48.00595474243164,
+          "height": 48,
+          "top": 353.4047546386719,
+          "right": 124.01190567016602,
+          "bottom": 401.4047546386719,
+          "left": 76.00595092773438
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "撥打 119",
+        "href": "tel:119",
+        "rect": {
+          "x": 20,
+          "y": 525.1666870117188,
+          "width": 280,
+          "height": 52,
+          "top": 525.1666870117188,
+          "right": 300,
+          "bottom": 577.1666870117188,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "撥打 110",
+        "href": "tel:110",
+        "rect": {
+          "x": 20,
+          "y": 585.1666870117188,
+          "width": 280,
+          "height": 52,
+          "top": 585.1666870117188,
+          "right": 300,
+          "bottom": 637.1666870117188,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "分享我的位置",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 645.1666870117188,
+          "width": 280,
+          "height": 48,
+          "top": 645.1666870117188,
+          "right": 300,
+          "bottom": 693.1666870117188,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "播放警報聲",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 701.1666870117188,
+          "width": 280,
+          "height": 48,
+          "top": 701.1666870117188,
+          "right": 300,
+          "bottom": 749.1666870117188,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "網路 119（需先登錄）",
+        "href": "https://www.fdma.go.jp/mission/prepare/transmission/transmission002.html",
+        "rect": {
+          "x": 20,
+          "y": 757.1666870117188,
+          "width": 280,
+          "height": 48,
+          "top": 757.1666870117188,
+          "right": 300,
+          "bottom": 805.1666870117188,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "水淹進來",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 939.9285888671875,
+          "width": 97.5297622680664,
+          "height": 48,
+          "top": 939.9285888671875,
+          "right": 117.5297622680664,
+          "bottom": 987.9285888671875,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "被困住",
+        "href": null,
+        "rect": {
+          "x": 125.5297622680664,
+          "y": 939.9285888671875,
+          "width": 81.5297622680664,
+          "height": 48,
+          "top": 939.9285888671875,
+          "right": 207.0595245361328,
+          "bottom": 987.9285888671875,
+          "left": 125.5297622680664
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "受傷",
+        "href": null,
+        "rect": {
+          "x": 215.0595245361328,
+          "y": 939.9285888671875,
+          "width": 65.5297622680664,
+          "height": 48,
+          "top": 939.9285888671875,
+          "right": 280.5892868041992,
+          "bottom": 987.9285888671875,
+          "left": 215.0595245361328
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "行動不便",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 995.9285888671875,
+          "width": 97.5297622680664,
+          "height": 48,
+          "top": 995.9285888671875,
+          "right": 117.5297622680664,
+          "bottom": 1043.9285888671875,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "帶小孩或長者",
+        "href": null,
+        "rect": {
+          "x": 125.5297622680664,
+          "y": 995.9285888671875,
+          "width": 129.52976989746094,
+          "height": 48,
+          "top": 995.9285888671875,
+          "right": 255.05953216552734,
+          "bottom": 1043.9285888671875,
+          "left": 125.5297622680664
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "不知道去哪",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 1051.9285888671875,
+          "width": 113.5297622680664,
+          "height": 48,
+          "top": 1051.9285888671875,
+          "right": 133.5297622680664,
+          "bottom": 1099.9285888671875,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "路被擋住",
+        "href": null,
+        "rect": {
+          "x": 141.52976989746094,
+          "y": 1051.9285888671875,
+          "width": 97.5297622680664,
+          "height": 48,
+          "top": 1051.9285888671875,
+          "right": 239.05953216552734,
+          "bottom": 1099.9285888671875,
+          "left": 141.52976989746094
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "送出",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 1115.9285888671875,
+          "width": 280,
+          "height": 52,
+          "top": 1115.9285888671875,
+          "right": 300,
+          "bottom": 1167.9285888671875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "錄音",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 1179.9285888671875,
+          "width": 280,
+          "height": 52,
+          "top": 1179.9285888671875,
+          "right": 300,
+          "bottom": 1231.9285888671875,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 1387.9285888671875,
+          "width": 87.23809814453125,
+          "height": 48,
+          "top": 1387.9285888671875,
+          "right": 107.23809814453125,
+          "bottom": 1435.9285888671875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "",
+        "href": "/map#evacuation-routes",
+        "rect": {
+          "x": 20,
+          "y": 1360.9285888671875,
+          "width": 179.9761962890625,
+          "height": 48,
+          "top": 1360.9285888671875,
+          "right": 199.9761962890625,
+          "bottom": 1408.9285888671875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "CANVAS",
+        "role": "region",
+        "name": "Map",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 44,
+          "width": 320,
+          "height": 339.0476379394531,
+          "top": 44,
+          "right": 320,
+          "bottom": 383.0476379394531,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0px none rgb(255, 255, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "© 国土地理院",
+        "href": "https://maps.gsi.go.jp/development/ichiran.html",
+        "rect": {
+          "x": 17,
+          "y": 121.14286041259766,
+          "width": 60.33928680419922,
+          "height": 11.428571701049805,
+          "top": 121.14286041259766,
+          "right": 77.33928680419922,
+          "bottom": 132.57143211364746,
+          "left": 17
+        },
+        "display": "inline",
+        "border": "0px none rgb(230, 255, 241)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "Natural Earth",
+        "href": "https://www.naturalearthdata.com/about/terms-of-use/",
+        "rect": {
+          "x": 84.91667175292969,
+          "y": 121.14286041259766,
+          "width": 58.44047546386719,
+          "height": 11.428571701049805,
+          "top": 121.14286041259766,
+          "right": 143.35714721679688,
+          "bottom": 132.57143211364746,
+          "left": 84.91667175292969
+        },
+        "display": "inline",
+        "border": "0px none rgb(230, 255, 241)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "放大",
+        "href": null,
+        "rect": {
+          "x": 260,
+          "y": 60,
+          "width": 48,
+          "height": 48,
+          "top": 60,
+          "right": 308,
+          "bottom": 108,
+          "left": 260
+        },
+        "display": "grid",
+        "border": "0.761905px solid rgb(82, 98, 114)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "縮小",
+        "href": null,
+        "rect": {
+          "x": 260,
+          "y": 116,
+          "width": 48,
+          "height": 48,
+          "top": 116,
+          "right": 308,
+          "bottom": 164,
+          "left": 260
+        },
+        "display": "grid",
+        "border": "0.761905px solid rgb(82, 98, 114)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "顯示全日本",
+        "href": null,
+        "rect": {
+          "x": 260,
+          "y": 172,
+          "width": 48,
+          "height": 48,
+          "top": 172,
+          "right": 308,
+          "bottom": 220,
+          "left": 260
+        },
+        "display": "grid",
+        "border": "0.761905px solid rgb(82, 98, 114)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "目前位置: Ishinomaki",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 327.23809814453125,
+          "width": 320,
+          "height": 56,
+          "top": 327.23809814453125,
+          "right": 320,
+          "bottom": 383.23809814453125,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "確認一次裝置位置",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "inline-block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "重新解釋目前行動",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "inline-block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "按災害分類評估避難路線 →",
+        "href": "/map#evacuation-routes",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "Miyagi Tsunami ReplayOsaka Earthquake ReplayTokyo Earthquake Replay",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "開始新的示範 →",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "JMA ↗",
+        "href": "https://www.jma.go.jp/jma/kishou/know/jishin/eew/kunren/kunren.html",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "NTT EAST ↗",
+        "href": "https://www.ntt-east.co.jp/saigai/voice171s/pla",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "INFO 請確認新的計畫",
+        "href": "/plan",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "標記已讀",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "CRITICAL 相關重大事件（示範）",
+        "href": "/dashboard",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "標記已讀",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "自動省電模式緊急省電最少顯示",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "需要協助",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "通知 · 0",
+        "href": "/notifications",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "119",
+        "href": "tel:119",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "110",
+        "href": "tel:110",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "inline",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "display": "block",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": false
+      },
+      {
+        "tag": "DIV",
+        "role": null,
+        "name": "下一則更新 →\n繼續\n重新開始\n1×\n2×\n4×\n2 / 4",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 383.23809814453125,
+          "width": 320,
+          "height": 120.76190948486328,
+          "top": 383.23809814453125,
+          "right": 320,
+          "bottom": 504.00000762939453,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "下一則更新 →",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 392,
+          "width": 107.98809814453125,
+          "height": 48,
+          "top": 392,
+          "right": 127.98809814453125,
+          "bottom": 440,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "繼續",
+        "href": null,
+        "rect": {
+          "x": 131.98809814453125,
+          "y": 392,
+          "width": 40.00595474243164,
+          "height": 48,
+          "top": 392,
+          "right": 171.9940528869629,
+          "bottom": 440,
+          "left": 131.98809814453125
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "重新開始",
+        "href": null,
+        "rect": {
+          "x": 175.99404907226562,
+          "y": 392,
+          "width": 72.00595092773438,
+          "height": 48,
+          "top": 392,
+          "right": 248,
+          "bottom": 440,
+          "left": 175.99404907226562
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "1×\n2×\n4×",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 448,
+          "width": 63.23809814453125,
+          "height": 48,
+          "top": 448,
+          "right": 83.23809814453125,
+          "bottom": 496,
+          "left": 20
+        },
+        "display": "block",
+        "border": "0.761905px solid rgba(255, 255, 255, 0.08)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "現在",
+        "href": null,
+        "rect": {
+          "x": 0,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 106.66667175292969,
+          "bottom": 568,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "地圖",
+        "href": null,
+        "rect": {
+          "x": 106.66667175292969,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 213.33334350585938,
+          "bottom": 568,
+          "left": 106.66667175292969
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "更多",
+        "href": "/more",
+        "rect": {
+          "x": 213.33334350585938,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 320.00001525878906,
+          "bottom": 568,
+          "left": 213.33334350585938
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      }
+    ]
+  },
+  "layout": [
+    {
+      "tag": "MAIN",
+      "name": "關閉\n\n演練／模擬\n\n立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）\n\n依據：氣象廳 津波警報 · 發布 14:49\n\n剩餘時間 25:00\n\n沒有可靠的目前位置。\n\n重播\n靜音\n\n這是建議，不代表一定沒有危險。請依現場與官方指示判斷。\n\n需要協助\n撥打 119\n撥",
+      "class": "ui-main ui-main-full",
+      "rect": {
+        "x": 0,
+        "y": 44,
+        "width": 320,
+        "height": 0,
+        "top": 44,
+        "right": 320,
+        "bottom": 44,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "演練／模擬",
+      "class": "distress-exercise",
+      "rect": {
+        "x": 20,
+        "y": 72,
+        "width": 280,
+        "height": 24.404762268066406,
+        "top": 72,
+        "right": 300,
+        "bottom": 96.4047622680664,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）",
+      "class": "distress-primary-text",
+      "rect": {
+        "x": 20,
+        "y": 128.40476989746094,
+        "width": 280,
+        "height": 105,
+        "top": 128.40476989746094,
+        "right": 300,
+        "bottom": 233.40476989746094,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "依據：氣象廳 津波警報 · 發布 14:49",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": 241.40476989746094,
+        "width": 280,
+        "height": 21,
+        "top": 241.40476989746094,
+        "right": 300,
+        "bottom": 262.40476989746094,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "剩餘時間 25:00",
+      "class": "distress-countdown",
+      "rect": {
+        "x": 20,
+        "y": 270.4047546386719,
+        "width": 280,
+        "height": 42,
+        "top": 270.4047546386719,
+        "right": 300,
+        "bottom": 312.4047546386719,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "沒有可靠的目前位置。",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": 320.4047546386719,
+        "width": 280,
+        "height": 21,
+        "top": 320.4047546386719,
+        "right": 300,
+        "bottom": 341.4047546386719,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "這是建議，不代表一定沒有危險。請依現場與官方指示判斷。",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": 413.4047546386719,
+        "width": 280,
+        "height": 42,
+        "top": 413.4047546386719,
+        "right": 300,
+        "bottom": 455.4047546386719,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "需要協助",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 20,
+        "y": 492.16668701171875,
+        "width": 280,
+        "height": 21,
+        "top": 492.16668701171875,
+        "right": 300,
+        "bottom": 513.1666870117188,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "聯絡人只存在這支手機。",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": 817.1666870117188,
+        "width": 280,
+        "height": 21,
+        "top": 817.1666870117188,
+        "right": 300,
+        "bottom": 838.1666870117188,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": 886.1666870117188,
+        "width": 280,
+        "height": 21,
+        "top": 886.1666870117188,
+        "right": 300,
+        "bottom": 907.1666870117188,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "AI 暫時無法使用，以下為內建指引。",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": 902.9285888671875,
+        "width": 280,
+        "height": 21,
+        "top": 902.9285888671875,
+        "right": 300,
+        "bottom": 923.9285888671875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "now-meta",
+      "rect": {
+        "x": 20,
+        "y": 1339.9285888671875,
+        "width": 280,
+        "height": 21,
+        "top": 1339.9285888671875,
+        "right": 300,
+        "bottom": 1360.9285888671875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "這不是安全判定；請依現場狀況與官方指示行動。",
+      "class": "map-legend",
+      "rect": {
+        "x": 20,
+        "y": 205.23809814453125,
+        "width": 280,
+        "height": 50,
+        "top": 205.23809814453125,
+        "right": 300,
+        "bottom": 255.23809814453125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "4px"
+    },
+    {
+      "tag": "H2",
+      "name": "目前位置",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "LABEL",
+      "name": " 同意在此裝置保存最後位置",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "flex",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "精確座標只在此裝置上使用。開始即時工作階段或更新地區時，只會分享地區名稱、地區 ID 與確認時間。同意後，只在此裝置保存最後一個位置最多 7 天，不保留位置歷史。顯示已授權地圖期間，僅在畫面位於前景時更新位置；離開即停止。",
+      "class": "muted",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H1",
+      "name": "現在往上走／往高處去，遠離水。",
+      "class": "now-hero now-hero-danger",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "依據：氣象廳 津波警報 · 發布 下午02:49",
+      "class": "now-meta",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "這是所選情境的合成資料。顯示的警報與交通更新並非真實災害資訊。",
+      "class": "now-meta",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "計畫歷史",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "One or more plan actions lost a dependency or current evidence. the distress level changed; the NOW action must be re-evaluated.",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "現在要做 · This high-risk action is blocked because live verified support is unavailable. · 已失效",
+      "class": "invalid",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "接下來確認 · 開始原定返程前，先等候已驗證的交通資訊。 · 已失效",
+      "class": "invalid",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "避免事項 · 不要只根據交通狀態判斷路線或自身安全。 · 已失效",
+      "class": "invalid",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "現在要做 · This high-risk action is blocked because live verified support is unavailable. · 已失效",
+      "class": "invalid",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "接下來確認 · 開始原定返程前，先等候已驗證的交通資訊。 · 已失效",
+      "class": "invalid",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "避免事項 · 不要只根據交通狀態判斷路線或自身安全。 · 已失效",
+      "class": "invalid",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "資訊來源",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "A synthetic typed assessment records a strong earthquake in Miyagi.",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "下午02:45 · 有效期限: 下午03:00 · 資訊經過時間: 4 min",
+      "class": "muted",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "已驗證（模擬情境）",
+      "class": "muted",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "A synthetic tsunami warning with an estimated arrival 30 minutes later; not a JMA bulletin.",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "下午02:49 · 有效期限: 下午03:04 · 資訊經過時間: 0 min",
+      "class": "muted",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "已驗證（模擬情境）",
+      "class": "muted",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "情境進度",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "AI 行動解釋",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "計劃建議先等候已驗證的交通更新，再考慮出行。",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "目前沒有符合資格的依據支持此行動，請參閱下方限制。",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "計劃指出，單靠交通狀態不能判斷路線或自身安全。",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "目前沒有符合資格的依據支持此行動，請參閱下方限制。",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "解釋只適用於這個計劃版本；不能新增行動、保證場所或路線安全。",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "這段說明不能建立或更改計劃、Safety Core 判斷、行動或移動授權。",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "交通可用性及路線幾何資料均不代表路線安全。",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "過時、衝突、未驗證或不符合資格的資料不會用於說明。",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "這段說明只對應所列計劃及參照 ID，並會在指定期限失效。",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "這是合成演習資料，並非目前的官方資訊。",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "目前沒有符合條件的有效證據參照。",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "演練設定",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "目前位置: Ishinomaki · 住宿地點: Ishinomaki · 情境時間: 下午02:50 JST",
+      "class": "now-meta",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "LABEL",
+      "name": "情境設定Miyagi Tsunami ReplayOsaka Earthquake ReplayTokyo Earthquake Replay",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "grid",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "離線防災備忘",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "一般靜態指引，不代表目前災害狀況 · v1.0.0 · 2026-10-04",
+      "class": "now-meta",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "搖晃期間降低姿勢、保護頭部，等待搖晃停止。",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "災害留言服務啟用時，可撥 171，再按 1 錄音／2 播放，並遵循語音指引。目前服務是否啟用及電話能否接通，尚未確認。",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "助けてください。（請幫忙。）／避難場所はどこですか。（避難地點在哪裡？）",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "JMA ↗",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "NTT EAST ↗",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "計畫產生方式: 確定性的保守指引 · INVALIDATED · ONLINE_VERIFIED",
+      "class": "now-meta",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "嚴重度本身不會授權移動或撤離。",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "ONLINE_VERIFIED",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "狀態變更通知",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "LABEL",
+      "name": "電量模式 自動省電模式緊急省電最少顯示",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "grid",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "15% 以下停止非必要通信與繪圖。這不是作業系統的電量保留功能。",
+      "class": "muted",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "Agent 紀錄",
+      "class": "ui-section-title",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "The user reported distress. It can only make guidance more protective.",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "SITUATION_AGENT · SUCCESS · distress_002_1791957000 → WATER_RISING, TRAPPED",
+      "class": "muted",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "A new conservative plan version was appended.",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "SAFETY_CORE · SUCCESS · distress_001_1791957000 → plan_v2, ev_miyagi-tsunami-warning-001",
+      "class": "muted",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "A dependency changed; a new plan version preserves unaffected guidance.",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "SAFETY_CORE · SUCCESS · distress_001_1791957000 → plan_v1, ev_miyagi-tsunami-warning-001",
+      "class": "muted",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "One or more plan actions lost a dependency or current evidence. the distress level changed; the NOW action must be re-evaluated.",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "SAFETY_CORE · SUCCESS · distress_001_1791957000 → act_plan_v1_now",
+      "class": "muted",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "One or more plan actions lost a dependency or current evidence. the distress level changed; the NOW action must be re-evaluated.",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "SAFETY_CORE · SUCCESS · distress_001_1791957000 → plan_v1, act_plan_v1_now",
+      "class": "muted",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "The user reported distress. It can only make guidance more protective.",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "SITUATION_AGENT · SUCCESS · distress_001_1791957000 → WATER_RISING, TRAPPED",
+      "class": "muted",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "A conservative plan was generated from current verified state.",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "SAFETY_CORE · SUCCESS · miyagi-tsunami-warning-001 → plan_v1, ev_miyagi-tsunami-warning-001",
+      "class": "muted",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "Synthetic replay evidence was normalized and stored with server-assigned source trust.",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "REPLAY_ENGINE · SUCCESS · miyagi-tsunami-warning-001 → ev_miyagi-tsunami-warning-001",
+      "class": "muted",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "Synthetic replay evidence was normalized and stored with server-assigned source trust.",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "REPLAY_ENGINE · SUCCESS · miyagi-earthquake-001 → ev_miyagi-earthquake-001",
+      "class": "muted",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "這不是安全判定；請依現場狀況與官方指示行動。",
+      "class": "now-meta now-note",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "更新 下午02:50",
+      "class": "now-meta",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "確認必要準備",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "目前沒有已驗證的移動指示。",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "確認時間: 2026/10/14 下午2:40:00",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "救護／消防 119・警察 110。需要由你自行撥打。",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "119 · 110",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "LABEL",
+      "name": " 同意在相關重大事件後收到安全確認（僅此裝置）",
+      "class": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "flex",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "本程式不會聯絡救援單位，確認僅於程式執行期間運作。",
+      "class": "muted",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    }
+  ],
+  "focus": {
+    "tag": "DIV",
+    "text": "關閉\n\n演練／模擬\n\n立刻往堅固建築物 3 樓以上或高處移動（來不及抵達指定場所）\n\n依據：氣象廳 津波警報 · 發布 14:49\n\n剩餘時間 25:00\n\n沒有可靠的目前位置。\n\n重播\n靜音\n\n這是建議，不代表一定沒有危險。請依現場與官方指示判斷。\n\n需要協助\n撥打 119\n撥",
+    "aria": "需要協助",
+    "insideDialog": true
+  },
+  "platform": {
+    "online": true,
+    "dialogs": 1,
+    "swControlled": true,
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36"
+  }
+}

@@ -1,0 +1,4550 @@
+{
+  "url": "http://localhost:3036/more",
+  "action": "viewport",
+  "snapshot": "- status:\n  - strong: 離線 · 最後確認 —\n- main:\n  - button \"需要協助\": 求助\n  - strong: 持續關注中\n  - text: 重新連線中 · 驗證尚未完成\n  - button \"‹ 返回\"\n  - region \"官方資訊來源\":\n    - strong: Japan Meteorological Agency (earthquake reports)\n    - text: 資訊來源過期或無法使用\n    - paragraph: \"JMA 資訊 · 由 72H 正規化 · 擷取時間: 2026/10/14 下午11:22:02\"\n    - paragraph: \"最後發布: 2026/10/14 下午10:21:50\"\n    - paragraph:\n      - link \"Japan Meteorological Agency (earthquake reports) · 開啟官方來源 ↗\":\n        - /url: https://www.data.jma.go.jp/developer/xml/feed/eqvol.xml\n      - text: JMA 資訊 · 由 72H 正規化\n    - paragraph:\n      - link \"Tokyo Metropolitan Government Emergency Map · 開啟官方來源 ↗\":\n        - /url: https://www.opendata.metro.tokyo.lg.jp/soumu/130001_evacuation_area.csv\n      - text: 指定避難場所清單 · 目前開放狀況不明\n    - paragraph:\n      - link \"Ekispert public transport route search · 開啟官方來源 ↗\":\n        - /url: https://api-mcp.ekispert.jp/mcp\n      - text: 交通路線候補 · 不保證安全\n  - region \"官方電文與補抓狀態\":\n    - heading \"官方電文與補抓狀態\" [level=2]\n    - paragraph: 只列出最近的參考紀錄。核實 feed 窗口不代表全國安全、沒有警報或可開始移動。\n    - status: 顯示保存／補抓紀錄，當前狀態未核實。\n    - article:\n      - heading \"Japan Meteorological Agency (earthquake reports)\" [level=3]\n      - term: 來源連線（最後查詢）\n      - definition: 可連接\n      - term: 最新成功接收\n      - definition: 2026/10/14 下午11:22:02\n      - term: 最新官方發表\n      - definition: 2026/10/14 下午10:21:50\n      - term: 長期 feed 核實至\n      - definition: 2026/10/14 下午10:22:18\n      - term: 補抓狀態\n      - definition: 補抓／等待中\n      - term: 待補抓電文\n      - definition: \"0\"\n      - term: 持久儲存\n      - definition: SQLITE · 可用\n      - status: \"輪詢中斷：等待較新的長期 feed: 2026/10/14 下午11:21:01\"\n      - group: 原文識別與版本\n    - article:\n      - heading \"Japan Meteorological Agency (tsunami warnings)\" [level=3]\n      - term: 來源連線（最後查詢）\n      - definition: 可連接\n      - term: 最新成功接收\n      - definition: 2026/10/14 下午11:22:02\n      - term: 最新官方發表\n      - definition: 2026/10/10 上午3:37:42\n      - term: 長期 feed 核實至\n      - definition: 2026/10/14 下午10:22:18\n      - term: 補抓狀態\n      - definition: 補抓／等待中\n      - term: 待補抓電文\n      - definition: \"0\"\n      - term: 持久儲存\n      - definition: SQLITE · 可用\n      - status: \"輪詢中斷：等待較新的長期 feed: 2026/10/14 下午11:21:01\"\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/14 下午10:21:50\n      - term: 業務報告時間\n      - definition: 2026/10/14 下午10:21:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午10:44:03\n      - term: 電文年齡（分鐘）\n      - definition: \"60\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: 03 · 04\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/14 下午10:36:50\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261014132150_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/14 下午4:11:09\n      - term: 業務報告時間\n      - definition: 2026/10/14 下午4:11:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:10:18\n      - term: 電文年齡（分鐘）\n      - definition: \"430\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"43\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/14 下午4:26:09\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261014071109_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/14 上午7:59:32\n      - term: 業務報告時間\n      - definition: 2026/10/14 上午7:59:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:10:19\n      - term: 電文年齡（分鐘）\n      - definition: \"922\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"43\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/14 上午8:14:32\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261013225932_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/14 上午4:36:19\n      - term: 業務報告時間\n      - definition: 2026/10/14 上午4:36:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:10:19\n      - term: 電文年齡（分鐘）\n      - definition: \"1125\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"46\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/14 上午4:51:19\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261013193620_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/13 下午10:08:13\n      - term: 業務報告時間\n      - definition: 2026/10/13 下午10:08:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:10:19\n      - term: 電文年齡（分鐘）\n      - definition: \"1513\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: 03 · 04\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/13 下午10:23:13\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261013130813_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/13 下午8:55:53\n      - term: 業務報告時間\n      - definition: 2026/10/13 下午8:55:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:10:19\n      - term: 電文年齡（分鐘）\n      - definition: \"1586\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"43\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/13 下午9:10:53\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261013115553_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/13 下午8:47:15\n      - term: 業務報告時間\n      - definition: 2026/10/13 下午8:47:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:11:22\n      - term: 電文年齡（分鐘）\n      - definition: \"1594\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: 30 · 36 · 28 · 37 · 39\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/13 下午9:02:15\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261013114715_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/13 上午11:31:53\n      - term: 業務報告時間\n      - definition: 2026/10/13 上午11:31:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:11:22\n      - term: 電文年齡（分鐘）\n      - definition: \"2150\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: 43 · 42 · 46\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/13 上午11:46:53\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261013023153_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/13 上午2:28:37\n      - term: 業務報告時間\n      - definition: 2026/10/13 上午2:28:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:11:22\n      - term: 電文年齡（分鐘）\n      - definition: \"2693\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"03\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/13 上午2:43:37\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261012172837_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/12 下午8:35:31\n      - term: 業務報告時間\n      - definition: 2026/10/12 下午8:35:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:11:22\n      - term: 電文年齡（分鐘）\n      - definition: \"3046\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"01\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/12 下午8:50:31\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261012113531_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/12 下午4:54:02\n      - term: 業務報告時間\n      - definition: 2026/10/12 下午4:54:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:11:23\n      - term: 電文年齡（分鐘）\n      - definition: \"3267\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: 43 · 46\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/12 下午5:09:02\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261012075402_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/12 下午12:48:12\n      - term: 業務報告時間\n      - definition: 2026/10/12 下午12:48:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:12:42\n      - term: 電文年齡（分鐘）\n      - definition: \"3513\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"01\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/12 下午1:03:12\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261012034812_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/12 上午10:00:17\n      - term: 業務報告時間\n      - definition: 2026/10/12 上午10:00:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:12:42\n      - term: 電文年齡（分鐘）\n      - definition: \"3681\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"13\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/12 上午10:15:17\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261012010018_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/12 上午5:08:56\n      - term: 業務報告時間\n      - definition: 2026/10/12 上午5:08:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:12:42\n      - term: 電文年齡（分鐘）\n      - definition: \"3973\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"43\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/12 上午5:23:56\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261011200856_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/12 上午1:27:32\n      - term: 業務報告時間\n      - definition: 2026/10/12 上午1:27:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:12:42\n      - term: 電文年齡（分鐘）\n      - definition: \"4194\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: 12 · 08\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/12 上午1:42:32\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261011162733_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/11 下午3:53:51\n      - term: 業務報告時間\n      - definition: 2026/10/11 下午3:53:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:12:42\n      - term: 電文年齡（分鐘）\n      - definition: \"4768\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"45\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/11 下午4:08:51\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261011065351_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/11 上午10:15:25\n      - term: 業務報告時間\n      - definition: 2026/10/11 上午10:15:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:22:35\n      - term: 電文年齡（分鐘）\n      - definition: \"5106\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"20\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/11 上午10:30:25\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261011011525_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/11 上午6:22:45\n      - term: 業務報告時間\n      - definition: 2026/10/11 上午6:22:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:22:35\n      - term: 電文年齡（分鐘）\n      - definition: \"5339\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"43\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/11 上午6:37:45\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261010212245_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/10 下午7:02:58\n      - term: 業務報告時間\n      - definition: 2026/10/10 下午7:02:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:22:36\n      - term: 電文年齡（分鐘）\n      - definition: \"6019\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"43\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/10 下午7:17:58\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261010100258_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/10 下午12:18:53\n      - term: 業務報告時間\n      - definition: 2026/10/10 下午12:18:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:22:36\n      - term: 電文年齡（分鐘）\n      - definition: \"6423\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: 42 · 43\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/10 下午12:33:53\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261010031853_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/10 上午10:23:10\n      - term: 業務報告時間\n      - definition: 2026/10/10 上午10:23:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:22:36\n      - term: 電文年齡（分鐘）\n      - definition: \"6538\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"17\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/10 上午10:38:10\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261010012310_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/10 上午7:46:23\n      - term: 業務報告時間\n      - definition: 2026/10/10 上午7:46:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:23:40\n      - term: 電文年齡（分鐘）\n      - definition: \"6695\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"43\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/10 上午8:01:23\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261009224623_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/10 上午7:37:23\n      - term: 業務報告時間\n      - definition: 2026/10/10 上午7:37:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:23:40\n      - term: 電文年齡（分鐘）\n      - definition: \"6704\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"43\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/10 上午7:52:23\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261009223723_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/10 上午4:30:55\n      - term: 業務報告時間\n      - definition: 2026/10/10 上午4:30:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:23:40\n      - term: 電文年齡（分鐘）\n      - definition: \"6891\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"43\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/10 上午4:45:55\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261009193055_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/10 上午3:50:24\n      - term: 業務報告時間\n      - definition: 2026/10/10 上午3:50:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:23:40\n      - term: 電文年齡（分鐘）\n      - definition: \"6931\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: 未提供可核實的目標區域\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/10 上午4:05:24\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261009185024_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/10 上午3:29:32\n      - term: 業務報告時間\n      - definition: 2026/10/10 上午3:29:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:23:40\n      - term: 電文年齡（分鐘）\n      - definition: \"6952\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"30\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/10 上午3:44:32\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261009182933_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/10 上午3:07:18\n      - term: 業務報告時間\n      - definition: 2026/10/10 上午3:07:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:24:54\n      - term: 電文年齡（分鐘）\n      - definition: \"6974\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: 03 · 04\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/10 上午3:22:18\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261009180718_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/10 上午1:49:08\n      - term: 業務報告時間\n      - definition: 2026/10/10 上午1:49:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:24:54\n      - term: 電文年齡（分鐘）\n      - definition: \"7052\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"01\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/10 上午2:04:08\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261009164909_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/9 上午11:15:09\n      - term: 業務報告時間\n      - definition: 2026/10/9 上午11:15:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:24:54\n      - term: 電文年齡（分鐘）\n      - definition: \"7926\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: 43 · 42 · 46\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/9 上午11:30:09\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261009021509_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/9 上午7:17:38\n      - term: 業務報告時間\n      - definition: 2026/10/9 上午7:17:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:24:54\n      - term: 電文年齡（分鐘）\n      - definition: \"8164\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"01\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/9 上午7:32:38\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261008221738_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/9 上午4:26:24\n      - term: 業務報告時間\n      - definition: 2026/10/9 上午4:26:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午10:42:04\n      - term: 電文年齡（分鐘）\n      - definition: \"8335\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: 01 · 02\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/9 上午4:41:24\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261008192624_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/9 上午12:34:57\n      - term: 業務報告時間\n      - definition: 2026/10/9 上午12:34:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午10:42:04\n      - term: 電文年齡（分鐘）\n      - definition: \"8567\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"13\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/9 上午12:49:57\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261008153457_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/8 下午9:29:53\n      - term: 業務報告時間\n      - definition: 2026/10/8 下午9:29:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午10:42:04\n      - term: 電文年齡（分鐘）\n      - definition: \"8752\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"43\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/8 下午9:44:53\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261008122953_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/8 下午8:38:27\n      - term: 業務報告時間\n      - definition: 2026/10/8 下午8:38:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午10:42:04\n      - term: 電文年齡（分鐘）\n      - definition: \"8803\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"20\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/8 下午8:53:27\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261008113827_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/8 下午6:17:00\n      - term: 業務報告時間\n      - definition: 2026/10/8 下午6:17:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午10:42:04\n      - term: 電文年齡（分鐘）\n      - definition: \"8945\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"03\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/8 下午6:32:00\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261008091700_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/8 下午1:33:00\n      - term: 業務報告時間\n      - definition: 2026/10/8 下午1:33:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午10:43:03\n      - term: 電文年齡（分鐘）\n      - definition: \"9229\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"01\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/8 下午1:48:00\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261008043300_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/8 下午1:25:47\n      - term: 業務報告時間\n      - definition: 2026/10/8 下午1:25:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午10:43:03\n      - term: 電文年齡（分鐘）\n      - definition: \"9236\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"43\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/8 下午1:40:47\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261008042547_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/8 上午11:46:01\n      - term: 業務報告時間\n      - definition: 2026/10/8 上午11:46:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午10:43:03\n      - term: 電文年齡（分鐘）\n      - definition: \"9335\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"46\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/8 下午12:01:01\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261008024601_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/8 上午7:17:52\n      - term: 業務報告時間\n      - definition: 2026/10/8 上午7:17:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午10:43:03\n      - term: 電文年齡（分鐘）\n      - definition: \"9604\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: 08 · 07 · 09 · 11 · 12\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/8 上午7:32:52\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261007221752_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/8 上午6:38:35\n      - term: 業務報告時間\n      - definition: 2026/10/8 上午6:38:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午10:43:03\n      - term: 電文年齡（分鐘）\n      - definition: \"9643\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"43\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/8 上午6:53:35\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261007213835_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/8 上午4:39:21\n      - term: 業務報告時間\n      - definition: 2026/10/8 上午4:39:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午10:44:03\n      - term: 電文年齡（分鐘）\n      - definition: \"9762\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: 12 · 08\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/8 上午4:54:21\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261007193921_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/8 上午4:17:55\n      - term: 業務報告時間\n      - definition: 2026/10/8 上午4:17:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午10:44:03\n      - term: 電文年齡（分鐘）\n      - definition: \"9784\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: 12 · 08 · 07 · 09 · 10 · 11 · 13 · 14 · 22\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/8 上午4:32:55\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261007191755_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/7 下午11:25:57\n      - term: 業務報告時間\n      - definition: 2026/10/7 下午11:25:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午10:44:03\n      - term: 電文年齡（分鐘）\n      - definition: \"10076\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: \"43\"\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/7 下午11:40:57\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261007142557_0_VXSE53_270000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"震源・震度に関する情報 · VXSE53\" [level=3]\n      - strong: 已被取代\n      - term: 電文發表／更新\n      - definition: 2026/10/10 上午3:26:00\n      - term: 業務報告時間\n      - definition: 2026/10/10 上午3:26:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:24:54\n      - term: 電文年齡（分鐘）\n      - definition: \"6956\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: 未提供可核實的目標區域\n      - term: 官方有效期\n      - definition: 未判定\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/10 上午3:41:00\n      - link \"開啟官方原文 · Japan Meteorological Agency (earthquake reports)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261009182600_0_VXSE53_010000.xml\n      - group: 原文識別與版本\n    - article:\n      - heading \"津波警報・注意報・予報a · VTSE41\" [level=3]\n      - strong: 過時\n      - term: 電文發表／更新\n      - definition: 2026/10/10 上午3:37:42\n      - term: 業務報告時間\n      - definition: 2026/10/10 上午3:37:00\n      - term: 首次接收\n      - definition: 2026/10/14 下午9:10:18\n      - term: 電文年齡（分鐘）\n      - definition: \"6944\"\n      - term: 官方目標區域代碼（未映射地點）\n      - definition: 100 · 101 · 102 · 201 · 210 · 220 · 250 · 300 · 310 · 311 · 320 · 321 · 330 · 380 · 390 · 391 · 400 · 530 · 580 · 600 · 610 · 760 · 770 · 771 · 772 · 800 · 801 · 802\n      - term: 官方有效期\n      - definition: 2026/10/11 下午8:00:00\n      - term: 應用程式證據使用期限\n      - definition: 2026/10/10 上午3:52:42\n      - link \"開啟官方原文 · Japan Meteorological Agency (tsunami warnings)\":\n        - /url: https://www.data.jma.go.jp/developer/xml/data/20261009183743_0_VTSE41_010000.xml\n      - group: 原文識別與版本\n  - button \"重新查詢\"\n  - heading \"已核對資訊\" [level=2]\n  - paragraph: 正在等待已驗證的資訊。\n  - heading \"目的地清單\" [level=2]\n  - paragraph: 目的地適用性尚未驗證\n  - region \"交通路線候補 · 不保證安全\":\n    - heading \"交通路線候補 · 不保證安全\" [level=2]\n    - paragraph: 沒有最新的已驗證路線\n    - paragraph: 移動所需的確認條件尚未齊備，因此未顯示地圖。\n  - time\n- navigation \"主選單\":\n  - link \"現在\":\n    - /url: /dashboard\n  - link \"地圖\":\n    - /url: /map\n  - link \"更多\":\n    - /url: /more\n- alert",
+  "metrics": {
+    "width": 320,
+    "height": 568,
+    "dpr": 2.625,
+    "scrollWidth": 320,
+    "lang": "zh-TW",
+    "text": "離線 · 最後確認 —\n求助\n持續關注中\n·\n重新連線中 · 驗證尚未完成\n‹ 返回\nJapan Meteorological Agency (earthquake reports)\n資訊來源過期或無法使用\n\nJMA 資訊 · 由 72H 正規化 · 擷取時間: 2026/10/14 下午11:22:02\n\n最後發布: 2026/10/14 下午10:21:50\n\nJapan Meteorological Agency (earthquake reports) · 開啟官方來源 ↗\nJMA 資訊 · 由 72H 正規化\n\nTokyo Metropolitan Government Emergency Map · 開啟官方來源 ↗\n指定避難場所清單 · 目前開放狀況不明\n\nEkispert public transport route search · 開啟官方來源 ↗\n交通路線候補 · 不保證安全\n\n官方電文與補抓狀態\n\n只列出最近的參考紀錄。核實 feed 窗口不代表全國安全、沒有警報或可開始移動。\n\n顯示保存／補抓紀錄，當前狀態未核實。\n\nJapan Meteorological Agency (earthquake reports)\n來源連線（最後查詢）\n可連接\n最新成功接收\n2026/10/14 下午11:22:02\n最新官方發表\n2026/10/14 下午10:21:50\n長期 feed 核實至\n2026/10/14 下午10:22:18\n補抓狀態\n補抓／等待中\n待補抓電文\n0\n持久儲存\nSQLITE · 可用\n\n輪詢中斷：等待較新的長期 feed: 2026/10/14 下午11:21:01\n\n原文識別與版本\nJapan Meteorological Agency (tsunami warnings)\n來源連線（最後查詢）\n可連接\n最新成功接收\n2026/10/14 下午11:22:02\n最新官方發表\n2026/10/10 上午3:37:42\n長期 feed 核實至\n2026/10/14 下午10:22:18\n補抓狀態\n補抓／等待中\n待補抓電文\n0\n持久儲存\nSQLITE · 可用\n\n輪詢中斷：等待較新的長期 feed: 2026/10/14 下午11:21:01\n\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/14 下午10:21:50\n業務報告時間\n2026/10/14 下午10:21:00\n首次接收\n2026/10/14 下午10:44:03\n電文年齡（分鐘）\n60\n官方目標區域代碼（未映射地點）\n03 · 04\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/14 下午10:36:50\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/14 下午4:11:09\n業務報告時間\n2026/10/14 下午4:11:00\n首次接收\n2026/10/14 下午9:10:18\n電文年齡（分鐘）\n430\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/14 下午4:26:09\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/14 上午7:59:32\n業務報告時間\n2026/10/14 上午7:59:00\n首次接收\n2026/10/14 下午9:10:19\n電文年齡（分鐘）\n922\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/14 上午8:14:32\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/14 上午4:36:19\n業務報告時間\n2026/10/14 上午4:36:00\n首次接收\n2026/10/14 下午9:10:19\n電文年齡（分鐘）\n1125\n官方目標區域代碼（未映射地點）\n46\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/14 上午4:51:19\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/13 下午10:08:13\n業務報告時間\n2026/10/13 下午10:08:00\n首次接收\n2026/10/14 下午9:10:19\n電文年齡（分鐘）\n1513\n官方目標區域代碼（未映射地點）\n03 · 04\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/13 下午10:23:13\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/13 下午8:55:53\n業務報告時間\n2026/10/13 下午8:55:00\n首次接收\n2026/10/14 下午9:10:19\n電文年齡（分鐘）\n1586\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/13 下午9:10:53\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/13 下午8:47:15\n業務報告時間\n2026/10/13 下午8:47:00\n首次接收\n2026/10/14 下午9:11:22\n電文年齡（分鐘）\n1594\n官方目標區域代碼（未映射地點）\n30 · 36 · 28 · 37 · 39\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/13 下午9:02:15\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/13 上午11:31:53\n業務報告時間\n2026/10/13 上午11:31:00\n首次接收\n2026/10/14 下午9:11:22\n電文年齡（分鐘）\n2150\n官方目標區域代碼（未映射地點）\n43 · 42 · 46\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/13 上午11:46:53\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/13 上午2:28:37\n業務報告時間\n2026/10/13 上午2:28:00\n首次接收\n2026/10/14 下午9:11:22\n電文年齡（分鐘）\n2693\n官方目標區域代碼（未映射地點）\n03\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/13 上午2:43:37\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/12 下午8:35:31\n業務報告時間\n2026/10/12 下午8:35:00\n首次接收\n2026/10/14 下午9:11:22\n電文年齡（分鐘）\n3046\n官方目標區域代碼（未映射地點）\n01\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/12 下午8:50:31\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/12 下午4:54:02\n業務報告時間\n2026/10/12 下午4:54:00\n首次接收\n2026/10/14 下午9:11:23\n電文年齡（分鐘）\n3267\n官方目標區域代碼（未映射地點）\n43 · 46\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/12 下午5:09:02\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/12 下午12:48:12\n業務報告時間\n2026/10/12 下午12:48:00\n首次接收\n2026/10/14 下午9:12:42\n電文年齡（分鐘）\n3513\n官方目標區域代碼（未映射地點）\n01\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/12 下午1:03:12\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/12 上午10:00:17\n業務報告時間\n2026/10/12 上午10:00:00\n首次接收\n2026/10/14 下午9:12:42\n電文年齡（分鐘）\n3681\n官方目標區域代碼（未映射地點）\n13\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/12 上午10:15:17\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/12 上午5:08:56\n業務報告時間\n2026/10/12 上午5:08:00\n首次接收\n2026/10/14 下午9:12:42\n電文年齡（分鐘）\n3973\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/12 上午5:23:56\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/12 上午1:27:32\n業務報告時間\n2026/10/12 上午1:27:00\n首次接收\n2026/10/14 下午9:12:42\n電文年齡（分鐘）\n4194\n官方目標區域代碼（未映射地點）\n12 · 08\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/12 上午1:42:32\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/11 下午3:53:51\n業務報告時間\n2026/10/11 下午3:53:00\n首次接收\n2026/10/14 下午9:12:42\n電文年齡（分鐘）\n4768\n官方目標區域代碼（未映射地點）\n45\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/11 下午4:08:51\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/11 上午10:15:25\n業務報告時間\n2026/10/11 上午10:15:00\n首次接收\n2026/10/14 下午9:22:35\n電文年齡（分鐘）\n5106\n官方目標區域代碼（未映射地點）\n20\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/11 上午10:30:25\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/11 上午6:22:45\n業務報告時間\n2026/10/11 上午6:22:00\n首次接收\n2026/10/14 下午9:22:35\n電文年齡（分鐘）\n5339\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/11 上午6:37:45\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 下午7:02:58\n業務報告時間\n2026/10/10 下午7:02:00\n首次接收\n2026/10/14 下午9:22:36\n電文年齡（分鐘）\n6019\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 下午7:17:58\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 下午12:18:53\n業務報告時間\n2026/10/10 下午12:18:00\n首次接收\n2026/10/14 下午9:22:36\n電文年齡（分鐘）\n6423\n官方目標區域代碼（未映射地點）\n42 · 43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 下午12:33:53\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 上午10:23:10\n業務報告時間\n2026/10/10 上午10:23:00\n首次接收\n2026/10/14 下午9:22:36\n電文年齡（分鐘）\n6538\n官方目標區域代碼（未映射地點）\n17\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午10:38:10\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 上午7:46:23\n業務報告時間\n2026/10/10 上午7:46:00\n首次接收\n2026/10/14 下午9:23:40\n電文年齡（分鐘）\n6695\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午8:01:23\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 上午7:37:23\n業務報告時間\n2026/10/10 上午7:37:00\n首次接收\n2026/10/14 下午9:23:40\n電文年齡（分鐘）\n6704\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午7:52:23\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 上午4:30:55\n業務報告時間\n2026/10/10 上午4:30:00\n首次接收\n2026/10/14 下午9:23:40\n電文年齡（分鐘）\n6891\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午4:45:55\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 上午3:50:24\n業務報告時間\n2026/10/10 上午3:50:00\n首次接收\n2026/10/14 下午9:23:40\n電文年齡（分鐘）\n6931\n官方目標區域代碼（未映射地點）\n未提供可核實的目標區域\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午4:05:24\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 上午3:29:32\n業務報告時間\n2026/10/10 上午3:29:00\n首次接收\n2026/10/14 下午9:23:40\n電文年齡（分鐘）\n6952\n官方目標區域代碼（未映射地點）\n30\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午3:44:32\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 上午3:07:18\n業務報告時間\n2026/10/10 上午3:07:00\n首次接收\n2026/10/14 下午9:24:54\n電文年齡（分鐘）\n6974\n官方目標區域代碼（未映射地點）\n03 · 04\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午3:22:18\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 上午1:49:08\n業務報告時間\n2026/10/10 上午1:49:00\n首次接收\n2026/10/14 下午9:24:54\n電文年齡（分鐘）\n7052\n官方目標區域代碼（未映射地點）\n01\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午2:04:08\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/9 上午11:15:09\n業務報告時間\n2026/10/9 上午11:15:00\n首次接收\n2026/10/14 下午9:24:54\n電文年齡（分鐘）\n7926\n官方目標區域代碼（未映射地點）\n43 · 42 · 46\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/9 上午11:30:09\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/9 上午7:17:38\n業務報告時間\n2026/10/9 上午7:17:00\n首次接收\n2026/10/14 下午9:24:54\n電文年齡（分鐘）\n8164\n官方目標區域代碼（未映射地點）\n01\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/9 上午7:32:38\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/9 上午4:26:24\n業務報告時間\n2026/10/9 上午4:26:00\n首次接收\n2026/10/14 下午10:42:04\n電文年齡（分鐘）\n8335\n官方目標區域代碼（未映射地點）\n01 · 02\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/9 上午4:41:24\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/9 上午12:34:57\n業務報告時間\n2026/10/9 上午12:34:00\n首次接收\n2026/10/14 下午10:42:04\n電文年齡（分鐘）\n8567\n官方目標區域代碼（未映射地點）\n13\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/9 上午12:49:57\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 下午9:29:53\n業務報告時間\n2026/10/8 下午9:29:00\n首次接收\n2026/10/14 下午10:42:04\n電文年齡（分鐘）\n8752\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 下午9:44:53\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 下午8:38:27\n業務報告時間\n2026/10/8 下午8:38:00\n首次接收\n2026/10/14 下午10:42:04\n電文年齡（分鐘）\n8803\n官方目標區域代碼（未映射地點）\n20\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 下午8:53:27\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 下午6:17:00\n業務報告時間\n2026/10/8 下午6:17:00\n首次接收\n2026/10/14 下午10:42:04\n電文年齡（分鐘）\n8945\n官方目標區域代碼（未映射地點）\n03\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 下午6:32:00\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 下午1:33:00\n業務報告時間\n2026/10/8 下午1:33:00\n首次接收\n2026/10/14 下午10:43:03\n電文年齡（分鐘）\n9229\n官方目標區域代碼（未映射地點）\n01\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 下午1:48:00\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 下午1:25:47\n業務報告時間\n2026/10/8 下午1:25:00\n首次接收\n2026/10/14 下午10:43:03\n電文年齡（分鐘）\n9236\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 下午1:40:47\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 上午11:46:01\n業務報告時間\n2026/10/8 上午11:46:00\n首次接收\n2026/10/14 下午10:43:03\n電文年齡（分鐘）\n9335\n官方目標區域代碼（未映射地點）\n46\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 下午12:01:01\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 上午7:17:52\n業務報告時間\n2026/10/8 上午7:17:00\n首次接收\n2026/10/14 下午10:43:03\n電文年齡（分鐘）\n9604\n官方目標區域代碼（未映射地點）\n08 · 07 · 09 · 11 · 12\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 上午7:32:52\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 上午6:38:35\n業務報告時間\n2026/10/8 上午6:38:00\n首次接收\n2026/10/14 下午10:43:03\n電文年齡（分鐘）\n9643\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 上午6:53:35\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 上午4:39:21\n業務報告時間\n2026/10/8 上午4:39:00\n首次接收\n2026/10/14 下午10:44:03\n電文年齡（分鐘）\n9762\n官方目標區域代碼（未映射地點）\n12 · 08\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 上午4:54:21\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 上午4:17:55\n業務報告時間\n2026/10/8 上午4:17:00\n首次接收\n2026/10/14 下午10:44:03\n電文年齡（分鐘）\n9784\n官方目標區域代碼（未映射地點）\n12 · 08 · 07 · 09 · 10 · 11 · 13 · 14 · 22\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 上午4:32:55\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/7 下午11:25:57\n業務報告時間\n2026/10/7 下午11:25:00\n首次接收\n2026/10/14 下午10:44:03\n電文年齡（分鐘）\n10076\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/7 下午11:40:57\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n已被取代\n電文發表／更新\n2026/10/10 上午3:26:00\n業務報告時間\n2026/10/10 上午3:26:00\n首次接收\n2026/10/14 下午9:24:54\n電文年齡（分鐘）\n6956\n官方目標區域代碼（未映射地點）\n未提供可核實的目標區域\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午3:41:00\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n津波警報・注意報・予報a · VTSE41\n過時\n電文發表／更新\n2026/10/10 上午3:37:42\n業務報告時間\n2026/10/10 上午3:37:00\n首次接收\n2026/10/14 下午9:10:18\n電文年齡（分鐘）\n6944\n官方目標區域代碼（未映射地點）\n100 · 101 · 102 · 201 · 210 · 220 · 250 · 300 · 310 · 311 · 320 · 321 · 330 · 380 · 390 · 391 · 400 · 530 · 580 · 600 · 610 · 760 · 770 · 771 · 772 · 800 · 801 · 802\n官方有效期\n2026/10/11 下午8:00:00\n應用程式證據使用期限\n2026/10/10 上午3:52:42\n開啟官方原文 · Japan Meteorological Agency (tsunami warnings)\n原文識別與版本\n重新查詢\n已核對資訊\n\n正在等待已驗證的資訊。\n\n目的地清單\n\n目的地適用性尚未驗證\n\n交通路線候補 · 不保證安全\n\n沒有最新的已驗證路線\n\n移動所需的確認條件尚未齊備，因此未顯示地圖。\n\n現在\n地圖\n更多",
+    "controls": [
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "求助",
+        "href": null,
+        "rect": {
+          "x": 235.99404907226562,
+          "y": 444,
+          "width": 64.00595092773438,
+          "height": 48,
+          "top": 444,
+          "right": 300,
+          "bottom": 492,
+          "left": 235.99404907226562
+        },
+        "display": "flex",
+        "border": "0px none rgb(11, 13, 16)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "‹ 返回",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 89,
+          "width": 56.93452453613281,
+          "height": 48,
+          "top": 89,
+          "right": 76.93452453613281,
+          "bottom": 137,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "Japan Meteorological Agency (earthquake reports) · 開啟官方來源 ↗",
+        "href": "https://www.data.jma.go.jp/developer/xml/feed/eqvol.xml",
+        "rect": {
+          "x": 20,
+          "y": 367,
+          "width": 280,
+          "height": 48,
+          "top": 367,
+          "right": 300,
+          "bottom": 415,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "Tokyo Metropolitan Government Emergency Map · 開啟官方來源 ↗",
+        "href": "https://www.opendata.metro.tokyo.lg.jp/soumu/130001_evacuation_area.csv",
+        "rect": {
+          "x": 20,
+          "y": 452,
+          "width": 280,
+          "height": 48,
+          "top": 452,
+          "right": 300,
+          "bottom": 500,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "Ekispert public transport route search · 開啟官方來源 ↗",
+        "href": "https://api-mcp.ekispert.jp/mcp",
+        "rect": {
+          "x": 20,
+          "y": 537,
+          "width": 280,
+          "height": 48,
+          "top": 537,
+          "right": 300,
+          "bottom": 585,
+          "left": 20
+        },
+        "display": "flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261014132150_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 2739.08349609375,
+          "width": 280,
+          "height": 48,
+          "top": 2739.08349609375,
+          "right": 300,
+          "bottom": 2787.08349609375,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261014071109_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 3378.84521484375,
+          "width": 280,
+          "height": 48,
+          "top": 3378.84521484375,
+          "right": 300,
+          "bottom": 3426.84521484375,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261013225932_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 4018.607177734375,
+          "width": 280,
+          "height": 48,
+          "top": 4018.607177734375,
+          "right": 300,
+          "bottom": 4066.607177734375,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261013193620_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 4658.369140625,
+          "width": 280,
+          "height": 48,
+          "top": 4658.369140625,
+          "right": 300,
+          "bottom": 4706.369140625,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261013130813_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 5298.130859375,
+          "width": 280,
+          "height": 48,
+          "top": 5298.130859375,
+          "right": 300,
+          "bottom": 5346.130859375,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261013115553_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 5937.89306640625,
+          "width": 280,
+          "height": 48,
+          "top": 5937.89306640625,
+          "right": 300,
+          "bottom": 5985.89306640625,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261013114715_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 6577.65478515625,
+          "width": 280,
+          "height": 48,
+          "top": 6577.65478515625,
+          "right": 300,
+          "bottom": 6625.65478515625,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261013023153_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 7217.4169921875,
+          "width": 280,
+          "height": 48,
+          "top": 7217.4169921875,
+          "right": 300,
+          "bottom": 7265.4169921875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261012172837_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 7857.1787109375,
+          "width": 280,
+          "height": 48,
+          "top": 7857.1787109375,
+          "right": 300,
+          "bottom": 7905.1787109375,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261012113531_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 8496.9404296875,
+          "width": 280,
+          "height": 48,
+          "top": 8496.9404296875,
+          "right": 300,
+          "bottom": 8544.9404296875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261012075402_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 9136.7021484375,
+          "width": 280,
+          "height": 48,
+          "top": 9136.7021484375,
+          "right": 300,
+          "bottom": 9184.7021484375,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261012034812_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 9776.46484375,
+          "width": 280,
+          "height": 48,
+          "top": 9776.46484375,
+          "right": 300,
+          "bottom": 9824.46484375,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261012010018_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 10416.2265625,
+          "width": 280,
+          "height": 48,
+          "top": 10416.2265625,
+          "right": 300,
+          "bottom": 10464.2265625,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261011200856_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 11055.98828125,
+          "width": 280,
+          "height": 48,
+          "top": 11055.98828125,
+          "right": 300,
+          "bottom": 11103.98828125,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261011162733_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 11695.75,
+          "width": 280,
+          "height": 48,
+          "top": 11695.75,
+          "right": 300,
+          "bottom": 11743.75,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261011065351_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 12335.51171875,
+          "width": 280,
+          "height": 48,
+          "top": 12335.51171875,
+          "right": 300,
+          "bottom": 12383.51171875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261011011525_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 12975.2744140625,
+          "width": 280,
+          "height": 48,
+          "top": 12975.2744140625,
+          "right": 300,
+          "bottom": 13023.2744140625,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261010212245_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 13615.0361328125,
+          "width": 280,
+          "height": 48,
+          "top": 13615.0361328125,
+          "right": 300,
+          "bottom": 13663.0361328125,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261010100258_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 14254.7978515625,
+          "width": 280,
+          "height": 48,
+          "top": 14254.7978515625,
+          "right": 300,
+          "bottom": 14302.7978515625,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261010031853_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 14894.5595703125,
+          "width": 280,
+          "height": 48,
+          "top": 14894.5595703125,
+          "right": 300,
+          "bottom": 14942.5595703125,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261010012310_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 15534.3212890625,
+          "width": 280,
+          "height": 48,
+          "top": 15534.3212890625,
+          "right": 300,
+          "bottom": 15582.3212890625,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261009224623_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 16174.083984375,
+          "width": 280,
+          "height": 48,
+          "top": 16174.083984375,
+          "right": 300,
+          "bottom": 16222.083984375,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261009223723_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 16813.845703125,
+          "width": 280,
+          "height": 48,
+          "top": 16813.845703125,
+          "right": 300,
+          "bottom": 16861.845703125,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261009193055_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 17453.607421875,
+          "width": 280,
+          "height": 48,
+          "top": 17453.607421875,
+          "right": 300,
+          "bottom": 17501.607421875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261009185024_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 18093.369140625,
+          "width": 280,
+          "height": 48,
+          "top": 18093.369140625,
+          "right": 300,
+          "bottom": 18141.369140625,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261009182933_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 18733.130859375,
+          "width": 280,
+          "height": 48,
+          "top": 18733.130859375,
+          "right": 300,
+          "bottom": 18781.130859375,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261009180718_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 19372.892578125,
+          "width": 280,
+          "height": 48,
+          "top": 19372.892578125,
+          "right": 300,
+          "bottom": 19420.892578125,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261009164909_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 20012.654296875,
+          "width": 280,
+          "height": 48,
+          "top": 20012.654296875,
+          "right": 300,
+          "bottom": 20060.654296875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261009021509_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 20652.41796875,
+          "width": 280,
+          "height": 48,
+          "top": 20652.41796875,
+          "right": 300,
+          "bottom": 20700.41796875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261008221738_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 21292.1796875,
+          "width": 280,
+          "height": 48,
+          "top": 21292.1796875,
+          "right": 300,
+          "bottom": 21340.1796875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261008192624_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 21931.94140625,
+          "width": 280,
+          "height": 48,
+          "top": 21931.94140625,
+          "right": 300,
+          "bottom": 21979.94140625,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261008153457_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 22571.703125,
+          "width": 280,
+          "height": 48,
+          "top": 22571.703125,
+          "right": 300,
+          "bottom": 22619.703125,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261008122953_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 23211.46484375,
+          "width": 280,
+          "height": 48,
+          "top": 23211.46484375,
+          "right": 300,
+          "bottom": 23259.46484375,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261008113827_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 23851.2265625,
+          "width": 280,
+          "height": 48,
+          "top": 23851.2265625,
+          "right": 300,
+          "bottom": 23899.2265625,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261008091700_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 24490.98828125,
+          "width": 280,
+          "height": 48,
+          "top": 24490.98828125,
+          "right": 300,
+          "bottom": 24538.98828125,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261008043300_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 25130.75,
+          "width": 280,
+          "height": 48,
+          "top": 25130.75,
+          "right": 300,
+          "bottom": 25178.75,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261008042547_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 25770.51171875,
+          "width": 280,
+          "height": 48,
+          "top": 25770.51171875,
+          "right": 300,
+          "bottom": 25818.51171875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261008024601_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 26410.2734375,
+          "width": 280,
+          "height": 48,
+          "top": 26410.2734375,
+          "right": 300,
+          "bottom": 26458.2734375,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261007221752_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 27050.037109375,
+          "width": 280,
+          "height": 48,
+          "top": 27050.037109375,
+          "right": 300,
+          "bottom": 27098.037109375,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261007213835_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 27689.798828125,
+          "width": 280,
+          "height": 48,
+          "top": 27689.798828125,
+          "right": 300,
+          "bottom": 27737.798828125,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261007193921_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 28329.560546875,
+          "width": 280,
+          "height": 48,
+          "top": 28329.560546875,
+          "right": 300,
+          "bottom": 28377.560546875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261007191755_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 28969.322265625,
+          "width": 280,
+          "height": 48,
+          "top": 28969.322265625,
+          "right": 300,
+          "bottom": 29017.322265625,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261007142557_0_VXSE53_270000.xml",
+        "rect": {
+          "x": 20,
+          "y": 29609.083984375,
+          "width": 280,
+          "height": 48,
+          "top": 29609.083984375,
+          "right": 300,
+          "bottom": 29657.083984375,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (earthquake reports)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261009182600_0_VXSE53_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 30248.845703125,
+          "width": 280,
+          "height": 48,
+          "top": 30248.845703125,
+          "right": 300,
+          "bottom": 30296.845703125,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "開啟官方原文 · Japan Meteorological Agency (tsunami warnings)",
+        "href": "https://www.data.jma.go.jp/developer/xml/data/20261009183743_0_VTSE41_010000.xml",
+        "rect": {
+          "x": 20,
+          "y": 30960.607421875,
+          "width": 280,
+          "height": 48,
+          "top": 30960.607421875,
+          "right": 300,
+          "bottom": 31008.607421875,
+          "left": 20
+        },
+        "display": "inline-flex",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "重新查詢",
+        "href": null,
+        "rect": {
+          "x": 20,
+          "y": 31069.369140625,
+          "width": 80.00595092773438,
+          "height": 48,
+          "top": 31069.369140625,
+          "right": 100.00595092773438,
+          "bottom": 31117.369140625,
+          "left": 20
+        },
+        "display": "inline-block",
+        "border": "0px none rgb(108, 182, 255)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "現在",
+        "href": "/dashboard",
+        "rect": {
+          "x": 0,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 106.66667175292969,
+          "bottom": 568,
+          "left": 0
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "地圖",
+        "href": "/map",
+        "rect": {
+          "x": 106.66667175292969,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 213.33334350585938,
+          "bottom": 568,
+          "left": 106.66667175292969
+        },
+        "display": "flex",
+        "border": "0px none rgb(154, 163, 173)",
+        "checked": null
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "更多",
+        "href": "/more",
+        "rect": {
+          "x": 213.33334350585938,
+          "y": 504.76190185546875,
+          "width": 106.66667175292969,
+          "height": 63.23809814453125,
+          "top": 504.76190185546875,
+          "right": 320.00001525878906,
+          "bottom": 568,
+          "left": 213.33334350585938
+        },
+        "display": "flex",
+        "border": "0px none rgb(242, 244, 246)",
+        "checked": null
+      }
+    ]
+  },
+  "layout": [
+    {
+      "tag": "MAIN",
+      "name": "求助\n持續關注中\n·\n重新連線中 · 驗證尚未完成\n‹ 返回\nJapan Meteorological Agency (earthquake reports)\n資訊來源過期或無法使用\n\nJMA 資訊 · 由 72H 正規化 · 擷取時間: 2026/10/14 下午11:22:0",
+      "class": "ui-main",
+      "rect": {
+        "x": 0,
+        "y": 56,
+        "width": 320,
+        "height": 31450.6484375,
+        "top": 56,
+        "right": 320,
+        "bottom": 31506.6484375,
+        "left": 0
+      },
+      "display": "block",
+      "paddingBottom": "80px"
+    },
+    {
+      "tag": "SPAN",
+      "name": "",
+      "class": "source-indicator source-stale",
+      "rect": {
+        "x": 20,
+        "y": 149,
+        "width": 10,
+        "height": 10,
+        "top": 149,
+        "right": 30,
+        "bottom": 159,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "SPAN",
+      "name": "資訊來源過期或無法使用",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 223,
+        "width": 176.00595092773438,
+        "height": 24,
+        "top": 223,
+        "right": 196.00595092773438,
+        "bottom": 247,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "JMA 資訊 · 由 72H 正規化 · 擷取時間: 2026/10/14 下午11:22:02",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 263,
+        "width": 280,
+        "height": 48,
+        "top": 263,
+        "right": 300,
+        "bottom": 311,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "最後發布: 2026/10/14 下午10:21:50",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 327,
+        "width": 280,
+        "height": 24,
+        "top": 327,
+        "right": 300,
+        "bottom": 351,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "Japan Meteorological Agency (earthquake reports) · 開啟官方來源 ↗\nJMA 資訊 · 由 72H 正規化",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 367,
+        "width": 280,
+        "height": 73,
+        "top": 367,
+        "right": 300,
+        "bottom": 440,
+        "left": 20
+      },
+      "display": "grid",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "Tokyo Metropolitan Government Emergency Map · 開啟官方來源 ↗\n指定避難場所清單 · 目前開放狀況不明",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 452,
+        "width": 280,
+        "height": 73,
+        "top": 452,
+        "right": 300,
+        "bottom": 525,
+        "left": 20
+      },
+      "display": "grid",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "Ekispert public transport route search · 開啟官方來源 ↗\n交通路線候補 · 不保證安全",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 537,
+        "width": 280,
+        "height": 73,
+        "top": 537,
+        "right": 300,
+        "bottom": 610,
+        "left": 20
+      },
+      "display": "grid",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "官方電文與補抓狀態",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 635.27978515625,
+        "width": 280,
+        "height": 24,
+        "top": 635.27978515625,
+        "right": 300,
+        "bottom": 659.27978515625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "只列出最近的參考紀錄。核實 feed 窗口不代表全國安全、沒有警報或可開始移動。",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 700.5595092773438,
+        "width": 280,
+        "height": 72,
+        "top": 700.5595092773438,
+        "right": 300,
+        "bottom": 772.5595092773438,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "顯示保存／補抓紀錄，當前狀態未核實。",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 816.5595092773438,
+        "width": 280,
+        "height": 48,
+        "top": 816.5595092773438,
+        "right": 300,
+        "bottom": 864.5595092773438,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "輪詢中斷：等待較新的長期 feed: 2026/10/14 下午11:21:01",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 1419.5595703125,
+        "width": 280,
+        "height": 48,
+        "top": 1419.5595703125,
+        "right": 300,
+        "bottom": 1467.5595703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 1547.5595703125,
+        "width": 280,
+        "height": 48,
+        "top": 1547.5595703125,
+        "right": 300,
+        "bottom": 1595.5595703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 1611.5595703125,
+        "width": 280,
+        "height": 72,
+        "top": 1611.5595703125,
+        "right": 300,
+        "bottom": 1683.5595703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 1699.5595703125,
+        "width": 280,
+        "height": 48,
+        "top": 1699.5595703125,
+        "right": 300,
+        "bottom": 1747.5595703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "輪詢中斷：等待較新的長期 feed: 2026/10/14 下午11:21:01",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 2083.321533203125,
+        "width": 280,
+        "height": 48,
+        "top": 2083.321533203125,
+        "right": 300,
+        "bottom": 2131.321533203125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 2211.321533203125,
+        "width": 280,
+        "height": 48,
+        "top": 2211.321533203125,
+        "right": 300,
+        "bottom": 2259.321533203125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 2275.321533203125,
+        "width": 280,
+        "height": 72,
+        "top": 2275.321533203125,
+        "right": 300,
+        "bottom": 2347.321533203125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 2363.321533203125,
+        "width": 280,
+        "height": 48,
+        "top": 2363.321533203125,
+        "right": 300,
+        "bottom": 2411.321533203125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 2851.08349609375,
+        "width": 280,
+        "height": 24,
+        "top": 2851.08349609375,
+        "right": 300,
+        "bottom": 2875.08349609375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 2891.08349609375,
+        "width": 280,
+        "height": 48,
+        "top": 2891.08349609375,
+        "right": 300,
+        "bottom": 2939.08349609375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 2955.08349609375,
+        "width": 280,
+        "height": 96,
+        "top": 2955.08349609375,
+        "right": 300,
+        "bottom": 3051.08349609375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 3067.08349609375,
+        "width": 280,
+        "height": 48,
+        "top": 3067.08349609375,
+        "right": 300,
+        "bottom": 3115.08349609375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 3490.84521484375,
+        "width": 280,
+        "height": 24,
+        "top": 3490.84521484375,
+        "right": 300,
+        "bottom": 3514.84521484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 3530.84521484375,
+        "width": 280,
+        "height": 48,
+        "top": 3530.84521484375,
+        "right": 300,
+        "bottom": 3578.84521484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 3594.84521484375,
+        "width": 280,
+        "height": 96,
+        "top": 3594.84521484375,
+        "right": 300,
+        "bottom": 3690.84521484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 3706.84521484375,
+        "width": 280,
+        "height": 48,
+        "top": 3706.84521484375,
+        "right": 300,
+        "bottom": 3754.84521484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 4130.607421875,
+        "width": 280,
+        "height": 24,
+        "top": 4130.607421875,
+        "right": 300,
+        "bottom": 4154.607421875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 4170.607421875,
+        "width": 280,
+        "height": 48,
+        "top": 4170.607421875,
+        "right": 300,
+        "bottom": 4218.607421875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 4234.607421875,
+        "width": 280,
+        "height": 96,
+        "top": 4234.607421875,
+        "right": 300,
+        "bottom": 4330.607421875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 4346.607421875,
+        "width": 280,
+        "height": 48,
+        "top": 4346.607421875,
+        "right": 300,
+        "bottom": 4394.607421875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 4770.369140625,
+        "width": 280,
+        "height": 24,
+        "top": 4770.369140625,
+        "right": 300,
+        "bottom": 4794.369140625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 4810.369140625,
+        "width": 280,
+        "height": 48,
+        "top": 4810.369140625,
+        "right": 300,
+        "bottom": 4858.369140625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 4874.369140625,
+        "width": 280,
+        "height": 72,
+        "top": 4874.369140625,
+        "right": 300,
+        "bottom": 4946.369140625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 4962.369140625,
+        "width": 280,
+        "height": 48,
+        "top": 4962.369140625,
+        "right": 300,
+        "bottom": 5010.369140625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 5410.130859375,
+        "width": 280,
+        "height": 24,
+        "top": 5410.130859375,
+        "right": 300,
+        "bottom": 5434.130859375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 5450.130859375,
+        "width": 280,
+        "height": 48,
+        "top": 5450.130859375,
+        "right": 300,
+        "bottom": 5498.130859375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 5514.130859375,
+        "width": 280,
+        "height": 72,
+        "top": 5514.130859375,
+        "right": 300,
+        "bottom": 5586.130859375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 5602.130859375,
+        "width": 280,
+        "height": 48,
+        "top": 5602.130859375,
+        "right": 300,
+        "bottom": 5650.130859375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 6049.89306640625,
+        "width": 280,
+        "height": 24,
+        "top": 6049.89306640625,
+        "right": 300,
+        "bottom": 6073.89306640625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 6089.89306640625,
+        "width": 280,
+        "height": 48,
+        "top": 6089.89306640625,
+        "right": 300,
+        "bottom": 6137.89306640625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 6153.89306640625,
+        "width": 280,
+        "height": 72,
+        "top": 6153.89306640625,
+        "right": 300,
+        "bottom": 6225.89306640625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 6241.89306640625,
+        "width": 280,
+        "height": 48,
+        "top": 6241.89306640625,
+        "right": 300,
+        "bottom": 6289.89306640625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 6689.65478515625,
+        "width": 280,
+        "height": 24,
+        "top": 6689.65478515625,
+        "right": 300,
+        "bottom": 6713.65478515625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 6729.65478515625,
+        "width": 280,
+        "height": 48,
+        "top": 6729.65478515625,
+        "right": 300,
+        "bottom": 6777.65478515625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 6793.65478515625,
+        "width": 280,
+        "height": 72,
+        "top": 6793.65478515625,
+        "right": 300,
+        "bottom": 6865.65478515625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 6881.65478515625,
+        "width": 280,
+        "height": 48,
+        "top": 6881.65478515625,
+        "right": 300,
+        "bottom": 6929.65478515625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 7329.4169921875,
+        "width": 280,
+        "height": 24,
+        "top": 7329.4169921875,
+        "right": 300,
+        "bottom": 7353.4169921875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 7369.4169921875,
+        "width": 280,
+        "height": 48,
+        "top": 7369.4169921875,
+        "right": 300,
+        "bottom": 7417.4169921875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 7433.4169921875,
+        "width": 280,
+        "height": 96,
+        "top": 7433.4169921875,
+        "right": 300,
+        "bottom": 7529.4169921875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 7545.4169921875,
+        "width": 280,
+        "height": 48,
+        "top": 7545.4169921875,
+        "right": 300,
+        "bottom": 7593.4169921875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 7969.1787109375,
+        "width": 280,
+        "height": 24,
+        "top": 7969.1787109375,
+        "right": 300,
+        "bottom": 7993.1787109375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 8009.1787109375,
+        "width": 280,
+        "height": 48,
+        "top": 8009.1787109375,
+        "right": 300,
+        "bottom": 8057.1787109375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 8073.1787109375,
+        "width": 280,
+        "height": 96,
+        "top": 8073.1787109375,
+        "right": 300,
+        "bottom": 8169.1787109375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 8185.1787109375,
+        "width": 280,
+        "height": 48,
+        "top": 8185.1787109375,
+        "right": 300,
+        "bottom": 8233.1787109375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 8608.9404296875,
+        "width": 280,
+        "height": 24,
+        "top": 8608.9404296875,
+        "right": 300,
+        "bottom": 8632.9404296875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 8648.9404296875,
+        "width": 280,
+        "height": 48,
+        "top": 8648.9404296875,
+        "right": 300,
+        "bottom": 8696.9404296875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 8712.9404296875,
+        "width": 280,
+        "height": 72,
+        "top": 8712.9404296875,
+        "right": 300,
+        "bottom": 8784.9404296875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 8800.9404296875,
+        "width": 280,
+        "height": 48,
+        "top": 8800.9404296875,
+        "right": 300,
+        "bottom": 8848.9404296875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 9248.7021484375,
+        "width": 280,
+        "height": 24,
+        "top": 9248.7021484375,
+        "right": 300,
+        "bottom": 9272.7021484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 9288.7021484375,
+        "width": 280,
+        "height": 48,
+        "top": 9288.7021484375,
+        "right": 300,
+        "bottom": 9336.7021484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 9352.7021484375,
+        "width": 280,
+        "height": 96,
+        "top": 9352.7021484375,
+        "right": 300,
+        "bottom": 9448.7021484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 9464.7021484375,
+        "width": 280,
+        "height": 48,
+        "top": 9464.7021484375,
+        "right": 300,
+        "bottom": 9512.7021484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 9888.46484375,
+        "width": 280,
+        "height": 24,
+        "top": 9888.46484375,
+        "right": 300,
+        "bottom": 9912.46484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 9928.46484375,
+        "width": 280,
+        "height": 48,
+        "top": 9928.46484375,
+        "right": 300,
+        "bottom": 9976.46484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 9992.46484375,
+        "width": 280,
+        "height": 72,
+        "top": 9992.46484375,
+        "right": 300,
+        "bottom": 10064.46484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 10080.46484375,
+        "width": 280,
+        "height": 48,
+        "top": 10080.46484375,
+        "right": 300,
+        "bottom": 10128.46484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 10528.2265625,
+        "width": 280,
+        "height": 24,
+        "top": 10528.2265625,
+        "right": 300,
+        "bottom": 10552.2265625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 10568.2265625,
+        "width": 280,
+        "height": 48,
+        "top": 10568.2265625,
+        "right": 300,
+        "bottom": 10616.2265625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 10632.2265625,
+        "width": 280,
+        "height": 96,
+        "top": 10632.2265625,
+        "right": 300,
+        "bottom": 10728.2265625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 10744.2265625,
+        "width": 280,
+        "height": 48,
+        "top": 10744.2265625,
+        "right": 300,
+        "bottom": 10792.2265625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 11167.98828125,
+        "width": 280,
+        "height": 24,
+        "top": 11167.98828125,
+        "right": 300,
+        "bottom": 11191.98828125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 11207.98828125,
+        "width": 280,
+        "height": 48,
+        "top": 11207.98828125,
+        "right": 300,
+        "bottom": 11255.98828125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 11271.98828125,
+        "width": 280,
+        "height": 96,
+        "top": 11271.98828125,
+        "right": 300,
+        "bottom": 11367.98828125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 11383.98828125,
+        "width": 280,
+        "height": 48,
+        "top": 11383.98828125,
+        "right": 300,
+        "bottom": 11431.98828125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 11807.75,
+        "width": 280,
+        "height": 24,
+        "top": 11807.75,
+        "right": 300,
+        "bottom": 11831.75,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 11847.75,
+        "width": 280,
+        "height": 48,
+        "top": 11847.75,
+        "right": 300,
+        "bottom": 11895.75,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 11911.75,
+        "width": 280,
+        "height": 96,
+        "top": 11911.75,
+        "right": 300,
+        "bottom": 12007.75,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 12023.75,
+        "width": 280,
+        "height": 48,
+        "top": 12023.75,
+        "right": 300,
+        "bottom": 12071.75,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 12447.51171875,
+        "width": 280,
+        "height": 24,
+        "top": 12447.51171875,
+        "right": 300,
+        "bottom": 12471.51171875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 12487.51171875,
+        "width": 280,
+        "height": 48,
+        "top": 12487.51171875,
+        "right": 300,
+        "bottom": 12535.51171875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 12551.51171875,
+        "width": 280,
+        "height": 72,
+        "top": 12551.51171875,
+        "right": 300,
+        "bottom": 12623.51171875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 12639.51171875,
+        "width": 280,
+        "height": 48,
+        "top": 12639.51171875,
+        "right": 300,
+        "bottom": 12687.51171875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 13087.2744140625,
+        "width": 280,
+        "height": 24,
+        "top": 13087.2744140625,
+        "right": 300,
+        "bottom": 13111.2744140625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 13127.2744140625,
+        "width": 280,
+        "height": 48,
+        "top": 13127.2744140625,
+        "right": 300,
+        "bottom": 13175.2744140625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 13191.2744140625,
+        "width": 280,
+        "height": 96,
+        "top": 13191.2744140625,
+        "right": 300,
+        "bottom": 13287.2744140625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 13303.2744140625,
+        "width": 280,
+        "height": 48,
+        "top": 13303.2744140625,
+        "right": 300,
+        "bottom": 13351.2744140625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 13727.0361328125,
+        "width": 280,
+        "height": 24,
+        "top": 13727.0361328125,
+        "right": 300,
+        "bottom": 13751.0361328125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 13767.0361328125,
+        "width": 280,
+        "height": 48,
+        "top": 13767.0361328125,
+        "right": 300,
+        "bottom": 13815.0361328125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 13831.0361328125,
+        "width": 280,
+        "height": 96,
+        "top": 13831.0361328125,
+        "right": 300,
+        "bottom": 13927.0361328125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 13943.0361328125,
+        "width": 280,
+        "height": 48,
+        "top": 13943.0361328125,
+        "right": 300,
+        "bottom": 13991.0361328125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 14366.7978515625,
+        "width": 280,
+        "height": 24,
+        "top": 14366.7978515625,
+        "right": 300,
+        "bottom": 14390.7978515625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 14406.7978515625,
+        "width": 280,
+        "height": 48,
+        "top": 14406.7978515625,
+        "right": 300,
+        "bottom": 14454.7978515625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 14470.7978515625,
+        "width": 280,
+        "height": 96,
+        "top": 14470.7978515625,
+        "right": 300,
+        "bottom": 14566.7978515625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 14582.7978515625,
+        "width": 280,
+        "height": 48,
+        "top": 14582.7978515625,
+        "right": 300,
+        "bottom": 14630.7978515625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 15006.5595703125,
+        "width": 280,
+        "height": 24,
+        "top": 15006.5595703125,
+        "right": 300,
+        "bottom": 15030.5595703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 15046.5595703125,
+        "width": 280,
+        "height": 48,
+        "top": 15046.5595703125,
+        "right": 300,
+        "bottom": 15094.5595703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 15110.5595703125,
+        "width": 280,
+        "height": 72,
+        "top": 15110.5595703125,
+        "right": 300,
+        "bottom": 15182.5595703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 15198.5595703125,
+        "width": 280,
+        "height": 48,
+        "top": 15198.5595703125,
+        "right": 300,
+        "bottom": 15246.5595703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 15646.3212890625,
+        "width": 280,
+        "height": 24,
+        "top": 15646.3212890625,
+        "right": 300,
+        "bottom": 15670.3212890625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 15686.3212890625,
+        "width": 280,
+        "height": 48,
+        "top": 15686.3212890625,
+        "right": 300,
+        "bottom": 15734.3212890625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 15750.3212890625,
+        "width": 280,
+        "height": 96,
+        "top": 15750.3212890625,
+        "right": 300,
+        "bottom": 15846.3212890625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 15862.3212890625,
+        "width": 280,
+        "height": 48,
+        "top": 15862.3212890625,
+        "right": 300,
+        "bottom": 15910.3212890625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 16286.083984375,
+        "width": 280,
+        "height": 24,
+        "top": 16286.083984375,
+        "right": 300,
+        "bottom": 16310.083984375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 16326.083984375,
+        "width": 280,
+        "height": 48,
+        "top": 16326.083984375,
+        "right": 300,
+        "bottom": 16374.083984375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 16390.083984375,
+        "width": 280,
+        "height": 96,
+        "top": 16390.083984375,
+        "right": 300,
+        "bottom": 16486.083984375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 16502.083984375,
+        "width": 280,
+        "height": 48,
+        "top": 16502.083984375,
+        "right": 300,
+        "bottom": 16550.083984375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 16925.845703125,
+        "width": 280,
+        "height": 24,
+        "top": 16925.845703125,
+        "right": 300,
+        "bottom": 16949.845703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 16965.845703125,
+        "width": 280,
+        "height": 48,
+        "top": 16965.845703125,
+        "right": 300,
+        "bottom": 17013.845703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 17029.845703125,
+        "width": 280,
+        "height": 72,
+        "top": 17029.845703125,
+        "right": 300,
+        "bottom": 17101.845703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 17117.845703125,
+        "width": 280,
+        "height": 48,
+        "top": 17117.845703125,
+        "right": 300,
+        "bottom": 17165.845703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 17565.607421875,
+        "width": 280,
+        "height": 24,
+        "top": 17565.607421875,
+        "right": 300,
+        "bottom": 17589.607421875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 17605.607421875,
+        "width": 280,
+        "height": 48,
+        "top": 17605.607421875,
+        "right": 300,
+        "bottom": 17653.607421875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 17669.607421875,
+        "width": 280,
+        "height": 96,
+        "top": 17669.607421875,
+        "right": 300,
+        "bottom": 17765.607421875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 17781.607421875,
+        "width": 280,
+        "height": 48,
+        "top": 17781.607421875,
+        "right": 300,
+        "bottom": 17829.607421875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 18205.369140625,
+        "width": 280,
+        "height": 24,
+        "top": 18205.369140625,
+        "right": 300,
+        "bottom": 18229.369140625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 18245.369140625,
+        "width": 280,
+        "height": 48,
+        "top": 18245.369140625,
+        "right": 300,
+        "bottom": 18293.369140625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 18309.369140625,
+        "width": 280,
+        "height": 96,
+        "top": 18309.369140625,
+        "right": 300,
+        "bottom": 18405.369140625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 18421.369140625,
+        "width": 280,
+        "height": 48,
+        "top": 18421.369140625,
+        "right": 300,
+        "bottom": 18469.369140625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 18845.130859375,
+        "width": 280,
+        "height": 24,
+        "top": 18845.130859375,
+        "right": 300,
+        "bottom": 18869.130859375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 18885.130859375,
+        "width": 280,
+        "height": 48,
+        "top": 18885.130859375,
+        "right": 300,
+        "bottom": 18933.130859375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 18949.130859375,
+        "width": 280,
+        "height": 72,
+        "top": 18949.130859375,
+        "right": 300,
+        "bottom": 19021.130859375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 19037.130859375,
+        "width": 280,
+        "height": 48,
+        "top": 19037.130859375,
+        "right": 300,
+        "bottom": 19085.130859375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 19484.892578125,
+        "width": 280,
+        "height": 24,
+        "top": 19484.892578125,
+        "right": 300,
+        "bottom": 19508.892578125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 19524.892578125,
+        "width": 280,
+        "height": 48,
+        "top": 19524.892578125,
+        "right": 300,
+        "bottom": 19572.892578125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 19588.892578125,
+        "width": 280,
+        "height": 96,
+        "top": 19588.892578125,
+        "right": 300,
+        "bottom": 19684.892578125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 19700.892578125,
+        "width": 280,
+        "height": 48,
+        "top": 19700.892578125,
+        "right": 300,
+        "bottom": 19748.892578125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 20124.654296875,
+        "width": 280,
+        "height": 24,
+        "top": 20124.654296875,
+        "right": 300,
+        "bottom": 20148.654296875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 20164.654296875,
+        "width": 280,
+        "height": 48,
+        "top": 20164.654296875,
+        "right": 300,
+        "bottom": 20212.654296875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 20228.654296875,
+        "width": 280,
+        "height": 72,
+        "top": 20228.654296875,
+        "right": 300,
+        "bottom": 20300.654296875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 20316.654296875,
+        "width": 280,
+        "height": 48,
+        "top": 20316.654296875,
+        "right": 300,
+        "bottom": 20364.654296875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 20764.41796875,
+        "width": 280,
+        "height": 24,
+        "top": 20764.41796875,
+        "right": 300,
+        "bottom": 20788.41796875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 20804.41796875,
+        "width": 280,
+        "height": 48,
+        "top": 20804.41796875,
+        "right": 300,
+        "bottom": 20852.41796875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 20868.41796875,
+        "width": 280,
+        "height": 96,
+        "top": 20868.41796875,
+        "right": 300,
+        "bottom": 20964.41796875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 20980.41796875,
+        "width": 280,
+        "height": 48,
+        "top": 20980.41796875,
+        "right": 300,
+        "bottom": 21028.41796875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 21404.1796875,
+        "width": 280,
+        "height": 24,
+        "top": 21404.1796875,
+        "right": 300,
+        "bottom": 21428.1796875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 21444.1796875,
+        "width": 280,
+        "height": 48,
+        "top": 21444.1796875,
+        "right": 300,
+        "bottom": 21492.1796875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 21508.1796875,
+        "width": 280,
+        "height": 72,
+        "top": 21508.1796875,
+        "right": 300,
+        "bottom": 21580.1796875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 21596.1796875,
+        "width": 280,
+        "height": 48,
+        "top": 21596.1796875,
+        "right": 300,
+        "bottom": 21644.1796875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 22043.94140625,
+        "width": 280,
+        "height": 24,
+        "top": 22043.94140625,
+        "right": 300,
+        "bottom": 22067.94140625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 22083.94140625,
+        "width": 280,
+        "height": 48,
+        "top": 22083.94140625,
+        "right": 300,
+        "bottom": 22131.94140625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 22147.94140625,
+        "width": 280,
+        "height": 72,
+        "top": 22147.94140625,
+        "right": 300,
+        "bottom": 22219.94140625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 22235.94140625,
+        "width": 280,
+        "height": 48,
+        "top": 22235.94140625,
+        "right": 300,
+        "bottom": 22283.94140625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 22683.703125,
+        "width": 280,
+        "height": 24,
+        "top": 22683.703125,
+        "right": 300,
+        "bottom": 22707.703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 22723.703125,
+        "width": 280,
+        "height": 48,
+        "top": 22723.703125,
+        "right": 300,
+        "bottom": 22771.703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 22787.703125,
+        "width": 280,
+        "height": 96,
+        "top": 22787.703125,
+        "right": 300,
+        "bottom": 22883.703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 22899.703125,
+        "width": 280,
+        "height": 48,
+        "top": 22899.703125,
+        "right": 300,
+        "bottom": 22947.703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 23323.46484375,
+        "width": 280,
+        "height": 24,
+        "top": 23323.46484375,
+        "right": 300,
+        "bottom": 23347.46484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 23363.46484375,
+        "width": 280,
+        "height": 48,
+        "top": 23363.46484375,
+        "right": 300,
+        "bottom": 23411.46484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 23427.46484375,
+        "width": 280,
+        "height": 96,
+        "top": 23427.46484375,
+        "right": 300,
+        "bottom": 23523.46484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 23539.46484375,
+        "width": 280,
+        "height": 48,
+        "top": 23539.46484375,
+        "right": 300,
+        "bottom": 23587.46484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 23963.2265625,
+        "width": 280,
+        "height": 24,
+        "top": 23963.2265625,
+        "right": 300,
+        "bottom": 23987.2265625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 24003.2265625,
+        "width": 280,
+        "height": 48,
+        "top": 24003.2265625,
+        "right": 300,
+        "bottom": 24051.2265625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 24067.2265625,
+        "width": 280,
+        "height": 96,
+        "top": 24067.2265625,
+        "right": 300,
+        "bottom": 24163.2265625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 24179.2265625,
+        "width": 280,
+        "height": 48,
+        "top": 24179.2265625,
+        "right": 300,
+        "bottom": 24227.2265625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 24602.98828125,
+        "width": 280,
+        "height": 24,
+        "top": 24602.98828125,
+        "right": 300,
+        "bottom": 24626.98828125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 24642.98828125,
+        "width": 280,
+        "height": 48,
+        "top": 24642.98828125,
+        "right": 300,
+        "bottom": 24690.98828125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 24706.98828125,
+        "width": 280,
+        "height": 72,
+        "top": 24706.98828125,
+        "right": 300,
+        "bottom": 24778.98828125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 24794.98828125,
+        "width": 280,
+        "height": 48,
+        "top": 24794.98828125,
+        "right": 300,
+        "bottom": 24842.98828125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 25242.75,
+        "width": 280,
+        "height": 24,
+        "top": 25242.75,
+        "right": 300,
+        "bottom": 25266.75,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 25282.75,
+        "width": 280,
+        "height": 48,
+        "top": 25282.75,
+        "right": 300,
+        "bottom": 25330.75,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 25346.75,
+        "width": 280,
+        "height": 96,
+        "top": 25346.75,
+        "right": 300,
+        "bottom": 25442.75,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 25458.75,
+        "width": 280,
+        "height": 48,
+        "top": 25458.75,
+        "right": 300,
+        "bottom": 25506.75,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 25882.51171875,
+        "width": 280,
+        "height": 24,
+        "top": 25882.51171875,
+        "right": 300,
+        "bottom": 25906.51171875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 25922.51171875,
+        "width": 280,
+        "height": 48,
+        "top": 25922.51171875,
+        "right": 300,
+        "bottom": 25970.51171875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 25986.51171875,
+        "width": 280,
+        "height": 96,
+        "top": 25986.51171875,
+        "right": 300,
+        "bottom": 26082.51171875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 26098.51171875,
+        "width": 280,
+        "height": 48,
+        "top": 26098.51171875,
+        "right": 300,
+        "bottom": 26146.51171875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 26522.2734375,
+        "width": 280,
+        "height": 24,
+        "top": 26522.2734375,
+        "right": 300,
+        "bottom": 26546.2734375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 26562.2734375,
+        "width": 280,
+        "height": 48,
+        "top": 26562.2734375,
+        "right": 300,
+        "bottom": 26610.2734375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 26626.2734375,
+        "width": 280,
+        "height": 72,
+        "top": 26626.2734375,
+        "right": 300,
+        "bottom": 26698.2734375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 26714.2734375,
+        "width": 280,
+        "height": 48,
+        "top": 26714.2734375,
+        "right": 300,
+        "bottom": 26762.2734375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 27162.037109375,
+        "width": 280,
+        "height": 24,
+        "top": 27162.037109375,
+        "right": 300,
+        "bottom": 27186.037109375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 27202.037109375,
+        "width": 280,
+        "height": 48,
+        "top": 27202.037109375,
+        "right": 300,
+        "bottom": 27250.037109375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 27266.037109375,
+        "width": 280,
+        "height": 96,
+        "top": 27266.037109375,
+        "right": 300,
+        "bottom": 27362.037109375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 27378.037109375,
+        "width": 280,
+        "height": 48,
+        "top": 27378.037109375,
+        "right": 300,
+        "bottom": 27426.037109375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 27801.798828125,
+        "width": 280,
+        "height": 24,
+        "top": 27801.798828125,
+        "right": 300,
+        "bottom": 27825.798828125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 27841.798828125,
+        "width": 280,
+        "height": 48,
+        "top": 27841.798828125,
+        "right": 300,
+        "bottom": 27889.798828125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 27905.798828125,
+        "width": 280,
+        "height": 96,
+        "top": 27905.798828125,
+        "right": 300,
+        "bottom": 28001.798828125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 28017.798828125,
+        "width": 280,
+        "height": 48,
+        "top": 28017.798828125,
+        "right": 300,
+        "bottom": 28065.798828125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 28441.560546875,
+        "width": 280,
+        "height": 24,
+        "top": 28441.560546875,
+        "right": 300,
+        "bottom": 28465.560546875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 28481.560546875,
+        "width": 280,
+        "height": 48,
+        "top": 28481.560546875,
+        "right": 300,
+        "bottom": 28529.560546875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 28545.560546875,
+        "width": 280,
+        "height": 96,
+        "top": 28545.560546875,
+        "right": 300,
+        "bottom": 28641.560546875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 28657.560546875,
+        "width": 280,
+        "height": 48,
+        "top": 28657.560546875,
+        "right": 300,
+        "bottom": 28705.560546875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 29081.322265625,
+        "width": 280,
+        "height": 24,
+        "top": 29081.322265625,
+        "right": 300,
+        "bottom": 29105.322265625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 29121.322265625,
+        "width": 280,
+        "height": 48,
+        "top": 29121.322265625,
+        "right": 300,
+        "bottom": 29169.322265625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 29185.322265625,
+        "width": 280,
+        "height": 72,
+        "top": 29185.322265625,
+        "right": 300,
+        "bottom": 29257.322265625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 29273.322265625,
+        "width": 280,
+        "height": 48,
+        "top": 29273.322265625,
+        "right": 300,
+        "bottom": 29321.322265625,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 29721.083984375,
+        "width": 280,
+        "height": 24,
+        "top": 29721.083984375,
+        "right": 300,
+        "bottom": 29745.083984375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 29761.083984375,
+        "width": 280,
+        "height": 48,
+        "top": 29761.083984375,
+        "right": 300,
+        "bottom": 29809.083984375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 29825.083984375,
+        "width": 280,
+        "height": 96,
+        "top": 29825.083984375,
+        "right": 300,
+        "bottom": 29921.083984375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 29937.083984375,
+        "width": 280,
+        "height": 48,
+        "top": 29937.083984375,
+        "right": 300,
+        "bottom": 29985.083984375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 30360.845703125,
+        "width": 280,
+        "height": 24,
+        "top": 30360.845703125,
+        "right": 300,
+        "bottom": 30384.845703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 30400.845703125,
+        "width": 280,
+        "height": 48,
+        "top": 30400.845703125,
+        "right": 300,
+        "bottom": 30448.845703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 30464.845703125,
+        "width": 280,
+        "height": 96,
+        "top": 30464.845703125,
+        "right": 300,
+        "bottom": 30560.845703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 30576.845703125,
+        "width": 280,
+        "height": 48,
+        "top": 30576.845703125,
+        "right": 300,
+        "bottom": 30624.845703125,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 31072.607421875,
+        "width": 280,
+        "height": 24,
+        "top": 31072.607421875,
+        "right": 300,
+        "bottom": 31096.607421875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 31112.607421875,
+        "width": 280,
+        "height": 48,
+        "top": 31112.607421875,
+        "right": 300,
+        "bottom": 31160.607421875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 31176.607421875,
+        "width": 280,
+        "height": 72,
+        "top": 31176.607421875,
+        "right": 300,
+        "bottom": 31248.607421875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 31264.607421875,
+        "width": 280,
+        "height": 48,
+        "top": 31264.607421875,
+        "right": 300,
+        "bottom": 31312.607421875,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "已核對資訊",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 31130.6484375,
+        "width": 280,
+        "height": 24,
+        "top": 31130.6484375,
+        "right": 300,
+        "bottom": 31154.6484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "正在等待已驗證的資訊。",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 31170.6484375,
+        "width": 280,
+        "height": 24,
+        "top": 31170.6484375,
+        "right": 300,
+        "bottom": 31194.6484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "目的地清單",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 31210.6484375,
+        "width": 280,
+        "height": 24,
+        "top": 31210.6484375,
+        "right": 300,
+        "bottom": 31234.6484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "目的地適用性尚未驗證",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 31250.6484375,
+        "width": 280,
+        "height": 24,
+        "top": 31250.6484375,
+        "right": 300,
+        "bottom": 31274.6484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "H2",
+      "name": "交通路線候補 · 不保證安全",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 31290.6484375,
+        "width": 280,
+        "height": 24,
+        "top": 31290.6484375,
+        "right": 300,
+        "bottom": 31314.6484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "沒有最新的已驗證路線",
+      "class": "",
+      "rect": {
+        "x": 20,
+        "y": 31330.6484375,
+        "width": 280,
+        "height": 24,
+        "top": 31330.6484375,
+        "right": 300,
+        "bottom": 31354.6484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    },
+    {
+      "tag": "P",
+      "name": "移動所需的確認條件尚未齊備，因此未顯示地圖。",
+      "class": "muted",
+      "rect": {
+        "x": 20,
+        "y": 31370.6484375,
+        "width": 280,
+        "height": 42,
+        "top": 31370.6484375,
+        "right": 300,
+        "bottom": 31412.6484375,
+        "left": 20
+      },
+      "display": "block",
+      "paddingBottom": "0px"
+    }
+  ],
+  "focus": {
+    "tag": "BODY",
+    "text": "離線 · 最後確認 —\n求助\n持續關注中\n·\n重新連線中 · 驗證尚未完成\n‹ 返回\nJapan Meteorological Agency (earthquake reports)\n資訊來源過期或無法使用\n\nJMA 資訊 · 由 72H 正規化 · 擷取時間: 2026/10/14 下午11:22:02\n\n最後發布: 2026/10/14 下午10:21:50\n\nJapan Meteorological Agency (earthquake reports) · 開啟官方來源 ↗\nJMA 資訊 · 由 72H 正規化\n\nTokyo Metropolitan Government Emergency Map · 開啟官方來源 ↗\n指定避難場所清單 · 目前開放狀況不明\n\nEkispert public transport route search · 開啟官方來源 ↗\n交通路線候補 · 不保證安全\n\n官方電文與補抓狀態\n\n只列出最近的參考紀錄。核實 feed 窗口不代表全國安全、沒有警報或可開始移動。\n\n顯示保存／補抓紀錄，當前狀態未核實。\n\nJapan Meteorological Agency (earthquake reports)\n來源連線（最後查詢）\n可連接\n最新成功接收\n2026/10/14 下午11:22:02\n最新官方發表\n2026/10/14 下午10:21:50\n長期 feed 核實至\n2026/10/14 下午10:22:18\n補抓狀態\n補抓／等待中\n待補抓電文\n0\n持久儲存\nSQLITE · 可用\n\n輪詢中斷：等待較新的長期 feed: 2026/10/14 下午11:21:01\n\n原文識別與版本\nJapan Meteorological Agency (tsunami warnings)\n來源連線（最後查詢）\n可連接\n最新成功接收\n2026/10/14 下午11:22:02\n最新官方發表\n2026/10/10 上午3:37:42\n長期 feed 核實至\n2026/10/14 下午10:22:18\n補抓狀態\n補抓／等待中\n待補抓電文\n0\n持久儲存\nSQLITE · 可用\n\n輪詢中斷：等待較新的長期 feed: 2026/10/14 下午11:21:01\n\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/14 下午10:21:50\n業務報告時間\n2026/10/14 下午10:21:00\n首次接收\n2026/10/14 下午10:44:03\n電文年齡（分鐘）\n60\n官方目標區域代碼（未映射地點）\n03 · 04\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/14 下午10:36:50\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/14 下午4:11:09\n業務報告時間\n2026/10/14 下午4:11:00\n首次接收\n2026/10/14 下午9:10:18\n電文年齡（分鐘）\n430\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/14 下午4:26:09\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/14 上午7:59:32\n業務報告時間\n2026/10/14 上午7:59:00\n首次接收\n2026/10/14 下午9:10:19\n電文年齡（分鐘）\n922\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/14 上午8:14:32\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/14 上午4:36:19\n業務報告時間\n2026/10/14 上午4:36:00\n首次接收\n2026/10/14 下午9:10:19\n電文年齡（分鐘）\n1125\n官方目標區域代碼（未映射地點）\n46\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/14 上午4:51:19\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/13 下午10:08:13\n業務報告時間\n2026/10/13 下午10:08:00\n首次接收\n2026/10/14 下午9:10:19\n電文年齡（分鐘）\n1513\n官方目標區域代碼（未映射地點）\n03 · 04\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/13 下午10:23:13\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/13 下午8:55:53\n業務報告時間\n2026/10/13 下午8:55:00\n首次接收\n2026/10/14 下午9:10:19\n電文年齡（分鐘）\n1586\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/13 下午9:10:53\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/13 下午8:47:15\n業務報告時間\n2026/10/13 下午8:47:00\n首次接收\n2026/10/14 下午9:11:22\n電文年齡（分鐘）\n1594\n官方目標區域代碼（未映射地點）\n30 · 36 · 28 · 37 · 39\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/13 下午9:02:15\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/13 上午11:31:53\n業務報告時間\n2026/10/13 上午11:31:00\n首次接收\n2026/10/14 下午9:11:22\n電文年齡（分鐘）\n2150\n官方目標區域代碼（未映射地點）\n43 · 42 · 46\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/13 上午11:46:53\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/13 上午2:28:37\n業務報告時間\n2026/10/13 上午2:28:00\n首次接收\n2026/10/14 下午9:11:22\n電文年齡（分鐘）\n2693\n官方目標區域代碼（未映射地點）\n03\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/13 上午2:43:37\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/12 下午8:35:31\n業務報告時間\n2026/10/12 下午8:35:00\n首次接收\n2026/10/14 下午9:11:22\n電文年齡（分鐘）\n3046\n官方目標區域代碼（未映射地點）\n01\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/12 下午8:50:31\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/12 下午4:54:02\n業務報告時間\n2026/10/12 下午4:54:00\n首次接收\n2026/10/14 下午9:11:23\n電文年齡（分鐘）\n3267\n官方目標區域代碼（未映射地點）\n43 · 46\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/12 下午5:09:02\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/12 下午12:48:12\n業務報告時間\n2026/10/12 下午12:48:00\n首次接收\n2026/10/14 下午9:12:42\n電文年齡（分鐘）\n3513\n官方目標區域代碼（未映射地點）\n01\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/12 下午1:03:12\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/12 上午10:00:17\n業務報告時間\n2026/10/12 上午10:00:00\n首次接收\n2026/10/14 下午9:12:42\n電文年齡（分鐘）\n3681\n官方目標區域代碼（未映射地點）\n13\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/12 上午10:15:17\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/12 上午5:08:56\n業務報告時間\n2026/10/12 上午5:08:00\n首次接收\n2026/10/14 下午9:12:42\n電文年齡（分鐘）\n3973\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/12 上午5:23:56\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/12 上午1:27:32\n業務報告時間\n2026/10/12 上午1:27:00\n首次接收\n2026/10/14 下午9:12:42\n電文年齡（分鐘）\n4194\n官方目標區域代碼（未映射地點）\n12 · 08\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/12 上午1:42:32\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/11 下午3:53:51\n業務報告時間\n2026/10/11 下午3:53:00\n首次接收\n2026/10/14 下午9:12:42\n電文年齡（分鐘）\n4768\n官方目標區域代碼（未映射地點）\n45\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/11 下午4:08:51\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/11 上午10:15:25\n業務報告時間\n2026/10/11 上午10:15:00\n首次接收\n2026/10/14 下午9:22:35\n電文年齡（分鐘）\n5106\n官方目標區域代碼（未映射地點）\n20\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/11 上午10:30:25\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/11 上午6:22:45\n業務報告時間\n2026/10/11 上午6:22:00\n首次接收\n2026/10/14 下午9:22:35\n電文年齡（分鐘）\n5339\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/11 上午6:37:45\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 下午7:02:58\n業務報告時間\n2026/10/10 下午7:02:00\n首次接收\n2026/10/14 下午9:22:36\n電文年齡（分鐘）\n6019\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 下午7:17:58\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 下午12:18:53\n業務報告時間\n2026/10/10 下午12:18:00\n首次接收\n2026/10/14 下午9:22:36\n電文年齡（分鐘）\n6423\n官方目標區域代碼（未映射地點）\n42 · 43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 下午12:33:53\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 上午10:23:10\n業務報告時間\n2026/10/10 上午10:23:00\n首次接收\n2026/10/14 下午9:22:36\n電文年齡（分鐘）\n6538\n官方目標區域代碼（未映射地點）\n17\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午10:38:10\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 上午7:46:23\n業務報告時間\n2026/10/10 上午7:46:00\n首次接收\n2026/10/14 下午9:23:40\n電文年齡（分鐘）\n6695\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午8:01:23\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 上午7:37:23\n業務報告時間\n2026/10/10 上午7:37:00\n首次接收\n2026/10/14 下午9:23:40\n電文年齡（分鐘）\n6704\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午7:52:23\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 上午4:30:55\n業務報告時間\n2026/10/10 上午4:30:00\n首次接收\n2026/10/14 下午9:23:40\n電文年齡（分鐘）\n6891\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午4:45:55\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 上午3:50:24\n業務報告時間\n2026/10/10 上午3:50:00\n首次接收\n2026/10/14 下午9:23:40\n電文年齡（分鐘）\n6931\n官方目標區域代碼（未映射地點）\n未提供可核實的目標區域\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午4:05:24\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 上午3:29:32\n業務報告時間\n2026/10/10 上午3:29:00\n首次接收\n2026/10/14 下午9:23:40\n電文年齡（分鐘）\n6952\n官方目標區域代碼（未映射地點）\n30\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午3:44:32\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 上午3:07:18\n業務報告時間\n2026/10/10 上午3:07:00\n首次接收\n2026/10/14 下午9:24:54\n電文年齡（分鐘）\n6974\n官方目標區域代碼（未映射地點）\n03 · 04\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午3:22:18\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/10 上午1:49:08\n業務報告時間\n2026/10/10 上午1:49:00\n首次接收\n2026/10/14 下午9:24:54\n電文年齡（分鐘）\n7052\n官方目標區域代碼（未映射地點）\n01\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午2:04:08\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/9 上午11:15:09\n業務報告時間\n2026/10/9 上午11:15:00\n首次接收\n2026/10/14 下午9:24:54\n電文年齡（分鐘）\n7926\n官方目標區域代碼（未映射地點）\n43 · 42 · 46\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/9 上午11:30:09\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/9 上午7:17:38\n業務報告時間\n2026/10/9 上午7:17:00\n首次接收\n2026/10/14 下午9:24:54\n電文年齡（分鐘）\n8164\n官方目標區域代碼（未映射地點）\n01\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/9 上午7:32:38\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/9 上午4:26:24\n業務報告時間\n2026/10/9 上午4:26:00\n首次接收\n2026/10/14 下午10:42:04\n電文年齡（分鐘）\n8335\n官方目標區域代碼（未映射地點）\n01 · 02\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/9 上午4:41:24\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/9 上午12:34:57\n業務報告時間\n2026/10/9 上午12:34:00\n首次接收\n2026/10/14 下午10:42:04\n電文年齡（分鐘）\n8567\n官方目標區域代碼（未映射地點）\n13\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/9 上午12:49:57\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 下午9:29:53\n業務報告時間\n2026/10/8 下午9:29:00\n首次接收\n2026/10/14 下午10:42:04\n電文年齡（分鐘）\n8752\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 下午9:44:53\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 下午8:38:27\n業務報告時間\n2026/10/8 下午8:38:00\n首次接收\n2026/10/14 下午10:42:04\n電文年齡（分鐘）\n8803\n官方目標區域代碼（未映射地點）\n20\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 下午8:53:27\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 下午6:17:00\n業務報告時間\n2026/10/8 下午6:17:00\n首次接收\n2026/10/14 下午10:42:04\n電文年齡（分鐘）\n8945\n官方目標區域代碼（未映射地點）\n03\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 下午6:32:00\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 下午1:33:00\n業務報告時間\n2026/10/8 下午1:33:00\n首次接收\n2026/10/14 下午10:43:03\n電文年齡（分鐘）\n9229\n官方目標區域代碼（未映射地點）\n01\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 下午1:48:00\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 下午1:25:47\n業務報告時間\n2026/10/8 下午1:25:00\n首次接收\n2026/10/14 下午10:43:03\n電文年齡（分鐘）\n9236\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 下午1:40:47\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 上午11:46:01\n業務報告時間\n2026/10/8 上午11:46:00\n首次接收\n2026/10/14 下午10:43:03\n電文年齡（分鐘）\n9335\n官方目標區域代碼（未映射地點）\n46\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 下午12:01:01\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 上午7:17:52\n業務報告時間\n2026/10/8 上午7:17:00\n首次接收\n2026/10/14 下午10:43:03\n電文年齡（分鐘）\n9604\n官方目標區域代碼（未映射地點）\n08 · 07 · 09 · 11 · 12\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 上午7:32:52\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 上午6:38:35\n業務報告時間\n2026/10/8 上午6:38:00\n首次接收\n2026/10/14 下午10:43:03\n電文年齡（分鐘）\n9643\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 上午6:53:35\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 上午4:39:21\n業務報告時間\n2026/10/8 上午4:39:00\n首次接收\n2026/10/14 下午10:44:03\n電文年齡（分鐘）\n9762\n官方目標區域代碼（未映射地點）\n12 · 08\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 上午4:54:21\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/8 上午4:17:55\n業務報告時間\n2026/10/8 上午4:17:00\n首次接收\n2026/10/14 下午10:44:03\n電文年齡（分鐘）\n9784\n官方目標區域代碼（未映射地點）\n12 · 08 · 07 · 09 · 10 · 11 · 13 · 14 · 22\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/8 上午4:32:55\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n過時\n電文發表／更新\n2026/10/7 下午11:25:57\n業務報告時間\n2026/10/7 下午11:25:00\n首次接收\n2026/10/14 下午10:44:03\n電文年齡（分鐘）\n10076\n官方目標區域代碼（未映射地點）\n43\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/7 下午11:40:57\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n震源・震度に関する情報 · VXSE53\n已被取代\n電文發表／更新\n2026/10/10 上午3:26:00\n業務報告時間\n2026/10/10 上午3:26:00\n首次接收\n2026/10/14 下午9:24:54\n電文年齡（分鐘）\n6956\n官方目標區域代碼（未映射地點）\n未提供可核實的目標區域\n官方有效期\n未判定\n應用程式證據使用期限\n2026/10/10 上午3:41:00\n開啟官方原文 · Japan Meteorological Agency (earthquake reports)\n原文識別與版本\n津波警報・注意報・予報a · VTSE41\n過時\n電文發表／更新\n2026/10/10 上午3:37:42\n業務報告時間\n2026/10/10 上午3:37:00\n首次接收\n2026/10/14 下午9:10:18\n電文年齡（分鐘）\n6944\n官方目標區域代碼（未映射地點）\n100 · 101 · 102 · 201 · 210 · 220 · 250 · 300 · 310 · 311 · 320 · 321 · 330 · 380 · 390 · 391 · 400 · 530 · 580 · 600 · 610 · 760 · 770 · 771 · 772 · 800 · 801 · 802\n官方有效期\n2026/10/11 下午8:00:00\n應用程式證據使用期限\n2026/10/10 上午3:52:42\n開啟官方原文 · Japan Meteorological Agency (tsunami warnings)\n原文識別與版本\n重新查詢\n已核對資訊\n\n正在等待已驗證的資訊。\n\n目的地清單\n\n目的地適用性尚未驗證\n\n交通路線候補 · 不保證安全\n\n沒有最新的已驗證路線\n\n移動所需的確認條件尚未齊備，因此未顯示地圖。\n\n現在\n地圖\n更多",
+    "aria": null
+  }
+}
