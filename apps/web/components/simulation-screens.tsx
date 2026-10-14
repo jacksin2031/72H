@@ -9,7 +9,6 @@ import { DistressEntry } from './distress-entry';
 import { UiIcon } from './ui-icon';
 import { SimulationReferenceMap } from './simulation-reference-map';
 import { SimulationRiskPanel } from './simulation-risk-panel';
-import './simulation-geo.css';
 import { useSimulationGeo } from '@/lib/use-simulation-geo';
 import { epicenterForPlayedMilestones, historicTsunamiWarningStarted, screenGeoExposure } from '@/lib/geospatial-exposure';
 import { seismicOriginsForMilestones } from '@/lib/seismic-wavefront';

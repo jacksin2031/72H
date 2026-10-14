@@ -82,3 +82,63 @@ a.ui-btn-secondary{color:var(--info)}
 .distress-pending{margin:var(--sp-4) 0;padding:var(--sp-3);border:1px dashed var(--info);border-radius:var(--radius)}
 .distress-pending label{display:flex;gap:var(--sp-2);align-items:center;min-height:48px}
 .distress-pending input{width:1.4rem;height:1.4rem}
+/* Screen-reader-only text (map page h1). */
+.ui-visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+/* Bottom sheet: closed content may stay mounted (hidden) so panel state survives. */
+.ui-sheet-held[hidden]{display:none}
+/* Pinned help vs bottom sheet (Task 7): sit above the sheet peek (56px) while closed; move to the top while the sheet is open so it never covers the sheet header or content. */
+.ui-app:has(.ui-sheet) .ui-help-pin{bottom:calc(64px + env(safe-area-inset-bottom) + 56px + var(--sp-3))}
+.ui-app:has(.ui-sheet[data-open]) .ui-help-pin{top:calc(var(--band-h,0px) + var(--sp-3));bottom:auto}
+/* Map screen (Task 7): full-bleed map, one chip row, one legend line, one sheet. */
+.map-screen{position:fixed;inset:0 0 calc(64px + env(safe-area-inset-bottom)) 0;background:var(--bg)}
+.map-canvas,.map-canvas>*{position:absolute;inset:0}
+.map-region{position:absolute;top:var(--sp-3);left:var(--gutter);right:72px;z-index:5}
+.map-region select{min-height:48px;max-width:100%;padding:0 var(--sp-3);border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);color:var(--text);font:inherit}
+.map-chips{position:absolute;left:0;right:0;bottom:72px;z-index:6;display:flex;gap:var(--sp-2);overflow-x:auto;padding:0 var(--gutter)}
+.map-chips .ui-chip{flex:0 0 auto;background:var(--bg)}
+.map-chips .ui-chip[aria-pressed=true]{background:var(--text)}
+.map-legend{position:absolute;left:var(--gutter);right:var(--gutter);bottom:128px;z-index:6;margin:0;padding:var(--sp-1) var(--sp-2);background:color-mix(in srgb,var(--bg) 85%,transparent);color:var(--text-2);font-size:var(--fs-meta)}
+.map-canvas .sim-map-footnote{top:72px;bottom:auto}
+.map-screen .ui-sheet{color:var(--text)}
+/* Sheet content (former card panels): plain text, rows and inputs; no frames. */
+.ui-sheet-body h3{margin:var(--sp-4) 0 var(--sp-2);font-size:var(--fs-body)}
+.ui-sheet-body h4{margin:var(--sp-3) 0 var(--sp-1);font-size:var(--fs-meta)}
+.ui-sheet-body p{margin:var(--sp-2) 0;overflow-wrap:anywhere}
+.ui-sheet-body a{color:var(--info)}
+.ui-sheet-body label{display:grid;gap:var(--sp-1);margin:var(--sp-3) 0;color:var(--text-2);font-size:var(--fs-meta)}
+.ui-sheet-body select,.ui-sheet-body input[type=search]{width:100%;min-height:48px;padding:0 var(--sp-3);border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);color:var(--text);font:inherit}
+.ui-sheet-body label.hazard-filter{display:flex;align-items:center;gap:var(--sp-2);min-height:48px}
+.ui-sheet-body button:not(.ui-btn):not(.ui-chip){min-height:48px;padding:0 var(--sp-2);background:none;border:0;color:var(--info);font:inherit;text-align:left;cursor:pointer}
+.ui-sheet-body button:disabled{opacity:.45;cursor:default}
+.ui-sheet-body details summary{min-height:48px;display:flex;align-items:center;color:var(--text-2);font-size:var(--fs-meta);cursor:pointer}
+.hazard-safety{color:var(--warn);font-weight:600}
+.hazard-muted{color:var(--text-2);font-size:var(--fs-meta)}
+.hazard-place-list,.national-shelter-list,.evacuation-checks{list-style:none;margin:0;padding:0}
+.hazard-place-list>li,.national-shelter-list>li,.evacuation-checks>li{padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+.hazard-place-list dl>div,.national-shelter-list dl>div,.evacuation-checks>li{display:flex;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
+.hazard-place-list dd,.national-shelter-list dd{margin:0}
+.hazard-observation-list{max-height:320px;overflow:auto}
+.hazard-warning-key{display:flex;flex-wrap:wrap;gap:var(--sp-1) var(--sp-3);font-size:var(--fs-meta)}
+.hazard-warning-key>span{display:inline-flex;align-items:center;gap:var(--sp-1)}
+.hazard-warning-key i{display:inline-block;width:10px;height:10px;flex:0 0 10px}
+.evacuation-route-panel article{padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+/* Exercise map risk panel (ported from simulation-geo.css; Task 8 restyles the exercise screens). */
+.sim-v2-map-sheet-risk{max-height:min(54dvh,540px);overflow-y:auto;overscroll-behavior:contain}
+.sim-risk-panel{text-align:left}
+.sim-risk-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-2)}
+.sim-risk-header h2{margin:0;font-size:var(--fs-title)}
+.sim-risk-exercise{color:var(--exercise);font-size:var(--fs-meta);font-weight:700}
+.sim-risk-gps{display:flex;gap:var(--sp-2);align-items:center;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+.sim-risk-gps p{margin:0;font-size:var(--fs-meta)}
+.sim-risk-gps button{min-height:48px;padding:0 var(--sp-3);border:0;border-radius:var(--radius);background:var(--text);color:var(--bg);font:inherit;font-weight:700}
+.sim-risk-gps button:disabled{opacity:.45}
+.sim-risk-entry{padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+.sim-risk-entry h3{display:flex;align-items:center;flex-wrap:wrap;gap:var(--sp-2);margin:0 0 var(--sp-2);font-size:var(--fs-body)}
+.sim-risk-entry p{margin:var(--sp-1) 0;font-size:var(--fs-meta)}
+.sim-risk-entry p strong{font-size:var(--fs-title);font-variant-numeric:tabular-nums}
+.sim-risk-entry a{display:inline-flex;align-items:center;min-height:48px;color:var(--info)}
+.sim-risk-entry small{display:block;color:var(--text-2)}
+.sim-risk-unknown{color:var(--warn);font-size:var(--fs-meta);white-space:nowrap}
+.sim-risk-limits,.sim-risk-alert{color:var(--warn);font-weight:700}
+.sim-risk-tsunami-on{border-left:4px solid var(--warn);padding-left:var(--sp-2)}
+.sim-risk-privacy{color:var(--text-2);font-size:var(--fs-meta)}

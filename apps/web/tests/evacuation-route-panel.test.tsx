@@ -32,6 +32,13 @@ it('calculates actual pinned roads to a tsunami-designated site locally and pres
  await act(async()=>button('計算本機道路候選').click());
  expect(host.querySelectorAll('article').length).toBeGreaterThan(0);expect(host.textContent).toContain('最安全路線：未判定');
  expect(host.textContent).toContain('災後道路通行');expect(host.textContent).toContain('最後接駁未核實');
+ // Text audit: the seven readiness rows collapse into one count line plus a disclosure listing every check.
+ const unverified=host.querySelector('[data-testid=route-unverified]')!;
+ expect(unverified.textContent).toBe('還有 4 項未確認');
+ const list=host.querySelector<HTMLDetailsElement>('details.ui-disclosure#route-checks-list')!;
+ expect(list.open).toBe(false);expect(list.querySelectorAll('li')).toHaveLength(7);
+ expect(list.textContent).toContain('災後道路通行');expect(list.textContent).toContain('目的地及移動授權');
+ expect(host.querySelector('h1,h2')).toBeNull();expect(host.textContent).not.toContain('導航');
  await act(async()=>button('查看此道路候選').click());expect(Number(host.querySelector('output')!.textContent)).toBeGreaterThan(2);
  await act(async()=>{hazard.value='earthquake';hazard.dispatchEvent(new Event('change',{bubbles:true}));});
  expect(host.querySelector('output')!.textContent).toBe('0');

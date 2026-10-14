@@ -19,7 +19,7 @@ async function render(value:HazardPack|null,bulletin?:unknown){
   vi.stubGlobal('fetch',vi.fn(async()=>bulletin?new Response(JSON.stringify(bulletin)):new Response('',{status:503})));
   container=document.createElement('div');document.body.append(container);root=createRoot(container);
   await act(async()=>root!.render(<OfficialHazardPanel language="zh-TW" pack={value} loading={false} error={!value} point={null}
-    showInundation showPlaces onInundation={()=>{}} onPlaces={()=>{}} onRetry={()=>{}} onGPS={gps} onClear={()=>{}} onFocus={()=>{}} onPlace={onPlace} gpsState="idle"/>));
+    onRetry={()=>{}} onGPS={gps} onClear={()=>{}} onFocus={()=>{}} onPlace={onPlace} gpsState="idle"/>));
   return {gps,onPlace};
 }
 it('keeps opening/route uncertainty visible and filters designation independently from shelter identity',async()=>{
@@ -28,6 +28,7 @@ it('keeps opening/route uncertainty visible and filters designation independentl
   expect(container!.textContent).toContain('安全性：無法判定');
   expect(container!.textContent).toContain('目前開放：未核實');
   expect(container!.textContent).toContain('路線：未核實');
+  expect(container!.querySelector('h1,h2,aside')).toBeNull(); // sheet content: no own title or card frame
   const filter=container!.querySelector<HTMLInputElement>('.hazard-filter input')!;
   await act(async()=>filter.click());
   expect(container!.querySelector('.hazard-place-list')!.textContent).toContain('Emergency test');
@@ -49,7 +50,7 @@ it('shows unknown facility precision without claiming a zero-error position',asy
   await render(pack);
   await act(async()=>root!.render(<OfficialHazardPanel language="zh-TW" pack={pack} loading={false} error={false}
     point={{lat:38,lng:141,accuracy_m:null,captured_at:Date.now(),source:'OFFICIAL_PLACE'}}
-    showInundation showPlaces onInundation={()=>{}} onPlaces={()=>{}} onRetry={()=>{}} onGPS={()=>{}}
+    onRetry={()=>{}} onGPS={()=>{}}
     onClear={()=>{}} onFocus={()=>{}} onPlace={()=>{}} gpsState="idle"/>));
   const query=container!.querySelector('[data-testid="official-hazard-assessment"]')!.textContent;
   expect(query).toContain('場所座標精度：未提供');expect(query).not.toContain('±0');
@@ -63,7 +64,7 @@ it('assesses a newly selected point against current time before the next freshne
   clock+=10000;
   await act(async()=>root!.render(<OfficialHazardPanel language="zh-TW" pack={pack} loading={false} error={false}
     point={{lat:38,lng:141,accuracy_m:0,captured_at:clock,source:'MAP_POINT'}}
-    showInundation showPlaces onInundation={()=>{}} onPlaces={()=>{}} onRetry={()=>{}} onGPS={()=>{}}
+    onRetry={()=>{}} onGPS={()=>{}}
     onClear={()=>{}} onFocus={()=>{}} onPlace={()=>{}} gpsState="idle"/>));
   expect(container!.textContent).toContain('沒有足夠調查覆蓋證據');
   expect(container!.textContent).not.toContain('定位已過期或精度不足');

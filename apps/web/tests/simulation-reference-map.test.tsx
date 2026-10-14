@@ -207,6 +207,21 @@ describe('isolated simulation reference map', () => {
     expect(details?.open).toBe(false);
   });
 
+  it('legend="none" drops the legend card and its navigation note (the map screen shows them once) but keeps status and attribution', async () => {
+    vi.stubGlobal('fetch',vi.fn(async()=>({ok:false,status:404})));
+    container=document.createElement('div');document.body.append(container);
+    root=createRoot(container);
+    await act(async()=>{root!.render(<SimulationReferenceMap language="zh-TW" legend="none" regionPicker={false}/>);});
+    await act(async()=>{await Promise.resolve();});
+    expect(container.querySelector('.sim-map-information')).toBeNull();
+    expect(container.querySelector('[data-testid=japan-land-sea-legend]')).toBeNull();
+    expect(container.querySelector('[data-testid=japan-map-details]')).toBeNull();
+    expect(container.textContent).not.toContain('導航');
+    expect(container.querySelector('.japan-region-picker')).toBeNull();
+    expect(container.querySelector('.sim-map-footnote [role=status]')?.textContent).toContain('不會顯示未經核實的地圖');
+    expect(container.querySelector('.sim-map-footnote a[href*="maps.gsi.go.jp"]')).not.toBeNull();
+  });
+
   it('fails closed on missing verified country coastline without requesting GPS or untrusted data', async () => {
     const fetcher=vi.fn(async (_url: string | URL, _init?: RequestInit) => ({ok:false,status:404}));
     const gps=vi.fn();

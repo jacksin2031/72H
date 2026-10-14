@@ -1,6 +1,0 @@
-.evacuation-route-panel{margin:1rem 0;padding:1rem;border:1px solid #668278;border-radius:12px;overflow-wrap:anywhere;scroll-margin-top:80px}
-.evacuation-route-panel label{display:block;margin:.8rem 0}.evacuation-route-panel select{display:block;width:100%;min-height:44px;margin-top:.3rem;background:#172c3d;color:#f4f8ff;border:1px solid #7e96aa;border-radius:8px;padding:.5rem;font:inherit}
-.evacuation-route-panel button{display:block;width:100%;margin:.65rem 0;min-height:44px;font:inherit}.evacuation-route-panel p{line-height:1.6}
-.evacuation-checks{list-style:none;padding:0}.evacuation-checks li{display:flex;justify-content:space-between;gap:1rem;border-bottom:1px solid #405565;padding:.7rem 0;flex-wrap:wrap}
-.evacuation-checks strong{font-size:.9rem}.evacuation-route-panel article{padding:1rem;border:1px dashed #668278;border-radius:10px;margin:1rem 0}
-.evacuation-route-panel summary{min-height:44px;display:flex;align-items:center;cursor:pointer}

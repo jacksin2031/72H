@@ -38,7 +38,7 @@ const text={
 export function DesignatedPlacesPanel({language,state,onPlace}:{language:Language;state:DesignatedPlacesState;onPlace:(p:OfficialPlace)=>void}){
   const t=hazardText[language],d=text[language],{pack,places,format,hazard,now}=state;const [limit,setLimit]=useState(12);
   useEffect(()=>setLimit(12),[format,hazard,state.search]);
-  return <section className="designated-places-panel" data-testid="designated-places"><h2>{t.list} · {places.length}</h2>
+  return <div className="designated-places-panel" data-testid="designated-places"><h3>{t.list} · {places.length}</h3>
     <p className="hazard-muted">{t.scope}</p><p>{d.dateUnknown}</p>
     {state.loading&&<p role="status">{t.loading}</p>}{state.error&&<p role="alert">{t.error}</p>}
     {(!pack||state.error)&&<button onClick={state.retry} disabled={state.loading}>{t.retry}</button>}
@@ -72,7 +72,7 @@ export function DesignatedPlacesPanel({language,state,onPlace}:{language:Languag
         <a href={pack.manifest.schema_url} target="_blank" rel="noopener noreferrer">GSI GeoJSON</a> · <a href={pack.manifest.license_url} target="_blank" rel="noopener noreferrer">国土地理院</a>
       </details>
     </>}
-  </section>;
+  </div>;
 }
 
 function openingReason(language:Language,reason:string){

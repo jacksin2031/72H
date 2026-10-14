@@ -33,7 +33,7 @@ function cssFiles(dir:string):string[]{
   return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?(e.name==='node_modules'||e.name==='.next'?[]:cssFiles(resolve(dir,e.name))):e.name.endsWith('.css')?[resolve(dir,e.name)]:[]);
 }
 /** Files not yet migrated. Shrinks every phase; must end as ['components/simulation-map-ui.css']. */
-export const LEGACY_CSS_ALLOWLIST=['app/globals.css','components/simulation-map-ui.css','components/simulation-flat-ui.css','components/simulation-dashboard.css','components/disaster-test.css','components/official-hazard.css','components/simulation-geo.css','components/simulation-advice.css','components/evacuation-route.css','components/plan-explanation.css'];
+export const LEGACY_CSS_ALLOWLIST=['app/globals.css','components/simulation-map-ui.css','components/simulation-flat-ui.css','components/simulation-dashboard.css','components/disaster-test.css','components/simulation-advice.css','components/plan-explanation.css'];
 const ALLOWED_RADIUS=new Set(['components/ui/ui.css','app/tokens.css','components/simulation-map-ui.css']);
 const WEB=resolve(__dirname,'..');
 describe('cardless guard',()=>{

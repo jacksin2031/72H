@@ -24,6 +24,7 @@ async function render(){
 }
 it('filters map and list together, distinguishes roles and retains opening uncertainty',async()=>{
   await render();expect(host!.textContent).toContain('目前開放：未核實');
+  expect(host!.querySelector('h1,h2')).toBeNull(); // sheet content: the Section supplies the title
   const select=host!.querySelector<HTMLSelectElement>('select[aria-label="災害類別"]')!;
   await act(async()=>{select.value='tsunami';select.dispatchEvent(new Event('change',{bubbles:true}));});
   const count=Number(host!.querySelector('[data-testid="mapped"]')!.textContent);

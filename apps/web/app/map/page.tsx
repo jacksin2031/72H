@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Language } from '@/lib/contracts';
 import { SimulationReferenceMap } from '@/components/simulation-reference-map';
+import { MAP_REGIONS, mapRegionLabel, mapOverviewLabel } from '@/lib/map-regions';
 import { AppShell } from '@/components/ui';
+import { MapScreen } from '@/components/map-screen';
 import { readSavedLanguage } from '@/lib/saved-language';
-import { documentedEpicenters } from '@/lib/geospatial-exposure';
 import { loadOfficialHazardPack, officialPlaceLocation, type HazardPack, type HazardLocation, type OfficialPlace } from '@/lib/official-hazards';
 import { OfficialHazardPanel } from '@/components/official-hazard-panel';
 import { JapanShelterPanel } from '@/components/japan-shelter-panel';
@@ -17,19 +18,29 @@ import { DesignatedPlacesPanel } from '@/components/designated-places-panel';
 import {EvacuationRoutePanel} from '@/components/evacuation-route-panel';
 import type {RoadCandidate} from '@/lib/evacuation-road-graph';
 import '@/components/simulation-flat-ui.css';
-import '@/components/simulation-geo.css';
 import '@/components/simulation-map-ui.css';
-import '@/components/official-hazard.css';
+
+const screenText={
+  'zh-TW':{title:'全日本參考地圖',inundation:'浸水想定',places:'避難場所',lines:'海嘯預報區',regions:'震度地域',
+    legendInundation:'浸水想定：官方靜態想定，非即時',legendPlaces:'避難場所：官方指定，開放未核實',legendLines:'海嘯預報區：最新電文參考',legendRegions:'震度地域：地域最大值，非逐點實測',
+    note:'僅供參考：不可作避難導航，也不是安全判定',peek:(n:number)=>`附近 ${n} 處指定避難場所`,placesTitle:'避難場所',officialTitle:'官方資料'},
+  ja:{title:'日本全国の参考地図',inundation:'浸水想定',places:'避難場所',lines:'津波予報区',regions:'震度地域',
+    legendInundation:'浸水想定：公式の静的想定・リアルタイムではない',legendPlaces:'避難場所：公式指定・開設は未確認',legendLines:'津波予報区：最新電文の参考',legendRegions:'震度地域：地域の最大値・各地点の実測ではない',
+    note:'参考情報：避難ナビ・安全判定には使えません',peek:(n:number)=>`付近の指定避難場所 ${n} か所`,placesTitle:'避難場所',officialTitle:'公式情報'},
+  en:{title:'All Japan reference map',inundation:'Inundation',places:'Places',lines:'Tsunami areas',regions:'Intensity regions',
+    legendInundation:'Inundation: official static scenario, not live',legendPlaces:'Places: official designations, opening unverified',legendLines:'Tsunami areas: latest bulletin reference',legendRegions:'Intensity regions: regional maxima, not point readings',
+    note:'Reference only: not for evacuation navigation or a safety determination',peek:(n:number)=>`${n} designated places nearby`,placesTitle:'Evacuation places',officialTitle:'Official data'},
+} as const;
 
 /** Public geography and reviewed official reference data. GPS is opt-in and device-local; no movement authority. */
 export default function JapanMapPage() {
   const [language,setLanguage]=useState<Language>('zh-TW');
-  const [historicCase,setHistoricCase]=useState('');
   const [pack,setPack]=useState<HazardPack|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(false),[attempt,setAttempt]=useState(0);
   const [showInundation,setShowInundation]=useState(true),[showPlaces,setShowPlaces]=useState(true);
   const [manualPoint,setManualPoint]=useState<HazardLocation|null>(null),[focus,setFocus]=useState<{lat:number;lng:number;zoom?:number}|null>(null);
   const [referencePlaces,setReferencePlaces]=useState<OfficialPlace[]>([]),[viewBounds,setViewBounds]=useState<[number,number,number,number]|null>(null);
   const [referenceRoute,setReferenceRoute]=useState<RoadCandidate|null>(null);
+  const [regionRequest,setRegionRequest]=useState<{value:string}|null>(null);
   const geo=useSimulationGeo();
   const [showIntensityRegions,setShowIntensityRegions]=useState(false);
   const official=useDisasterMap(showIntensityRegions);
@@ -56,31 +67,46 @@ export default function JapanMapPage() {
       void navigator.serviceWorker.register('/sw.js').catch(()=>{});
     }
   },[]);
-  return <AppShell tab="map" language={language} fullBleed><div className="japan-reference-page japan-official-page">
-    <div className="official-hazard-layout"><div className="japan-reference-viewport">
-      <SimulationReferenceMap language={language} protectDeviceLocation epicenter={documentedEpicenters[historicCase]??null}
+  const t=screenText[language];
+  const layers=[
+    {key:'inundation',label:t.inundation,on:showInundation,toggle:()=>setShowInundation(v=>!v),legend:t.legendInundation},
+    {key:'places',label:t.places,on:showPlaces,toggle:()=>setShowPlaces(v=>!v),legend:t.legendPlaces},
+    {key:'lines',label:t.lines,on:showForecastLines,toggle:()=>setShowForecastLines(v=>!v),legend:t.legendLines},
+    {key:'regions',label:t.regions,on:showIntensityRegions,toggle:()=>setShowIntensityRegions(v=>!v),legend:t.legendRegions},
+  ];
+  // One legend line: what each visible layer is, then the page's single navigation / safety note (shown even with every layer off).
+  const legend=[...layers.filter(l=>l.on).map(l=>l.legend),t.note].join(' · ');
+  // Road candidates need an origin: the section appears once a point (GPS, map point or place) is chosen, and stays while a candidate is drawn.
+  const routeSection=point||referenceRoute?<EvacuationRoutePanel language={language} state={designations} origin={point} onOrigin={choosePoint} onFocus={setFocus} onRoute={setReferenceRoute}/>:null;
+  return <AppShell tab="map" language={language} fullBleed>
+    <h1 className="ui-visually-hidden">{t.title}</h1>
+    <MapScreen language={language}
+      map={<SimulationReferenceMap language={language} protectDeviceLocation epicenter={null} legend="none" regionPicker={false} regionRequest={regionRequest}
         userLocation={geo.location} referencePoint={manualPoint} officialPack={pack} showInundation={showInundation} showPlaces={showPlaces}
         disasterReference={official.data} forecastLinePack={official.pack} referenceConnected={official.connected} referenceNow={official.now} showForecastLines={showForecastLines}
         intensityRegionPack={official.regions} showIntensityRegions={showIntensityRegions}
         referencePlaces={mapPlaces} viewBounds={viewBounds} referenceRoute={referenceRoute}
-        focusPoint={focus} onReferencePoint={choosePoint} onPlace={choosePlace}/>
-      <label className="japan-history-picker"><select aria-label={language==='ja'?'過去の地震':language==='en'?'Historical earthquake':'歷史地震'} value={historicCase} onChange={event=>setHistoricCase(event.target.value)}>
-        <option value="">{language==='ja'?'過去の震央を表示':language==='en'?'Show historical epicenter':'顯示歷史震央'}</option>
-        <option value="tohoku-2011">2011 · 東日本</option><option value="kobe-1995">1995 · 神戶 / 神戸</option>
-        <option value="kumamoto-2016">2016 · 熊本</option><option value="iburi-2018">2018 · 北海道</option><option value="noto-2024">2024 · 能登</option>
-      </select></label>
-    </div><div className="japan-official-sidebar">
-      <JapanShelterPanel language={language} onPlaces={setReferencePlaces} onPlace={choosePlace} onRegion={setViewBounds}/>
-      <OfficialHazardPanel language={language} pack={pack} loading={loading} error={error} point={point} includePlaceList={false}
-      liveReference={<DisasterMapPanel language={language} {...official} showLines={showForecastLines} onLines={setShowForecastLines}
-        showRegions={showIntensityRegions} onRegions={setShowIntensityRegions}/>}
-      placesReference={<><EvacuationRoutePanel language={language} state={designations} origin={point} onOrigin={choosePoint} onFocus={setFocus} onRoute={setReferenceRoute}/>
-        <DesignatedPlacesPanel language={language} state={designations} onPlace={choosePlace}/></>}
-      showInundation={showInundation} showPlaces={showPlaces} onInundation={setShowInundation} onPlaces={setShowPlaces}
-      onRetry={()=>setAttempt(x=>x+1)} onGPS={()=>{setManualPoint(null);geo.request();}} gpsState={geo.state}
-      onClear={()=>{geo.clear();setManualPoint(null);}} onFocus={()=>{
-        if(pack?.manifest.bbox){const [w,s,e,n]=pack.manifest.bbox;setFocus({lng:(w+e)/2,lat:(s+n)/2,zoom:10});}
-        else if(pack?.places[0])setFocus({lat:pack.places[0].lat,lng:pack.places[0].lng});
-      }} onPlace={choosePlace}/></div></div>
-  </div></AppShell>;
+        focusPoint={focus} onReferencePoint={choosePoint} onPlace={choosePlace}/>}
+      region={<select aria-label={mapRegionLabel(language)} defaultValue="" onChange={event=>setRegionRequest({value:event.target.value})}>
+        <option value="">{mapOverviewLabel(language)}</option>
+        {MAP_REGIONS.map(r=><option key={r.value} value={r.value}>{r.label}</option>)}
+      </select>}
+      layers={layers.map(({key,label,on,toggle})=>({key,label,on,toggle}))}
+      legend={legend}
+      peek={t.peek(mapPlaces.length)}
+      routeSection={routeSection}
+      sections={[
+        {title:t.placesTitle,content:<>
+          <DesignatedPlacesPanel language={language} state={designations} onPlace={choosePlace}/>
+          <JapanShelterPanel language={language} onPlaces={setReferencePlaces} onPlace={choosePlace} onRegion={setViewBounds}/>
+        </>},
+        {title:t.officialTitle,content:<OfficialHazardPanel language={language} pack={pack} loading={loading} error={error} point={point} includePlaceList={false}
+          liveReference={<DisasterMapPanel language={language} {...official} showRegions={showIntensityRegions}/>}
+          onRetry={()=>setAttempt(x=>x+1)} onGPS={()=>{setManualPoint(null);geo.request();}} gpsState={geo.state}
+          onClear={()=>{geo.clear();setManualPoint(null);}} onFocus={()=>{
+            if(pack?.manifest.bbox){const [w,s,e,n]=pack.manifest.bbox;setFocus({lng:(w+e)/2,lat:(s+n)/2,zoom:10});}
+            else if(pack?.places[0])setFocus({lat:pack.places[0].lat,lng:pack.places[0].lng});
+          }} onPlace={choosePlace}/>},
+      ]}/>
+  </AppShell>;
 }

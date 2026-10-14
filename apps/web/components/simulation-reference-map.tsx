@@ -10,6 +10,7 @@ import {REFERENCE_VECTOR_SOURCE,REFERENCE_VECTOR_LAYERS,REFERENCE_GLYPHS,REFEREN
 import type { HazardPack, OfficialPlace } from '@/lib/official-hazards';
 import {forecastLines,type DisasterMapReference,type ForecastLinePack} from '@/lib/disaster-map';
 import {regionalMaxima,type IntensityRegionPack} from '@/lib/intensity-regions';
+import {MAP_REGIONS,mapRegionLabel} from '@/lib/map-regions';
 import {
   GSI_ATTRIBUTION_URL, JAPAN_DEFAULT_CENTER, JAPAN_VIEW_BOUNDS,
   NATURAL_EARTH_LICENSE_URL,
@@ -71,6 +72,7 @@ export function SimulationReferenceMap({
   language,compact=false,showInformation=true,epicenter=null,userLocation=null,referencePoint=null,officialPack=null,showInundation=false,showPlaces=false,focusPoint=null,onReferencePoint,onPlace,protectDeviceLocation=true,seismicOrigins=[],seismicTime=null,
   disasterReference=null,forecastLinePack=null,referenceConnected=false,referenceNow=0,showForecastLines=false,
   intensityRegionPack=null,showIntensityRegions=false,referencePlaces,viewBounds=null,referenceRoute=null,
+  legend='card',regionPicker=!compact,regionRequest=null,
 }:{
   language:Language; compact?:boolean;showInformation?:boolean;epicenter?:Epicenter|null;userLocation?:LocationFix|null;
   referencePoint?:{lat:number;lng:number}|null;
@@ -83,6 +85,8 @@ export function SimulationReferenceMap({
   referenceConnected?:boolean;referenceNow?:number;showForecastLines?:boolean;
   intensityRegionPack?:IntensityRegionPack|null;showIntensityRegions?:boolean;
   referenceRoute?:import('@/lib/evacuation-road-graph').RoadCandidate|null;
+  /** 'none': the host screen renders its own one-line legend and the single navigation/safety note. */
+  legend?:'card'|'none';regionPicker?:boolean;regionRequest?:{value:string}|null;
 }){
   const host=useRef<HTMLDivElement>(null);
   const mapRef=useRef<import('maplibre-gl').Map|null>(null);
@@ -372,28 +376,27 @@ export function SimulationReferenceMap({
   const nationwide=()=>{
     fitCountry.current();
   };
+  const goRegion=(region:string)=>{
+    if(!region){nationwide();return;}
+    const [lng,lat,zoom]=region.split(',').map(Number);
+    mapRef.current?.easeTo({center:[lng,lat],zoom,duration:0});
+  };
+  useEffect(()=>{if(status==='ready'&&regionRequest)goRegion(regionRequest.value);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[status,regionRequest]);
+  const card=showInformation&&legend==='card';
   return <section className={compact?'sim-map-reference sim-map-compact':'sim-map-reference sim-map-full'}
     aria-label={t.title} data-testid="simulation-reference-map">
     <div ref={host} className="sim-map-canvas" aria-hidden="true"/>
-    {!compact&&<label className="japan-region-picker"><span>{language==='ja'?'地域':language==='en'?'Region':'地區'}</span>
-      <select aria-label={language==='ja'?'地図の地域':language==='en'?'Map region':'地圖地區'} defaultValue=""
-        disabled={status!=='ready'} onChange={event=>{
-          const region=event.target.value;
-          if(!region){nationwide();return;}
-          const [lng,lat,zoom]=region.split(',').map(Number);
-          mapRef.current?.easeTo({center:[lng,lat],zoom,duration:0});
-        }}>
+    {regionPicker&&<label className="japan-region-picker"><span>{language==='ja'?'地域':language==='en'?'Region':'地區'}</span>
+      <select aria-label={mapRegionLabel(language)} defaultValue=""
+        disabled={status!=='ready'} onChange={event=>goRegion(event.target.value)}>
         <option value="">{t.overview}</option>
-        <option value="142,43.5,6">北海道</option><option value="140,38.5,6">東北</option>
-        <option value="139.7,35.7,11">東京 / Tokyo</option><option value="137,36.5,6">中部</option>
-        <option value="135.5,34.7,7">近畿</option><option value="133,34.2,7">中國・四國</option>
-        <option value="131,32.5,6">九州</option><option value="127.7,26.2,8">沖繩 / 沖縄</option>
-        <option value="124.2,24.4,8">八重山</option><option value="142.2,27.1,8">小笠原</option>
-        <option value="153.98,24.28,10">南鳥島</option>
+        {MAP_REGIONS.map(r=><option key={r.value} value={r.value}>{r.label}</option>)}
       </select>
     </label>}
-    <div className={showInformation?'sim-map-information':'sim-map-footnote'}>
-      {showInformation&&<>
+    <div className={card?'sim-map-information':'sim-map-footnote'}>
+      {card&&<>
       <div className="sim-map-maplabel"><strong>{t.title}</strong><small>{officialPack?(language==='ja'?'公式想定データ · 安全性未判定':language==='en'?'Official scenario data · safety undetermined':'官方想定資料 · 安全性未判定'):t.note}</small></div>
       <div className="sim-map-landsea-legend" data-testid="japan-land-sea-legend">
         <span><i className="sim-map-land-color"/>{t.land}</span>
@@ -406,7 +409,7 @@ export function SimulationReferenceMap({
           <span><i style={{background:'none',width:16,height:0,borderBottom:'3px dashed #a6adb5'}}/>{language==='ja'?'過去／未確認／取消':language==='en'?'Old / unverified / cancelled':'舊資料／未核實／取消'}</span></>}
       </div>
       </>}
-      <p className="sim-map-quick-caution">{t.shortCaution}</p>
+      {legend==='card'&&<p className="sim-map-quick-caution">{t.shortCaution}</p>}
       {seismicOrigins.length>0&&seismicTime!==null&&<p className="sim-map-wave-legend" data-testid="seismic-wave-legend"
         data-wave-time={seismicTime} data-wave-count={waveData.features.length}
         data-p-radius-km={waveData.features.filter(f=>f.properties.phase==='P').at(-1)?.properties.radius_km.toFixed(3)}
@@ -418,7 +421,7 @@ export function SimulationReferenceMap({
         {status==='loading'?t.loading:status==='unavailable'?t.unavailable:t.tilesUnavailable}
       </p>}
       {protectDeviceLocation&&userLocation&&<p className="sim-map-status">{language==='ja'?'GPS使用中は位置を守るため端末内の輪郭・想定データのみ表示':language==='en'?'GPS view uses device-local outlines and scenario data to protect location':'GPS 查詢只顯示裝置內輪廓及想定資料，避免詳細圖磚洩漏位置'}</p>}
-      {showInformation&&<details className="sim-map-details" data-testid="japan-map-details">
+      {card&&<details className="sim-map-details" data-testid="japan-map-details">
         <summary>{t.details}</summary>
         <p className="sim-map-caution">{t.caution}</p>
         <p className="sim-map-detail-ready">{t.ready}</p>
