@@ -23,6 +23,39 @@ function harness(cached?: Response) {
 }
 
 describe('offline map pack fetch handling', () => {
+  it('bounds downloaded national data at 32 MiB and evicts the oldest pack',async()=>{
+    const listeners:Record<string,(event:unknown)=>void>={};
+    const store=new Map<string,Response>();
+    const cache={keys:async()=>[...store.keys()].map(url=>new Request(url)),
+      match:async(request:Request)=>store.get(request.url)?.clone(),
+      delete:async(request:Request)=>store.delete(request.url),
+      put:async(request:Request,response:Response)=>{store.set(request.url,response.clone());}};
+    const size=7*1024*1024;
+    runInNewContext(script,{URL,Response,Headers,fetch:vi.fn(async()=>new Response(new Uint8Array(size))),
+      caches:{open:async()=>cache},self:{location:{origin},addEventListener:(name:string,listener:(event:unknown)=>void)=>{listeners[name]=listener;}}});
+    for(let i=1;i<=5;i++){
+      let response:Promise<Response>|undefined;const writes:Promise<unknown>[]=[];
+      const path=`${origin}/shelters/japan-v1/0${i}-${'a'.repeat(64)}.json`;
+      listeners.fetch({request:new Request(path),respondWith:(value:Promise<Response>)=>{response=value;},waitUntil:(value:Promise<unknown>)=>{writes.push(value);}});
+      await response;await Promise.all(writes);
+    }
+    expect(store.size).toBe(4);
+    expect([...store.keys()].some(url=>url.includes('/01-'))).toBe(false);
+    expect([...store.values()].reduce((sum,response)=>sum+Number(response.headers.get('Content-Length')),0)).toBeLessThanOrEqual(32*1024*1024);
+  });
+  it('serves only downloaded hash-addressed national shelter packs offline',async()=>{
+    const app=harness(new Response('cached designation snapshot'));
+    const path='/shelters/japan-v1/13-'+ 'a'.repeat(64)+'.json';
+    const respond=app.request(path);
+    expect(respond).toHaveBeenCalledOnce();
+    expect(await (await respond.mock.calls[0][0]).text()).toContain('designation snapshot');
+    expect(app.fetch).not.toHaveBeenCalled();
+    expect(app.request(path+'?gps=1')).not.toHaveBeenCalled();
+    expect(app.request(path,{Authorization:'Bearer test'})).not.toHaveBeenCalled();
+    expect(app.request('/shelters/japan-v1/unpinned.json')).not.toHaveBeenCalled();
+    const uncached=harness();
+    await expect(uncached.request(path).mock.calls[0][0]).rejects.toThrow('Network unavailable');
+  });
   it('migrates public packs before shell cleanup and retains them across later offline upgrades',async()=>{
     const listeners:Record<string,(event:unknown)=>void>={};
     const stores=new Map<string,Map<string,{request:Request,response:Response}>>();

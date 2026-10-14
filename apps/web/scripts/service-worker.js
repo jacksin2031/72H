@@ -2,6 +2,28 @@
 const VERSION = '72h-shell-__BUILD_ID__';
 // Public reference packs survive shell upgrades; the client still verifies every hash.
 const HAZARDS = '72h-hazards-v1';
+const SHELTERS = '72h-shelters-v1';
+const isShelterPath = path => /^\/shelters\/japan-v1\/(manifest|\d{2})-[a-f0-9]{64}\.json$/.test(path);
+let shelterWrites = Promise.resolve();
+function cacheShelters(request,response){
+  // Serialized, bounded public-only cache. Content-addressed snapshots cannot
+  // satisfy a newer manifest; runtime consumers verify bytes before using them.
+  shelterWrites=shelterWrites.then(async()=>{
+    const bytes=await response.arrayBuffer();if(bytes.byteLength>8000000)return;
+    const cache=await caches.open(SHELTERS),headers=new Headers(response.headers);
+    headers.set('Content-Length',String(bytes.byteLength));
+    await cache.delete(request);await cache.put(request,new Response(bytes,{status:response.status,headers}));
+    const entries=[];let size=0;
+    for(const key of await cache.keys()){
+      const item=await cache.match(key);if(!item)continue;
+      const length=Number(item.headers.get('Content-Length'));
+      if(!Number.isFinite(length)||length<0){await cache.delete(key);continue;}
+      entries.push({key,length});size+=length;
+    }
+    while(size>32*1024*1024||entries.length>64){const oldest=entries.shift();if(!oldest)break;await cache.delete(oldest.key);size-=oldest.length;}
+  }).catch(()=>{});
+  return shelterWrites;
+}
 const isHazardPath = path => /^\/hazards\/[a-z0-9/_-]{1,140}\.(json|geojson)$/.test(path);
 const SHELL = ['/', '/dashboard', '/plan', '/more', '/notifications', '/sources', '/trace', '/demo', '/map', '/icon.svg', '/manifest.webmanifest', '/maps/catalog.json', '/maps/manifest.json', '/maps/japan-land-50m.geojson', '/maps/geography-manifest.json', '/maps/tokyo-central-geography.geojson', '/maplibre/maplibre-gl-worker.mjs', '/maplibre/maplibre-gl-shared.mjs', '/areas/catalog.json', '/areas/manifest.json', '/areas/worker.mjs', '/areas/area-geometry.mjs'];
 self.addEventListener('install', event => {
@@ -51,6 +73,10 @@ self.addEventListener('fetch', event => {
       if (response.ok) { const copy = response.clone(); event.waitUntil(caches.open(VERSION).then(cache => cache.put(request, copy))); }
       return response;
     }).catch(async () => (await caches.match(url.pathname)) || (await caches.match('/dashboard')) || Response.error()));
+  } else if (isShelterPath(url.pathname)) {
+    event.respondWith(caches.open(SHELTERS).then(cache=>cache.match(request).then(cached=>cached||fetch(request).then(response=>{
+      if(response.ok)event.waitUntil(cacheShelters(request,response.clone()));return response;
+    }))));
   } else if (isHazardPath(url.pathname)) {
     event.respondWith(caches.open(HAZARDS).then(cache => cache.match(request).then(cached => cached || fetch(request).then(response => {
       if (response.ok) { const copy = response.clone(); event.waitUntil(cache.put(request, copy)); }
