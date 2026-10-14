@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from types import SimpleNamespace
 from threading import RLock
 from time import monotonic
 from uuid import UUID, uuid4
 
 from seventytwoh_contracts.models import (
+    AgentName,
+    DistressLevel,
+    DistressRequest,
+    TraceEvent,
+    TraceStatus,
     IncidentStatus,
     Language,
     NetworkState,
@@ -23,8 +29,11 @@ from seventytwoh_contracts.models import (
     validate_location_area_path,
 )
 
-from .domain import CoreState, reduce_event, reduce_event_with_planner
+from .domain import CoreState, reduce_event
 from .planning import evidence_projections
+from .distress import record_distress_report, resolve_distress
+from .distress_advice import advice_needs_trace, advice_traced_state, ai_escalated_state
+from .domain import MAX_TRACE
 from .planner import CandidatePlanner
 from .scenario import (
     DEFAULT_SCENARIO_KEY,
@@ -216,45 +225,8 @@ class ReplayStore:
             return self._snapshot(aggregate)
 
     async def next_async(self, session_id: UUID) -> ReplaySnapshot:
-        """Advance one event, publishing only after optional candidate validation."""
-        aggregate = self._get_aggregate(session_id)
-        with aggregate.lock:
-            if aggregate.session.status not in {ReplayStatus.RUNNING, ReplayStatus.PAUSED}:
-                raise InvalidReplayTransition("replay must be running or paused before advancing")
-            index = aggregate.session.current_event_index
-            if index >= len(aggregate.scenario.events):
-                raise InvalidReplayTransition("replay has no remaining events")
-            captured_session = aggregate.session
-            captured_state = aggregate.state
-            event = aggregate.scenario.events[index]
-
-        new_state, planning_mode = await reduce_event_with_planner(
-            captured_state,
-            event,
-            self._planner,
-            str(captured_session.id),
-            self._policy,
-        )
-        new_index = index + 1
-        new_status = (
-            ReplayStatus.COMPLETED
-            if new_index == len(aggregate.scenario.events)
-            else captured_session.status
-        )
-        with aggregate.lock:
-            if aggregate.state is not captured_state or aggregate.session != captured_session:
-                raise InvalidReplayTransition("replay changed while candidate planning was in progress")
-            aggregate.state = new_state
-            aggregate.session = captured_session.model_copy(
-                update={
-                    "status": new_status,
-                    "current_event_index": new_index,
-                    "current_time": event.occurred_at,
-                    "planning_mode": planning_mode or captured_session.planning_mode,
-                }
-            )
-            self._touch(aggregate)
-            return self._snapshot(aggregate)
+        """Async API compatibility wrapper; all plan transitions remain deterministic."""
+        return self.next(session_id)
 
     def reset(self, session_id: UUID) -> ReplaySnapshot:
         aggregate = self._get_aggregate(session_id)
@@ -309,6 +281,60 @@ class ReplayStore:
             self._touch(aggregate)
             return aggregate
 
+    def record_distress(self, session_id: UUID, request: DistressRequest) -> ReplaySnapshot:
+        from .planning import evaluate_and_replan
+
+        aggregate = self._get_aggregate(session_id)
+        with aggregate.lock:
+            before = aggregate.state
+            self._require_trace_capacity(before)
+            now = before.current_time
+            reported = record_distress_report(before, request.tags, request.input_mode, now)
+            report_id = reported.distress_reports[-1].id
+            trace = TraceEvent(
+                id=f"trace_{len(reported.trace) + 1:03d}", situation_id=reported.situation.id, timestamp=now,
+                agent=AgentName.SITUATION_AGENT, event_type="DISTRESS_REPORTED",
+                input_refs=(report_id,), output_refs=tuple(t.value for t in request.tags),
+                status=TraceStatus.SUCCESS,
+                public_summary="The user reported distress. It can only make guidance more protective.",
+            )
+            reported = replace(reported, trace=(*reported.trace, trace))
+            aggregate.state = evaluate_and_replan(before, reported, SimpleNamespace(id=report_id), self._policy)
+            self._touch(aggregate)
+            return self._snapshot(aggregate)
+
+    def record_ai_escalation(self, session_id: UUID) -> bool:
+        """Core-approved AI escalation NONE -> USER_REPORTED; it can only make guidance more protective.
+        Returns False (no trace, no re-plan) when the Core level is no longer NONE."""
+        from .planning import evaluate_and_replan
+
+        aggregate = self._get_aggregate(session_id)
+        with aggregate.lock:
+            before = aggregate.state
+            if resolve_distress(before, before.current_time, self._policy).level != DistressLevel.NONE:
+                return False
+            self._require_trace_capacity(before)
+            escalated = ai_escalated_state(before, before.current_time)
+            event_id = escalated.trace[-1].id
+            aggregate.state = evaluate_and_replan(before, escalated, SimpleNamespace(id=event_id), self._policy)
+            self._touch(aggregate)
+            return True
+
+    def record_advice_trace(self, session_id: UUID, applied) -> ReplaySnapshot:
+        aggregate = self._get_aggregate(session_id)
+        with aggregate.lock:
+            if advice_needs_trace(applied):
+                self._require_trace_capacity(aggregate.state)
+                aggregate.state = advice_traced_state(aggregate.state, applied, aggregate.state.current_time)
+            self._touch(aggregate)
+            return self._snapshot(aggregate)
+
+    @staticmethod
+    def _require_trace_capacity(state) -> None:
+        # Same headroom as live: a re-plan can append several trace events.
+        if len(state.trace) >= MAX_TRACE - 8:
+            raise InvalidReplayTransition("replay trace capacity reached")
+
     def _touch(self, aggregate: SessionAggregate) -> None:
         aggregate.expires_at = monotonic() + self._ttl_seconds
 
@@ -354,6 +380,7 @@ class ReplayStore:
             scenario_events=tuple(timeline_event(event) for event in aggregate.scenario.events),
             mobility=aggregate.state.mobility,
             plan_evaluations=aggregate.state.plan_evaluations,
+            distress=resolve_distress(aggregate.state, aggregate.state.current_time, self._policy),
         )
 
     def _initial_state(

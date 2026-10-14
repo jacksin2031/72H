@@ -1,5 +1,24 @@
 # 72H Implementation Plan v0.1
 
+## Authorized P2.4 A+B package — 2026-10-12
+
+The first bounded official-event contract/lifecycle package is implemented and
+locally validated on `codex/p2-4-event-lifecycle`. Evidence and exact scope are in
+[VNEXT_P2_4_EVENT_LIFECYCLE_VALIDATION.md](VNEXT_P2_4_EVENT_LIFECYCLE_VALIDATION.md).
+This does not complete P2.4 C/D or P2.5–P2.7, nor update deployed environments.
+The current JMA product table defines revision as new 発表; unsupported 訂正 is
+rejected, and information withdrawal never means the disaster is resolved.
+
+## Next-phase roadmap — P2.4 to P2.7
+
+The user's 2026-10-11 proposed order is recorded in
+[VNEXT_P2_4_P2_7_ROADMAP.md](VNEXT_P2_4_P2_7_ROADMAP.md): prioritize the official
+event lifecycle before verified map layers, hazard-specific places and
+post-Safety-Core AI explanations. This is an audited development plan, not a
+claim that the new phases are implemented. Older P2.4 tsunami/shelter pilot
+documents retain their historical names and evidence; the new roadmap explains
+their reuse under P2.5/P2.6 and the required contract migration for P2.7.
+
 ## Authorized P1.1 local execution
 
 The 2026-10-08 approved plan adds accessible GPS-first onboarding, nationwide

@@ -48,7 +48,7 @@ from .scenario import (
     source_authorizes_disaster_assessments,
     source_authorizes_transport,
 )
-from .live_sources import JMA_TSUNAMI_SOURCE_KEY
+from .live_sources import JMA_SOURCE_KEY, JMA_TSUNAMI_SOURCE_KEY
 from .safety import (
     DEFAULT_POLICY,
     SafetyPolicy,
@@ -66,24 +66,37 @@ MAX_PLANS = 128
 MAX_ACTIONS = 512
 
 
-def _supersede_tsunami_revision(state: CoreState, event: DisasterEvent, evidence: Evidence) -> CoreState:
-    """Retire older serials for one JMA tsunami event before evaluating the new revision."""
-    if evidence.source_key != JMA_TSUNAMI_SOURCE_KEY or event.event_type != DisasterEventType.TSUNAMI:
+def _supersede_official_revision(
+    state: CoreState, event: DisasterEvent, evidence: Evidence, aliases: tuple[str, ...] = (),
+) -> CoreState:
+    """Withdraw prior evidence for exactly one normalized JMA information unit."""
+    source_key = {DisasterEventType.EARTHQUAKE: JMA_SOURCE_KEY, DisasterEventType.TSUNAMI: JMA_TSUNAMI_SOURCE_KEY}.get(event.event_type)
+    if evidence.source_key != source_key:
         return state
     group, separator, _revision = event.id.partition("--")
-    if not separator or not group.startswith("jma-tsunami-"):
+    if not separator or not group.startswith(("jma-tsunami-", "jma-earthquake-")):
         return state
     retired_ids = {
         item.id
         for item in state.events
-        if item.event_type == DisasterEventType.TSUNAMI
-        and item.id.startswith(f"{group}--")
+        if item.event_type == event.event_type
+        and (item.id.startswith(f"{group}--") or item.id in aliases)
         and item.id != event.id
+        and any(
+            proof.id == f"ev_{item.id}" and proof.source_key == source_key
+            and not proof.is_synthetic and proof.source_class == SourceClass.OFFICIAL
+            and (
+                proof.published_at <= evidence.published_at
+                if item.id.startswith(f"{group}--")
+                else item.id in aliases  # Alias ordering was verified from original official XML.
+            )
+            for proof in state.evidence
+        )
     }
     if not retired_ids:
         return state
     events = tuple(
-        item.model_copy(update={"status": DisasterEventStatus.RESOLVED})
+        item.model_copy(update={"status": DisasterEventStatus.UNKNOWN})
         if item.id in retired_ids
         else item
         for item in state.events
@@ -93,7 +106,7 @@ def _supersede_tsunami_revision(state: CoreState, event: DisasterEvent, evidence
             "trust_status": TrustStatus.STALE,
             "freshness_status": FreshnessStatus.STALE,
         })
-        if item.source_key == JMA_TSUNAMI_SOURCE_KEY and item.id.removeprefix("ev_") in retired_ids
+        if item.source_key == source_key and item.id.removeprefix("ev_") in retired_ids
         else item
         for item in state.evidence
     )
@@ -103,6 +116,18 @@ def _supersede_tsunami_revision(state: CoreState, event: DisasterEvent, evidence
         events=events,
         evidence=evidence_items,
         situation=state.situation.model_copy(update={"active_event_ids": active_ids}),
+    )
+
+
+def _outdated_official_revision(state: CoreState, event: DisasterEvent, evidence: Evidence) -> bool:
+    group, separator, _ = event.id.partition("--")
+    if not separator or not group.startswith(("jma-tsunami-", "jma-earthquake-")):
+        return False
+    return any(
+        item.source_key == evidence.source_key
+        and item.id.removeprefix("ev_").startswith(f"{group}--")
+        and item.published_at >= evidence.published_at
+        for item in state.evidence
     )
 
 
@@ -137,6 +162,7 @@ def apply_live_evidence_batch(
     policy: SafetyPolicy = DEFAULT_POLICY,
     *,
     synthetic_mode: bool = False,
+    official_aliases: dict[str, tuple[str, ...]] | None = None,
 ) -> CoreState:
     """Append server-normalized evidence; only an internal mock adapter may enable synthetic mode."""
     if current_time.tzinfo is None or current_time.utcoffset() is None:
@@ -157,7 +183,11 @@ def apply_live_evidence_batch(
             raise ValueError("live records must belong to the current situation")
         if any(item.id == event.id for item in reduced.events):
             continue
-        reduced = _supersede_tsunami_revision(reduced, event, evidence)
+        if _outdated_official_revision(reduced, event, evidence):
+            continue
+        reduced = _supersede_official_revision(
+            reduced, event, evidence, (official_aliases or {}).get(event.id, ()),
+        )
         active_event_ids = reduced.situation.active_event_ids
         if event.event_type == DisasterEventType.TSUNAMI:
             active_event_ids = tuple(item for item in active_event_ids if item != event.id)
@@ -209,179 +239,29 @@ def apply_live_evidence_batch(
     return evaluate_and_replan(before, reduced, clock_event, policy)
 
 
-async def reduce_event_with_planner(
-    state: CoreState,
-    event: ReplayEvent,
-    planner,
-    replay_id: str,
-    policy: SafetyPolicy = DEFAULT_POLICY,
-):
-    """Run a deterministic preview, validate one optional candidate, then publish once."""
-    if event.occurred_at < state.current_time:
-        raise ValueError("replay event occurred_at cannot move virtual time backwards")
-    state_at_event = replace(state, current_time=event.occurred_at)
-    reduced = _reduce_event_input(state_at_event, event, policy)
-    from .planning import (
-        PlannerTrace,
-        candidate_context_for_preview,
-        evaluate_and_replan,
-    )
-
-    preview = evaluate_and_replan(state, reduced, event, policy)
-    context = candidate_context_for_preview(state, preview, policy)
-    if context is None:
-        return preview, None
-
-    outcome = await planner.select(replay_id, context)
-    if outcome.mode == "DETERMINISTIC_REPLAY_ONLY":
-        return preview, outcome.mode
-    if outcome.mode == "GEMINI_ADK" and outcome.selection is None:
-        outcome = type(outcome)(mode="GEMINI_ADK_FALLBACK", reason_code="INVALID_OUTPUT")
-    if outcome.mode != "GEMINI_ADK" and outcome.selection is not None:
-        outcome = type(outcome)(mode="GEMINI_ADK_FALLBACK", reason_code="INVALID_OUTPUT")
-
-    published = evaluate_and_replan(
-        state,
-        reduced,
-        event,
-        policy,
-        candidate_selection=outcome.selection,
-        candidate_context=context,
-        planner_trace=PlannerTrace(mode=outcome.mode, reason_code=outcome.reason_code),
-    )
-    return published, outcome.mode
-
-
-async def apply_live_evidence_batch_with_planner(
-    state: CoreState,
-    records: tuple[tuple[DisasterEvent, Evidence], ...],
-    current_time,
-    planner,
-    live_session_id: str,
-    policy: SafetyPolicy = DEFAULT_POLICY,
-    *,
-    synthetic_mode: bool = False,
-):
-    """Publish official Live or isolated synthetic Mock Live evidence through identical planning."""
-    if current_time.tzinfo is None or current_time.utcoffset() is None:
-        raise ValueError("live current_time must be timezone aware")
-    if current_time < state.current_time:
-        raise ValueError("live state time cannot move backwards")
-    before = state
-    reduced = replace(state, current_time=current_time)
-    for event, evidence in records:
-        if synthetic_mode:
-            if not event.is_synthetic or not evidence.is_synthetic or evidence.eligible_for_high_risk:
-                raise ValueError("mock-live requires synthetic, high-risk-ineligible evidence")
-        elif event.is_synthetic or evidence.is_synthetic:
-            raise ValueError("synthetic replay records cannot enter a live session")
-        if event.source_class != SourceClass.OFFICIAL or evidence.trust_status != TrustStatus.VERIFIED_OFFICIAL:
-            raise ValueError("live JMA records must use server-assigned official trust")
-        if event.situation_id != reduced.situation.id or evidence.situation_id != reduced.situation.id:
-            raise ValueError("live records must belong to the current situation")
-        if any(item.id == event.id for item in reduced.events):
-            continue
-        reduced = _supersede_tsunami_revision(reduced, event, evidence)
-        active_event_ids = reduced.situation.active_event_ids
-        if event.event_type == DisasterEventType.TSUNAMI:
-            active_event_ids = tuple(item for item in active_event_ids if item != event.id)
-            if event.status in {DisasterEventStatus.ACTIVE, DisasterEventStatus.UNKNOWN}:
-                active_event_ids = (*active_event_ids, event.id)
-        else:
-            active_event_ids = (*active_event_ids, event.id)
-        situation = reduced.situation.model_copy(
-            update={
-                "incident_status": (
-                    IncidentStatus.EVENT_DETECTED
-                    if event.status in {DisasterEventStatus.ACTIVE, DisasterEventStatus.UNKNOWN}
-                    else reduced.situation.incident_status
-                ),
-                "active_event_ids": tuple(dict.fromkeys(active_event_ids)),
-                "updated_at": current_time,
-            }
-        )
-        event_trace = TraceEvent(
-            id=f"trace_live_event_{len(reduced.trace) + 1:03d}",
-            situation_id=situation.id,
-            timestamp=current_time,
-            agent=AgentName.SOURCE_AGENT,
-            event_type="MOCK_LIVE_EVENT_RECEIVED" if synthetic_mode else "LIVE_OFFICIAL_EVENT_RECEIVED",
-            input_refs=(event.id,),
-            output_refs=(event.id,),
-            status=TraceStatus.SUCCESS,
-            public_summary=(
-                "MOCK LIVE: synthetic earthquake input exercised the Live reducer; not a JMA bulletin."
-                if synthetic_mode else f"An official JMA {event.event_type.value.lower()} report entered the live evidence pipeline."
-            ),
-        )
-        reduced = replace(
-            reduced,
-            situation=situation,
-            events=(*reduced.events, event),
-            trace=(*reduced.trace, event_trace),
-        )
-        reduced = _append_evidence(
-            reduced,
-            event.id,
-            evidence,
-            "MOCK_LIVE_EVIDENCE_ADDED" if synthetic_mode else "OFFICIAL_LIVE_EVIDENCE_ADDED",
-            (event.id,),
-        )
-    return await replan_live_transition_with_planner(
-        before, reduced, planner, live_session_id, policy,
-    )
-
-
-async def replan_live_transition_with_planner(
+def replan_live_transition(
     before: CoreState,
     reduced: CoreState,
-    planner,
-    live_session_id: str,
     policy: SafetyPolicy = DEFAULT_POLICY,
     *,
     event_id: str | None = None,
     allow_network_reconciliation: bool = True,
 ):
-    """Evaluate a prepared live transition and optionally apply one bounded candidate."""
-    from .planning import (
-        PlannerTrace,
-        candidate_context_for_preview,
-        evaluate_and_replan,
-    )
+    """Evaluate a prepared LIVE transition and publish only deterministic Core output."""
+    from .planning import evaluate_and_replan
 
     if reduced.current_time < before.current_time:
         raise ValueError("live state time cannot move backwards")
     clock_event = type("LiveRefreshEvent", (), {
         "id": event_id or f"live-refresh-{int(reduced.current_time.timestamp())}"
     })()
-    preview = evaluate_and_replan(
+    return evaluate_and_replan(
         before,
         reduced,
         clock_event,
         policy,
         allow_network_reconciliation=allow_network_reconciliation,
     )
-    context = candidate_context_for_preview(before, preview, policy)
-    if context is None:
-        return preview, None
-    outcome = await planner.select(live_session_id, context)
-    if outcome.mode == "DETERMINISTIC_REPLAY_ONLY":
-        return preview, outcome.mode
-    if outcome.mode == "GEMINI_ADK" and outcome.selection is None:
-        outcome = type(outcome)(mode="GEMINI_ADK_FALLBACK", reason_code="INVALID_OUTPUT")
-    if outcome.mode != "GEMINI_ADK" and outcome.selection is not None:
-        outcome = type(outcome)(mode="GEMINI_ADK_FALLBACK", reason_code="INVALID_OUTPUT")
-    published = evaluate_and_replan(
-        before,
-        reduced,
-        clock_event,
-        policy,
-        candidate_selection=outcome.selection,
-        candidate_context=context,
-        planner_trace=PlannerTrace(mode=outcome.mode, reason_code=outcome.reason_code),
-        allow_network_reconciliation=allow_network_reconciliation,
-    )
-    return published, outcome.mode
 
 
 def _reduce_event_input(state: CoreState, event: ReplayEvent, policy: SafetyPolicy) -> CoreState:

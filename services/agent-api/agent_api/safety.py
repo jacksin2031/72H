@@ -23,7 +23,8 @@ from seventytwoh_contracts.models import (
     TrustStatus,
 )
 
-from .live_sources import JMA_TSUNAMI_SOURCE_KEY
+from .live_sources import JMA_SOURCE_KEY, JMA_TSUNAMI_SOURCE_KEY
+from .official_events import official_event_group
 
 TRUSTED_STATUSES = {TrustStatus.VERIFIED_OFFICIAL, TrustStatus.VERIFIED_PARTNER}
 
@@ -77,6 +78,10 @@ class SafetyPolicy:
     movement_directive_ttl_seconds: int = 5 * 60
     user_report_ttl_seconds: int = 10 * 60
     general_update_ttl_seconds: int = 15 * 60
+    distress_arrival_margin_seconds: int = 300
+    # Reports naming TRAPPED / INJURED / MOBILITY_LIMITED stay active longer: a trapped or
+    # injured person must not silently drop back to NONE after 10 minutes.
+    distress_critical_report_ttl_seconds: int = 60 * 60
     movement_directive_source_keys: tuple[str, ...] = ()
     destination_status_source_keys: tuple[str, ...] = ()
     route_status_source_keys: tuple[str, ...] = ()
@@ -90,6 +95,8 @@ class SafetyPolicy:
             ("movement_directive_ttl_seconds", self.movement_directive_ttl_seconds),
             ("user_report_ttl_seconds", self.user_report_ttl_seconds),
             ("general_update_ttl_seconds", self.general_update_ttl_seconds),
+            ("distress_arrival_margin_seconds", self.distress_arrival_margin_seconds),
+            ("distress_critical_report_ttl_seconds", self.distress_critical_report_ttl_seconds),
         ):
             if type(value) is not int or not 1 <= value <= 86400:
                 raise ValueError(f"{name} must be between 1 and 86400 seconds")
@@ -271,7 +278,7 @@ def derive_claim_states(
                 )
             )
 
-    states, conflict_keys, conflicting_evidence_ids = _aggregate_active_jma_tsunami_claims(
+    states, conflict_keys, conflicting_evidence_ids = _aggregate_active_jma_disaster_claims(
         previous,
         evidence,
         events,
@@ -283,7 +290,7 @@ def derive_claim_states(
     return tuple(states), tuple(sorted(set(conflict_keys))), tuple(sorted(conflicting_evidence_ids))
 
 
-def _aggregate_active_jma_tsunami_claims(
+def _aggregate_active_jma_disaster_claims(
     situation: Situation,
     evidence: tuple[Evidence, ...],
     events: tuple[DisasterEvent, ...],
@@ -292,23 +299,24 @@ def _aggregate_active_jma_tsunami_claims(
     states: list[SituationClaim],
     conflict_keys: list[str],
 ) -> tuple[list[SituationClaim], list[str], set[str]]:
-    """Keep a cancellation for one JMA EventID from resolving another active EventID."""
+    """Aggregate independent JMA information units without clearing another hazard."""
     active_ids = set(situation.active_event_ids)
     evidence_by_id = {item.id: item for item in evidence}
     active_by_group: dict[str, tuple[DisasterEvent, Evidence]] = {}
     for event in events:
         if (
             event.id not in active_ids
-            or event.event_type != DisasterEventType.TSUNAMI
+            or event.event_type not in {DisasterEventType.TSUNAMI, DisasterEventType.EARTHQUAKE}
             or event.is_synthetic
             or event.source_class.value != "OFFICIAL"
         ):
             continue
-        event_group, separator, _revision = event.id.partition("--")
-        if not separator or not event_group.startswith("jma-tsunami-"):
+        event_group = official_event_group(event.id)
+        if event_group is None:
             continue
         evidence_item = evidence_by_id.get(f"ev_{event.id}")
-        if evidence_item is None or evidence_item.source_key != JMA_TSUNAMI_SOURCE_KEY:
+        expected_source = JMA_TSUNAMI_SOURCE_KEY if event.event_type == DisasterEventType.TSUNAMI else JMA_SOURCE_KEY
+        if evidence_item is None or evidence_item.source_key != expected_source:
             continue
         previous = active_by_group.get(event_group)
         previous_evidence = previous[1] if previous is not None else None
@@ -333,14 +341,14 @@ def _aggregate_active_jma_tsunami_claims(
         }
         return states, conflict_keys, conflict_ids
 
-    groups_by_area: dict[str, list[tuple[DisasterEvent, Evidence]]] = {}
+    groups_by_area: dict[tuple[DisasterEventType, str], list[tuple[DisasterEvent, Evidence]]] = {}
     for event, evidence_item in active_by_group.values():
         for area_id in set(event.affected_area_ids) | set(evidence_item.affected_area_ids):
-            groups_by_area.setdefault(area_id, []).append((event, evidence_item))
+            groups_by_area.setdefault((event.event_type, area_id), []).append((event, evidence_item))
 
     state_by_key = {item.key: item for item in states}
-    for area_id, groups in groups_by_area.items():
-        key = disaster_claim_key(area_id, DisasterEventType.TSUNAMI.value, "status")
+    for (event_type, area_id), groups in groups_by_area.items():
+        key = disaster_claim_key(area_id, event_type.value, "status")
         supporting_active: list[str] = []
         supporting_resolved: list[str] = []
         unresolved_support: list[str] = []
@@ -349,7 +357,7 @@ def _aggregate_active_jma_tsunami_claims(
             assessment = next(
                 (
                     item for item in evidence_item.disaster_assessments
-                    if item.area_id == area_id and item.event_type == DisasterEventType.TSUNAMI
+                    if item.area_id == area_id and item.event_type == event_type
                 ),
                 None,
             )

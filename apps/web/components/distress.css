@@ -1,0 +1,27 @@
+.distress-panel{margin:1rem 0;padding:1rem;border:2px solid #ffd400;border-radius:14px;background:#000;color:#fff;overflow-wrap:anywhere}
+.distress-panel a{color:#ffe866}
+.distress-exercise{display:inline-block;margin:0 0 .8rem;padding:.35rem .8rem;border-radius:999px;background:#ffd400;color:#000;font-weight:800;font-size:1.1rem}
+.distress-offline{margin:0 0 .6rem;color:#ffe866}
+.distress-stale{margin:.4rem 0;color:#ffe866;font-weight:700}
+.distress-basis{margin:.3rem 0;font-size:.95rem;opacity:.9}
+.distress-primary{padding:1rem;border-radius:12px;background:#111;border:3px solid #fff}
+.distress-primary-text{margin:0 0 .6rem;font-size:clamp(1.6rem,6vw,2.4rem);line-height:1.3;font-weight:900;color:#fff}
+.distress-primary p{margin:.4rem 0;font-size:1.1rem;line-height:1.5}
+.distress-primary small{display:block;margin-top:.6rem;color:#d8d8d8}
+.distress-countdown strong{font-size:1.6rem;font-variant-numeric:tabular-nums;color:#ffd400}
+.distress-ai{display:inline-block;margin-left:.5rem;padding:.1rem .5rem;border:1px solid #8fd3ff;border-radius:6px;color:#8fd3ff;font-size:.85rem;font-weight:700;vertical-align:middle}
+.distress-ai-off{display:block;margin:.4rem 0;color:#d8d8d8}
+.distress-speech,.distress-voice{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.8rem 0}
+.distress-tags{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:.5rem;margin:.8rem 0}
+.distress-panel button{min-height:48px;padding:.5rem .8rem;font:inherit;font-size:1.05rem;border-radius:10px;border:2px solid #fff;background:#1d1d1d;color:#fff}
+.distress-panel button[aria-pressed="true"]{background:#ffd400;color:#000;border-color:#ffd400;font-weight:800}
+.distress-panel button:disabled{opacity:.55}
+.distress-panel .distress-send{width:100%;background:#ffd400;color:#000;font-weight:900;border-color:#ffd400}
+.distress-panel .distress-send:disabled{background:#3a3a3a;color:#bbb;border-color:#666}
+.distress-panel textarea{display:block;width:100%;min-height:5rem;margin:.5rem 0;font:inherit;background:#111;color:#fff;border:1px solid #aaa;border-radius:8px}
+.distress-pending{margin:.8rem 0;border:2px dashed #8fd3ff;border-radius:10px}
+.distress-pending label{display:flex;gap:.5rem;align-items:center;min-height:44px;font-size:1.1rem}
+.distress-pending input{width:1.4rem;height:1.4rem}
+.distress-emphasis{padding-left:1.2rem}
+.distress-panel summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
+.distress-entry-button{position:sticky;top:0;z-index:50;display:block;width:100%;min-height:52px;margin:0 0 .6rem;font:inherit;font-size:1.15rem;font-weight:900;background:#ffd400;color:#000;border:0;border-radius:12px}

@@ -24,7 +24,7 @@ function cacheShelters(request,response){
   }).catch(()=>{});
   return shelterWrites;
 }
-const isHazardPath = path => /^\/hazards\/[a-z0-9/_-]{1,140}\.(json|geojson)$/.test(path);
+const isHazardPath = path => /^\/(hazards|roads)\/[a-z0-9/_-]{1,140}\.(json|geojson)$/.test(path);
 const SHELL = ['/', '/dashboard', '/plan', '/more', '/notifications', '/sources', '/trace', '/demo', '/map', '/icon.svg', '/manifest.webmanifest', '/maps/catalog.json', '/maps/manifest.json', '/maps/japan-land-50m.geojson', '/maps/geography-manifest.json', '/maps/tokyo-central-geography.geojson', '/maplibre/maplibre-gl-worker.mjs', '/maplibre/maplibre-gl-shared.mjs', '/areas/catalog.json', '/areas/manifest.json', '/areas/worker.mjs', '/areas/area-geometry.mjs'];
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -78,10 +78,20 @@ self.addEventListener('fetch', event => {
       if(response.ok)event.waitUntil(cacheShelters(request,response.clone()));return response;
     }))));
   } else if (isHazardPath(url.pathname)) {
-    event.respondWith(caches.open(HAZARDS).then(cache => cache.match(request).then(cached => cached || fetch(request).then(response => {
-      if (response.ok) { const copy = response.clone(); event.waitUntil(cache.put(request, copy)); }
-      return response;
-    }))));
+    event.respondWith(caches.open(HAZARDS).then(async cache => {
+      const cached = await cache.match(request);
+      // A new app pin must be able to obtain the new manifest / bytes. Offline
+      // fallback is still validated against the caller's pin; no API is cached.
+      if (cached && request.cache !== 'no-cache' && request.cache !== 'reload') return cached;
+      try {
+        const response = await fetch(request);
+        if (response.ok) { const copy = response.clone(); event.waitUntil(cache.put(request, copy)); }
+        return response.ok || !cached ? response : cached;
+      } catch (error) {
+        if (cached) return cached;
+        throw error;
+      }
+    }));
   } else if (url.pathname.startsWith('/_next/static/') || SHELL.includes(url.pathname)
     || /^\/maps\/[a-z0-9][a-z0-9._-]{0,96}\.geojson$/.test(url.pathname)
   ) {

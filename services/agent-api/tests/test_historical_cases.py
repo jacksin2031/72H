@@ -62,7 +62,8 @@ def test_historical_runs_use_live_adapter_and_keep_explicit_unsupported_tsunami(
                 if milestone.kind in {"TSUNAMI_WARNING","TSUNAMI_UPGRADE","POWER_OUTAGE"}:
                     assert current["historical"]["current_milestone"]["fed_to_safety_core"] is False
             assert client.post(f"/api/mock-live/{sid}/next",headers=HEADERS).status_code==409
-        assert planner.contexts and all("exercise_conditions" in ctx for ctx in planner.contexts)
+        # P2.7: the candidate planner no longer selects Live/Mock Live actions before Core gating.
+        assert planner.contexts == []
 
 
 def test_history_is_server_allowlisted_and_never_applies_to_real_live(monkeypatch):

@@ -220,15 +220,6 @@ class TsunamiAreaStatus(StrEnum):
     UNKNOWN = "UNKNOWN"
 
 
-class TsunamiWarningClass(StrEnum):
-    MAJOR_WARNING = "MAJOR_WARNING"
-    WARNING = "WARNING"
-    ADVISORY = "ADVISORY"
-    FORECAST = "FORECAST"
-    NONE = "NONE"
-    UNKNOWN = "UNKNOWN"
-
-
 class TsunamiHeightExpression(StrEnum):
     NUMERIC = "NUMERIC"
     HIGH = "HIGH"
@@ -261,6 +252,8 @@ class SafeIntentId(StrEnum):
     AVOID_DISRUPTED_ROUTE = "avoid_disrupted_route"
     DO_NOT_ASSUME_ROUTE_SAFETY = "do_not_assume_route_safety"
     EVACUATE_TO_DESIGNATED_SHELTER = "evacuate_to_designated_shelter"
+    SHELTER_IN_PLACE_VERTICAL = "shelter_in_place_vertical"
+    TSUNAMI_EVACUATE_NOW = "tsunami_evacuate_now"
 
 
 class RiskLevel(StrEnum):
@@ -361,16 +354,37 @@ class ProfileSeed(ContractModel):
     accessibility_constraints: Annotated[tuple[ShortText, ...], Field(max_length=32)] = ()
 
 
+class TsunamiWarningClass(StrEnum):
+    MAJOR_WARNING = "MAJOR_WARNING"
+    WARNING = "WARNING"
+    ADVISORY = "ADVISORY"
+    FORECAST = "FORECAST"
+    NONE = "NONE"
+    UNKNOWN = "UNKNOWN"
+
+
 class DisasterAssessment(ContractModel):
     area_id: Identifier
     event_type: DisasterEventType
     level: DisasterSeverityLevel | None = None
     status: DisasterEventStatus
+    tsunami_warning_class: TsunamiWarningClass | None = None
+    arrival_at: AwareDatetime | None = None
+    # Deterministic withdrawal marker: the official issuer withdrew this area's status (JMA
+    # InfoType 取消, or a newer bulletin of the same information unit omitted the area). The
+    # status stays UNKNOWN, but an earlier warning for the area is no longer issued.
+    withdrawn: StrictBool = False
 
     @model_validator(mode="after")
     def tsunami_does_not_use_earthquake_severity(self) -> "DisasterAssessment":
+        if self.withdrawn and self.status != DisasterEventStatus.UNKNOWN:
+            raise ValueError("only an UNKNOWN assessment can be marked withdrawn")
         if self.event_type == DisasterEventType.TSUNAMI and self.level is not None:
             raise ValueError("tsunami assessments must not use earthquake L0-L4 severity levels")
+        if self.event_type != DisasterEventType.TSUNAMI and (
+            self.tsunami_warning_class is not None or self.arrival_at is not None
+        ):
+            raise ValueError("tsunami warning class and arrival time apply only to tsunami assessments")
         return self
 
 
@@ -411,6 +425,7 @@ class TsunamiReferenceSource(ContractModel):
     fetched_at: AwareDatetime | None = None
     operation: TsunamiOperation = TsunamiOperation.UNKNOWN
     serial: Annotated[StrictStr, Field(max_length=16)] | None = None
+    recovery: OfficialSourceRecovery | None = None
 
 
 class TsunamiReferenceResponse(ContractModel):
@@ -421,6 +436,7 @@ class TsunamiReferenceResponse(ContractModel):
     source: TsunamiReferenceSource
     forecast_areas: Annotated[tuple[TsunamiReferenceForecastArea, ...], Field(max_length=128)] = ()
     safety_authority: Literal["NONE"]
+    official_reports: Annotated[tuple[OfficialReportReference, ...], Field(max_length=128)] = ()
 
     @model_validator(mode="after")
     def reference_state_is_conservative(self) -> "TsunamiReferenceResponse":
@@ -593,6 +609,76 @@ class Plan(ContractModel):
         if self.expires_at <= self.created_at:
             raise ValueError("expires_at must be later than created_at")
         return self
+
+
+class DistressTag(StrEnum):
+    WATER_RISING = "WATER_RISING"
+    TRAPPED = "TRAPPED"
+    INJURED = "INJURED"
+    MOBILITY_LIMITED = "MOBILITY_LIMITED"
+    WITH_DEPENDENTS = "WITH_DEPENDENTS"
+    LOST_NO_DESTINATION = "LOST_NO_DESTINATION"
+    ROUTE_BLOCKED_REPORTED = "ROUTE_BLOCKED_REPORTED"
+
+
+DistressInputMode = Literal["BUTTON", "VOICE", "TEXT"]
+DistressTags = Annotated[tuple[DistressTag, ...], Field(min_length=1, max_length=7)]
+
+
+def _unique_tags(tags: tuple[DistressTag, ...]) -> None:
+    if len(tags) != len(set(tags)):
+        raise ValueError("distress tags must be unique")
+
+
+class DistressRequest(ContractModel):
+    tags: DistressTags
+    input_mode: DistressInputMode
+
+    @model_validator(mode="after")
+    def tags_are_unique(self) -> "DistressRequest":
+        _unique_tags(self.tags)
+        return self
+
+
+class DistressReport(ContractModel):
+    """A user's own report. It can make guidance more protective, never authorize movement."""
+
+    id: Identifier
+    tags: DistressTags
+    input_mode: DistressInputMode
+    reported_at: AwareDatetime
+    source: Literal["USER_REPORTED"] = "USER_REPORTED"
+
+    @model_validator(mode="after")
+    def tags_are_unique(self) -> "DistressReport":
+        _unique_tags(self.tags)
+        return self
+
+
+class DistressLevel(StrEnum):
+    NONE = "NONE"
+    USER_REPORTED = "USER_REPORTED"
+    OFFICIAL_TSUNAMI = "OFFICIAL_TSUNAMI"
+    # The last official tsunami warning for the area expired without a newer
+    # cancellation: protective vertical shelter plus a "data expired" notice.
+    OFFICIAL_STALE = "OFFICIAL_STALE"
+
+
+class DistressStatus(ContractModel):
+    level: DistressLevel = DistressLevel.NONE
+    reports: Annotated[tuple[DistressReport, ...], Field(max_length=16)] = ()
+    trigger_evidence_ids: StringList = ()
+    deadline_at: AwareDatetime | None = None
+    ai_escalated: StrictBool = False
+    synthetic: StrictBool = False
+    # Official basis (OFFICIAL_TSUNAMI / OFFICIAL_STALE only): the warning class, when the
+    # official evidence was issued, and when it stops being current.
+    warning_class: TsunamiWarningClass | None = None
+    last_official_at: AwareDatetime | None = None
+    trigger_expires_at: AwareDatetime | None = None
+    # OFFICIAL_STALE only: the official evidence expired, or it is still current but the
+    # location fix is too old (> 2 min, <= 30 min) to confirm the person is in the area.
+    stale_reason: Literal["EVIDENCE_EXPIRED", "LOCATION_STALE"] | None = None
 
 
 class PlanAction(ContractModel):
@@ -778,6 +864,35 @@ class RoutePresentation(ContractModel):
         return self
 
 
+class OfficialSourceRecovery(ContractModel):
+    persistence: Literal["MEMORY", "SQLITE", "GCS"]
+    storage_status: Literal["HEALTHY", "UNCONFIGURED", "FAILED"]
+    scan_status: Literal["NOT_STARTED", "SCANNING", "WINDOW_VERIFIED", "GAP", "UNKNOWN"]
+    connection_status: Literal["REACHABLE", "UNAVAILABLE", "UNKNOWN"] = "UNKNOWN"
+    last_successful_fetch_at: AwareDatetime | None = None
+    pending_details: Annotated[StrictInt, Field(ge=0, le=1024)] = 0
+    archived_reports: Annotated[StrictInt, Field(ge=0, le=4096)] = 0
+    checkpoint_version: Annotated[StrictInt, Field(ge=0)] = 0
+    last_checked_at: AwareDatetime | None = None
+    last_verified_at: AwareDatetime | None = None
+    window_start_at: AwareDatetime | None = None
+    coverage_origin_at: AwareDatetime | None = None
+    reconciliation_required_since: AwareDatetime | None = None
+    restored: StrictBool = False
+    limitations: Annotated[tuple[ShortText, ...], Field(max_length=8)] = ()
+
+    @model_validator(mode="after")
+    def verified_scan_is_consistent(self) -> "OfficialSourceRecovery":
+        if self.scan_status == "WINDOW_VERIFIED" and (self.pending_details or self.last_verified_at is None or self.reconciliation_required_since is not None):
+            raise ValueError("a verified window requires no pending details and a verification time")
+        if self.storage_status == "FAILED" and self.scan_status != "UNKNOWN":
+            raise ValueError("failed persistence cannot support a verified recovery state")
+        if (self.last_verified_at is not None and self.coverage_origin_at is not None
+            and self.last_verified_at < self.coverage_origin_at):
+            raise ValueError("verification cannot precede observed coverage")
+        return self
+
+
 class LiveSourceProjection(ContractModel):
     source_key: Identifier
     source_name: ShortText
@@ -788,6 +903,111 @@ class LiveSourceProjection(ContractModel):
     next_retry_at: AwareDatetime | None = None
     record_count: Annotated[StrictInt, Field(ge=0, le=4096)] = 0
     detail: ShortText
+    recovery: OfficialSourceRecovery | None = None
+
+    @model_validator(mode="after")
+    def fresh_source_has_completed_recovery(self) -> "LiveSourceProjection":
+        if self.status == LiveSourceStatus.FRESH and self.recovery is not None and self.recovery.scan_status != "WINDOW_VERIFIED":
+            raise ValueError("an incomplete recovery cannot be presented as a fresh official source")
+        return self
+
+
+class OfficialReportReference(ContractModel):
+    """Official lifecycle metadata; deliberately not movement/evidence authority."""
+    report_id: Annotated[StrictStr, Field(pattern=r"^[a-f0-9]{24}--[a-f0-9]{24}$")]
+    group_id: Annotated[StrictStr, Field(pattern=r"^[a-f0-9]{24}$")]
+    product: Literal["VXSE53", "VTSE41"]
+    title: Annotated[StrictStr, Field(min_length=1, max_length=80)]
+    source_name: ShortText
+    reference_url: Annotated[StrictStr, Field(min_length=1, max_length=300)]
+    event_ids: Annotated[tuple[Annotated[StrictStr, Field(pattern=r"^\d{14}$")], ...], Field(min_length=1, max_length=8)]
+    serial: Annotated[StrictStr, Field(max_length=16)] | None = None
+    operation: Literal["ISSUE", "CANCEL"]
+    lifecycle: Literal["CURRENT", "STALE", "WITHDRAWN", "SUPERSEDED", "CONFLICT", "UNKNOWN"]
+    issued_at: AwareDatetime
+    reported_at: AwareDatetime
+    received_at: AwareDatetime
+    target_at: AwareDatetime | None = None
+    occurred_at: AwareDatetime | None = None
+    official_valid_until: AwareDatetime | None = None
+    evidence_expires_at: AwareDatetime
+    target_codes: Annotated[tuple[Annotated[StrictStr, Field(min_length=1, max_length=32)], ...], Field(max_length=128)] = ()
+    is_head: StrictBool
+    superseded_by: Identifier | None = None
+    raw_sha256: Annotated[StrictStr, Field(pattern=r"^[a-f0-9]{64}$")]
+    parser_version: ShortText
+    information_version: ShortText
+    code_mapping_version: ShortText
+    authority: Literal["REFERENCE_ONLY"] = "REFERENCE_ONLY"
+    eligible_for_action: Literal[False] = False
+
+    @model_validator(mode="after")
+    def reference_clock_and_identity_are_consistent(self) -> "OfficialReportReference":
+        from urllib.parse import urlparse
+        url = urlparse(self.reference_url)
+        if (url.scheme != "https" or url.netloc != "www.data.jma.go.jp"
+            or not url.path.startswith("/developer/xml/data/") or url.query or url.fragment):
+            raise ValueError("official reference URL outside allowlist")
+        if self.report_id != f"{self.group_id}--{self.raw_sha256[:24]}":
+            raise ValueError("official reference identity/hash mismatch")
+        if self.reported_at > self.issued_at or self.issued_at > self.received_at:
+            raise ValueError("official reference clocks inconsistent")
+        if self.lifecycle == "CURRENT" and not self.is_head:
+            raise ValueError("superseded information cannot be current")
+        return self
+
+
+class OfficialIntensityObservation(ContractModel):
+    granularity: Literal["PREFECTURE", "REGION", "CITY", "STATION"]
+    measurement: Literal["MAXIMUM", "MEASURED"]
+    code: Annotated[StrictStr, Field(min_length=1, max_length=16)] | None
+    name: Annotated[StrictStr, Field(min_length=1, max_length=160)]
+    intensity: Literal["0", "1", "2", "3", "4", "5-", "5+", "6-", "6+", "7", "不明"] | None
+    prefecture_code: Annotated[StrictStr, Field(pattern=r"^\d{2}$")] | None
+    @model_validator(mode="after")
+    def station_is_observation_not_area_maximum(self):
+        if (self.granularity == "STATION") != (self.measurement == "MEASURED"):
+            raise ValueError("only station Int is a measured point; other levels are maxima")
+        return self
+
+
+class OfficialMapReport(ContractModel):
+    bulletin: OfficialReportReference
+    observations: Annotated[tuple[OfficialIntensityObservation, ...], Field(max_length=6000)] = ()
+    forecast_areas: Annotated[tuple[TsunamiReferenceForecastArea, ...], Field(max_length=128)] = ()
+    @model_validator(mode="after")
+    def data_matches_product(self):
+        if not self.bulletin.is_head or (self.bulletin.product == "VXSE53" and self.forecast_areas) or (self.bulletin.product == "VTSE41" and self.observations):
+            raise ValueError("map data must match the current information-unit head/product")
+        if len({area.area_code for area in self.forecast_areas}) != len(self.forecast_areas):
+            raise ValueError("duplicate forecast codes within a map information unit")
+        return self
+
+
+class DisasterMapReferenceResponse(ContractModel):
+    mode: Literal["LIVE_REFERENCE"] = "LIVE_REFERENCE"
+    generated_at: AwareDatetime
+    sources: Annotated[tuple[LiveSourceProjection, ...], Field(min_length=2, max_length=2)]
+    reports: Annotated[tuple[OfficialMapReport, ...], Field(max_length=128)] = ()
+    observation_mapping_version: Literal["jma-xml-observation-v1"] = "jma-xml-observation-v1"
+    earthquake_code_table_version: Literal["20261007"] = "20261007"
+    tsunami_code_table_version: Literal["20261007"] = "20261007"
+    coverage: Literal["PARTIAL"] = "PARTIAL"
+    capacity_exceeded: StrictBool = False
+    authority: Literal["REFERENCE_ONLY"] = "REFERENCE_ONLY"
+    safe_location_verified: Literal[False] = False
+    route_authorized: Literal[False] = False
+    @model_validator(mode="after")
+    def bounded_observations(self):
+        if len({report.bulletin.report_id for report in self.reports}) != len(self.reports):
+            raise ValueError("duplicate map information unit")
+        if {source.source_key for source in self.sources} != {"jma-live-eqvol", "jma-live-tsunami"}:
+            raise ValueError("map reference requires the two official source projections")
+        if sum(len(report.observations) for report in self.reports) > 12000:
+            raise ValueError("map observation response capacity exceeded")
+        if self.capacity_exceeded and self.reports:
+            raise ValueError("over-capacity reference cannot show a silently truncated observation map")
+        return self
 
 
 class SpatialGuidanceProjection(ContractModel):
@@ -862,9 +1082,17 @@ class LiveSnapshot(ContractModel):
     destinations: Annotated[tuple[DestinationRecord, ...], Field(max_length=512)] = ()
     routes: Annotated[tuple[RoutePresentation, ...], Field(max_length=128)] = ()
     spatial_guidance: SpatialGuidanceProjection
+    official_reports: Annotated[tuple[OfficialReportReference, ...], Field(max_length=128)] = ()
+    official_sources: Annotated[tuple[LiveSourceProjection, ...], Field(max_length=2)] = ()
+    distress: DistressStatus = DistressStatus()
 
     @model_validator(mode="after")
     def movement_projection_matches_active_safety_core_action(self) -> "LiveSnapshot":
+        if self.situation.network_state == NetworkState.ONLINE_VERIFIED and any(
+            source.recovery is not None and source.recovery.scan_status != "WINDOW_VERIFIED"
+            for source in (self.source, *self.official_sources)
+        ):
+            raise ValueError("incomplete official recovery cannot support ONLINE_VERIFIED")
         spatial = self.spatial_guidance
         if not spatial.movement_authorized:
             return self
@@ -957,7 +1185,7 @@ class ReplayEventBase(ContractModel):
 
 class DisasterAlertReplayEvent(ReplayEventBase):
     event_type: Literal["disaster_alert"]
-    source_key: Literal["jma-replay", "osaka-jma-replay"]
+    source_key: Literal["jma-replay", "osaka-jma-replay", "miyagi-jma-replay"]
     disaster_type: DisasterEventType
     affected_areas: AreaList
     affected_area_ids: StringList = ()
@@ -975,7 +1203,7 @@ class DisasterAlertReplayEvent(ReplayEventBase):
 
 class OfficialUpdateReplayEvent(ReplayEventBase):
     event_type: Literal["official_update"]
-    source_key: Literal["jma-replay", "osaka-jma-replay"]
+    source_key: Literal["jma-replay", "osaka-jma-replay", "miyagi-jma-replay"]
     published_at: AwareDatetime
     affected_areas: AreaList
     affected_area_ids: StringList = ()
@@ -1059,7 +1287,7 @@ class NetworkRestoredReplayEvent(ReplayEventBase):
 
 class VerifiedUpdateReplayEvent(ReplayEventBase):
     event_type: Literal["verified_update"]
-    source_key: Literal["jma-replay", "osaka-jma-replay", "transport-replay"]
+    source_key: Literal["jma-replay", "osaka-jma-replay", "miyagi-jma-replay", "transport-replay"]
     published_at: AwareDatetime
     affected_areas: AreaList = ()
     affected_area_ids: StringList = ()
@@ -1219,6 +1447,7 @@ class ReplaySnapshot(ContractModel):
     evidence_projections: Annotated[tuple[EvidenceProjection, ...], Field(max_length=128)]
     mobility: Annotated[tuple[MobilitySnapshot, ...], Field(max_length=128)]
     plan_evaluations: Annotated[tuple[PlanEvaluation, ...], Field(max_length=512)]
+    distress: DistressStatus = DistressStatus()
 
 
 class ReplayScenarioOption(ContractModel):

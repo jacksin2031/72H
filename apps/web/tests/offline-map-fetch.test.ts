@@ -13,9 +13,9 @@ function harness(cached?: Response) {
     self: { location: { origin }, addEventListener(name: string, listener: (event: unknown) => void) { listeners[name] = listener; } },
     caches: { match, open:vi.fn().mockResolvedValue({match,put:vi.fn()}) },
   });
-  const request = (path: string, headers?: HeadersInit) => {
+  const request = (path: string, headers?: HeadersInit, cache:RequestCache='default') => {
     const respondWith = vi.fn();
-    const event = { request: new Request(path.startsWith('https:') ? path : origin + path, { headers }), respondWith, waitUntil: vi.fn() };
+    const event = { request: new Request(path.startsWith('https:') ? path : origin + path, { headers,cache }), respondWith, waitUntil: vi.fn() };
     listeners.fetch(event);
     return respondWith;
   };
@@ -55,6 +55,23 @@ describe('offline map pack fetch handling', () => {
     expect(app.request('/shelters/japan-v1/unpinned.json')).not.toHaveBeenCalled();
     const uncached=harness();
     await expect(uncached.request(path).mock.calls[0][0]).rejects.toThrow('Network unavailable');
+  });
+  it('restores pinned public walking graphs offline without caching GPS queries or model responses',async()=>{
+    const app=harness(new Response('pinned-road-reference'));
+    const response=app.request('/roads/ishinomaki-central-v1/graph.json',undefined,'no-cache');
+    expect(response).toHaveBeenCalledOnce();expect(await (await response.mock.calls[0][0]).text()).toBe('pinned-road-reference');
+    expect(app.request('/roads/ishinomaki-central-v1/graph.json?lat=38.4')).not.toHaveBeenCalled();
+    expect(app.request('/api/live/session/explanation')).not.toHaveBeenCalled();
+  });
+  it('revalidates a public pack requested with no-cache after a pin/manifest upgrade',async()=>{
+    const app=harness(new Response('old-manifest'));app.fetch.mockResolvedValue(new Response('new-manifest'));
+    const respond=app.request('/hazards/jma-forecast-lines-v1/manifest.json',undefined,'no-cache');
+    expect(await (await respond.mock.calls[0][0]).text()).toBe('new-manifest');expect(app.fetch).toHaveBeenCalledOnce();
+  });
+  it('retains the public cached pack on offline revalidation; the client still checks its pinned hash',async()=>{
+    const app=harness(new Response('old-reference'));
+    const respond=app.request('/hazards/jma-forecast-lines-v1/manifest.json',undefined,'no-cache');
+    expect(await (await respond.mock.calls[0][0]).text()).toBe('old-reference');
   });
   it('migrates public packs before shell cleanup and retains them across later offline upgrades',async()=>{
     const listeners:Record<string,(event:unknown)=>void>={};

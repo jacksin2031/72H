@@ -1,5 +1,28 @@
 # 72H Agent & Safety Contract v0.1
 
+## Authorized simulation location assessment (2026-10-13)
+
+The simulation-only extension uses device-local GPS area resolution or manual
+canonical area selection. Deterministic code binds scenario facts, expiry,
+limitations and permitted reference choices before Gemini/ADK selects a choice.
+The response must match the exact version, all fact IDs and restrictions.
+Scenario assumptions are never official evidence or real destination, route or
+movement authorization. Failure, stale GPS, offline and reconnect without a new
+assessment remain UNKNOWN. Existing Live Safety Core and plan history remain
+authoritative; this extension does not complete the full P2.7 migration. See
+[simulation contract](VNEXT_SIMULATION_GEMINI_LOCATION.md).
+
+## Official lifecycle extension — P2.4 A+B (2026-10-12)
+
+JMA product identity, ordering, deduplication, withdrawal, conflict and TTL
+remain deterministic. VXSE53/VTSE41 use Control.DateTime and the full
+Title/Status/EventID unit; withdrawal retires evidence to UNKNOWN, never
+RESOLVED. Legacy ID migration also preserves UNKNOWN and immutable plan
+history. The evidence TTL is application policy, not an official warning expiry.
+There is no expansion of AI or movement authorization. Bounded in-memory
+history is not durable feed recovery. See
+[local package evidence](VNEXT_P2_4_EVENT_LIFECYCLE_VALIDATION.md).
+
 ## 1. Purpose
 
 This document defines which decisions may be delegated to Gemini / ADK agents and which decisions must remain deterministic.

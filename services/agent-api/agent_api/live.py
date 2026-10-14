@@ -6,12 +6,15 @@ import asyncio
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
+import re
 from threading import RLock
 from time import monotonic
 from types import SimpleNamespace
 from uuid import UUID, uuid4
 
 from seventytwoh_contracts.models import (
+    DistressLevel,
+    DistressRequest,
     AgentName,
     AreaDefinition,
     Claim,
@@ -32,6 +35,7 @@ from seventytwoh_contracts.models import (
     LiveProfileUpdateRequest,
     LiveSnapshot,
     LiveSourceProjection,
+    OfficialReportReference,
     LiveSourceStatus,
     NetworkState,
     Location,
@@ -47,6 +51,7 @@ from seventytwoh_contracts.models import (
     SourceClass,
     StartLiveRequest,
     TsunamiAreaStatus,
+    TsunamiWarningClass,
     TsunamiOperation,
     TsunamiReferenceResponse,
     TraceEvent,
@@ -56,7 +61,7 @@ from seventytwoh_contracts.models import (
     validate_location_area_path,
 )
 
-from .domain import apply_live_evidence_batch, apply_live_evidence_batch_with_planner, replan_live_transition_with_planner
+from .domain import apply_live_evidence_batch, replan_live_transition
 from .area_registry import base_japan_area_catalog, catalog_for_state, load_japan_area_registry
 from .live_sources import (
     JMA_EVIDENCE_TTL_SECONDS,
@@ -76,13 +81,16 @@ from .live_sources import (
     JmaEarthquakeReport,
     JmaEarthquakeSource,
     jma_status_at_publication_deadline,
+    jma_report_deadline,
     tsunami_reference_from_result,
     TokyoShelterSource,
 )
 from .planning import evidence_projections
+from .distress import resolve_distress
 from .location_freshness import gps_observation_is_fresh
 from .safety import DEFAULT_POLICY, SafetyPolicy, claims_from_disaster_assessments, derive_claim_states
 from .state import CoreState
+from .official_events import OfficialBulletin
 from .live_routes import EKISPERT_MCP_ENDPOINT, EKISPERT_ROUTE_SOURCE_KEY, EKISPERT_ROUTE_SOURCE_NAME, EkispertRouteSource
 from .planner import CandidatePlanner
 from .spatial import evaluated_spatial_guidance
@@ -146,12 +154,25 @@ class LiveAggregate:
     destination_source: LiveSourceProjection
     route_source: LiveSourceProjection
     expires_at: float
+    official_reports: tuple[OfficialReportReference, ...] = ()
+    tsunami_source: LiveSourceProjection | None = None
+    tsunami_deadlines: tuple[datetime, ...] = ()
     lock: RLock = field(default_factory=RLock)
     operation_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
 
 def build_live_area_catalog() -> tuple[AreaDefinition, ...]:
     return base_japan_area_catalog()
+
+
+_TSUNAMI_WARNING_RANK = {
+    TsunamiWarningClass.MAJOR_WARNING: 4,
+    TsunamiWarningClass.WARNING: 3,
+    TsunamiWarningClass.ADVISORY: 2,
+    TsunamiWarningClass.FORECAST: 1,
+    TsunamiWarningClass.NONE: 0,
+    TsunamiWarningClass.UNKNOWN: -1,
+}
 
 
 class LiveStore:
@@ -316,42 +337,53 @@ class LiveStore:
                     # A same-area fix refreshes only location metadata. Retain route
                     # and source evidence; the normal evaluator still enforces their
                     # own TTLs at the new current time.
-                    if len(before.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
-                        raise InvalidLiveLocationRequest("live trace capacity reached")
                     transition_time = max(now, before.current_time)
-                    event_id = f"live-location-refresh-{len(before.trace) + 1}-{int(transition_time.timestamp())}"
-                    trace = TraceEvent(
-                        id=f"trace_{len(before.trace) + 1:03d}",
-                        situation_id=before.situation.id,
-                        timestamp=transition_time,
-                        agent=AgentName.SITUATION_AGENT,
-                        event_type="PROFILE_LOCATION_REFRESHED",
-                        input_refs=(event_id,),
-                        output_refs=request.area_ids,
-                        status=TraceStatus.SUCCESS,
-                        public_summary=(
-                            f"Current area location timestamp refreshed from {request.source.value}: "
-                            f"{location.label}. Area scope and source evidence were not changed."
-                        ),
-                    )
                     profile = before.profile.model_copy(
                         update={"current_location": location, "updated_at": transition_time}
                     )
-                    after = replace(
-                        before,
-                        profile=profile,
-                        current_time=transition_time,
-                        trace=(*before.trace, trace),
-                    )
-                    event = SimpleNamespace(id=event_id)
                     from .planning import evaluate_and_replan
 
-                    aggregate.state = evaluate_and_replan(
-                        before,
-                        after,
-                        event,
-                        self._policy,
-                    )
+                    def refreshed(position: int, prior_trace: tuple) -> CoreState:
+                        event_id = f"live-location-refresh-{position}-{int(transition_time.timestamp())}"
+                        trace = TraceEvent(
+                            id=f"trace_{position:03d}",
+                            situation_id=before.situation.id,
+                            timestamp=transition_time,
+                            agent=AgentName.SITUATION_AGENT,
+                            event_type="PROFILE_LOCATION_REFRESHED",
+                            input_refs=(event_id,),
+                            output_refs=request.area_ids,
+                            status=TraceStatus.SUCCESS,
+                            public_summary=(
+                                f"Current area location timestamp refreshed from {request.source.value}: "
+                                f"{location.label}. Area scope and source evidence were not changed."
+                            ),
+                        )
+                        after = replace(before, profile=profile, current_time=transition_time,
+                                        trace=(*prior_trace, trace))
+                        return evaluate_and_replan(before, after, SimpleNamespace(id=event_id), self._policy)
+
+                    # F3: a refresh that produces no plan evaluation replaces the previous
+                    # PROFILE_LOCATION_REFRESHED trace in place (same id and position), so a
+                    # long run of same-area refreshes never grows the trace toward its cap.
+                    previous = before.trace[-1] if before.trace else None
+                    if previous is not None and previous.event_type == "PROFILE_LOCATION_REFRESHED":
+                        candidate = refreshed(len(before.trace), before.trace[:-1])
+                        candidate = replace(candidate, trace=(
+                            *candidate.trace[:len(before.trace) - 1],
+                            candidate.trace[len(before.trace) - 1].model_copy(update={"id": previous.id}),
+                            *candidate.trace[len(before.trace):],
+                        ))
+                        if (
+                            len(candidate.plan_evaluations) == len(before.plan_evaluations)
+                            and len(candidate.trace) == len(before.trace)
+                        ):
+                            aggregate.state = candidate
+                            self._touch(aggregate)
+                            return self._snapshot(aggregate)
+                    if len(before.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
+                        raise InvalidLiveLocationRequest("live trace capacity reached")
+                    aggregate.state = refreshed(len(before.trace) + 1, before.trace)
                     self._touch(aggregate)
                     return self._snapshot(aggregate)
 
@@ -386,15 +418,11 @@ class LiveStore:
                 except ValueError as exc:
                     raise InvalidLiveLocationRequest(str(exc)) from exc
 
-            from .domain import replan_live_transition_with_planner
             from .planning import evaluate_and_replan
 
-            event = SimpleNamespace(id=event_id)
-            planned, _planning_mode = await replan_live_transition_with_planner(
+            planned = replan_live_transition(
                 before,
                 after,
-                self._planner,
-                f"live-{aggregate.session_id}",
                 self._policy,
                 event_id=event_id,
             )
@@ -511,12 +539,9 @@ class LiveStore:
                 except ValueError as exc:
                     raise InvalidLiveProfileUpdate(str(exc)) from exc
 
-            event = SimpleNamespace(id=event_id)
-            planned, _planning_mode = await replan_live_transition_with_planner(
+            planned = replan_live_transition(
                 before,
                 after,
-                self._planner,
-                f"live-{aggregate.session_id}",
                 self._policy,
                 event_id=event_id,
                 allow_network_reconciliation=False,
@@ -556,6 +581,144 @@ class LiveStore:
                         self._policy,
                         allow_network_reconciliation=False,
                     )
+                self._touch(aggregate)
+                return self._snapshot(aggregate)
+
+    async def record_distress(self, session_id: UUID, request: DistressRequest) -> LiveSnapshot:
+        """Record a user-reported distress signal and re-plan; it can only make guidance more protective."""
+        from .distress import record_distress_report
+        from .planning import evaluate_and_replan
+
+        aggregate = self._get_aggregate(session_id)
+
+        def reported_state(base, at):
+            reported = record_distress_report(base, request.tags, request.input_mode, at)
+            report_id = reported.distress_reports[-1].id
+            trace = TraceEvent(
+                id=f"trace_{len(reported.trace) + 1:03d}",
+                situation_id=reported.situation.id,
+                timestamp=at,
+                agent=AgentName.SITUATION_AGENT,
+                event_type="DISTRESS_REPORTED",
+                input_refs=(report_id,),
+                output_refs=tuple(tag.value for tag in request.tags),
+                status=TraceStatus.SUCCESS,
+                public_summary="The user reported distress. It can only make guidance more protective.",
+            )
+            return replace(
+                reported,
+                situation=reported.situation.model_copy(update={"updated_at": at}),
+                current_time=at,
+                trace=(*reported.trace, trace),
+            ), report_id
+
+        async with aggregate.operation_lock:
+            with aggregate.lock:
+                before = aggregate.state
+                if len(before.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
+                    raise InvalidLiveProfileUpdate("live trace capacity reached")
+                transition_time = max(self._now(), before.current_time)
+                after, report_id = reported_state(before, transition_time)
+
+            planned = replan_live_transition(
+                before,
+                after,
+                self._policy,
+                event_id=report_id,
+                allow_network_reconciliation=False,
+            )
+
+            with aggregate.lock:
+                if aggregate.state is before:
+                    aggregate.state = planned
+                else:
+                    latest = aggregate.state
+                    if len(latest.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
+                        raise InvalidLiveProfileUpdate("live trace capacity reached")
+                    latest_time = max(transition_time, latest.current_time)
+                    latest_after, latest_report_id = reported_state(latest, latest_time)
+                    aggregate.state = evaluate_and_replan(
+                        latest,
+                        latest_after,
+                        SimpleNamespace(id=latest_report_id),
+                        self._policy,
+                        allow_network_reconciliation=False,
+                    )
+                self._touch(aggregate)
+                return self._snapshot(aggregate)
+
+    async def record_ai_escalation(self, session_id: UUID) -> bool:
+        """Core-approved AI escalation NONE -> USER_REPORTED, then re-plan; it can only add protection.
+        Returns False (no trace, no re-plan) when the Core level is no longer NONE."""
+        from .distress_advice import ai_escalated_state
+        from .planning import evaluate_and_replan
+
+        aggregate = self._get_aggregate(session_id)
+
+        def escalated_state(base, at):
+            escalated = ai_escalated_state(base, at)
+            return replace(
+                escalated,
+                situation=escalated.situation.model_copy(update={"updated_at": at}),
+                current_time=at,
+            ), escalated.trace[-1].id
+
+        def still_none(state, at) -> bool:
+            return resolve_distress(state, at, self._policy).level == DistressLevel.NONE
+
+        async with aggregate.operation_lock:
+            with aggregate.lock:
+                before = aggregate.state
+                transition_time = max(self._now(), before.current_time)
+                if not still_none(before, transition_time):
+                    return False
+                if len(before.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
+                    raise InvalidLiveProfileUpdate("live trace capacity reached")
+                after, event_id = escalated_state(before, transition_time)
+
+            planned = replan_live_transition(
+                before,
+                after,
+                self._policy,
+                event_id=event_id,
+                allow_network_reconciliation=False,
+            )
+
+            with aggregate.lock:
+                if aggregate.state is before:
+                    aggregate.state = planned
+                else:
+                    latest = aggregate.state
+                    if len(latest.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
+                        raise InvalidLiveProfileUpdate("live trace capacity reached")
+                    latest_time = max(transition_time, latest.current_time)
+                    if not still_none(latest, latest_time):
+                        return False
+                    latest_after, latest_event_id = escalated_state(latest, latest_time)
+                    aggregate.state = evaluate_and_replan(
+                        latest,
+                        latest_after,
+                        SimpleNamespace(id=latest_event_id),
+                        self._policy,
+                        allow_network_reconciliation=False,
+                    )
+                self._touch(aggregate)
+                return True
+
+    async def record_advice_trace(self, session_id: UUID, applied) -> LiveSnapshot:
+        """Append the advice outcome trace (field names only, never model text)."""
+        from .distress_advice import advice_needs_trace, advice_traced_state
+
+        aggregate = self._get_aggregate(session_id)
+        async with aggregate.operation_lock:
+            with aggregate.lock:
+                state = aggregate.state
+                if not advice_needs_trace(applied):
+                    self._touch(aggregate)
+                    return self._snapshot(aggregate)
+                if len(state.trace) >= MAX_LIVE_TRACE_EVENTS - 8:
+                    raise InvalidLiveProfileUpdate("live trace capacity reached")
+                aggregate.state = advice_traced_state(state, applied, max(self._now(), state.current_time))
                 self._touch(aggregate)
                 return self._snapshot(aggregate)
 
@@ -652,18 +815,28 @@ class LiveStore:
     def refresh(self, session_id: UUID) -> LiveSnapshot:
         aggregate = self._get_aggregate(session_id)
         with aggregate.lock:
+            legacy_metadata = self._resolve_snapshot_metadata(aggregate.state)
             source_result = self._jma.fetch_latest()
             tsunami_result = self._tsunami.fetch_latest()
             destinations_payload = self._destinations.fetch_latest()
-            now = self._now()
-            pairs = self._apply_source_results_locked(aggregate, source_result, tsunami_result, destinations_payload, now)
-            aggregate.state = apply_live_evidence_batch(aggregate.state, pairs, now, self._policy, synthetic_mode=getattr(self, "_synthetic_source_mode", False))
+            now = max(self._now(), aggregate.state.current_time)
+            pairs, aliases = self._apply_source_results_locked(
+                aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata,
+            )
+            aggregate.state = apply_live_evidence_batch(
+                aggregate.state, pairs, now, self._policy,
+                synthetic_mode=getattr(self, "_synthetic_source_mode", False),
+                official_aliases=aliases,
+            )
             self._touch(aggregate)
             return self._snapshot(aggregate)
 
     async def refresh_async(self, session_id: UUID) -> LiveSnapshot:
         aggregate = self._get_aggregate(session_id)
         async with aggregate.operation_lock:
+            with aggregate.lock:
+                legacy_state = aggregate.state
+            legacy_metadata = await asyncio.to_thread(self._resolve_snapshot_metadata, legacy_state)
             source_result, tsunami_result, destinations_payload = await asyncio.gather(
                 asyncio.to_thread(self._jma.fetch_latest),
                 asyncio.to_thread(self._tsunami.fetch_latest),
@@ -671,18 +844,17 @@ class LiveStore:
             )
             with aggregate.lock:
                 now = self._now()
-                pairs = self._apply_source_results_locked(
-                    aggregate, source_result, tsunami_result, destinations_payload, now
+                pairs, aliases = self._apply_source_results_locked(
+                    aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata
                 )
                 prepared = aggregate.state
-            after, _planning_mode = await apply_live_evidence_batch_with_planner(
+            after = apply_live_evidence_batch(
                 prepared,
                 pairs,
                 max(now, prepared.current_time),
-                self._planner,
-                f"live-{aggregate.session_id}",
                 self._policy,
                 synthetic_mode=getattr(self, "_synthetic_source_mode", False),
+                official_aliases=aliases,
             )
             with aggregate.lock:
                 if aggregate.state is not prepared:
@@ -693,6 +865,7 @@ class LiveStore:
                         max(now, aggregate.state.current_time),
                         self._policy,
                         synthetic_mode=getattr(self, "_synthetic_source_mode", False),
+                        official_aliases=aliases,
                     )
                     after = aggregate.state
                 aggregate.state = after
@@ -710,7 +883,25 @@ class LiveStore:
         """Fetch the latest read-only JMA reference without mutating live sessions."""
         return tsunami_reference_from_result(self._tsunami.fetch_latest())
 
-    def _apply_source_results_locked(self, aggregate, source_result, tsunami_result, destinations_payload, now):
+    def get_disaster_map_reference(self):
+        from .disaster_map import project_disaster_map
+        return project_disaster_map(self._jma.fetch_latest(), self._tsunami.fetch_latest(), self._now())
+
+    def _apply_source_results_locked(self, aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata):
+        # Old snapshots lack Control.DateTime; use recovered original official
+        # XML only. Business/receipt clocks never substitute for system ordering.
+        if source_result.status in {LiveSourceStatus.FRESH, LiveSourceStatus.STALE} and any(
+            item.bulletin is not None and self._legacy_ordering_unknown(aggregate.state, item.bulletin, legacy_metadata)
+            for item in source_result.reports
+        ):
+            source_result = replace(source_result, status=LiveSourceStatus.INVALID_RESPONSE,
+                detail="Legacy official XML identity/ordering could not be verified; prior evidence is unavailable for current claims.")
+        if tsunami_result.status in {LiveSourceStatus.FRESH, LiveSourceStatus.STALE} and any(
+            item.bulletin is not None and self._legacy_ordering_unknown(aggregate.state, item.bulletin, legacy_metadata)
+            for item in tsunami_result.bulletins
+        ):
+            tsunami_result = replace(tsunami_result, status=LiveSourceStatus.INVALID_RESPONSE,
+                detail="Legacy official XML identity/ordering could not be verified; current tsunami status is UNKNOWN.")
         projected_status = jma_status_at_publication_deadline(
             source_result.status,
             source_result.last_published_at,
@@ -733,7 +924,18 @@ class LiveStore:
             next_retry_at=source_result.next_retry_at,
             record_count=len(source_result.reports),
             detail=source_result.detail,
+            recovery=source_result.recovery,
         )
+        aggregate.tsunami_source = LiveSourceProjection(
+            source_key=JMA_TSUNAMI_SOURCE_KEY, source_name=JMA_TSUNAMI_SOURCE_NAME, source_url=JMA_FEED_URL,
+            status=tsunami_result.status, retrieved_at=tsunami_result.retrieved_at,
+            last_published_at=tsunami_result.last_published_at, next_retry_at=tsunami_result.next_retry_at,
+            record_count=len(tsunami_result.bulletins), detail=tsunami_result.detail, recovery=tsunami_result.recovery)
+        aggregate.tsunami_deadlines = tuple(jma_report_deadline(item) for item in tsunami_result.bulletins)
+        aggregate.official_reports = tuple(
+            item.model_copy(update={"lifecycle": "UNKNOWN"})
+            if item.lifecycle == "CURRENT" and result.status != LiveSourceStatus.FRESH else item
+            for result in (source_result, tsunami_result) for item in result.references[:64])
         if destination_status == LiveSourceStatus.FRESH:
             destination_status = LiveSourceStatus.STALE
         area_scope = set(aggregate.state.profile.current_location.area_ids)
@@ -772,15 +974,18 @@ class LiveStore:
             aggregate.state.reconnect_evidence_count is not None
             or aggregate.state.situation.network_state == NetworkState.RECONNECTING
         )
+        recovery_ready = all(result.recovery is None or result.recovery.scan_status == "WINDOW_VERIFIED"
+                             for result in (source_result, tsunami_result))
         network_state = (
             NetworkState.RECONNECTING
             if reconnect_pending
             else NetworkState.ONLINE_VERIFIED
-            if source_result.status == LiveSourceStatus.FRESH
+            if source_result.status == LiveSourceStatus.FRESH and recovery_ready
             else NetworkState.ONLINE_DEGRADED
         )
         aggregate.state = replace(
             aggregate.state,
+            official_recovery_ready=recovery_ready,
             situation=aggregate.state.situation.model_copy(update={"network_state": network_state}),
         )
         if source_result.status not in {LiveSourceStatus.FRESH, LiveSourceStatus.STALE}:
@@ -788,7 +993,7 @@ class LiveStore:
         else:
             earthquake_pairs = tuple(
             pair for report in source_result.reports
-            if (pair := self._event_evidence_pair(aggregate.state, report, now)) is not None
+            if (pair := self._event_evidence_pair(aggregate.state, report, now, legacy_metadata)) is not None
             )
 
         active_tsunami_event_ids = {
@@ -812,8 +1017,8 @@ class LiveStore:
             tsunami_pairs = tuple(
                 pair
                 for bulletin in tsunami_result.bulletins
-                if now < bulletin.published_at + timedelta(seconds=JMA_EVIDENCE_TTL_SECONDS)
-                and (pair := self._tsunami_event_evidence_pair(aggregate.state, bulletin, now)) is not None
+                if now < jma_report_deadline(bulletin)
+                and (pair := self._tsunami_event_evidence_pair(aggregate.state, bulletin, now, legacy_metadata)) is not None
             )
         elif tsunami_result.status in {
             LiveSourceStatus.STALE,
@@ -833,7 +1038,20 @@ class LiveStore:
             tsunami_pairs = ()
         else:
             tsunami_pairs = ()
-        return (*earthquake_pairs, *tsunami_pairs)
+        pairs = (*earthquake_pairs, *tsunami_pairs)
+        metadata = {
+            f"jma-earthquake-{item.bulletin.report_id}": item.bulletin
+            for item in source_result.reports if item.bulletin is not None
+        }
+        metadata.update({
+            f"jma-tsunami-{item.bulletin.report_id}": item.bulletin
+            for item in tsunami_result.bulletins if item.bulletin is not None
+        })
+        aliases = {
+            event.id: tuple(previous.id for previous, _ in self._prior_official_records(aggregate.state, metadata[event.id]))
+            for event, _ in pairs if event.id in metadata
+        }
+        return pairs, aliases
 
     def _mark_tsunami_evidence_stale(self, aggregate, *, conflict: bool = False) -> None:
         evidence = tuple(
@@ -891,25 +1109,142 @@ class LiveStore:
             self._touch(aggregate)
             return self._snapshot(aggregate)
 
+    @staticmethod
+    def _prior_official_records(
+        state: CoreState, metadata: OfficialBulletin,
+    ) -> tuple[tuple[DisasterEvent, Evidence], ...]:
+        """Match canonical units and pre-lifecycle IDs using verified provenance.
+
+        Legacy parsers accepted one EventID only and normal product status.
+        Omitted title/clock provenance must be recovered from the original
+        official XML before a legacy alias can be retired.
+        Never partially match compound tsunami EventID combinations.
+        """
+        earthquake = metadata.product == "VXSE53"
+        event_type = DisasterEventType.EARTHQUAKE if earthquake else DisasterEventType.TSUNAMI
+        source_key = JMA_SOURCE_KEY if earthquake else JMA_TSUNAMI_SOURCE_KEY
+        source_name = JMA_SOURCE_NAME if earthquake else JMA_TSUNAMI_SOURCE_NAME
+        prefix = "jma-earthquake-" if earthquake else "jma-tsunami-"
+        canonical = f"{prefix}{metadata.group_id}--"
+        tokens = metadata.event_id.split()
+        legacy = None
+        if len(tokens) == 1:
+            legacy = (
+                rf"jma-{re.escape(tokens[0])}-[A-Za-z0-9_-]+" if earthquake else
+                rf"jma-tsunami-{sha256(tokens[0].encode()).hexdigest()[:16]}--[A-Za-z0-9_-]+"
+            )
+        proofs = {item.id: item for item in state.evidence}
+        records = []
+        for event in state.events:
+            proof = proofs.get(f"ev_{event.id}")
+            if (
+                event.event_type == event_type and event.source_name == source_name
+                and event.source_class == SourceClass.OFFICIAL and not event.is_synthetic
+                and proof is not None and proof.source_key == source_key
+                and proof.source_class == SourceClass.OFFICIAL and not proof.is_synthetic
+                and (event.id.startswith(canonical) or (legacy is not None and event.id in state.situation.active_event_ids and re.fullmatch(legacy, event.id)))
+            ):
+                records.append((event, proof))
+        return tuple(records)
+
+    def _resolve_snapshot_metadata(self, state: CoreState) -> dict[str, OfficialBulletin]:
+        recovered: dict[str, OfficialBulletin] = {}
+        proofs = {item.id: item for item in state.evidence}
+        active = set(state.situation.active_event_ids)
+        for event_type, source, source_key, source_name in (
+            (DisasterEventType.EARTHQUAKE, self._jma, JMA_SOURCE_KEY, JMA_SOURCE_NAME),
+            (DisasterEventType.TSUNAMI, self._tsunami, JMA_TSUNAMI_SOURCE_KEY, JMA_TSUNAMI_SOURCE_NAME),
+        ):
+            events = []
+            pattern = (
+                r"jma-\d{14}-[A-Za-z0-9_-]+" if event_type == DisasterEventType.EARTHQUAKE else
+                r"jma-tsunami-[a-f0-9]{16}--[A-Za-z0-9_-]+"
+            )
+            for event in state.events:
+                proof = proofs.get(f"ev_{event.id}")
+                if (
+                    event.id in active and event.event_type == event_type and event.source_name == source_name
+                    and not event.is_synthetic and event.source_class == SourceClass.OFFICIAL
+                    and proof is not None and proof.source_key == source_key
+                    and proof.source_class == SourceClass.OFFICIAL and not proof.is_synthetic
+                    and event.raw_reference == proof.raw_reference and re.fullmatch(pattern, event.id)
+                ):
+                    events.append(event)
+            resolver = getattr(source, "fetch_snapshot_metadata", None)
+            if not events or resolver is None:
+                continue
+            by_url = resolver(tuple(event.raw_reference for event in events))
+            for event in events:
+                metadata = by_url.get(event.raw_reference)
+                proof = proofs[f"ev_{event.id}"]
+                if metadata is None or len(metadata.event_id.split()) != 1:
+                    continue
+                legacy_id = (
+                    f"jma-{metadata.event_id}-{metadata.serial}" if event_type == DisasterEventType.EARTHQUAKE else
+                    f"jma-tsunami-{sha256(metadata.event_id.encode()).hexdigest()[:16]}--{metadata.serial or 'none'}-{int(metadata.reported_at.timestamp())}"
+                )
+                if (metadata.product == ("VXSE53" if event_type == DisasterEventType.EARTHQUAKE else "VTSE41")
+                    and metadata.reference_url == event.raw_reference and metadata.reported_at == proof.published_at
+                    and legacy_id == event.id):
+                    recovered[event.id] = metadata
+        return recovered
+
+    @classmethod
+    def _legacy_ordering_unknown(cls, state: CoreState, metadata: OfficialBulletin, recovered) -> bool:
+        canonical = f"jma-{'earthquake' if metadata.product == 'VXSE53' else 'tsunami'}-{metadata.group_id}--"
+        for event, _ in cls._prior_official_records(state, metadata):
+            if event.id.startswith(canonical):
+                continue
+            prior = recovered.get(event.id)
+            if (prior is None or prior.group_id != metadata.group_id
+                or (prior.issued_at == metadata.issued_at and prior.raw_sha256 != metadata.raw_sha256)):
+                return True
+        return False
+
+    @classmethod
+    def _prior_official_is_newer_or_unordered(cls, state: CoreState, metadata: OfficialBulletin, recovered) -> bool:
+        canonical = f"jma-{'earthquake' if metadata.product == 'VXSE53' else 'tsunami'}-{metadata.group_id}--"
+        return cls._legacy_ordering_unknown(state, metadata, recovered) or any(
+            (proof.published_at if event.id.startswith(canonical) else recovered[event.id].issued_at) > metadata.issued_at
+            for event, proof in cls._prior_official_records(state, metadata)
+        )
+
     def _event_evidence_pair(
         self,
         state: CoreState,
         report: JmaEarthquakeReport,
         now: datetime,
+        legacy_metadata: dict[str, OfficialBulletin] | None = None,
     ) -> tuple[DisasterEvent, Evidence] | None:
-        event_id = f"jma-{report.report_id}"
+        event_id = f"jma-earthquake-{report.report_id}" if report.bulletin else f"jma-{report.report_id}"
         evidence_id = f"ev_{event_id}"
         if any(item.id == event_id for item in state.events) or any(item.id == evidence_id for item in state.evidence):
             return None
+        previous = self._prior_official_records(state, report.bulletin) if report.bulletin else ()
+        if report.bulletin and self._prior_official_is_newer_or_unordered(state, report.bulletin, legacy_metadata or {}):
+            return None  # A cold adapter must not resurrect an older snapshot revision.
         observations = report.observations
-        area_ids = tuple(dict.fromkeys(item.area_id for item in observations if item.area_id is not None))
-        names = tuple(dict.fromkeys(item.name for item in observations))
+        scoped_observations = (*observations, *report.withdrawn_observations)
+        area_ids = tuple(dict.fromkeys(item.area_id for item in scoped_observations if item.area_id is not None))
+        names = tuple(dict.fromkeys(item.name for item in scoped_observations))
+        cancelled = report.bulletin is not None and report.bulletin.operation.value == "CANCEL"
+        current_area_ids = {item.area_id for item in observations} if not cancelled else set()
+        occurred_at = report.occurred_at
+        if previous:
+            area_ids = tuple(dict.fromkeys((*area_ids, *(area for event, _ in previous for area in event.affected_area_ids))))
+            names = tuple(dict.fromkeys((*names, *(name for event, _ in previous for name in event.affected_areas))))
+            if occurred_at is None and cancelled:
+                occurred_at = max(previous, key=lambda item: item[1].published_at)[0].occurred_at
+        if occurred_at is None or not area_ids:
+            # A bodyless cancellation with no earlier official scope is retained
+            # by the source ledger, never turned into fabricated event data.
+            return None
         assessments = tuple(
             DisasterAssessment(
                 area_id=area_id,
                 event_type=DisasterEventType.EARTHQUAKE,
                 level=None,
-                status=DisasterEventStatus.ACTIVE,
+                status=DisasterEventStatus.ACTIVE if area_id in current_area_ids else DisasterEventStatus.UNKNOWN,
             )
             for area_id in area_ids
         )
@@ -936,14 +1271,14 @@ class LiveStore:
             id=event_id,
             situation_id=state.situation.id,
             event_type=DisasterEventType.EARTHQUAKE,
-            occurred_at=report.occurred_at,
+            occurred_at=occurred_at,
             received_at=now,
             affected_areas=names[:20],
             affected_area_ids=area_ids,
             source_name=JMA_SOURCE_NAME,
             source_class=SourceClass.OFFICIAL,
             severity_raw="JMA earthquake intensity observations; no 72H severity mapping",
-            status=DisasterEventStatus.ACTIVE,
+            status=DisasterEventStatus.UNKNOWN if cancelled else DisasterEventStatus.ACTIVE,
             raw_reference=report.reference_url,
             is_synthetic=False,
         )
@@ -964,7 +1299,8 @@ class LiveStore:
             claim_type=ClaimType.DISASTER_STATUS,
             claims=tuple(claims),
             summary=(
-                "JMA reported earthquake intensity by prefecture. All reported disaster assessments are retained; "
+                ("JMA withdrew an information unit; current earthquake status remains UNKNOWN. " if cancelled else
+                 "JMA reported earthquake intensity by prefecture. Withdrawn scopes remain UNKNOWN; ") +
                 f"exact intensity claims are retained only for profile areas {sorted(retained_intensity_area_ids) or 'none'}. "
                 "72H severity is not inferred."
             ),
@@ -978,9 +1314,16 @@ class LiveStore:
         state: CoreState,
         bulletin: JmaTsunamiBulletin,
         now: datetime,
+        legacy_metadata: dict[str, OfficialBulletin] | None = None,
     ) -> tuple[DisasterEvent, Evidence] | None:
         """Create SafetyCore evidence only for exact prefecture-level JMA areas."""
-        if bulletin.occurred_at is None:
+        previous = self._prior_official_records(state, bulletin.bulletin) if bulletin.bulletin else ()
+        if bulletin.bulletin and self._prior_official_is_newer_or_unordered(state, bulletin.bulletin, legacy_metadata or {}):
+            return None
+        occurred_at = bulletin.occurred_at
+        if occurred_at is None and bulletin.info_type == "取消" and previous:
+            occurred_at = max(previous, key=lambda item: item[1].published_at)[0].occurred_at
+        if occurred_at is None:
             # A cancellation without the prior event cached cannot be attached to
             # a safety scope; it remains visible only in the reference response.
             return None
@@ -993,20 +1336,50 @@ class LiveStore:
             )
             if prefecture is None:
                 continue
-            assessment_status = {
+            assessment_status = DisasterEventStatus.UNKNOWN if bulletin.info_type == "取消" else {
                 TsunamiAreaStatus.ACTIVE: DisasterEventStatus.ACTIVE,
                 TsunamiAreaStatus.CANCELLED: DisasterEventStatus.RESOLVED,
                 TsunamiAreaStatus.UNKNOWN: DisasterEventStatus.UNKNOWN,
             }[area.status]
+            # Only an ACTIVE official area may carry class/arrival (feeds level-2 logic).
+            carries_warning = bulletin.info_type != "取消" and area.status == TsunamiAreaStatus.ACTIVE
             assessment = DisasterAssessment(
                 area_id=f"JP-{prefecture}",
                 event_type=DisasterEventType.TSUNAMI,
                 level=None,
                 status=assessment_status,
+                tsunami_warning_class=area.warning_class if carries_warning else None,
+                arrival_at=area.arrival_at if carries_warning else None,
+                # InfoType 取消 withdraws the information unit: deterministic cancellation marker.
+                withdrawn=bulletin.info_type == "取消",
             )
-            if all(item.area_id != assessment.area_id for item in assessments):
+            existing = next((i for i, item in enumerate(assessments) if item.area_id == assessment.area_id), None)
+            if existing is None:
                 assessments.append(assessment)
+            else:
+                # Class/arrival are None on non-ACTIVE areas, so only ACTIVE areas contribute.
+                # Status: ACTIVE wins over UNKNOWN wins over RESOLVED (conservative).
+                prior = assessments[existing]
+                status_rank = {DisasterEventStatus.ACTIVE: 2, DisasterEventStatus.UNKNOWN: 1}
+                merged_status = max((prior.status, assessment.status), key=lambda v: status_rank.get(v, 0))
+                stronger = _TSUNAMI_WARNING_RANK.get(assessment.tsunami_warning_class, -2) > _TSUNAMI_WARNING_RANK.get(
+                    prior.tsunami_warning_class, -2
+                )
+                arrivals = [t for t in (prior.arrival_at, assessment.arrival_at) if t is not None]
+                assessments[existing] = prior.model_copy(update={
+                    "status": merged_status,
+                    "withdrawn": prior.withdrawn and assessment.withdrawn and merged_status == DisasterEventStatus.UNKNOWN,
+                    "tsunami_warning_class": assessment.tsunami_warning_class if stronger else prior.tsunami_warning_class,
+                    "arrival_at": min(arrivals) if arrivals else None,
+                })
             names.append(area.name)
+        # Preserve withdrawn verified scope directly; never invent a forecast code.
+        for previous_event, proof in previous:
+            for assessment in proof.disaster_assessments:
+                if assessment.event_type == DisasterEventType.TSUNAMI and all(item.area_id != assessment.area_id for item in assessments):
+                    # The newer bulletin of the same unit no longer issues this area: withdrawn.
+                    assessments.append(assessment.model_copy(update={"status": DisasterEventStatus.UNKNOWN, "level": None, "tsunami_warning_class": None, "arrival_at": None, "withdrawn": True}))
+            names.extend(previous_event.affected_areas)
         if not assessments:
             return None
 
@@ -1020,13 +1393,16 @@ class LiveStore:
         assessment_tuple = tuple(assessments)
         claims = claims_from_disaster_assessments(assessment_tuple)
         area_ids = tuple(item.area_id for item in assessments)
-        group = sha256(bulletin.event_id.encode("utf-8")).hexdigest()[:16]
+        group = bulletin.bulletin.group_id if bulletin.bulletin else sha256(bulletin.event_id.encode("utf-8")).hexdigest()[:16]
         revision = bulletin.serial or "none"
-        event_id = f"jma-tsunami-{group}--{revision}-{int(bulletin.published_at.timestamp())}"
+        event_id = (
+            f"jma-tsunami-{bulletin.bulletin.report_id}" if bulletin.bulletin else
+            f"jma-tsunami-{group}--{revision}-{int(bulletin.published_at.timestamp())}"
+        )
         evidence_id = f"ev_{event_id}"
         if any(item.id == event_id for item in state.events) or any(item.id == evidence_id for item in state.evidence):
             return None
-        expires_at = bulletin.published_at + timedelta(seconds=JMA_EVIDENCE_TTL_SECONDS)
+        expires_at = jma_report_deadline(bulletin)
         freshness = FreshnessStatus.CURRENT if now < expires_at else FreshnessStatus.STALE
         if freshness == FreshnessStatus.STALE and event_status == DisasterEventStatus.ACTIVE:
             event_status = DisasterEventStatus.UNKNOWN
@@ -1034,7 +1410,7 @@ class LiveStore:
             id=event_id,
             situation_id=state.situation.id,
             event_type=DisasterEventType.TSUNAMI,
-            occurred_at=bulletin.occurred_at,
+            occurred_at=occurred_at,
             received_at=now,
             affected_areas=tuple(dict.fromkeys(names))[:20],
             affected_area_ids=area_ids,
@@ -1123,6 +1499,22 @@ class LiveStore:
                     "detail": "JMA publication freshness deadline elapsed; publication and retrieval timestamps are unchanged.",
                 }
             )
+        tsunami_source = aggregate.tsunami_source
+        if tsunami_source:
+            tsunami_status = jma_status_at_publication_deadline(tsunami_source.status, tsunami_source.last_published_at, state.current_time)
+            if tsunami_status == LiveSourceStatus.FRESH and aggregate.tsunami_deadlines and not any(state.current_time < deadline for deadline in aggregate.tsunami_deadlines):
+                tsunami_status = LiveSourceStatus.STALE
+            tsunami_source = tsunami_source.model_copy(update={"status": tsunami_status})
+        freshness_by_id = {item.evidence_id: item.freshness_status for item in projections}
+        expired_event_ids = {item.id.removeprefix("ev_") for item in state.evidence
+                            if freshness_by_id.get(item.id) == FreshnessStatus.STALE}
+        # Project observation validity at read time, without rewriting stored
+        # evidence, event history or prior plan versions.
+        public_evidence = tuple(item.model_copy(update={"freshness_status": freshness_by_id[item.id]})
+            if item.freshness_status == FreshnessStatus.CURRENT and freshness_by_id.get(item.id) in {FreshnessStatus.STALE, FreshnessStatus.UNKNOWN}
+            else item for item in state.evidence)
+        public_events = tuple(item.model_copy(update={"status": DisasterEventStatus.UNKNOWN})
+            if item.id in expired_event_ids else item for item in state.events)
         return LiveSnapshot(
             session_id=aggregate.session_id,
             mode="LIVE",
@@ -1132,16 +1524,21 @@ class LiveStore:
             profile=state.profile,
             area_catalog=catalog_for_state(state, self._area_registry),
             situation=state.situation,
-            events=state.events,
-            evidence=state.evidence,
+            events=public_events,
+            evidence=public_evidence,
             evidence_projections=projections,
             plans=state.plans,
             plan_actions=state.plan_actions,
             trace=state.trace,
             plan_evaluations=state.plan_evaluations,
+            distress=resolve_distress(state, state.current_time, self._policy),
             destinations=state.destinations,
             routes=state.routes,
             spatial_guidance=spatial,
+            official_reports=tuple(item.model_copy(update={"lifecycle": "STALE"})
+                if item.lifecycle == "CURRENT" and state.current_time >= item.evidence_expires_at else item
+                for item in aggregate.official_reports),
+            official_sources=(source, *((tsunami_source,) if tsunami_source else ())),
         )
 
     def _empty_jma_projection(self) -> LiveSourceProjection:

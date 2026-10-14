@@ -847,6 +847,12 @@ def write_pack(
         "reviewed_at": jst_iso(reviewed_at),
         "review_due_at": jst_iso(review_due_at),
         "coverage_status": "PARTIAL",
+        "scenario": {
+            "source_id": "miyagi-tsunami-depth-original-2022",
+            "announced_on": "2022-05-10", "source_crs": "EPSG:6668", "output_crs": "EPSG:4326",
+            "terrain_basis": "Post-2011 ground changes and recovery projects as of 2019-12",
+            "conditions": ["MAXIMUM_CLASS_ADVERSE", "LARGER_OR_OUTSIDE_POSSIBLE", "LATER_WAVE_MAXIMUM", "RIVER_LAKE_CHANGES_NOT_SHOWN"],
+        },
         "positional_accuracy_m": 25,
         "positional_accuracy_kind": "STANDARD_DEVIATION",
         "coverage_note": (

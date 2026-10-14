@@ -14,6 +14,9 @@ from seventytwoh_contracts.models import (
     DisasterEvent,
     DisasterEventType,
     DisasterEventStatus,
+    DistressLevel,
+    DistressStatus,
+    DistressTag,
     Evidence,
     EvidenceProjection,
     FreshnessStatus,
@@ -35,6 +38,7 @@ from seventytwoh_contracts.models import (
     TrustStatus,
 )
 
+from .distress import distress_plan_horizon, distress_signature, official_tsunami_trigger, resolve_distress
 from .domain import append_plan
 from .live_sources import JMA_SOURCE_KEY, JMA_TSUNAMI_SOURCE_KEY
 from .safety import (
@@ -48,6 +52,7 @@ from .safety import (
     route_claim_key,
 )
 from .state import CoreState
+from .official_events import official_event_group
 from .spatial import MovementSupport, resolve_movement_support
 
 TRUSTED_STATUSES = {TrustStatus.VERIFIED_OFFICIAL, TrustStatus.VERIFIED_PARTNER}
@@ -85,12 +90,6 @@ def route_status_claim_key(state: CoreState) -> str | None:
     if not current or not destination:
         return None
     return route_claim_key(current[0], destination[0])
-
-
-@dataclass(frozen=True, slots=True)
-class PlannerTrace:
-    mode: str
-    reason_code: str | None = None
 
 
 INTENT_DESCRIPTIONS = {
@@ -261,9 +260,6 @@ def evaluate_and_replan(
     event,
     policy: SafetyPolicy = DEFAULT_POLICY,
     *,
-    candidate_selection: CandidatePlanSelection | None = None,
-    candidate_context: dict[str, object] | None = None,
-    planner_trace: PlannerTrace | None = None,
     allow_network_reconciliation: bool = True,
 ) -> CoreState:
     """Rebuild current projections, evaluate plan dependencies, and append new versions."""
@@ -337,7 +333,12 @@ def evaluate_and_replan(
         None,
     )
     current_actions = _actions_for_plan(after, current_plan.id) if current_plan else ()
-    location_changed = before.profile.current_location != after.profile.current_location
+    # Only an area-scope or source change re-evaluates the plan. A same-area GPS refresh
+    # (new observed_at / lat / lng) must not invalidate HIGH actions or append plan
+    # versions; spatial dependencies that need coordinates are checked separately below.
+    location_changed = _location_scope_changed(
+        before.profile.current_location, after.profile.current_location
+    )
     profile_context_changed = any(
         getattr(before.profile, field) != getattr(after.profile, field)
         for field in (
@@ -347,6 +348,12 @@ def evaluate_and_replan(
             "accessibility_constraints",
         )
     )
+    # `after.situation.claim_states` was refreshed above from current evidence, so the
+    # after-signature sees the same claim states that _generate_plan will use.
+    distress_changed = distress_signature(before, before.current_time, policy) != distress_signature(
+        after, after.current_time, policy
+    )
+    distress_now = resolve_distress(after, after.current_time, policy)
     dependency_keys = {
         key for action in current_actions for key in action.dependency_keys
     }
@@ -374,8 +381,10 @@ def evaluate_and_replan(
     )
     can_start_initial_plan = bool(
         current_plan is None
-        and after.situation.active_event_ids
-        and verified_disaster is not None
+        and (
+            (after.situation.active_event_ids and verified_disaster is not None)
+            or distress_now.level != DistressLevel.NONE
+        )
     )
     should_review = bool(
         changed_dependencies
@@ -385,12 +394,8 @@ def evaluate_and_replan(
         or location_changed
         or profile_context_changed
         or can_start_initial_plan
+        or distress_changed
     )
-
-    if candidate_selection is not None:
-        if candidate_context is None or not should_review:
-            raise ValueError("OUTPUT_REJECTED: no matching plan generation is pending")
-        validate_candidate_selection(candidate_selection, candidate_context)
 
     if current_plan and should_review:
         evaluation = _evaluate_plan(
@@ -403,6 +408,7 @@ def evaluate_and_replan(
             after,
             policy,
             location_changed,
+            distress_changed,
         )
         after = _append_evaluation(after, evaluation, event)
         if evaluation.status in {
@@ -430,7 +436,6 @@ def evaluate_and_replan(
                 projection_by_id,
                 policy,
                 event,
-                candidate_selection,
             )
         else:
             after = _emit_trace(
@@ -450,40 +455,20 @@ def evaluate_and_replan(
             projection_by_id,
             policy,
             event,
-            candidate_selection,
         )
-
-    if should_review and planner_trace is not None:
-        generated_plan = next(
-            (plan for plan in reversed(after.plans) if plan.id not in {item.id for item in before.plans}),
-            None,
-        )
-        if generated_plan is not None:
-            if planner_trace.mode == "GEMINI_ADK":
-                event_type = "GEMINI_CANDIDATE_APPLIED"
-                trace_status = TraceStatus.SUCCESS
-                summary = "A constrained Gemini/ADK intent selection was validated and used."
-            else:
-                code = planner_trace.reason_code or "PROVIDER_ERROR"
-                if code not in PUBLIC_PLANNER_REASON_CODES:
-                    code = "PROVIDER_ERROR"
-                event_type = "GEMINI_CANDIDATE_FALLBACK"
-                trace_status = TraceStatus.FAILED
-                summary = f"Gemini/ADK selection unavailable ({code}); deterministic safe intents were used."
-            after = _emit_trace(
-                after,
-                event,
-                event_type,
-                trace_status,
-                (generated_plan.id,),
-                summary,
-                agent=AgentName.ACTION_AGENT,
-            )
 
     after = _expire_historical_plans(after, event)
     if len(after.plan_evaluations) > 512:
         raise ValueError("plan evaluation history limit reached")
     return after
+
+
+# High-risk intents that may be allowed only when the caller passes deterministic
+# authorization evidence (movement support or an official tsunami trigger).
+_AUTHORIZABLE_HIGH_RISK_INTENTS = frozenset({
+    SafeIntentId.EVACUATE_TO_DESIGNATED_SHELTER,
+    SafeIntentId.TSUNAMI_EVACUATE_NOW,
+})
 
 
 def assess_action(
@@ -516,7 +501,7 @@ def assess_action(
                 }
             )
         if (
-            action.intent_id == SafeIntentId.EVACUATE_TO_DESIGNATED_SHELTER
+            action.intent_id in _AUTHORIZABLE_HIGH_RISK_INTENTS
             and authorized_movement_evidence_ids
             and set(authorized_movement_evidence_ids).issubset(action.evidence_ids)
             and all(
@@ -557,11 +542,8 @@ def assess_action(
     return action.model_copy(update={"confidence_class": "LOW"})
 
 
-def _jma_tsunami_group(event_identity: str) -> str | None:
-    group, separator, _revision = event_identity.partition("--")
-    if separator and group.startswith("jma-tsunami-"):
-        return group
-    return None
+def _jma_official_group(event_identity: str) -> str | None:
+    return official_event_group(event_identity)
 
 
 def _reconcile_network_if_ready(
@@ -569,7 +551,7 @@ def _reconcile_network_if_ready(
     projections: dict[str, EvidenceProjection],
     event,
 ) -> CoreState:
-    if state.situation.network_state != NetworkState.RECONNECTING:
+    if state.situation.network_state != NetworkState.RECONNECTING or not state.official_recovery_ready:
         return state
     reconnect = next(
         (item for item in reversed(state.trace) if item.event_type == "NETWORK_RESTORED"),
@@ -638,7 +620,7 @@ def _reconcile_network_if_ready(
             )
             if matching_keys:
                 group = (
-                    _jma_tsunami_group(evidence_item.id.removeprefix("ev_"))
+                    _jma_official_group(evidence_item.id.removeprefix("ev_"))
                     if assessment.event_type == DisasterEventType.TSUNAMI
                     and not evidence_item.is_synthetic
                     else None
@@ -652,7 +634,7 @@ def _reconcile_network_if_ready(
                     frozenset(matching_keys),
                 ))
 
-    # Real JMA tsunami requirements are grouped by EventID. A cancellation for
+    # Real JMA requirements are grouped by information unit. A cancellation for
     # one group cannot satisfy another group's still-active reconnect requirement.
     required_evidence: dict[
         tuple[str, str | None, DisasterEventType | None, str | None], set[str]
@@ -662,7 +644,10 @@ def _reconcile_network_if_ready(
         claim_keys = typed_keys_by_type.get(event_type, set())
         if not claim_keys or expected_source_key is None:
             return state
-        if event_type == DisasterEventType.TSUNAMI:
+        if event_type == DisasterEventType.TSUNAMI or (
+            event_type == DisasterEventType.EARTHQUAKE
+            and all(item.is_synthetic or _jma_official_group(item.id) is not None for item in matching_active)
+        ):
             real_groups: dict[str, DisasterEvent] = {}
             synthetic_active = False
             evidence_by_id = {item.id: item for item in state.evidence}
@@ -670,7 +655,7 @@ def _reconcile_network_if_ready(
                 if active_event.is_synthetic:
                     synthetic_active = True
                     continue
-                group = _jma_tsunami_group(active_event.id)
+                group = _jma_official_group(active_event.id)
                 if group is None:
                     return state
                 existing_event = real_groups.get(group)
@@ -740,7 +725,7 @@ def _reconcile_network_if_ready(
                 continue
             if required_source_key is not None and evidence.source_key != required_source_key:
                 continue
-            if required_group is not None and _jma_tsunami_group(evidence.id.removeprefix("ev_")) != required_group:
+            if required_group is not None and _jma_official_group(evidence.id.removeprefix("ev_")) != required_group:
                 continue
             if claim_keys.intersection(claim_set):
                 fresh_after_reconnect[requirement].append(evidence)
@@ -779,6 +764,7 @@ def _evaluate_plan(
     state: CoreState,
     policy: SafetyPolicy,
     location_changed: bool = False,
+    distress_changed: bool = False,
 ) -> PlanEvaluation:
     if current_time >= plan.expires_at:
         return PlanEvaluation(
@@ -796,6 +782,9 @@ def _evaluate_plan(
         if location_changed and action.risk_level == RiskLevel.HIGH:
             action_invalid = True
             reasons.append("the current location changed; the previous high-risk action is no longer current")
+        if distress_changed and action.category == PlanActionCategory.NOW:
+            action_invalid = True
+            reasons.append("the distress level changed; the NOW action must be re-evaluated")
         expected_values = action.dependency_values
         for key in action.dependency_keys:
             if key not in expected_values:
@@ -835,6 +824,10 @@ def _evaluate_plan(
         reason=reason[:240],
         invalid_action_ids=tuple(sorted(set(invalid))),
     )
+
+
+def _location_scope_changed(before, after) -> bool:
+    return before.area_ids != after.area_ids or before.source != after.source
 
 
 def _spatial_dependency_changed(
@@ -879,7 +872,6 @@ def _generate_plan(
     projections: dict[str, EvidenceProjection],
     policy: SafetyPolicy,
     event,
-    candidate_selection: CandidatePlanSelection | None = None,
 ) -> CoreState:
     version = len(state.plans) + 1
     plan_id = f"plan_v{version}"
@@ -889,14 +881,17 @@ def _generate_plan(
         else ()
     )
     previous_by_category = {item.category: item for item in previous_actions}
-    candidate_by_category = (
-        {choice.category: choice for choice in candidate_selection.choices}
-        if candidate_selection is not None
-        else {}
-    )
     evidence_by_id = {item.id: item for item in state.evidence}
     current_claims = {item.key: item for item in state.situation.claim_states}
     movement_support = resolve_movement_support(state, state.current_time, policy)
+    distress = resolve_distress(state, state.current_time, policy)
+
+    def authorized_ids(intent_id: SafeIntentId | None) -> tuple[str, ...]:
+        if intent_id == SafeIntentId.EVACUATE_TO_DESIGNATED_SHELTER and movement_support is not None:
+            return movement_support.evidence_ids
+        if intent_id == SafeIntentId.TSUNAMI_EVACUATE_NOW and distress.level == DistressLevel.OFFICIAL_TSUNAMI:
+            return distress.trigger_evidence_ids
+        return ()
 
     actions: list[PlanAction] = []
     changed_action_ids: list[str] = []
@@ -917,12 +912,7 @@ def _generate_plan(
                 preserved,
                 evidence_by_id,
                 projections,
-                authorized_movement_evidence_ids=(
-                    movement_support.evidence_ids
-                    if movement_support is not None
-                    and preserved.intent_id == SafeIntentId.EVACUATE_TO_DESIGNATED_SHELTER
-                    else ()
-                ),
+                authorized_movement_evidence_ids=authorized_ids(preserved.intent_id),
             )
             if assessed.status == PlanActionStatus.ACTIVE:
                 actions.append(assessed)
@@ -943,9 +933,15 @@ def _generate_plan(
                 current_claims,
                 projections,
                 evidence_by_id,
-                candidate_by_category.get(category),
+                distress,
+                policy,
             )
-            assessed = assess_action(action, evidence_by_id, projections)
+            assessed = assess_action(
+                action,
+                evidence_by_id,
+                projections,
+                authorized_movement_evidence_ids=authorized_ids(action.intent_id),
+            )
         actions.append(assessed)
         changed_action_ids.append(action.id)
 
@@ -973,6 +969,9 @@ def _generate_plan(
         )
     else:
         expires_at = state.current_time + timedelta(seconds=policy.transport_ttl_seconds)
+    if distress.level in {DistressLevel.USER_REPORTED, DistressLevel.OFFICIAL_STALE}:
+        horizon = distress_plan_horizon(state, state.current_time, policy)
+        expires_at = min(expires_at, horizon) if future_expiries else horizon
     if expires_at <= state.current_time:
         expires_at = state.current_time + timedelta(seconds=min(policy.transport_ttl_seconds, 60))
 
@@ -1068,8 +1067,14 @@ def _new_action(
     claims: dict[str, SituationClaim],
     projections: dict[str, EvidenceProjection],
     evidence_by_id: dict[str, Evidence],
-    candidate: CandidateActionSelection | None = None,
+    distress: DistressStatus | None = None,
+    policy: SafetyPolicy = DEFAULT_POLICY,
 ) -> PlanAction:
+    if category == PlanActionCategory.NOW and distress is not None:
+        if distress.level == DistressLevel.OFFICIAL_TSUNAMI:
+            return _distress_action(state, plan_id, distress, SafeIntentId.TSUNAMI_EVACUATE_NOW, evidence_by_id, policy)
+        if distress.level in {DistressLevel.USER_REPORTED, DistressLevel.OFFICIAL_STALE}:
+            return _distress_action(state, plan_id, distress, SafeIntentId.SHELTER_IN_PLACE_VERTICAL, evidence_by_id, policy)
     route_key = route_status_claim_key(state)
     route_state = claims.get(route_key) if route_key else None
     route_value = current_claim_value(route_state)
@@ -1085,7 +1090,7 @@ def _new_action(
     )
     route_dependencies = (route_key,) if route_key else ()
     route_ids = _eligible_ids_for_claim(route_state, projections)
-    intent_id = candidate.intent_id if candidate is not None else _default_intent(category, route_value)
+    intent_id = _default_intent(category, route_value)
     if category == PlanActionCategory.NOW:
         if intent_id == SafeIntentId.REVIEW_OFFICIAL_GUIDANCE:
             words = {
@@ -1140,8 +1145,6 @@ def _new_action(
                 route_ids,
                 route_dependencies,
             )
-    if candidate is not None:
-        evidence_ids = candidate.evidence_ids
     dependency_expectations = tuple(
         DependencyExpectation(
             key=key,
@@ -1162,6 +1165,150 @@ def _new_action(
         evidence_ids=tuple(reference for reference in evidence_ids if reference in evidence_by_id),
         dependency_keys=dependencies,
         dependency_expectations=dependency_expectations,
+        status=PlanActionStatus.ACTIVE,
+        safety_decision=SafetyDecision.ALLOW,
+    )
+
+
+_DISTRESS_WORDS = {
+    SafeIntentId.SHELTER_IN_PLACE_VERTICAL: {
+        "ja": (
+            "今すぐ建物の上の階か高い場所へ移動し、水辺から離れてください。",
+            "危険が報告されました。今すぐ建物の上の階か高い場所へ移動し、水辺から離れてください。",
+        ),
+        "en": (
+            "Move to an upper floor or higher ground now and keep away from water.",
+            "You reported danger. Move to an upper floor or higher ground now and keep away from water.",
+        ),
+        "zh-TW": (
+            "立刻往建築物上層或高處移動，遠離水邊。",
+            "你回報了危險。立刻往建築物上層或高處移動，遠離水邊。",
+        ),
+    },
+    SafeIntentId.TSUNAMI_EVACUATE_NOW: {
+        "ja": (
+            "今すぐ公式に指定された津波避難場所へ向かってください。間に合わない場合は、頑丈な建物の3階以上か高い場所へ今すぐ移動してください。",
+            "公式の津波警報があなたの地域に出ています。今すぐ公式に指定された津波避難場所へ向かってください。間に合わない場合は、頑丈な建物の3階以上か高い場所へ今すぐ移動してください。",
+        ),
+        "en": (
+            "Go now to an officially designated tsunami site, or if you cannot reach one in time, move to the 3rd floor or higher of a solid building or to high ground.",
+            "An official tsunami warning covers your area. Go now to an officially designated tsunami site, or if you cannot reach one in time, move to the 3rd floor or higher of a solid building or to high ground.",
+        ),
+        "zh-TW": (
+            "立刻前往官方指定的海嘯避難場所；如果來不及，立刻往堅固建築物的 3 樓以上或高處移動。",
+            "官方海嘯警報涵蓋你所在的地區。立刻前往官方指定的海嘯避難場所；如果來不及，立刻往堅固建築物的 3 樓以上或高處移動。",
+        ),
+    },
+}
+
+
+# OFFICIAL_STALE: the official warning expired without a cancellation. Same protective
+# vertical-shelter intent, never "go to a place"; the reason states the data age.
+_STALE_WORDS = {
+    "ja": (
+        "今すぐ建物の上の階か高い場所へ移動し、水辺から離れてください。",
+        "公式の津波警報の情報が有効時間を過ぎました（取り消しは確認されていません）。今すぐ建物の上の階か高い場所へ移動し、水辺から離れてください。",
+    ),
+    "en": (
+        "Move to an upper floor or higher ground now and keep away from water.",
+        "The official tsunami warning data has expired (no cancellation was received). Move to an upper floor or higher ground now and keep away from water.",
+    ),
+    "zh-TW": (
+        "立刻往建築物上層或高處移動，遠離水邊。",
+        "官方海嘯警報資料已超過有效時間（未收到解除）。立刻往建築物上層或高處移動，遠離水邊。",
+    ),
+}
+
+
+# OFFICIAL_STALE / LOCATION_STALE: the warning is current but the location fix is too old.
+_LOCATION_STALE_WORDS = {
+    "ja": (
+        "今すぐ建物の上の階か高い場所へ移動し、水辺から離れてください。",
+        "位置情報が古く、公式の津波警報の地域内にいるか確認できません。今すぐ建物の上の階か高い場所へ移動し、水辺から離れてください。",
+    ),
+    "en": (
+        "Move to an upper floor or higher ground now and keep away from water.",
+        "Your location fix is too old to confirm you are inside the official tsunami warning area. Move to an upper floor or higher ground now and keep away from water.",
+    ),
+    "zh-TW": (
+        "立刻往建築物上層或高處移動，遠離水邊。",
+        "位置資料過舊，無法確認你仍在官方海嘯警報地區內。立刻往建築物上層或高處移動，遠離水邊。",
+    ),
+}
+_LOCATION_STALE_PREFIX = {
+    "ja": "位置情報が古く、公式の津波警報の地域内にいるか確認できません。",
+    "en": "Your location fix is too old to confirm you are inside the official tsunami warning area.",
+    "zh-TW": "位置資料過舊，無法確認你仍在官方海嘯警報地區內。",
+}
+
+
+_STALE_PREFIX = {
+    "ja": "公式の津波警報の情報が有効時間を過ぎました（取り消しは確認されていません）。",
+    "en": "The official tsunami warning data has expired (no cancellation was received).",
+    "zh-TW": "官方海嘯警報資料已超過有效時間（未收到解除）。",
+}
+# Level-1 vertical guidance for a person who reported TRAPPED: they may not be able to move.
+_TRAPPED_WORDS = {
+    "ja": (
+        "助けを求め、身を守れる場所にとどまってください。水が上がってきたら高い所へ移動してください。",
+        "閉じ込められていると報告されました。助けを求め、身を守れる場所にとどまってください。水が上がってきたら高い所へ移動してください。",
+    ),
+    "en": (
+        "Call for help and stay where you can protect yourself. If water is rising, move higher.",
+        "You reported being trapped. Call for help and stay where you can protect yourself. If water is rising, move higher.",
+    ),
+    "zh-TW": (
+        "請求救，留在可以保護自己的地方；如果水在上升，就往高處移動。",
+        "你回報受困。請求救，留在可以保護自己的地方；如果水在上升，就往高處移動。",
+    ),
+}
+
+
+def _distress_action(
+    state: CoreState,
+    plan_id: str,
+    distress: DistressStatus,
+    intent: SafeIntentId,
+    evidence_by_id: dict[str, Evidence],
+    policy: SafetyPolicy,
+) -> PlanAction:
+    """Deterministic NOW action for a resolved distress level; it still passes assess_action."""
+    official = intent == SafeIntentId.TSUNAMI_EVACUATE_NOW
+    key = None
+    if official:
+        trigger = official_tsunami_trigger(state, state.current_time, policy)
+        if trigger is None:  # pragma: no cover - resolve_distress already found one
+            raise ValueError("OFFICIAL_TSUNAMI distress requires a current official trigger")
+        key = disaster_claim_key(trigger.area_id, "TSUNAMI", "status")
+    language = state.profile.preferred_language.value
+    trapped = any(DistressTag.TRAPPED in report.tags for report in distress.reports)
+    if not official and trapped:
+        text, reason = _TRAPPED_WORDS[language]
+        if distress.level == DistressLevel.OFFICIAL_STALE:
+            prefix = _LOCATION_STALE_PREFIX if distress.stale_reason == "LOCATION_STALE" else _STALE_PREFIX
+            reason = prefix[language] + (" " if language == "en" else "") + reason
+    elif distress.level == DistressLevel.OFFICIAL_STALE and not official:
+        words = _LOCATION_STALE_WORDS if distress.stale_reason == "LOCATION_STALE" else _STALE_WORDS
+        text, reason = words[language]
+    else:
+        text, reason = _DISTRESS_WORDS[intent][language]
+    evidence_ids = (
+        tuple(reference for reference in distress.trigger_evidence_ids if reference in evidence_by_id)
+        if official
+        else ()
+    )
+    return PlanAction(
+        id=f"act_{plan_id}_{PlanActionCategory.NOW.value.casefold()}",
+        plan_id=plan_id,
+        category=PlanActionCategory.NOW,
+        intent_id=intent,
+        text=text,
+        reason=reason,
+        risk_level=RiskLevel.HIGH if official else RiskLevel.LOW,
+        confidence_class="HIGH" if official else "UNKNOWN",
+        evidence_ids=evidence_ids,
+        dependency_keys=(key,) if key else (),
+        dependency_expectations=(DependencyExpectation(key=key, expected_value="ACTIVE"),) if key else (),
         status=PlanActionStatus.ACTIVE,
         safety_decision=SafetyDecision.ALLOW,
     )

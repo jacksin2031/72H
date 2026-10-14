@@ -1,0 +1,69 @@
+import type {DistressTag} from './contracts';
+import type {DesignatedPlace} from './designated-places';
+import {selectEvacuationDestinations} from './evacuation-route-assessment';
+import {EVACUATION_ROAD_BOUNDS,findEvacuationRoadCandidates,type RoadGraphPack} from './evacuation-road-graph';
+
+/** Deterministic, device-local. Distance is never a safety ranking. */
+export const DISTRESS_PARAMS={walkMps:1.0,slowWalkMps:0.5,detourFactor:1.5,lowAccuracyM:50,maxAccuracyM:100,maxCandidates:12} as const;
+const SLOW_TAGS:readonly DistressTag[]=['MOBILITY_LIMITED','INJURED','WITH_DEPENDENTS'];
+export type ReachCandidate={place_id:string;name:string;distance_m:number;walk_seconds:number;via_road:boolean};
+/** `excludedReach`: shortest walk (s) among sites excluded on the person's blocked-route report, when any is walkable.
+ * EXCLUDED_BY_REPORT: every site reachable before the deadline was excluded on that report. */
+export type TsunamiGuidance={kind:'GO_TO_SITE';candidates:ReachCandidate[];deadlineAt:number;excludedReach?:number}
+ |{kind:'VERTICAL_NOW';reason:'NO_TIME'|'NO_REACHABLE_SITE'|'NO_LOCATION'|'NO_SITES_IN_PACK'|'EXCLUDED_BY_REPORT';deadlineAt:number;excludedReach?:number};
+
+function haversine(a:{lat:number;lng:number},b:{lat:number;lng:number}){
+ const r=Math.PI/180,dLat=(b.lat-a.lat)*r,dLng=(b.lng-a.lng)*r;
+ const h=Math.sin(dLat/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLng/2)**2;
+ return 2*6_371_008.8*Math.asin(Math.min(1,Math.sqrt(h)));
+}
+const GRAPH_NOT_APPLICABLE:ReadonlySet<string>=new Set(['OUTSIDE_PACK_BOUNDS','INVALID_GRAPH','ORIGIN_TOO_FAR_FROM_ROAD','DESTINATION_TOO_FAR_FROM_ROAD','SAME_GRAPH_NODE']);
+const inBounds=(p:{lat:number;lng:number})=>p.lat>=EVACUATION_ROAD_BOUNDS.south&&p.lat<=EVACUATION_ROAD_BOUNDS.north&&p.lng>=EVACUATION_ROAD_BOUNDS.west&&p.lng<=EVACUATION_ROAD_BOUNDS.east;
+
+export function resolveTsunamiGuidance(input:{origin:{lat:number;lng:number;accuracy_m:number|null}|null;deadlineAt:number;now:number;
+ tags:readonly DistressTag[];places:readonly DesignatedPlace[];graph:RoadGraphPack|null;excluded?:readonly string[]}):TsunamiGuidance{
+ const {origin,deadlineAt,now}=input;
+ const available=(deadlineAt-now)/1000;
+ if(!Number.isFinite(available)||available<=0)return {kind:'VERTICAL_NOW',reason:'NO_TIME',deadlineAt};
+ if(!origin||!Number.isFinite(origin.lat)||!Number.isFinite(origin.lng)||origin.accuracy_m===null||!(origin.accuracy_m>=0)||origin.accuracy_m>DISTRESS_PARAMS.maxAccuracyM)
+  return {kind:'VERTICAL_NOW',reason:'NO_LOCATION',deadlineAt};
+ const sites=selectEvacuationDestinations(input.places,'tsunami');
+ if(!sites.length)return {kind:'VERTICAL_NOW',reason:'NO_SITES_IN_PACK',deadlineAt};
+ const excluded=new Set(input.excluded??[]);
+ const finite=(p:{lat:number;lng:number})=>Number.isFinite(p.lat)&&Number.isFinite(p.lng);
+ const speed=input.tags.some(t=>SLOW_TAGS.includes(t))?DISTRESS_PARAMS.slowWalkMps:DISTRESS_PARAMS.walkMps;
+ const penalty=origin.accuracy_m>DISTRESS_PARAMS.lowAccuracyM?origin.accuracy_m:0;
+ const byDistance=(list:DesignatedPlace[])=>list.filter(finite).map(s=>({s,straight:haversine(origin,s)}))
+  .sort((a,b)=>a.straight-b.straight).slice(0,DISTRESS_PARAMS.maxCandidates);
+ const walkTo=(s:DesignatedPlace,straight:number):ReachCandidate|null=>{
+  let distance=straight*DISTRESS_PARAMS.detourFactor,viaRoad=false;
+  if(input.graph&&inBounds(origin)&&inBounds(s)){
+   const road=findEvacuationRoadCandidates(input.graph,origin,s);
+   const best=road.candidates[0];
+   if(best){distance=best.distance_m+best.origin_gap_m+best.destination_gap_m;viaRoad=true;}
+   // Only an allow-listed "graph not applicable" reason falls back to the straight-line estimate; any other
+   // reason (no walkable path, implausible path, or one added later) is treated as unreachable.
+   else if(!road.reason||!GRAPH_NOT_APPLICABLE.has(road.reason))return null;
+  }
+  distance+=penalty;
+  return {place_id:s.id,name:s.name,distance_m:distance,walk_seconds:distance/speed,via_road:viaRoad};
+ };
+ const candidates:ReachCandidate[]=[];
+ for(const {s,straight} of byDistance(sites.filter(s=>!excluded.has(s.id)))){
+  const c=walkTo(s,straight);
+  if(c&&c.walk_seconds<=available)candidates.push(c);
+ }
+ let excludedReach:number|undefined;
+ if(excluded.size)for(const {s,straight} of byDistance(sites.filter(s=>excluded.has(s.id)))){
+  const c=walkTo(s,straight);
+  if(c&&(excludedReach===undefined||c.walk_seconds<excludedReach))excludedReach=c.walk_seconds;
+ }
+ const extra=excludedReach===undefined?{}:{excludedReach};
+ if(!candidates.length)return {kind:'VERTICAL_NOW',reason:excludedReach!==undefined&&excludedReach<=available?'EXCLUDED_BY_REPORT':'NO_REACHABLE_SITE',deadlineAt,...extra};
+ candidates.sort((a,b)=>a.walk_seconds-b.walk_seconds);
+ return {kind:'GO_TO_SITE',candidates,deadlineAt,...extra};
+}
+
+export function adviceCandidates(g:TsunamiGuidance){
+ return g.kind==='GO_TO_SITE'?g.candidates.map(c=>({place_id:c.place_id,name:c.name.slice(0,80),walk_minutes:Math.min(240,Math.ceil(c.walk_seconds/60))})):[];
+}

@@ -5,8 +5,23 @@ import { isAllowedApiProxyPath, isAllowedApiProxyRequest } from '../app/api/[...
 it('allows only read access to the explicit official tsunami reference endpoint',()=>{
   expect(isAllowedApiProxyRequest('reference/tsunami','GET')).toBe(true);
   expect(isAllowedApiProxyRequest('reference/tsunami','POST')).toBe(false);
+  expect(isAllowedApiProxyRequest('reference/disaster-map','GET')).toBe(true);
+  expect(isAllowedApiProxyRequest('reference/disaster-map','POST')).toBe(false);
+  expect(isAllowedApiProxyRequest('reference/place-opening/04202','GET')).toBe(true);
+  expect(isAllowedApiProxyRequest('reference/place-opening/04202','POST')).toBe(false);
+  expect(isAllowedApiProxyPath('reference/place-opening/04202/extra')).toBe(false);
   expect(isAllowedApiProxyPath('reference/tsunami/private')).toBe(false);
   expect(isAllowedApiProxyPath('reference/other')).toBe(false);
+  for (const scope of ['replay','live','mock-live']) {
+    expect(isAllowedApiProxyRequest(`${scope}/abc-123/explanation`,'POST')).toBe(true);
+    expect(isAllowedApiProxyRequest(`${scope}/abc-123/explanation`,'GET')).toBe(false);
+    expect(isAllowedApiProxyPath(`${scope}/abc-123/explanation/extra`)).toBe(false);
+    expect(isAllowedApiProxyRequest(`${scope}/abc-123/distress`,'POST')).toBe(true);
+    expect(isAllowedApiProxyRequest(`${scope}/abc-123/distress`,'GET')).toBe(false);
+    expect(isAllowedApiProxyRequest(`${scope}/abc-123/distress/advice`,'POST')).toBe(true);
+  }
+  expect(isAllowedApiProxyRequest('distress/extract','POST')).toBe(true);
+  expect(isAllowedApiProxyRequest('distress/extract','GET')).toBe(false);
 });
 
 it('accepts the public browser origin for localhost and Cloud Run', () => {

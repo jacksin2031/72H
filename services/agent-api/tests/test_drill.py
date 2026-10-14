@@ -68,14 +68,12 @@ def test_full_pipeline_calls_planner_with_fake_api_input_and_remains_isolated(mo
             snapshot = response.json()
         assert snapshot["replay"]["status"] == "COMPLETED"
         assert snapshot["situation"]["network_state"] in {"OFFLINE_RECENT", "OFFLINE_STALE"}
-        assert planner.contexts, "Real candidate-planner boundary must be reached"
-        assert planner.contexts[-1]["exercise_conditions"]["battery_percent"] == 3
-        assert planner.contexts[-1]["exercise_conditions"]["severity"] == "L4"
+        assert planner.contexts == [], "Safety Core transitions must not invoke candidate planning"
         assert all(e["is_synthetic"] for e in snapshot["evidence"])
         assert all(not e["eligible_for_high_risk"] for e in snapshot["evidence"])
         assert all(not (a["risk_level"] == "HIGH" and a["safety_decision"] == "ALLOW") for a in snapshot["plan_actions"])
         assert any(e["event_type"] == "OFFLINE_MODE_ENTERED" for e in snapshot["trace"])
-        assert snapshot["replay"]["planning_mode"] == "GEMINI_ADK_FALLBACK"
+        assert snapshot["replay"]["planning_mode"] == "DETERMINISTIC_REPLAY_ONLY"
         assert client.get(f"/api/drill/{drill_id}", headers=headers).status_code == 200
         assert client.get(f"/api/drill/{drill_id}").status_code == 403
 

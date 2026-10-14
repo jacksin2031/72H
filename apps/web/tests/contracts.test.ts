@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { disasterAssessmentSchema, snapshotSchema, tsunamiReferenceSchema } from '../lib/contracts';
+import { disasterAssessmentSchema, distressStatusSchema, distressTagSchema, snapshotSchema, tsunamiReferenceSchema } from '../lib/contracts';
 
 const fixture = () => ({
   profile: { id: 'demo-user', preferred_language: 'ja', current_location: { label: 'Shibuya' }, accommodation_location: { label: 'Asakusa' }, current_destination: { label: 'Asakusa' }, party_size: 1, self_reported_safety_status: 'SAFE', created_at: '2026-10-04T17:40:00+09:00', updated_at: '2026-10-04T17:40:00+09:00' },
@@ -69,4 +69,22 @@ describe('Snapshot boundary', () => {
       expect(snapshotSchema.safeParse(JSON.parse(readFileSync(file, 'utf8').replace(/^\uFEFF/, ''))).success).toBe(true);
     });
   }
+  it('accepts the distress status and rejects non-whitelisted tags', () => {
+    expect(distressStatusSchema.parse({level:'USER_REPORTED',reports:[{id:'d1',tags:['TRAPPED'],input_mode:'BUTTON',reported_at:'2026-10-13T08:00:00Z',source:'USER_REPORTED'}],trigger_evidence_ids:[],deadline_at:null,ai_escalated:false,synthetic:false}).level).toBe('USER_REPORTED');
+    expect(() => distressTagSchema.parse('SAFE_HERE')).toThrow();
+  });
+  it('keeps OFFICIAL_STALE and the official basis fields instead of stripping them', () => {
+    const parsed = distressStatusSchema.parse({level:'OFFICIAL_STALE',reports:[],trigger_evidence_ids:['ev-1'],deadline_at:null,ai_escalated:false,synthetic:true,
+      warning_class:'MAJOR_WARNING',last_official_at:'2026-10-13T08:00:00Z',trigger_expires_at:'2026-10-13T08:15:00Z'});
+    expect(parsed).toMatchObject({level:'OFFICIAL_STALE',warning_class:'MAJOR_WARNING',last_official_at:'2026-10-13T08:00:00Z',trigger_expires_at:'2026-10-13T08:15:00Z'});
+    const legacy = distressStatusSchema.parse({level:'NONE',reports:[],trigger_evidence_ids:[],deadline_at:null,ai_escalated:false,synthetic:false});
+    expect(legacy).toMatchObject({warning_class:null,last_official_at:null,trigger_expires_at:null});
+  });
+  it('keeps the OFFICIAL_STALE stale_reason (F2) and defaults it to null for older snapshots', () => {
+    const base = {level:'OFFICIAL_STALE',reports:[],trigger_evidence_ids:['ev-1'],deadline_at:null,ai_escalated:false,synthetic:false};
+    expect(distressStatusSchema.parse({...base,stale_reason:'LOCATION_STALE'}).stale_reason).toBe('LOCATION_STALE');
+    expect(distressStatusSchema.parse({...base,stale_reason:'EVIDENCE_EXPIRED'}).stale_reason).toBe('EVIDENCE_EXPIRED');
+    expect(distressStatusSchema.parse(base).stale_reason).toBeNull();
+    expect(() => distressStatusSchema.parse({...base,stale_reason:'WHATEVER'})).toThrow();
+  });
 });

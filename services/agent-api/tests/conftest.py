@@ -14,6 +14,26 @@ from agent_api.domain import CoreState
 from agent_api.scenario import load_scenario
 
 
+class _BlockedGenaiClient:
+    def __init__(self, *args, **kwargs):
+        raise RuntimeError("tests must not construct a real google.genai.Client; inject a fake model")
+
+
+@pytest.fixture(autouse=True)
+def _no_real_model_calls(monkeypatch):
+    """F7: no backend test may reach Gemini / Vertex. Tests that need the model path inject
+    fakes (model=..., config=...); the env default for distress is deterministic."""
+    from google import genai
+
+    monkeypatch.setattr(genai, "Client", _BlockedGenaiClient)
+    try:
+        from google.genai import client as genai_client_module
+        monkeypatch.setattr(genai_client_module, "Client", _BlockedGenaiClient)
+    except ImportError:  # pragma: no cover - SDK layout differs
+        pass
+    monkeypatch.setenv("DISTRESS_MODE", "deterministic")
+
+
 @pytest.fixture
 def initial_state() -> CoreState:
     scenario = load_scenario()
