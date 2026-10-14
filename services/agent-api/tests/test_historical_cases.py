@@ -35,7 +35,7 @@ def test_curated_historical_catalog_factual_anchors(monkeypatch):
         assert data[1]["milestones"][1]["historic_observation"] is False
 
 
-def test_historical_runs_use_live_adapter_and_keep_explicit_unsupported_tsunami(monkeypatch):
+def test_historical_runs_use_live_adapter_feed_tsunami_and_keep_power_outage_background(monkeypatch):
     monkeypatch.setenv("DRILL_ACCESS_KEY",KEY)
     planner=Fallback()
     with TestClient(create_app(mock_live_store=MockLiveDrillStore(planner=planner))) as client:
@@ -59,8 +59,12 @@ def test_historical_runs_use_live_adapter_and_keep_explicit_unsupported_tsunami(
                 assert snapshot["spatial_guidance"]["movement_authorized"] is False
                 assert all(x["is_synthetic"] and not x["eligible_for_high_risk"] for x in snapshot["evidence"])
                 assert snapshot["routes"]==[] and snapshot["destinations"]==[]
-                if milestone.kind in {"TSUNAMI_WARNING","TSUNAMI_UPGRADE","POWER_OUTAGE"}:
+                # Tsunami milestones now enter the Safety Core as synthetic bulletins; power outage stays background.
+                if milestone.kind == "POWER_OUTAGE":
                     assert current["historical"]["current_milestone"]["fed_to_safety_core"] is False
+                if milestone.kind in {"TSUNAMI_WARNING","TSUNAMI_UPGRADE"}:
+                    assert current["historical"]["current_milestone"]["fed_to_safety_core"] is True
+                    assert all(e["is_synthetic"] for e in snapshot["events"] if e["event_type"]=="TSUNAMI")
             assert client.post(f"/api/mock-live/{sid}/next",headers=HEADERS).status_code==409
         # P2.7: the candidate planner no longer selects Live/Mock Live actions before Core gating.
         assert planner.contexts == []

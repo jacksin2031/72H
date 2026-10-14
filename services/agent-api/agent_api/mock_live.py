@@ -16,12 +16,15 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, StrictBool, model_validator
 from seventytwoh_contracts.models import (
     DistressRequest, LiveSnapshot, LiveSourceStatus, NetworkState, SelfReportedSafetyStatus, StartLiveRequest,
-    TsunamiOperation,LocationSource,
+    TsunamiAreaStatus, TsunamiMaxHeight, TsunamiOperation, TsunamiWarningClass, LocationSource,
 )
 from .drill import DrillRequest
-from .historical_cases import CASES, HistoricalId, HistoricCase, list_historical_cases
+from .historical_cases import CASES, TSUNAMI_KINDS, HistoricalId, HistoricCase, list_historical_cases
 from .live import LiveSessionNotFound, LiveStore
-from .live_sources import JmaEarthquakeReport, JmaPrefObservation, JmaFetchResult, JmaTsunamiFetchResult
+from .live_sources import (
+    JMA_PREFECTURES, JMA_TSUNAMI_SOURCE_KEY, JmaEarthquakeReport, JmaPrefObservation, JmaFetchResult,
+    JmaTsunamiArea, JmaTsunamiBulletin, JmaTsunamiFetchResult, _aggregate_tsunami_forecast_areas, jma_report_deadline,
+)
 from .planner import CandidatePlanner
 from .scenario import load_scenario
 from .simulation_advice import SimulationLocation,SimulationConditions,SimulationAdvisor,SimulationAssessment,build_advice_envelope
@@ -29,6 +32,7 @@ from .area_registry import load_japan_area_registry
 
 MOCK_MODE = "MOCK_LIVE"
 MOCK_JMA_NAME = "SIMULATED JMA provider (NOT official)"
+MOCK_JMA_TSUNAMI_NAME = "SIMULATED JMA tsunami provider (NOT official)"
 MAX_MOCK_SESSIONS = 8
 MOCK_TTL = 30 * 60
 
@@ -119,8 +123,10 @@ class MockJmaSource:
                 if self.request.network == "OFFLINE":
                     return JmaFetchResult(LiveSourceStatus.UNAVAILABLE, now, None, None, (),
                                           "MOCK historical timeline: simulated outage; no fresh feed.")
-                return JmaFetchResult(LiveSourceStatus.FRESH, now, now, None, (),
-                                      f"MOCK historical supplemental event {milestone.kind}: unsupported by earthquake Safety Core.")
+                detail = ("MOCK historical tsunami event: no new earthquake report; the synthetic tsunami source carries it."
+                          if milestone.kind in TSUNAMI_KINDS else
+                          f"MOCK historical background event {milestone.kind}: not a Safety Core input.")
+                return JmaFetchResult(LiveSourceStatus.FRESH, now, now, None, (), detail)
             published = now - timedelta(hours=2) if self.request.evidence == "STALE" else now
             result_status = LiveSourceStatus.STALE if self.request.evidence == "STALE" else LiveSourceStatus.FRESH
             report = JmaEarthquakeReport(
@@ -158,21 +164,80 @@ class MockDestinationSource:
 
 
 class MockTsunamiSource:
-    """Keep Mock Live isolated from the real JMA tsunami adapter and network."""
+    """Synthetic tsunami bulletins for historical exercises; never the real JMA adapter or network.
+
+    It reads the replay stage from the shared MockJmaSource. Once a TSUNAMI_WARNING /
+    TSUNAMI_UPGRADE milestone has been reached it returns the latest synthetic bulletin
+    for that event (ISSUE, then UPDATE), as the live VTSE41 adapter keeps one bulletin
+    per information unit. Publication time is fixed on the runtime clock when the
+    milestone is first reached and never refreshed, so the normal JMA evidence deadline
+    makes it STALE and the Live reducers stop treating it as current.
+    """
+
+    def __init__(self, jma: "MockJmaSource | None" = None, *, now=None) -> None:
+        self.jma = jma
+        self._now = now or (lambda: datetime.now(timezone.utc))
+        self._published: dict[int, datetime] = {}
+
+    @staticmethod
+    def _empty(now: datetime, detail: str, status=LiveSourceStatus.UNSUPPORTED) -> JmaTsunamiFetchResult:
+        return JmaTsunamiFetchResult(
+            status=status, retrieved_at=now, last_published_at=None, next_retry_at=None,
+            operation=TsunamiOperation.UNKNOWN, serial=None, bulletins=(), forecast_areas=(),
+            conflict=False, detail=detail,
+        )
 
     def fetch_latest(self) -> JmaTsunamiFetchResult:
-        now = datetime.now(timezone.utc)
+        now = self._now()
+        jma = self.jma
+        historic = jma.historic if jma is not None else None
+        reached = tuple(
+            (index + 1, milestone) for index, milestone in enumerate(jma.milestones[:jma.stage])
+            if milestone.kind in TSUNAMI_KINDS
+        ) if historic else ()
+        if not reached:
+            return self._empty(now, "MOCK LIVE: no synthetic tsunami bulletin at this exercise stage.")
+        if jma.request.network == "OFFLINE" or jma.request.evidence == "UNKNOWN":
+            return self._empty(now, "MOCK historical timeline: simulated outage; no fresh tsunami feed.",
+                               LiveSourceStatus.UNAVAILABLE)
+        for item_stage, _ in reached:
+            self._published.setdefault(item_stage, now - timedelta(hours=2) if jma.request.evidence == "STALE" else now)
+        stage, milestone = reached[-1]
+        published = self._published[stage]
+        bulletin = JmaTsunamiBulletin(
+            event_id=f"historical-{historic.id}-tsunami",
+            serial=str(len(reached)),
+            info_type="発表",
+            operation=TsunamiOperation.UPDATE if len(reached) > 1 else TsunamiOperation.ISSUE,
+            published_at=published,
+            occurred_at=self._published[reached[0][0]],
+            reference_url=f"mock://72h/historical/{historic.id}/{stage}/tsunami",
+            forecast_areas=tuple(
+                JmaTsunamiArea(
+                    # Synthetic 9xx code (9 + prefecture code): never presented as a real JMA forecast-area code.
+                    code="9" + next(code for code, pref in JMA_PREFECTURES.items() if pref == name),
+                    name=name,
+                    status=TsunamiAreaStatus.ACTIVE,
+                    warning_class=TsunamiWarningClass(warning_class),
+                    max_height=TsunamiMaxHeight(),
+                    arrival_at=None,
+                )
+                for name, warning_class in milestone.tsunami_areas
+            ),
+        )
+        areas, conflict = _aggregate_tsunami_forecast_areas((bulletin,), now)
         return JmaTsunamiFetchResult(
-            status=LiveSourceStatus.UNSUPPORTED,
+            status=LiveSourceStatus.FRESH if now < jma_report_deadline(bulletin) else LiveSourceStatus.STALE,
             retrieved_at=now,
-            last_published_at=None,
+            last_published_at=published,
             next_retry_at=None,
-            operation=TsunamiOperation.UNKNOWN,
-            serial=None,
-            bulletins=(),
-            forecast_areas=(),
-            conflict=False,
-            detail="MOCK LIVE: no official tsunami data is requested or simulated.",
+            operation=bulletin.operation,
+            serial=bulletin.serial,
+            bulletins=(bulletin,),
+            forecast_areas=areas,
+            conflict=conflict,
+            detail=(f"HISTORICAL EXERCISE tsunami bulletin for {historic.id} (archived {milestone.at_jst}); "
+                    "synthetic, replayed on the runtime clock; not live JMA."),
         )
 
 
@@ -193,7 +258,7 @@ class MockLiveStore(LiveStore):
         self.mock_request = request
         super().__init__(
             jma_source=self.mock_source,
-            tsunami_source=MockTsunamiSource(),
+            tsunami_source=MockTsunamiSource(self.mock_source),
             destination_source=MockDestinationSource(),
             route_source=MockRouteSource(),
             planner=planner,
@@ -224,6 +289,28 @@ class MockLiveStore(LiveStore):
         })
         return event, evidence
 
+    def _tsunami_event_evidence_pair(self, state, bulletin, now, legacy_metadata=None):
+        pair = super()._tsunami_event_evidence_pair(state, bulletin, now, legacy_metadata)
+        if pair is None:
+            return None
+        event, evidence = pair
+        case = self.mock_source.historic.id if self.mock_source.historic else "custom"
+        event = event.model_copy(update={
+            "source_name": MOCK_JMA_TSUNAMI_NAME,
+            "severity_raw": "HISTORICAL EXERCISE " + event.severity_raw.removeprefix("JMA VTSE41 ")[:40],
+            "raw_reference": bulletin.reference_url,
+            "is_synthetic": True,
+        })
+        evidence = evidence.model_copy(update={
+            "source_name": MOCK_JMA_TSUNAMI_NAME,
+            "summary": (f"SYNTHETIC HISTORICAL EXERCISE: {case} tsunami warning replayed on an artificial runtime clock; "
+                        "not live JMA. Prefecture-level area only; it does not authorize movement or identify safe places."),
+            "raw_reference": bulletin.reference_url,
+            "is_synthetic": True,
+            "eligible_for_high_risk": False,
+        })
+        return event, evidence
+
     def _apply_source_results_locked(self, aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata):
         pairs, aliases = super()._apply_source_results_locked(
             aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata
@@ -247,12 +334,16 @@ class MockLiveStore(LiveStore):
     def _snapshot(self, aggregate):
         snapshot = super()._snapshot(aggregate)
         # Never let real official origin labels be presented as actual reporting.
+        def simulated_source(item):
+            tsunami = item.source_key == JMA_TSUNAMI_SOURCE_KEY
+            return item.model_copy(update={
+                "source_name": MOCK_JMA_TSUNAMI_NAME if tsunami else MOCK_JMA_NAME,
+                "source_url": "mock://72h/jma-tsunami" if tsunami else "mock://72h/jma",
+                "detail": "SIMULATION ONLY. " + item.detail[:210],
+            })
         simulated = snapshot.model_copy(update={
-            "source": snapshot.source.model_copy(update={
-                "source_name": MOCK_JMA_NAME,
-                "source_url": "mock://72h/jma",
-                "detail": "SIMULATION ONLY. " + snapshot.source.detail[:210],
-            }),
+            "source": simulated_source(snapshot.source),
+            "official_sources": tuple(simulated_source(item) for item in snapshot.official_sources),
             "destination_source": snapshot.destination_source.model_copy(update={
                 "source_name": "SIMULATED shelter source (empty)",
                 "source_url": "mock://72h/shelter",
@@ -265,6 +356,7 @@ class MockLiveStore(LiveStore):
             }),
         })
         if (simulated.spatial_guidance.movement_authorized
+            or any(not item.source_url.startswith("mock://") for item in (simulated.source, *simulated.official_sources))
             or any(not item.is_synthetic for item in simulated.evidence)
             or any(not item.is_synthetic for item in simulated.events)
             or any(item.risk_level == "HIGH" and item.safety_decision == "ALLOW"

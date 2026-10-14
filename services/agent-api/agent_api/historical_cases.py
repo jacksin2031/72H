@@ -2,8 +2,14 @@
 
 Historical times are archived facts (JST). We translate archived events to the
 exercise runtime clock when entering the Live evaluator; we NEVER pass 2011
-timestamps off as fresh JMA observations. Supplemental tsunami/power events
-are *not* currently actionable inputs for the earthquake-only Safety Core.
+timestamps off as fresh JMA observations.
+
+Earthquake, aftershock and tsunami-warning milestones are fed to the Safety Core
+through the real Live reducers as clearly labelled SYNTHETIC bulletins: a tsunami
+milestone lists the warned areas as JMA prefecture names (the exact-name mapping
+Live uses for VTSE41 forecast areas) and its warning class. Power-outage entries
+remain historical background only. Nothing here infers hazard zones, shelters or
+safe routes.
 """
 from __future__ import annotations
 from dataclasses import dataclass
@@ -11,6 +17,9 @@ from typing import Literal
 
 HistoricalId = Literal["tohoku-2011", "kobe-1995", "kumamoto-2016", "iburi-2018", "noto-2024"]
 StageKind = Literal["EARTHQUAKE", "TSUNAMI_WARNING", "TSUNAMI_UPGRADE", "POWER_OUTAGE", "AFTERSHOCK"]
+TsunamiClass = Literal["MAJOR_WARNING", "WARNING"]
+SAFETY_CORE_KINDS = frozenset({"EARTHQUAKE", "AFTERSHOCK", "TSUNAMI_WARNING", "TSUNAMI_UPGRADE"})
+TSUNAMI_KINDS = frozenset({"TSUNAMI_WARNING", "TSUNAMI_UPGRADE"})
 JMA_TOHOKU = "https://www.jma.go.jp/jma/en/2011_Earthquake/Information_on_2011_Earthquake.html"
 JMA_KOBE = "https://www.data.jma.go.jp/eqev/data/1995_01_17_hyogonanbu/gaiyo.html"
 JMA_KUMAMOTO = "https://www.data.jma.go.jp/eqev/data/2016_04_14_kumamoto/"
@@ -28,6 +37,13 @@ class HistoricMilestone:
     en: str
     source_url: str
     historic_observation: bool = True
+    # Tsunami milestones only: (JMA prefecture name, warning class) for every warned area
+    # in force after this milestone. Names must equal live_sources.JMA_PREFECTURES values.
+    tsunami_areas: tuple[tuple[str, TsunamiClass], ...] = ()
+
+    def __post_init__(self) -> None:
+        if (self.kind in TSUNAMI_KINDS) != bool(self.tsunami_areas):
+            raise ValueError("tsunami milestones (and only they) must list warned areas")
 
     def public(self) -> dict:
         return {
@@ -35,7 +51,7 @@ class HistoricMilestone:
             "label": {"ja": self.ja, "zh-TW": self.zh, "en": self.en},
             "source_url": self.source_url,
             "historic_observation": self.historic_observation,
-            "fed_to_safety_core": self.kind in {"EARTHQUAKE", "AFTERSHOCK"},
+            "fed_to_safety_core": self.kind in SAFETY_CORE_KINDS,
         }
 
 
@@ -73,11 +89,16 @@ CASES: dict[HistoricalId, HistoricCase] = {
                 "M9.0 offshore Tohoku; JMA intensity 7 at Kurihara", JMA_TOHOKU),
             HistoricMilestone("2011-03-11T14:49:00+09:00", "TSUNAMI_WARNING",
                 "岩手・宮城・福島に大津波警報", "岩手、宮城、福島發布大海嘯警報",
-                "Major tsunami warnings issued for Iwate, Miyagi, Fukushima", JMA_TOHOKU),
+                "Major tsunami warnings issued for Iwate, Miyagi, Fukushima", JMA_TOHOKU,
+                tsunami_areas=(("岩手県", "MAJOR_WARNING"), ("宮城県", "MAJOR_WARNING"), ("福島県", "MAJOR_WARNING"))),
             HistoricMilestone("2011-03-11T15:14:00+09:00", "TSUNAMI_UPGRADE",
                 "津波警報の対象範囲・予想高さを引き上げ", "擴大海嘯警報範圍並提高預測海嘯高度",
                 "Tsunami warnings expanded and upgraded",
-                "https://www.data.jma.go.jp/eqev/data/tsunamihyoka/20110311Tohokuchihoutaiheiyouoki/index.html"),
+                "https://www.data.jma.go.jp/eqev/data/tsunamihyoka/20110311Tohokuchihoutaiheiyouoki/index.html",
+                # Whole-prefecture JMA forecast areas only; partial coasts (e.g. Aomori Pacific,
+                # Chiba Kujukuri) have no exact prefecture-name match in the Live mapping.
+                tsunami_areas=(("岩手県", "MAJOR_WARNING"), ("宮城県", "MAJOR_WARNING"),
+                               ("福島県", "MAJOR_WARNING"), ("茨城県", "MAJOR_WARNING"))),
             HistoricMilestone("2011-03-11T15:15:00+09:00", "AFTERSHOCK",
                 "M7.6の最大余震発生", "發生 M7.6 大型餘震",
                 "Major M7.6 aftershock", JMA_TOHOKU),
@@ -127,14 +148,16 @@ CASES: dict[HistoricalId, HistoricCase] = {
                 "M7.6 Noto earthquake; intensity 7", JMA_NOTO),
             HistoricMilestone("2024-01-01T16:12:00+09:00", "TSUNAMI_WARNING",
                 "新潟・富山・石川へ津波警報", "新潟、富山、石川發布海嘯警報",
-                "Tsunami warnings for Niigata, Toyama and Ishikawa", JMA_NOTO),
+                "Tsunami warnings for Niigata, Toyama and Ishikawa", JMA_NOTO,
+                tsunami_areas=(("新潟県", "WARNING"), ("富山県", "WARNING"), ("石川県", "WARNING"))),
             HistoricMilestone("2024-01-01T16:18:00+09:00", "AFTERSHOCK",
                 "能登地方M6.1の地震", "能登地方發生 M6.1 地震",
                 "M6.1 earthquake in Noto",
                 "https://www.jma.go.jp/jma/menu/20240101_noto_jishin.html"),
             HistoricMilestone("2024-01-01T16:22:00+09:00", "TSUNAMI_UPGRADE",
                 "石川県能登に大津波警報へ切替", "石川縣能登升級至大海嘯警報",
-                "Major tsunami warning upgraded for Noto", JMA_NOTO),
+                "Major tsunami warning upgraded for Noto", JMA_NOTO,
+                tsunami_areas=(("新潟県", "WARNING"), ("富山県", "WARNING"), ("石川県", "MAJOR_WARNING"))),
         )
     ),
 }

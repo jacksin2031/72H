@@ -34,8 +34,10 @@ def test_historical_time_window_runs_only_requested_311_events(monkeypatch):
             state=response.json()
         assert state["current_step"]==2
         assert state["historical"]["current_milestone"]["at_jst"]=="2011-03-11T14:49:00+09:00"
-        assert state["historical"]["current_milestone"]["fed_to_safety_core"] is False
-        assert len(state["snapshot"]["events"])==1
+        # The tsunami milestone is fed to the Safety Core as a synthetic bulletin.
+        assert state["historical"]["current_milestone"]["fed_to_safety_core"] is True
+        assert sorted(e["event_type"] for e in state["snapshot"]["events"])==["EARTHQUAKE","TSUNAMI"]
+        assert all(e["is_synthetic"] for e in state["snapshot"]["events"])
         assert all(x["is_synthetic"] for x in state["snapshot"]["evidence"])
         assert not state["snapshot"]["spatial_guidance"]["movement_authorized"]
         assert client.post(f"/api/mock-live/{sid}/next",headers=HEADERS).status_code==409
@@ -52,7 +54,8 @@ def test_historical_range_can_start_midstream_without_prior_quake(monkeypatch):
         info=response.json()
         assert info["total_steps"]==1
         snap=client.post(f"/api/mock-live/{info['snapshot']['session_id']}/next",headers=HEADERS).json()
-        assert snap["snapshot"]["events"]==[]
+        # No earthquake is invented; only the synthetic tsunami bulletin for the selected milestone.
+        assert [(e["event_type"],e["is_synthetic"]) for e in snap["snapshot"]["events"]]==[("TSUNAMI",True)]
         assert snap["historical"]["current_milestone"]["kind"]=="TSUNAMI_WARNING"
 
 def test_rejects_invalid_ranges_or_no_historical_cases(monkeypatch):
