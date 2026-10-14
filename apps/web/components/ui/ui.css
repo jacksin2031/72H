@@ -55,3 +55,30 @@ div.ui-row{cursor:default}
 /* Pinned help control: shown when the full "I need help" button is off screen or absent; sits just above the tabs. */
 .ui-help-pin{position:fixed;right:var(--gutter);bottom:calc(64px + env(safe-area-inset-bottom) + var(--sp-3));z-index:31;display:inline-flex;align-items:center;justify-content:center;min-width:48px;min-height:48px;padding:0 var(--sp-4);border:0;border-radius:999px;background:var(--danger);color:var(--bg);font:inherit;font-weight:700;cursor:pointer}
 .ui-app-has-controls .ui-help-pin{bottom:calc(64px + 120px + env(safe-area-inset-bottom) + var(--sp-3))}
+/* Distress / SOS panel (Task 6): cardless, one column; no card chrome or shadows. */
+.distress-panel{margin:var(--sp-5) 0;overflow-wrap:anywhere}
+.distress-panel a{color:var(--info)}
+.distress-exercise{margin:0 0 var(--sp-3)}
+.distress-primary{padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+.distress-primary-text{margin:0 0 var(--sp-3);font-size:var(--fs-hero);line-height:1.25;font-weight:700;color:var(--text)}
+.distress-primary p{margin:var(--sp-2) 0}
+.distress-stale{color:var(--warn);font-weight:600}
+.distress-countdown{font-size:var(--fs-body)}
+.distress-countdown strong{font-size:var(--fs-hero);font-variant-numeric:tabular-nums;color:var(--warn)}
+.distress-link{display:inline-flex;align-items:center;min-height:48px}
+.distress-speech,.distress-voice{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center;margin:var(--sp-3) 0}
+.distress-voice p{flex-basis:100%}
+.distress-sos{padding:var(--sp-4) 0;border-bottom:1px solid var(--line)}
+.distress-ai-note{margin:0 0 var(--sp-3)}
+.sos-actions{display:flex;flex-direction:column;gap:var(--sp-2);margin:var(--sp-3) 0}
+a.ui-btn{text-decoration:none}
+a.ui-btn-danger{color:var(--bg)}
+a.ui-btn-secondary{color:var(--info)}
+.sos-message{margin:0;white-space:pre-wrap;font:inherit;font-size:var(--fs-meta);color:var(--text-2)}
+.distress-tags{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin:var(--sp-4) 0}
+.ui-chip{min-height:48px;padding:0 var(--sp-4);border:1px solid var(--line);border-radius:999px;background:none;color:var(--text);font:inherit;cursor:pointer}
+.ui-chip[aria-pressed=true]{background:var(--text);color:var(--bg);border-color:var(--text);font-weight:600}
+.distress-textarea{display:block;width:100%;min-height:5rem;margin:var(--sp-2) 0;padding:var(--sp-2);font:inherit;background:none;color:var(--text);border:1px solid var(--line);border-radius:var(--radius)}
+.distress-pending{margin:var(--sp-4) 0;padding:var(--sp-3);border:1px dashed var(--info);border-radius:var(--radius)}
+.distress-pending label{display:flex;gap:var(--sp-2);align-items:center;min-height:48px}
+.distress-pending input{width:1.4rem;height:1.4rem}

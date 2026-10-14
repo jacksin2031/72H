@@ -11,7 +11,7 @@ import type {SosProfile} from '../lib/emergency-contacts';
 import type {RoadGraphPack} from '../lib/evacuation-road-graph';
 import {useDistressRecorder} from '../lib/use-distress-recorder';
 import {SosPanel} from './sos-panel';
-import './distress.css';
+import {Button,Disclosure,Tag} from './ui';
 
 export type DistressSnapshot={distress:DistressStatus;session_id?:string;replay?:{id:string};situation?:{updated_at:string;latest_evidence_at?:string|null};
  profile?:{current_location?:{observed_at?:string|null}}}|null;
@@ -176,62 +176,65 @@ export function DistressPanel(p:DistressPanelProps){
  // A critical server report keeps SOS pinned on this device for its whole 60-minute lifetime.
  const criticalUntil=Math.max(0,...distress.reports.filter(r=>isCriticalReport(r.tags)).map(r=>Date.parse(r.reported_at)+CRITICAL_REPORT_MS).filter(Number.isFinite));
  useEffect(()=>{if(criticalUntil>pinUntil)setPinUntil(rememberSosPin(p.scope,criticalUntil));},[criticalUntil,pinUntil,p.scope]);
- const pinned=shouldPinSos(reported,p.sosProfile,level)||now<pinUntil||!!gemini?.suggest_sos;
+ // D1: only the person's own report (or saved profile / 60-minute pin) lifts SOS directly under the instruction. An AI suggestion never moves it.
+ const selfPinned=shouldPinSos(reported,p.sosProfile,level)||now<pinUntil;
  const sos=<>
-  {gemini?.suggest_sos&&<p className="distress-ai-note"><span className="distress-ai" data-testid="distress-sos-ai">{t.aiSuggestion}</span> {t.sosSuggested}</p>}
-  <SosPanel language={p.language} profile={p.sosProfile} tags={unique([...reported,...selected])} location={p.location} pinned={pinned}/>
+  {gemini?.suggest_sos&&<p className="distress-ai-note"><span data-testid="distress-sos-ai"><Tag tone="ai">{t.aiSuggestion}</Tag></span> {t.sosSuggested}</p>}
+  <SosPanel language={p.language} profile={p.sosProfile} tags={unique([...reported,...selected])} location={p.location} pinned={selfPinned}/>
  </>;
 
  return <section className="distress-panel" aria-label={t.chooseSituation}>
-  {(distress.synthetic||p.scope!=='live')&&<p className="distress-exercise" data-testid="distress-exercise">{t.exercise}</p>}
-  {!online&&<p className="distress-offline" role="status">{t.offlineReason}{verifiedAt&&<span data-testid="distress-last-verified"> {t.lastVerified}: {new Date(verifiedAt).toLocaleString(p.language)}</span>}</p>}
-  {pinned&&sos}
-  <div className="distress-primary" data-testid="distress-primary">
-   <p className="distress-primary-text" aria-live="assertive">{primaryText}{aiInfluenced&&<span className="distress-ai" data-testid="distress-ai-label">{t.aiSuggestion}</span>}</p>
+  {(distress.synthetic||p.scope!=='live')&&<p className="distress-exercise" data-testid="distress-exercise"><Tag tone="exercise">{t.exercise}</Tag></p>}
+  {!online&&<p className="now-meta" role="status">{t.offlineReason}{verifiedAt&&<span data-testid="distress-last-verified"> {t.lastVerified}: {new Date(verifiedAt).toLocaleString(p.language)}</span>}</p>}
+  <div className="distress-primary" data-distress="primary" data-testid="distress-primary">
+   <p className="distress-primary-text" aria-live="assertive">{primaryText}{aiInfluenced&&<> <span data-testid="distress-ai-label"><Tag tone="ai">{t.aiSuggestion}</Tag></span></>}</p>
    {staleNotice&&<p className="distress-stale" role="status" data-testid="distress-stale">{staleNotice}</p>}
-   {basis&&<p className="distress-basis" data-testid="distress-basis">{basis}</p>}
-   {kind==='GO_TO_SITE'&&first&&<p>{t.walkMeta.replace('{min}',String(Math.ceil(first.walk_seconds/60))).replace('{m}',String(Math.round(first.distance_m)))}</p>}
+   {basis&&<p className="now-meta" data-testid="distress-basis">{basis}</p>}
+   {kind==='GO_TO_SITE'&&first&&<p className="now-meta">{t.walkMeta.replace('{min}',String(Math.ceil(first.walk_seconds/60))).replace('{m}',String(Math.round(first.distance_m)))}</p>}
    {deadlineAt!==null&&deadlineAt>now&&<p className="distress-countdown" role="timer" aria-live="off">{t.countdown} <strong>{formatCountdown(deadlineAt-now)}</strong></p>}
-   {kind==='GO_TO_SITE'&&<p>{t.roadCandidateNotice}</p>}
-   {kind==='PENDING'&&<p>{t.computing}</p>}
-   {reason&&<p>{reason}</p>}
-   {kind==='NONE'&&<Link href="/map#evacuation-routes">{t.officialSites} →</Link>}
-   <small data-testid="distress-disclaimer">{t.notGuaranteed}</small>
+   {kind==='GO_TO_SITE'&&<p className="now-meta">{t.roadCandidateNotice}</p>}
+   {kind==='PENDING'&&<p className="now-meta">{t.computing}</p>}
+   {reason&&<p className="now-meta">{reason}</p>}
+   {kind==='NONE'&&<Link className="distress-link" href="/map#evacuation-routes">{t.officialSites} →</Link>}
+   <div className="distress-speech">
+    <Button variant="secondary" disabled={kind==='NONE'} onClick={()=>say(primaryText,p.language)}>{t.replay}</Button>
+    <Button variant="secondary" aria-pressed={!speechOn} onClick={toggleSpeech}>{speechOn?t.mute:t.speak}</Button>
+   </div>
+   <p className="now-meta" data-testid="distress-disclaimer">{t.notGuaranteed}</p>
   </div>
-  <div className="distress-speech">
-   <button type="button" disabled={kind==='NONE'} onClick={()=>say(primaryText,p.language)}>{t.replay}</button>
-   <button type="button" aria-pressed={!speechOn} onClick={toggleSpeech}>{speechOn?t.mute:t.speak}</button>
-  </div>
-  {aiOff&&<small className="distress-ai-off">{t.aiUnavailable}</small>}
-  {!!gemini?.emphasis_clause_ids.length&&<ul className="distress-emphasis">{gemini.emphasis_clause_ids.map(id=><li key={id}><span className="distress-ai">{t.aiSuggestion}</span> {emphasisText[p.language][id]}</li>)}</ul>}
+  {selfPinned&&<div className="distress-sos" data-distress="sos-pinned">{sos}</div>}
+  {aiOff&&<p className="now-meta">{t.aiUnavailable}</p>}
+  {!!gemini?.emphasis_clause_ids.length&&<ul className="now-list">{gemini.emphasis_clause_ids.map(id=><li key={id}><Tag tone="ai">{t.aiSuggestion}</Tag> {emphasisText[p.language][id]}</li>)}</ul>}
   <div className="distress-tags" role="group" aria-label={t.chooseSituation}>
-   {TAGS.map(tag=><button key={tag} type="button" aria-pressed={selected.includes(tag)} onClick={()=>toggle(tag)}>{tt[tag]}</button>)}
+   {TAGS.map(tag=><button key={tag} type="button" className="ui-chip" aria-pressed={selected.includes(tag)} onClick={()=>toggle(tag)}>{tt[tag]}</button>)}
   </div>
-  <button type="button" className="distress-send" disabled={!selected.length||busy} onClick={()=>{const tags=selected;setSelected([]);void submit(tags,'BUTTON');}}>{t.send}</button>
+  <Button variant="primary" disabled={!selected.length||busy} onClick={()=>{const tags=selected;setSelected([]);void submit(tags,'BUTTON');}}>{t.send}</Button>
   <div className="distress-voice">
    {recorder.recording
-    ?<button type="button" className="danger" onClick={recorder.stop}>{t.stopRecording}</button>
-    :<button type="button" disabled={!canAi||busy||recorder.starting} onClick={()=>void recorder.start()}>{t.record}</button>}
-   {!online?<small>{t.voiceNeedsNetwork}</small>:!canAi?<small>{t.noSession}</small>:null}
-   {recorder.failed&&<small role="status">{t.micUnavailable}</small>}
-   {analyzing&&<small role="status">{t.analyzing}</small>}
+    ?<Button variant="danger" onClick={recorder.stop}>{t.stopRecording}</Button>
+    :<Button variant="primary" disabled={!canAi||busy||recorder.starting} onClick={()=>void recorder.start()}>{t.record}</Button>}
+   {!online?<p className="now-meta">{t.voiceNeedsNetwork}</p>:!canAi?<p className="now-meta">{t.noSession}</p>:null}
+   {recorder.failed&&<p className="now-meta" role="status">{t.micUnavailable}</p>}
+   {analyzing&&<p className="now-meta" role="status">{t.analyzing}</p>}
   </div>
-  <details className="distress-type"><summary>{t.typeInstead}</summary>
-   <textarea maxLength={500} value={text} onChange={e=>setText(e.target.value)} aria-label={t.typeInstead}/>
-   <button type="button" disabled={!canAi||busy||!text.trim()} onClick={()=>void analyze({text},'TEXT')}>{t.analyze}</button>
-  </details>
-  {notice&&<p role="status">{notice}</p>}
+  <Disclosure summary={t.typeInstead}>
+   <textarea className="distress-textarea" maxLength={500} value={text} onChange={e=>setText(e.target.value)} aria-label={t.typeInstead}/>
+   <Button variant="secondary" disabled={!canAi||busy||!text.trim()} onClick={()=>void analyze({text},'TEXT')}>{t.analyze}</Button>
+  </Disclosure>
+  {notice&&<p className="now-meta" role="status">{notice}</p>}
   {pending&&<fieldset className="distress-pending"><legend>{t.pendingTags}</legend>
    {pending.tags.map(tag=><label key={tag}><input type="checkbox" checked={pending.checked.includes(tag)}
     onChange={()=>setPending(v=>v&&{...v,checked:v.checked.includes(tag)?v.checked.filter(x=>x!==tag):[...v.checked,tag]})}/> {tt[tag]}</label>)}
    {hint&&<p>{t.aiHeard}「{hint}」</p>}
-   <button type="button" className="distress-send" disabled={busy||!unique([...selected,...pending.checked]).length} onClick={confirm}>{t.confirm}</button>
+   <Button variant="primary" disabled={busy||!unique([...selected,...pending.checked]).length} onClick={confirm}>{t.confirm}</Button>
   </fieldset>}
-  {!pinned&&sos}
-  <details className="distress-details"><summary>{t.moreDetails}</summary>
-   {others.length>0&&<><p>{t.otherCandidates}{othersByAi&&<> <span className="distress-ai" data-testid="distress-other-ai">{t.aiSuggestion}</span></>}</p><ul>{others.map(c=><li key={c.place_id}>{c.name} · {t.walkMeta.replace('{min}',String(Math.ceil(c.walk_seconds/60))).replace('{m}',String(Math.round(c.distance_m)))}</li>)}</ul></>}
-   {!!reported.length&&<p>{t.lastReport}: {reported.map(x=>tt[x]).join('、')}</p>}
-   {kind!=='NONE'&&<Link href="/map#evacuation-routes">{t.officialSites} →</Link>}
-  </details>
+  {!selfPinned&&<div className="distress-sos" data-distress="sos">{sos}</div>}
+  <Disclosure summary={t.moreDetails}>
+   <div className="distress-details">
+    {others.length>0&&<><p className="now-meta">{t.otherCandidates}{othersByAi&&<> <span data-testid="distress-other-ai"><Tag tone="ai">{t.aiSuggestion}</Tag></span></>}</p><ul className="now-list">{others.map(c=><li key={c.place_id}>{c.name} · {t.walkMeta.replace('{min}',String(Math.ceil(c.walk_seconds/60))).replace('{m}',String(Math.round(c.distance_m)))}</li>)}</ul></>}
+    {!!reported.length&&<p className="now-meta">{t.lastReport}: {reported.map(x=>tt[x]).join('、')}</p>}
+    {kind!=='NONE'&&<Link className="distress-link" href="/map#evacuation-routes">{t.officialSites} →</Link>}
+   </div>
+  </Disclosure>
  </section>;
 }
