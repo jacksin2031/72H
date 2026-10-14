@@ -64,3 +64,5 @@ The map page carries exactly one "not for evacuation navigation / not a safety d
 | Desktop settings block (desktop-settings: profile form, location, safety check, route preview, handoff, offline, plan history, emergency guide, refresh) | one long panel | delete; desktop uses the same nine-row More. Route preview and plan history stay in the Now basis details. | (none) |
 | More subpage back control | `.more-back` 「その他に戻る」 button | shorten | ‹ 返回 / ‹ 戻る / ‹ Back |
 | 關於 subpage version row (new) | (none) | add | 版本 / バージョン / Version + package version |
+| 位置與隱私 privacy text (`locationPrivacy`, 4 sentences) | shown in full on the subpage | shorten to the first sentence; the full text moves into the 了解更多 Disclosure | 精確座標只在此裝置上使用。 / 正確な座標はこの端末内でのみ使います。 / Exact coordinates stay on this device. |
+| 演練與示範 map legend card | default reference-map caution card | delete (the subpage's exercise note is the single caution) | (none) |

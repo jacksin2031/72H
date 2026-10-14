@@ -665,15 +665,17 @@ function LiveNow({ view, snapshot, projection, primaryAction, language, messages
 const themeChoices = ['dark', 'system', 'contrast'] as const;
 const languageChoices = [['ja', '日本語'], ['en', 'English'], ['zh-TW', '繁體中文']] as const;
 const moreCopy = {
-  'zh-TW': { learnMore: '了解更多', version: '版本' },
-  ja: { learnMore: '詳しく見る', version: 'バージョン' },
-  en: { learnMore: 'Learn more', version: 'Version' },
+  'zh-TW': { learnMore: '了解更多', version: '版本', privacyShort: '精確座標只在此裝置上使用。' },
+  ja: { learnMore: '詳しく見る', version: 'バージョン', privacyShort: '正確な座標はこの端末内でのみ使います。' },
+  en: { learnMore: 'Learn more', version: 'Version', privacyShort: 'Exact coordinates stay on this device.' },
 } as const;
 
 /** The More tab: a plain list of nine settings rows; each opens a subpage that renders the existing component for that setting. */
-function MoreHub({ view, snapshot, projection, language, chooseLanguage, messages, deviceLocation, power, level, override, choose, theme, chooseTheme, busy,
+export function MoreHub({ view, snapshot, projection, language, chooseLanguage, messages, deviceLocation, power, level, override, choose, theme, chooseTheme, busy,
   onProfileUpdate, onRefresh, link, now, connection, check, setCheck, notifications, dismissNotification, sessionLost, canStart, locationSync,
-  onRetryLocation, onLocalLocationChecked, onChooseArea }: {
+  onRetryLocation, onLocalLocationChecked, onChooseArea, fullSafetyCheck = false }: {
+  /** Desktop has no Now-screen check controls, so its More hosts the full set; mobile keeps them on Now. */
+  fullSafetyCheck?: boolean;
   view: string; snapshot: LiveSnapshot; projection: NonNullable<ReturnType<typeof projectLiveSnapshot>>; language: Language;
   chooseLanguage?: (value: Language) => void; messages: Record<string, string>; deviceLocation: ReturnType<typeof useDeviceLocation>;
   power: ReturnType<typeof usePower>['power']; level: number | null; override: string; choose: (value: string) => void;
@@ -753,8 +755,9 @@ function MoreHub({ view, snapshot, projection, language, chooseLanguage, message
         <AreaFallbackPicker messages={messages} disabled={busy || !canStart} buttonLabel={messages.changeArea}
           onConfirm={selection => { setSub(null); onChooseArea(selection); }} />
       </section>
-      <p>{messages.locationPrivacy}</p>
-      <Disclosure summary={copy.learnMore}><DeviceLocationControls location={deviceLocation} language={language} showLocate={false} /></Disclosure>
+      <p>{copy.privacyShort}</p>
+      <DeviceLocationControls location={deviceLocation} language={language} showLocate={false} />
+      <Disclosure summary={copy.learnMore}><p>{messages.locationPrivacy}</p></Disclosure>
       <section className="settings-panel more-personal-panel"><h2>{messages.personalDestination}</h2>
         <dl className="personal-summary"><div><dt>{messages.currentAreaLabel}</dt><dd>{snapshot.profile.current_location.label}</dd></div>
           <div><dt>{messages.accommodationAreaLabel}</dt><dd>{snapshot.profile.accommodation_location.label}</dd></div>
@@ -764,7 +767,7 @@ function MoreHub({ view, snapshot, projection, language, chooseLanguage, message
             : messages.noAccessibilityNeeds}</dd></div>
         </dl>
         <Button variant="secondary" onClick={() => setProfileEditing(true)}>{messages.editPersonal}</Button>
-        <SafetyCheckControls check={check} setCheck={setCheck} messages={messages} consentOnly />
+        <SafetyCheckControls check={check} setCheck={setCheck} messages={messages} consentOnly={!fullSafetyCheck} />
       </section>
     </>;
 
@@ -858,7 +861,7 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
     </>}
     {(view === 'more' || view === 'notifications') && <MoreHub key={view} view={view} snapshot={snapshot} projection={projection} language={language} chooseLanguage={chooseLanguage}
       messages={messages} deviceLocation={deviceLocation} power={power} level={level} override={override} choose={choose} theme={theme} chooseTheme={chooseTheme}
-      busy={busy} onProfileUpdate={onProfileUpdate} onRefresh={onRefresh} link={link} now={now} connection={connection} check={check} setCheck={setCheck}
+      busy={busy} onProfileUpdate={onProfileUpdate} onRefresh={onRefresh} link={null} now={now} connection={connection} check={check} setCheck={setCheck}
       notifications={notifications} dismissNotification={dismissNotification} sessionLost={sessionLost} canStart={canStart} locationSync={locationSync}
       onRetryLocation={onRetryLocation} onLocalLocationChecked={onLocalLocationChecked} onChooseArea={onChooseArea} />}
     {view === 'more' && snapshot.spatial_guidance.current_action_kind === 'EVACUATE' && !projection.mapGate && <p className="muted">{messages.mapGateClosed}</p>}
@@ -868,7 +871,7 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
 }
 
 function DesktopPreparedness({ view, snapshot, language, messages, projection, link, busy, power, location, connection, now, refresh, onProfile, onProfileUpdate,
-  onRouteSearch, check, setCheck, notifications, dismissNotification, sessionLost, onChooseArea, canUpdateLocation, chooseLanguage, level, override, choose, theme, chooseTheme, help }: {
+  onRouteSearch, check, setCheck, notifications, dismissNotification, sessionLost, onChooseArea, canUpdateLocation, chooseLanguage, level, override, choose, theme, chooseTheme, onRetryLocation, onLocalLocationChecked, help }: {
   view: string; snapshot: LiveSnapshot | null; language: Language; messages: Record<string, string>;
   projection: ReturnType<typeof projectLiveSnapshot> | null; link: string | null; busy: boolean; power: ReturnType<typeof usePower>['power'];
   location: ReturnType<typeof useDeviceLocation>; connection: Connection; now: number; refresh: () => void; onProfile: (profile: LiveProfileSeed) => void;
@@ -876,7 +879,7 @@ function DesktopPreparedness({ view, snapshot, language, messages, projection, l
   setCheck: Dispatch<SetStateAction<SafetyCheckState>>; notifications: Notification[]; dismissNotification: (id: string) => void; sessionLost: boolean;
   onChooseArea: (location: OnboardingLocation) => void; canUpdateLocation: boolean;
   chooseLanguage: (value: Language) => void; level: number | null; override: string; choose: (value: string) => void;
-  theme: string; chooseTheme: (value: string) => void;
+  theme: string; chooseTheme: (value: string) => void; onRetryLocation: () => void; onLocalLocationChecked: () => void;
   /** The "I need help" entry, placed in NowScreen's help slot on the Now views. */
   help?: ReactNode;
 }) {
@@ -885,7 +888,7 @@ function DesktopPreparedness({ view, snapshot, language, messages, projection, l
       messages={messages} deviceLocation={location} power={power} level={level} override={override} choose={choose} theme={theme} chooseTheme={chooseTheme}
       busy={busy} onProfileUpdate={onProfileUpdate} onRefresh={refresh} link={link} now={now} connection={connection} check={check} setCheck={setCheck}
       notifications={notifications} dismissNotification={dismissNotification} sessionLost={sessionLost} canStart={canUpdateLocation} locationSync={null}
-      onRetryLocation={refresh} onLocalLocationChecked={() => {}} onChooseArea={onChooseArea} />
+      onRetryLocation={onRetryLocation} onLocalLocationChecked={onLocalLocationChecked} onChooseArea={onChooseArea} fullSafetyCheck />
   </div>;
   if (tabForView(view) === 'now' && snapshot && projection) return <div className="desktop-preparedness">
     <LiveNow view={view} snapshot={snapshot} projection={projection} primaryAction={projection.presentation.primaryAction} language={language} messages={messages}
@@ -1392,7 +1395,8 @@ export function LiveDashboard({ view }: { view: string }) {
         refresh={() => void refresh()} onProfile={profile => void begin(profile)} onProfileUpdate={profile => updateProfile(profile)} onRouteSearch={searchRoute}
         check={check} setCheck={setCheck} notifications={notifications} dismissNotification={id => setNotifications(items => items.filter(item => item.id !== id))} sessionLost={sessionLost}
         onChooseArea={chooseLocationArea} canUpdateLocation={canUseNetwork} help={helpInNow ? helpEntry : null}
-        chooseLanguage={chooseLanguage} level={power.level} override={power.override} choose={power.choose} theme={theme} chooseTheme={chooseTheme} />
+        chooseLanguage={chooseLanguage} level={power.level} override={power.override} choose={power.choose} theme={theme} chooseTheme={chooseTheme}
+        onRetryLocation={() => void retryLocationUpdate()} onLocalLocationChecked={() => setLocationGate({ phase: 'failed', update: null })} />
       : <MobileScene view={mobileView} snapshot={snapshot} language={language} chooseLanguage={chooseLanguage} messages={messages} projection={projection}
         deviceLocation={deviceLocation} locationResolving={locationResolving} onHomeMapReady={onHomeMapReady}
         power={power.power} level={power.level} override={power.override} choose={power.choose}

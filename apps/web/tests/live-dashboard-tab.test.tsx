@@ -7,8 +7,8 @@ import { movementLiveSnapshot } from './live-fixtures';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-const flags = vi.hoisted(() => ({ takeover: false }));
-vi.mock('../lib/device-role', () => ({ useDeviceRole: () => 'mobile' }));
+const flags = vi.hoisted(() => ({ takeover: false, role: 'mobile', locateCalls: 0 }));
+vi.mock('../lib/device-role', () => ({ useDeviceRole: () => flags.role }));
 vi.mock('../lib/live-presentation', async orig => ({
   ...await orig<typeof import('../lib/live-presentation')>(),
   shouldUseCriticalMobileTakeover: () => flags.takeover,
@@ -22,7 +22,7 @@ vi.mock('../lib/use-device-location', () => {
   const location: DeviceLocation = {
     position: null, state: 'unavailable', freshness: 'UNAVAILABLE', now: 0, consent: false, ready: true, busy: false,
     failed: false, permissionDenied: false, permissionGranted: false, storageUnavailable: false,
-    locate: async () => null, retain: () => {},
+    locate: async () => { flags.locateCalls += 1; return null; }, retain: () => {},
   };
   return { useDeviceLocation: () => location };
 });
@@ -43,7 +43,7 @@ beforeEach(() => {
 });
 afterEach(async () => {
   if (root) await act(async () => root!.unmount());
-  root = null; container?.remove(); container = null; flags.takeover = false;
+  root = null; container?.remove(); container = null; flags.takeover = false; flags.role = 'mobile'; flags.locateCalls = 0;
   localStorage.clear();
   Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
 });
@@ -69,4 +69,16 @@ it('highlights Now (not More) when an official takeover shows the Now content on
     expect(currentTab(page), view).toBe('Now');
     await act(async () => root!.unmount()); root = null; container?.remove(); container = null;
   }
+});
+it('desktop role: the More location button runs a location update (device locate), not a session refresh', async () => {
+  flags.role = 'desktop';
+  Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
+  const page = await render('more');
+  expect(page.querySelector('.more')).not.toBeNull();
+  const row = [...page.querySelectorAll<HTMLElement>('.ui-row')].find(r => r.querySelector('.ui-row-label')?.textContent === 'Location & privacy')!;
+  await act(async () => row.click());
+  const button = page.querySelector<HTMLButtonElement>('.more-location-card button.primary')!;
+  expect(button.disabled).toBe(false);
+  await act(async () => { button.click(); });
+  expect(flags.locateCalls).toBeGreaterThan(0);
 });

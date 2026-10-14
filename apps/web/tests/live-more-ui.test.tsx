@@ -2,7 +2,7 @@
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { liveNowScreenVisible, liveTakeoverBandLabel, MobileScene } from '../components/live-dashboard';
+import { liveNowScreenVisible, liveTakeoverBandLabel, MobileScene, MoreHub } from '../components/live-dashboard';
 import { liveMessages } from '../lib/live-i18n';
 import { liveMoreMessages } from '../lib/live-more-i18n';
 import { projectLiveSnapshot } from '../lib/live-presentation';
@@ -29,7 +29,7 @@ function sceneProps(overrides: Partial<React.ComponentProps<typeof MobileScene>>
     messages: { ...liveMessages.en, ...liveMoreMessages.en }, projection, deviceLocation, locationResolving: false,
     onHomeMapReady: () => {}, power: derivePower(75, false), level: null, override: 'AUTO', choose: () => {},
     theme: 'dark', chooseTheme: () => {}, busy: false, onProfile: () => {}, onProfileUpdate: async () => true,
-    onRefresh: () => {}, onRouteSearch: async () => true, link: null, now: LIVE_NOW, connection: 'offline' as const,
+    onRefresh: () => {}, onRouteSearch: async () => true, link: 'https://example.test/app', now: LIVE_NOW, connection: 'offline' as const,
     check: initialSafetyCheck(), setCheck: () => {}, notifications: [], dismissNotification: () => {}, sessionLost: false,
     canStart: false, locationSync: null, onRetryLocation: () => {}, onLocalLocationChecked: () => {}, onChooseArea: () => {},
     ...overrides,
@@ -151,6 +151,10 @@ describe('mobile More and Plan navigation', () => {
     await openRow(page, 'About');
     expect(page.textContent).toContain('Emergency basics');
     expect(page.querySelector('.emergency-contact a[href="tel:119"]')).not.toBeNull();
+    // Mobile has no handoff card, even when a handoff link exists.
+    expect(page.querySelector('.handoff-card')).toBeNull();
+    expect(page.textContent).not.toContain('Continue on mobile');
+    expect(page.querySelector('a.primary')).toBeNull();
     expect(page.querySelector('.ui-row-value')?.textContent).toMatch(/^\d+\.\d+\.\d+/);
   });
 
@@ -482,5 +486,62 @@ describe('liveNowScreenVisible', () => {
     expect(v('desktop', 'sources', true, 'MONITORING', false)).toBe(true);
     expect(v('desktop', 'dashboard', true, 'EMERGENCY_PROTECT', true)).toBe(false);
     expect(v('unknown', 'dashboard', true, 'MONITORING', false)).toBe(false);
+  });
+});
+
+describe('More hub: privacy sentence and desktop wiring', () => {
+  function hubProps(overrides: Partial<React.ComponentProps<typeof MoreHub>> = {}) {
+    const { view, snapshot, language, messages, projection, deviceLocation, power, level, override, choose, theme, chooseTheme, busy,
+      onProfileUpdate, onRefresh, now, connection, check, setCheck, notifications, dismissNotification, sessionLost, canStart, locationSync,
+      onRetryLocation, onLocalLocationChecked, onChooseArea } = sceneProps();
+    return { view, snapshot: snapshot!, projection: projection!, language, messages, deviceLocation, power, level, override, choose, theme, chooseTheme,
+      busy, onProfileUpdate, onRefresh, link: null, now, connection, check, setCheck, notifications, dismissNotification, sessionLost, canStart,
+      locationSync, onRetryLocation, onLocalLocationChecked, onChooseArea, ...overrides };
+  }
+  async function mountHub(props: React.ComponentProps<typeof MoreHub>) {
+    container = document.createElement('div'); document.body.append(container); root = createRoot(container);
+    await act(async () => { root!.render(<MoreHub {...props} />); });
+    return container;
+  }
+
+  it('shows one short privacy sentence, the controls outside the disclosure, and the full explanation inside it', async () => {
+    const page = await mountHub(hubProps());
+    await openRow(page, 'Location & privacy');
+    const disclosure = page.querySelector('details.ui-disclosure')!;
+    expect(page.textContent).toContain('Exact coordinates stay on this device.');
+    expect(disclosure.textContent).toContain(liveMoreMessages.en.locationPrivacy ?? liveMessages.en.locationPrivacy);
+    // The long text is only inside the disclosure.
+    const full = liveMessages.en.locationPrivacy;
+    expect(page.textContent!.split(full).length - 1).toBe(1);
+    expect(disclosure.contains(page.querySelector('.device-location'))).toBe(false);
+    expect(page.querySelector('.device-location input[type="checkbox"]')).not.toBeNull();
+  });
+
+  it('desktop: full safety-check response buttons live in Location & privacy; consent only without the flag', async () => {
+    const waiting = { ...initialSafetyCheck(), consent: true, status: 'AWAITING_RESPONSE' as const, eventKey: 'k', requestedAt: LIVE_NOW, attempts: 1 };
+    let page = await mountHub(hubProps({ check: waiting, fullSafetyCheck: true }));
+    await openRow(page, 'Location & privacy');
+    expect(page.querySelectorAll('.check-buttons button')).toHaveLength(3);
+    await act(async () => root!.unmount()); container!.remove();
+    page = await mountHub(hubProps({ check: waiting }));
+    await openRow(page, 'Location & privacy');
+    expect(page.querySelector('.check-buttons')).toBeNull();
+    expect(page.querySelector('.check-card input[type="checkbox"]')).not.toBeNull();
+  });
+
+  it('shows the handoff card only when the hub is given a link (desktop)', async () => {
+    const page = await mountHub(hubProps({ link: 'https://example.test/app' }));
+    await openRow(page, 'About');
+    expect(page.querySelector('.handoff-card')).not.toBeNull();
+  });
+
+  it('the online GPS button calls the location-update callback, not the session refresh', async () => {
+    const onRetryLocation = vi.fn(); const onRefresh = vi.fn();
+    const base = hubProps();
+    const page = await mountHub(hubProps({ connection: 'online', canStart: true, onRetryLocation, onRefresh, deviceLocation: { ...base.deviceLocation, ready: true } }));
+    await openRow(page, 'Location & privacy');
+    await click(page.querySelector('.more-location-card button.primary')!);
+    expect(onRetryLocation).toHaveBeenCalledOnce();
+    expect(onRefresh).not.toHaveBeenCalled();
   });
 });
