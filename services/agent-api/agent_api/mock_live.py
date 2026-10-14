@@ -99,6 +99,12 @@ class MockLiveResponse(BaseModel):
     historical: HistoricalView | None = None
     movement_assessment: SimulationAssessment | None = None
     movement_assessment_history: tuple[SimulationAssessment,...] = ()
+    # Assessments replaced because the Safety Core plan changed after they were made (oldest first).
+    movement_assessment_superseded: tuple[SimulationAssessment,...] = ()
+
+
+MAX_SUPERSEDED_ASSESSMENTS = 24
+PLAN_CHANGED = "PLAN_CHANGED"
 
 
 class MockJmaSource:
@@ -372,7 +378,10 @@ class _MockSession:
     request: MockLiveRequest
     expires: float
     lock: asyncio.Lock
+    store_session_id: UUID | None = None
     assessments: list[SimulationAssessment] = field(default_factory=list)
+    superseded: list[SimulationAssessment] = field(default_factory=list)
+    assessment_lock: RLock = field(default_factory=RLock)
 
 
 class MockLiveDrillStore:
@@ -399,8 +408,45 @@ class MockLiveDrillStore:
             session.expires = monotonic() + MOCK_TTL
             return session
 
+    @staticmethod
+    def _advice_envelope(session: _MockSession, step: int, plan_id: str | None, now: datetime) -> dict:
+        milestones = session.store.mock_source.milestones
+        return build_advice_envelope(
+            session.request.location_context, session.request.conditions,
+            event_kind=milestones[step - 1].kind if session.request.historical_case else "EARTHQUAKE",
+            mobility=session.request.mobility, network=session.request.network, evidence=session.request.evidence,
+            step=step, session_id=str(session.store_session_id), plan_id=plan_id,
+            tsunami_active=any(m.kind in TSUNAMI_KINDS for m in milestones[:step]),
+            now=now,
+        )
+
+    def _rebind_assessment(self, session: _MockSession, snapshot: LiveSnapshot) -> None:
+        """Keep the current assessment bound to the current Safety Core plan.
+
+        When the plan changes after an assessment was made (a distress report, an AI escalation,
+        or plan expiry), the old assessment no longer describes the current plan. It is moved to the
+        superseded log, never rewritten, and the step's current entry becomes a deterministic NOT_RUN
+        assessment bound to the new plan: no model call and no model decision is claimed.
+        """
+        plan_id = str(snapshot.situation.current_plan_id) if snapshot.situation.current_plan_id else None
+        with session.assessment_lock:
+            if not session.assessments or session.assessments[-1].plan_id == plan_id:
+                return
+            old = session.assessments[-1]
+            envelope = self._advice_envelope(session, old.step, plan_id, datetime.now(timezone.utc))
+            rebound = SimulationAssessment(
+                **{key: envelope[key] for key in ("version", "session_id", "step", "plan_id", "area_ids", "area_label",
+                                                 "location_source", "location_observed_at", "created_at", "expires_at",
+                                                 "allowed_decisions", "facts", "limitation_ids")},
+                decision="UNKNOWN", fact_ids=tuple(f["id"] for f in envelope["facts"]),
+                ai_mode="NOT_RUN", reason_code=PLAN_CHANGED,
+            )
+            session.superseded = [*session.superseded, old][-MAX_SUPERSEDED_ASSESSMENTS:]
+            session.assessments[-1] = rebound
+
     def _response(self, session: _MockSession, snapshot: LiveSnapshot) -> MockLiveResponse:
         self._assert_not_live(snapshot)
+        self._rebind_assessment(session, snapshot)
         return MockLiveResponse(
             current_step=session.store.mock_source.stage,
             total_steps=(len(session.store.mock_source.milestones)
@@ -411,6 +457,7 @@ class MockLiveDrillStore:
             historical=self._historical_view(session),
             movement_assessment=session.assessments[-1] if session.assessments else None,
             movement_assessment_history=tuple(session.assessments),
+            movement_assessment_superseded=tuple(session.superseded),
         )
 
     @staticmethod
@@ -469,7 +516,8 @@ class MockLiveDrillStore:
             "current_plan_summary": "SIMULATION ONLY",
         })
         snap = await store.start_async(StartLiveRequest(language=request.language, profile=seed))
-        session = _MockSession(store, instrumented, request, monotonic() + MOCK_TTL, asyncio.Lock())
+        session = _MockSession(store, instrumented, request, monotonic() + MOCK_TTL, asyncio.Lock(),
+                               store_session_id=snap.session_id)
         with self._lock:
             self._purge()
             if len(self._sessions) >= self._max:
@@ -514,11 +562,9 @@ class MockLiveDrillStore:
                 session.store.mock_source.stage = stage
                 raise
             if session.request.use_gemini:
-                kind=(session.store.mock_source.milestones[stage].kind if session.request.historical_case else 'EARTHQUAKE')
-                envelope=build_advice_envelope(session.request.location_context,session.request.conditions,
-                    event_kind=kind,mobility=session.request.mobility,network=session.request.network,evidence=session.request.evidence,
-                    step=stage+1,session_id=str(id),plan_id=str(snap.situation.current_plan_id) if snap.situation.current_plan_id else None,
-                    tsunami_active=any(m.kind in ('TSUNAMI_WARNING','TSUNAMI_UPGRADE') for m in session.store.mock_source.milestones[:stage+1]),
-                    now=datetime.now(timezone.utc))
-                session.assessments.append(await self._advisor.assess(envelope))
+                plan_id = str(snap.situation.current_plan_id) if snap.situation.current_plan_id else None
+                envelope = self._advice_envelope(session, stage + 1, plan_id, datetime.now(timezone.utc))
+                assessment = await self._advisor.assess(envelope)
+                with session.assessment_lock:
+                    session.assessments.append(assessment)
             return self._response(session, snap)

@@ -200,6 +200,38 @@ def test_cases_without_tsunami_milestones_never_trigger(monkeypatch, case):
             assert not any(e["event_type"] == "TSUNAMI" for e in data["snapshot"]["events"])
 
 
+def test_distress_report_rebinds_the_current_assessment_and_keeps_history(monkeypatch):
+    monkeypatch.setenv("DRILL_ACCESS_KEY", KEY)
+    runner = UnknownRunner()
+    with _client(runner) as client:
+        sid = _start(client)
+        for _ in range(4):
+            before = _next(client, sid)
+        calls = len(runner.contexts)
+        plans_before = [p["id"] for p in before["snapshot"]["plans"]]
+        response = client.post(f"/api/mock-live/{sid}/distress", headers=HEADERS,
+                               json={"tags": ["WATER_RISING"], "input_mode": "BUTTON"})
+        assert response.status_code == 200, response.text
+        after = response.json()
+        current_plan = after["snapshot"]["situation"]["current_plan_id"]
+        assessment = after["movement_assessment"]
+        history = after["movement_assessment_history"]
+        assert assessment["plan_id"] == current_plan
+        assert assessment["step"] == after["current_step"] == 4
+        assert history[-1] == assessment and [a["step"] for a in history] == [1, 2, 3, 4]
+        # The superseded step-4 assessment is retained, never rewritten.
+        superseded = after["movement_assessment_superseded"]
+        assert before["movement_assessment"] in superseded
+        assert [p["id"] for p in after["snapshot"]["plans"]][:len(plans_before)] == plans_before
+        # Rebinding is deterministic: no extra model call, and it never claims a model decision.
+        assert len(runner.contexts) == calls
+        if assessment["plan_id"] != before["movement_assessment"]["plan_id"]:
+            assert assessment["ai_mode"] == "NOT_RUN" and assessment["reason_code"] == "PLAN_CHANGED"
+            assert assessment["decision"] == "UNKNOWN"
+        again = client.get(f"/api/mock-live/{sid}", headers=HEADERS).json()
+        assert again["movement_assessment"]["plan_id"] == again["snapshot"]["situation"]["current_plan_id"]
+
+
 def test_mock_tsunami_bulletin_is_stable_labelled_and_expires(monkeypatch):
     request = MockLiveRequest(historical_case="tohoku-2011")
     jma = MockJmaSource(request)
