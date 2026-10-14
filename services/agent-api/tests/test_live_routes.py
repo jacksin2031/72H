@@ -316,7 +316,7 @@ def test_jma_prefecture_claim_batch_keeps_all_47_statuses_under_64_claim_contrac
     assert "JP-13" in evidence.summary
 
 
-def test_live_fresh_jma_evidence_uses_bounded_candidate_planner_before_publish():
+def test_live_fresh_jma_evidence_uses_deterministic_safety_core_before_publish():
     report = JmaEarthquakeReport(
         report_id="fresh-live-planner-fixture",
         title="JMA earthquake report fixture",
@@ -379,9 +379,9 @@ def test_live_fresh_jma_evidence_uses_bounded_candidate_planner_before_publish()
     assert snapshot.source.status == LiveSourceStatus.FRESH
     assert snapshot.evidence[0].source_key == JMA_SOURCE_KEY
     assert snapshot.evidence[0].trust_status.value == "VERIFIED_OFFICIAL"
-    assert runner.calls == 1
-    assert runner.contexts[0]["verified_claims"]
-    assert any(item.event_type == "GEMINI_CANDIDATE_APPLIED" for item in snapshot.trace)
+    assert runner.calls == 0
+    assert not runner.contexts
+    assert not any(item.event_type.startswith("GEMINI_CANDIDATE") for item in snapshot.trace)
     assert snapshot.spatial_guidance.movement_authorized is False
 
 
@@ -423,7 +423,7 @@ def test_live_snapshot_projects_jma_stale_at_exact_publication_deadline_without_
     assert expired.spatial_guidance.movement_authorized is False
 
 
-def test_live_planner_wait_crossing_jma_deadline_rechecks_freshness_before_publish():
+def test_live_publication_does_not_wait_on_candidate_planner_before_safety_core():
     wall = [NOW]
     report = JmaEarthquakeReport(
         report_id="live-planner-expiry-boundary",
@@ -439,7 +439,10 @@ def test_live_planner_wait_crossing_jma_deadline_rechecks_freshness_before_publi
             return JmaFetchResult(LiveSourceStatus.FRESH, wall[0], report.published_at, None, (report,), "fixture fresh")
 
     class DeadlineCrossingRunner:
+        calls = 0
+
         async def run_candidate(self, context, _config):
+            self.calls += 1
             choices = []
             for category in context["choices"]:
                 option = category["options"][0]
@@ -462,7 +465,7 @@ def test_live_planner_wait_crossing_jma_deadline_rechecks_freshness_before_publi
             global_calls_per_minute=12,
             global_max_calls=100,
         ),
-        runner=DeadlineCrossingRunner(),
+        runner=(runner := DeadlineCrossingRunner()),
     )
     store = LiveStore(
         jma_source=FreshJma(),
@@ -479,10 +482,12 @@ def test_live_planner_wait_crossing_jma_deadline_rechecks_freshness_before_publi
         },
     }))
 
-    assert snapshot.source.status == LiveSourceStatus.STALE
+    assert runner.calls == 0
+    assert wall[0] == NOW
+    assert snapshot.source.status == LiveSourceStatus.FRESH
     assert snapshot.source.last_published_at == NOW
     assert snapshot.evidence_projections
-    assert all(item.freshness_status.value == "STALE" for item in snapshot.evidence_projections)
+    assert all(item.freshness_status.value == "CURRENT" for item in snapshot.evidence_projections)
     assert snapshot.spatial_guidance.movement_authorized is False
 
 

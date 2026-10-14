@@ -1,0 +1,44 @@
+{
+  "source_url": "https://xml.kishou.go.jp/jmaxml_20260917_Samples.zip",
+  "archive_sha256": "96332ca3f8e107be36fedff26e576b533c731616f85312d85b058f2118c2b6c2",
+  "retrieved_on": "2026-10-12",
+  "purpose": "Offline official sample tests, never live incident evidence. The historical VXSE53 cancellation sample uses 1.0_0 and must fail current live validation; the 311 VXSE53 sample uses current 1.0_1.",
+  "samples": [
+    {
+      "file": "live-validity-VTSE41.xml",
+      "source_url": "https://www.data.jma.go.jp/developer/xml/data/20261009183743_0_VTSE41_010000.xml",
+      "retrieved_on": "2026-10-12",
+      "purpose": "Pinned slight sea-level-change forecast expiry regression only; not current incident evidence.",
+      "sha256": "e088e061cdf7abf68821df26c2ed709775cdbf493905b53d5e7135bfc4483196",
+      "bytes": 15030
+    },
+    {
+      "file": "live-unobserved-VXSE53.xml",
+      "source_url": "https://www.data.jma.go.jp/developer/xml/data/20261009185024_0_VXSE53_010000.xml",
+      "retrieved_on": "2026-10-12",
+      "purpose": "Pinned remote-earthquake regression fixture only; not current incident evidence or proof of safety in Japan.",
+      "sha256": "8a4a096f97dcd78ce80b88d0ea4d61d3f6c7dc0c7ecab9fda2f5b11939161c9c",
+      "bytes": 2160
+    },
+    {
+      "file": "38-39_02_04_250206_VTSE41.xml",
+      "sha256": "8171a3dd83677d2b44076fb95726645ff5f37104aaceef88e2e3a02da15bc819",
+      "bytes": 4570
+    },
+    {
+      "file": "38-39_03_01_210805_VTSE41.xml",
+      "sha256": "d3d1d1e49c76bb49eef4628d0e0262001cc762326d792f1a4aa464215e29238b",
+      "bytes": 1090
+    },
+    {
+      "file": "32-35_06_06_100915_VXSE53.xml",
+      "sha256": "803a63295a5cf1b95fcdce1218a98ad89160f0471a055f91cde2795b771c2c03",
+      "bytes": 1135
+    },
+    {
+      "file": "32-39_11_05_240613_VXSE53.xml",
+      "sha256": "06cab4069736ef2b0a14bc4d66072c012f08c861b62f26d5cbc83a12282ed9db",
+      "bytes": 397222
+    }
+  ]
+}

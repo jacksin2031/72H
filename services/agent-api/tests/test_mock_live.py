@@ -58,8 +58,7 @@ def test_mock_live_feed_enters_actual_live_pipeline_and_isolated(monkeypatch):
             assert all(item["is_synthetic"] for item in data["snapshot"]["events"])
             assert all(item["is_synthetic"] and not item["eligible_for_high_risk"] for item in data["snapshot"]["evidence"])
             assert all(not (action["risk_level"]=="HIGH" and action["safety_decision"]=="ALLOW") for action in data["snapshot"]["plan_actions"])
-        assert planner.contexts, "real Live candidate planning boundary must run"
-        assert planner.contexts[-1]["exercise_conditions"]["battery_percent"] == 5
+        assert planner.contexts == [], "Mock Live Safety Core transitions must not invoke candidate planning"
         assert client.post(f"/api/mock-live/{sid}/next", headers=HEADERS).status_code == 409
         assert client.get(f"/api/mock-live/{sid}").status_code == 403
 

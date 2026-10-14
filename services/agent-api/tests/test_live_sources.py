@@ -49,8 +49,8 @@ DETAIL_URL = "https://www.data.jma.go.jp/developer/xml/data/20261006010000_0_VXS
 
 def _detail(*, control="通常", info_type="発表", report_at="2026-10-06T01:00:00Z", origin_at="2026-10-06T00:58:00Z", pref_code="13"):
     return f"""<?xml version="1.0" encoding="UTF-8"?>
-<Report xmlns="urn:test"><Control><Title>震源・震度に関する情報</Title><Status>{control}</Status></Control>
-<Head><ReportDateTime>{report_at}</ReportDateTime><InfoType>{info_type}</InfoType><InfoKind>地震情報</InfoKind><EventID>20261006010000</EventID><Serial>1</Serial></Head>
+<Report xmlns="urn:test"><Control><Title>震源・震度に関する情報</Title><DateTime>{report_at}</DateTime><Status>{control}</Status><EditorialOffice>気象庁本庁</EditorialOffice><PublishingOffice>気象庁</PublishingOffice></Control>
+<Head><ReportDateTime>{report_at}</ReportDateTime><InfoType>{info_type}</InfoType><InfoKind>地震情報</InfoKind><InfoKindVersion>1.0_1</InfoKindVersion><EventID>20261006010000</EventID><Serial>1</Serial></Head>
 <Body><Earthquake><OriginTime>{origin_at}</OriginTime></Earthquake><Intensity><Observation><Pref><Name>東京都</Name><Code>{pref_code}</Code><MaxInt>3</MaxInt></Pref></Observation></Intensity></Body></Report>""".encode()
 
 
@@ -74,14 +74,13 @@ def test_jma_normal_report_is_typed_with_exact_prefecture_scope_and_unknown_code
     "kwargs",
     [
         {"control": "試験"},
-        {"info_type": "取消"},
         {"info_type": "訂正"},
         {"report_at": ""},
         {"origin_at": ""},
         {"report_at": "2026-10-06T01:01:00Z"},
     ],
 )
-def test_jma_rejects_test_correction_cancel_missing_time_and_future_publication(kwargs):
+def test_jma_rejects_test_missing_time_and_future_publication(kwargs):
     with pytest.raises(ValueError):
         _parse_jma_detail(DETAIL_URL, _detail(**kwargs), NOW)
 
@@ -225,8 +224,8 @@ def _tsunami_detail(
     </Item></Forecast></Tsunami>"""
     earthquake = f"<Earthquake><OriginTime>{origin}</OriginTime></Earthquake>" if origin else ""
     return f"""<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<Report xmlns=\"urn:test\"><Control><Title>津波警報・注意報・予報</Title><Status>通常</Status></Control>
-<Head><ReportDateTime>{report_at}</ReportDateTime><InfoType>{info_type}</InfoType><InfoKind>津波警報・注意報・予報</InfoKind><EventID>20261006010000</EventID><Serial>{serial}</Serial></Head>
+<Report xmlns=\"urn:test\"><Control><Title>津波警報・注意報・予報</Title><DateTime>{report_at}</DateTime><Status>通常</Status><EditorialOffice>気象庁本庁</EditorialOffice><PublishingOffice>気象庁</PublishingOffice></Control>
+<Head><ReportDateTime>{report_at}</ReportDateTime><InfoType>{info_type}</InfoType><InfoKind>津波警報・注意報・予報</InfoKind><InfoKindVersion>1.0_1</InfoKindVersion><EventID>20261006010000</EventID><Serial></Serial></Head>
 <Body>{earthquake}{areas}</Body></Report>""".encode()
 
 
@@ -308,12 +307,12 @@ def test_jma_vtse41_feed_requires_official_detail_url_and_is_product_bounded():
         _parse_jma_tsunami_feed(_tsunami_feed("https://example.com/developer/xml/data/a_VTSE41.xml"))
 
 
-def test_jma_tsunami_source_projects_issue_correction_cancel_and_retains_original_areas():
+def test_jma_tsunami_source_projects_issue_republication_cancel_and_retains_unknown_scope():
     mono = [0.0]
     wall = [NOW]
     versions = [
         _tsunami_detail(),
-        _tsunami_detail(info_type="訂正", serial="2", report_at="2026-10-06T01:01:00Z", kind="51", height="3", description="3m"),
+        _tsunami_detail(serial="2", report_at="2026-10-06T01:01:00Z", kind="51", height="3", description="3m"),
         _tsunami_detail(info_type="取消", serial="3", report_at="2026-10-06T01:02:00Z", origin=""),
     ]
 
@@ -333,16 +332,16 @@ def test_jma_tsunami_source_projects_issue_correction_cancel_and_retains_origina
     mono[0] += 61
     wall[0] += timedelta(seconds=61)
     corrected = source.fetch_latest(force=True)
-    assert corrected.operation == TsunamiOperation.CORRECTION
-    assert corrected.bulletins[0].serial == "2"
+    assert corrected.operation == TsunamiOperation.UPDATE
+    assert corrected.bulletins[0].serial is None
     assert corrected.bulletins[0].forecast_areas[0].warning_class == TsunamiWarningClass.WARNING
 
     mono[0] += 61
     wall[0] += timedelta(seconds=61)
     cancelled = source.fetch_latest(force=True)
     assert cancelled.operation == TsunamiOperation.CANCEL
-    assert cancelled.bulletins[0].forecast_areas[0].status == TsunamiAreaStatus.CANCELLED
-    assert tsunami_reference_from_result(cancelled).status == TsunamiReferenceStatus.CANCELLED
+    assert cancelled.bulletins[0].forecast_areas[0].status == TsunamiAreaStatus.UNKNOWN
+    assert tsunami_reference_from_result(cancelled).status == TsunamiReferenceStatus.UNKNOWN
     assert cancelled.bulletins[0].occurred_at == NOW - timedelta(minutes=2)
 
 
@@ -396,7 +395,7 @@ def test_jma_tsunami_source_recovers_after_backoff_with_new_publication_evidence
         ValueError("temporary source outage"),
         HttpPayload(200, _tsunami_feed(updated="2026-10-06T01:00:04Z"), {}),
         HttpPayload(200, _tsunami_detail(
-            info_type="訂正", serial="2", report_at="2026-10-06T01:00:04Z", kind="51", height="3", description="3m"
+            serial="2", report_at="2026-10-06T01:00:04Z", kind="51", height="3", description="3m"
         ), {}),
     ]
 
@@ -422,7 +421,7 @@ def test_jma_tsunami_source_recovers_after_backoff_with_new_publication_evidence
     wall[0] += timedelta(seconds=5)
     restored = source.fetch_latest(force=True)
     assert restored.status == LiveSourceStatus.FRESH
-    assert restored.operation == TsunamiOperation.CORRECTION
+    assert restored.operation == TsunamiOperation.UPDATE
     assert restored.last_published_at > old_published
     assert restored.forecast_areas[0].status == TsunamiAreaStatus.ACTIVE
     assert restored.forecast_areas[0].warning_class == TsunamiWarningClass.WARNING

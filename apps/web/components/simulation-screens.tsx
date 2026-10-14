@@ -1,16 +1,21 @@
 'use client';
 
-import { useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import type { Language } from '@/lib/contracts';
 import { jstInputFromEpoch } from '@/lib/historical-playback';
 import type { SimulationLaunch } from '@/lib/simulation-session';
-import type { MockLiveResponse } from '@/lib/mock-live-envelope';
+import { mockLiveResponseSchema, type MockLiveResponse } from '@/lib/mock-live-envelope';
+import { DistressEntry } from './distress-entry';
 import { UiIcon } from './ui-icon';
 import { SimulationReferenceMap } from './simulation-reference-map';
 import { SimulationRiskPanel } from './simulation-risk-panel';
 import './simulation-geo.css';
 import { useSimulationGeo } from '@/lib/use-simulation-geo';
 import { epicenterForPlayedMilestones, historicTsunamiWarningStarted, screenGeoExposure } from '@/lib/geospatial-exposure';
+import { seismicOriginsForMilestones } from '@/lib/seismic-wavefront';
+import { activeSimulationAdvice, simulationAdviceText } from '@/lib/simulation-advice';
+import { SimulationAdvicePanel } from './simulation-advice-panel';
+import {PlanExplanationPanel} from './plan-explanation-panel';
 
 export type SimulationSection = 'home' | 'plan' | 'events' | 'map' | 'more';
 type Stage = 'waiting' | 'processing' | 'running' | 'completed' | 'failed';
@@ -21,7 +26,7 @@ const ui = {
     map:'地図', reference:'参考地図を開く',timeline:'時系列',eventDone:'処理済み',upcoming:'未発生',
     awaiting:'演習が始まる前です。周囲を確認し、落ち着いて準備してください。',waiting:'AI / Safety Core の判定を待っています',ending:'演習完了',
     unsupported:'歴史的参考情報のみ · 安全判断の対象外', earthquake:'地震発生', note:'国土地理院の日本全国参考地図です。海岸線は浸水や安全経路を示しません。',
-    noRoute:'避難経路を案内できません', safety:'実際のGPS・通知・移動許可は使用しません',
+    noRoute:'避難経路を案内できません', safety:'GPS地域は任意設定。実際の通知・移動許可はありません',
     mapBack:'戻る', mapDetails:'地図の制限', reset:'終了して設定に戻る', ai:'AI / Safety Core',
     waitingNext:'次のイベントまで', consult:'史料', actions:'行動プラン', source:'模擬ソース', status:'ステータス',
     pending:'イベント発生を待っています', processing:'模擬イベントを処理中…', completed:'完了', mapData:'日本全国 · 海と陸を区別',
@@ -34,7 +39,7 @@ const ui = {
     map:'Map',reference:'View reference map',timeline:'Timeline',eventDone:'Processed',upcoming:'Not yet',
     awaiting:'The drill has not reached the event. Stay ready and monitor surroundings.',waiting:'AI / Safety Core decision pending',ending:'Drill complete',
     unsupported:'Historical context only · no hazard assessment',earthquake:'Earthquake event',note:'Nationwide GSI reference map. Coastline is NOT an inundation or safe-route boundary.',
-    noRoute:'Evacuation navigation unavailable',safety:'Actual GPS, alerts and movement authorization are disabled',
+    noRoute:'Evacuation navigation unavailable',safety:'GPS area is optional. No actual alerts or movement authorization',
     mapBack:'Back',mapDetails:'Map limitations',reset:'End drill and return to setup',ai:'AI / Safety Core',
     waitingNext:'Until next event',consult:'Historic source',actions:'Action plan',source:'Simulated source',status:'Status',
     pending:'Waiting for a simulated event',processing:'Processing simulated event…',completed:'Completed',mapData:'All Japan · distinct land and sea',
@@ -47,7 +52,7 @@ const ui = {
     map:'地圖',reference:'查看參考地圖',timeline:'時間線',eventDone:'已處理',upcoming:'未發生',
     awaiting:'尚未到達模擬災難時間，請留意周圍環境並保持準備。',waiting:'等待 AI／Safety Core 判斷',ending:'演習完成',
     unsupported:'僅作歷史背景 · 不屬安全判斷',earthquake:'地震發生',note:'全日本國土地理院參考地圖，海岸線不是海嘯浸水或避難安全邊界。',
-    noRoute:'暫時無法提供避難導航',safety:'不使用真實 GPS、通知或移動授權',
+    noRoute:'暫時無法提供避難導航',safety:'可自選 GPS 地區；不發出真實通知或移動授權',
     mapBack:'返回',mapDetails:'地圖使用限制',reset:'結束演習並返回設定',ai:'AI／Safety Core',
     waitingNext:'距離下一事件',consult:'歷史來源',actions:'行動計劃',source:'模擬來源',status:'狀態',
     pending:'等待模擬事件發生',processing:'正在處理模擬事件…',completed:'已完成',mapData:'全日本 · 海陸分色',
@@ -67,15 +72,28 @@ type Props = {
   setTab: Dispatch<SetStateAction<SimulationSection>>;
   time: number; speed: number; state: MockLiveResponse | null;
   done: number; processing: boolean; error: string; leave: () => void;
+  /** Adopts a validated distress/advice response for the same exercise session. */
+  onState?: (next: MockLiveResponse) => void;
 };
 
-export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done,processing,error,leave}:Props) {
+export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done,processing,error,leave,onState}:Props) {
   const language:Language = config.language;
   const t=ui[language];
   const [eventDetail,setEventDetail]=useState<number|null>(null);
   const [mapSheetExpanded,setMapSheetExpanded]=useState(false);
+  const [wallTime,setWallTime]=useState(()=>Date.now());
+  const [connected,setConnected]=useState(()=>typeof navigator==='undefined'||navigator.onLine);
+  const [lastDisconnect,setLastDisconnect]=useState(0);
+  useEffect(()=>{
+    const tick=setInterval(()=>setWallTime(Date.now()),1000);
+    const online=()=>{setConnected(true);setWallTime(Date.now());};const offline=()=>{setConnected(false);setLastDisconnect(Date.now());};
+    window.addEventListener('online',online);window.addEventListener('offline',offline);
+    return()=>{clearInterval(tick);window.removeEventListener('online',online);window.removeEventListener('offline',offline);};
+  },[]);
   const geo=useSimulationGeo();
-  const epicenter=epicenterForPlayedMilestones(config.historicalCase,config.milestones,done);
+  const seismicOrigins=useMemo(()=>seismicOriginsForMilestones(config.historicalCase,config.milestones),[config.historicalCase,config.milestones]);
+  const occurredOrigins=seismicOrigins.filter(origin=>Date.parse(origin.observed_at_jst)<=time);
+  const epicenter=occurredOrigins.at(-1)??epicenterForPlayedMilestones(config.historicalCase,config.milestones,done);
   const warning=historicTsunamiWarningStarted(config.milestones,done);
   const assessment=screenGeoExposure({location:geo.location,epicenter,tsunamiWarningActive:warning,now:Date.now()});
   const current=config.milestones[Math.max(0,done-1)]??null;
@@ -85,11 +103,16 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
   const actions=state?.snapshot.plan_actions.filter(a=>a.plan_id===plan?.id && a.status==='ACTIVE')??[];
   const nowActions=actions.filter(a=>a.category==='NOW');
   const byCategory=(category:'NOW'|'NEXT'|'AVOID')=>actions.filter(a=>a.category===category);
-  const ai=state?.ai_modes.includes('GEMINI_ADK')?'Gemini / ADK'
-    :state?.ai_modes.some(m=>m.includes('FALLBACK'))?'Safety Core fallback':t.waiting;
+  const advice=state?activeSimulationAdvice(state.movement_assessment,{session_id:state.snapshot.session_id,step:state.current_step,
+    plan_id:state.snapshot.situation.current_plan_id},connected&&config.input.network==='ONLINE'&&!processing&&phase!=='failed'
+      &&Date.parse(state.movement_assessment?.created_at??'')>lastDisconnect,wallTime):null;
+  const adviceText=simulationAdviceText[language];
+  const lastMode=state?.movement_assessment?.ai_mode;
+  const ai=(state?.movement_assessment&&!advice&&lastMode!=='NOT_RUN'?(language==='zh-TW'?'最近一次執行：':language==='ja'?'直近の実行：':'Last execution: '):'')
+    +(lastMode==='GEMINI_ADK'?adviceText.success:lastMode==='GEMINI_ADK_FALLBACK'?adviceText.fallback:adviceText.notRun);
   const doneEvent=done>0;
   const imminent=upcoming && seconds<=60;
-  const timeText=jstInputFromEpoch(time).replace('T',' ');
+  const timeText=jstInputFromEpoch(time).replace('T',' ')+':'+new Date(time).toISOString().slice(17,19);
   const firstEpoch=Date.parse(config.milestones[0]?.at_jst??'');
   const preludeEpoch=Date.parse(config.acceleratedStart+':00+09:00');
   const preludeProgress=config.timeMode==='ACCELERATED' && Number.isFinite(firstEpoch) && Number.isFinite(preludeEpoch)
@@ -122,19 +145,20 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
                 <small>{current?.at_jst.slice(11,16)??timeText.slice(11)} · {config.title}{current && !current.fed_to_safety_core ? ' · '+t.unsupported : ''}</small></div>
             </div>
             <div className="sim-v2-main-action"><span>{t.now}</span>
-              <h1 data-testid="simulation-now">{nowActions.length?nowActions.map(a=>a.text).join(' · '):t.waiting}</h1>
+              <h1 data-testid="simulation-now">{config.conditions?adviceText[advice?.decision??'UNKNOWN']:nowActions.length?nowActions.map(a=>a.text).join(' · '):t.waiting}</h1>
             </div>
             <div className="sim-v2-two-actions">
               <div><b>{t.next}</b><p>{byCategory('NEXT').map(a=>a.text).join(' · ')||t.waiting}</p></div>
               <div><b>{t.avoid}</b><p>{byCategory('AVOID').map(a=>a.text).join(' · ')||t.waiting}</p></div>
             </div>
           </div>}
+          {doneEvent&&<SimulationAdvicePanel advice={advice} executionMode={lastMode} language={language} cannotMove={config.input.mobility==='CANNOT_MOVE'} stale={Boolean(state?.movement_assessment&&!advice)}/>}
           <div className="sim-v2-home-footnote"><span className="sim-v2-network-symbol">✦</span>
             <span {...(!doneEvent ? {'data-testid':'simulation-now'} : {})}>{doneEvent?ai:t.awaiting}</span>
           </div>
         </div>
         <div className="sim-v2-map-teaser">
-          <SimulationReferenceMap language={language} compact userLocation={assessment.user_location} epicenter={epicenter}/>
+          <SimulationReferenceMap language={language} compact showInformation={false} userLocation={assessment.user_location} epicenter={epicenter} seismicOrigins={seismicOrigins} seismicTime={time}/>
           <button type="button" className="sim-v2-expand-map" onClick={()=>setTab('map')}>{t.reference} <span aria-hidden="true">↗</span></button>
         </div>
         <div className="sim-v2-event-dock">
@@ -147,6 +171,11 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
       </section>}
       {tab==='plan'&&<section className="sim-v2-plan" data-testid="simulation-plan">
         <header className="sim-v2-page-title"><span>{t.actions}</span><small>{doneEvent?ai:t.pending}</small></header>
+        <SimulationAdvicePanel advice={advice} executionMode={lastMode} language={language} cannotMove={config.input.mobility==='CANNOT_MOVE'} stale={Boolean(state?.movement_assessment&&!advice)}/>
+        {state&&<DistressEntry snapshot={state.snapshot} language={language} scope="mock-live" accessKey={config.accessKey}
+          fix={geo.location?{lat:geo.location.lat,lng:geo.location.lng,accuracy_m:geo.location.accuracy_m,captured_at:geo.location.captured_at,manual:geo.location.source==='MANUAL_EXERCISE'}:null}
+          onSnapshot={raw=>{const parsed=mockLiveResponseSchema.safeParse(raw);if(parsed.success&&parsed.data.snapshot.session_id===state.snapshot.session_id)onState?.(parsed.data);}}/>}
+        {state&&<PlanExplanationPanel snapshot={state.snapshot} language={language} scope="mock-live" accessKey={config.accessKey} enabled={connected&&!processing&&phase!=='failed'&&config.input.network==='ONLINE'}/>}
         {(['NOW','NEXT','AVOID'] as const).map((category,i)=><section key={category} className="sim-v2-plan-step">
           <span className={`sim-v2-plan-index sim-v2-step-${category.toLowerCase()}`}>{i+1}</span>
           <div><h2>{i===0?t.now:i===1?t.next:t.avoid}</h2>
@@ -181,7 +210,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
           </li>)}
         </ol>
         <div className="sim-v2-timeline-map">
-          <SimulationReferenceMap language={language} compact userLocation={assessment.user_location} epicenter={epicenter}/>
+          <SimulationReferenceMap language={language} compact showInformation={false} userLocation={assessment.user_location} epicenter={epicenter} seismicOrigins={seismicOrigins} seismicTime={time}/>
           <button type="button" onClick={()=>setTab('map')}>{t.reference} ↗</button>
         </div>
         <p className="sim-v2-timeline-caption">{t.note}</p>
@@ -191,7 +220,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
           <button type="button" onClick={()=>setTab('events')} aria-label={t.mapBack}><span className="sim-icon-back"><UiIcon name="arrow" /></span></button>
           <div><strong>{t.map}</strong><small>{t.mapData}</small></div>
         </header>
-        <SimulationReferenceMap language={language} userLocation={assessment.user_location} epicenter={epicenter}/>
+        <SimulationReferenceMap language={language} showInformation={false} userLocation={assessment.user_location} epicenter={epicenter} seismicOrigins={seismicOrigins} seismicTime={time}/>
         <div className="sim-v2-map-sheet sim-v2-map-sheet-risk"
           data-testid="simulation-map-sheet" data-sheet-state={mapSheetExpanded?'expanded':'collapsed'}>
           <button type="button" className="sim-v2-sheet-toggle" data-testid="simulation-risk-toggle"

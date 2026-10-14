@@ -1,5 +1,17 @@
 # 72H Data Model v0.1
 
+## Internal official envelope — P2.4 A+B
+
+`agent_api.official_events.OfficialBulletin` adds strict, immutable source
+metadata without changing public snapshot schemas. Issued, reported, target,
+occurrence and receipt clocks remain distinct; absent origin/official expiry
+remain nullable. The two initial products pin InfoKindVersion 1.0_1 and support
+ISSUE/CANCEL operations; republication is ordered by Control.DateTime.
+`DisasterEvent.occurred_at` remains required. A bodyless cancellation is only
+projected with a prior verified occurrence and scope, otherwise no event is
+invented. Prior evidence and plan versions remain in history after retirement.
+See [field semantics and validation](VNEXT_P2_4_EVENT_LIFECYCLE_VALIDATION.md).
+
 ## Authorized P1.1 location contract
 
 The full national registry uses JP, JP-01..JP-47 and JP-MUNI-{five-digit N03 code}.

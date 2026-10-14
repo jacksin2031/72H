@@ -6,25 +6,26 @@ remains synthetic through normalization, planning, evidence and UI projection.
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, replace, field
 from datetime import datetime, timedelta, timezone
 from threading import RLock
 from time import monotonic
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, StrictBool, model_validator
 from seventytwoh_contracts.models import (
-    LiveSnapshot, LiveSourceStatus, NetworkState, SelfReportedSafetyStatus, StartLiveRequest,
-    TsunamiOperation,
+    DistressRequest, LiveSnapshot, LiveSourceStatus, NetworkState, SelfReportedSafetyStatus, StartLiveRequest,
+    TsunamiOperation,LocationSource,
 )
 from .drill import DrillRequest
 from .historical_cases import CASES, HistoricalId, HistoricCase, list_historical_cases
-from .drill_store import _DrillCandidatePlanner
 from .live import LiveSessionNotFound, LiveStore
 from .live_sources import JmaEarthquakeReport, JmaPrefObservation, JmaFetchResult, JmaTsunamiFetchResult
 from .planner import CandidatePlanner
 from .scenario import load_scenario
+from .simulation_advice import SimulationLocation,SimulationConditions,SimulationAdvisor,SimulationAssessment,build_advice_envelope
+from .area_registry import load_japan_area_registry
 
 MOCK_MODE = "MOCK_LIVE"
 MOCK_JMA_NAME = "SIMULATED JMA provider (NOT official)"
@@ -33,6 +34,9 @@ MOCK_TTL = 30 * 60
 
 
 class MockLiveRequest(DrillRequest):
+    use_gemini: StrictBool = False
+    location_context: SimulationLocation | None = None
+    conditions: SimulationConditions = SimulationConditions()
     historical_case: HistoricalId | None = None
     historical_start_jst: datetime | None = None
     historical_end_jst: datetime | None = None
@@ -89,6 +93,8 @@ class MockLiveResponse(BaseModel):
     battery: int | None = None
     snapshot: LiveSnapshot
     historical: HistoricalView | None = None
+    movement_assessment: SimulationAssessment | None = None
+    movement_assessment_history: tuple[SimulationAssessment,...] = ()
 
 
 class MockJmaSource:
@@ -179,24 +185,9 @@ class MockRouteSource:
         pass
 
 
-class RecordingMockPlanner(_DrillCandidatePlanner):
-    def __init__(self, planner: CandidatePlanner):
-        super().__init__(planner)
-        self.outcomes: dict[str, list[str]] = {}
-
-    async def select(self, replay_id, context):
-        outcome = await super().select(replay_id, context)
-        self.outcomes.setdefault(replay_id, []).append(outcome.mode)
-        return outcome
-
-    def release_session(self, replay_id):
-        self.outcomes.pop(replay_id, None)
-        super().release_session(replay_id)
-
-
 class MockLiveStore(LiveStore):
     """Use the existing Live reducers and planning with synthetic-only adapters."""
-    def __init__(self, request: MockLiveRequest, planner: RecordingMockPlanner):
+    def __init__(self, request: MockLiveRequest, planner: CandidatePlanner):
         self._synthetic_source_mode = True
         self.mock_source = MockJmaSource(request)
         self.mock_request = request
@@ -210,8 +201,8 @@ class MockLiveStore(LiveStore):
             ttl_seconds=MOCK_TTL,
         )
 
-    def _event_evidence_pair(self, state, report, now):
-        pair = super()._event_evidence_pair(state, report, now)
+    def _event_evidence_pair(self, state, report, now, legacy_metadata=None):
+        pair = super()._event_evidence_pair(state, report, now, legacy_metadata)
         if pair is None:
             return None
         event, evidence = pair
@@ -233,9 +224,9 @@ class MockLiveStore(LiveStore):
         })
         return event, evidence
 
-    def _apply_source_results_locked(self, aggregate, source_result, tsunami_result, destinations_payload, now):
-        pairs = super()._apply_source_results_locked(
-            aggregate, source_result, tsunami_result, destinations_payload, now
+    def _apply_source_results_locked(self, aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata):
+        pairs, aliases = super()._apply_source_results_locked(
+            aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata
         )
         if self.mock_source.stage == 2 and self.mock_request.network != "ONLINE":
             aggregate.state = replace(
@@ -251,7 +242,7 @@ class MockLiveStore(LiveStore):
                     update={"network_state": NetworkState.RECONNECTING}
                 ),
             )
-        return pairs
+        return pairs, aliases
 
     def _snapshot(self, aggregate):
         snapshot = super()._snapshot(aggregate)
@@ -285,24 +276,27 @@ class MockLiveStore(LiveStore):
 @dataclass(slots=True)
 class _MockSession:
     store: MockLiveStore
-    planner: RecordingMockPlanner
+    planner: CandidatePlanner
     request: MockLiveRequest
     expires: float
     lock: asyncio.Lock
+    assessments: list[SimulationAssessment] = field(default_factory=list)
 
 
 class MockLiveDrillStore:
-    def __init__(self, *, planner: CandidatePlanner | None = None, max_sessions: int = MAX_MOCK_SESSIONS):
+    def __init__(self, *, planner: CandidatePlanner | None = None, max_sessions: int = MAX_MOCK_SESSIONS, advisor: SimulationAdvisor | None = None):
         self._planner = planner or CandidatePlanner()
         self._max = max_sessions
         self._sessions: dict[UUID, _MockSession] = {}
         self._lock = RLock()
+        self._advisor = advisor or SimulationAdvisor()
 
     def _purge(self) -> None:
         expired = [k for k, s in self._sessions.items() if s.expires <= monotonic()]
         for k in expired:
             s = self._sessions.pop(k)
             s.planner.release_session(f"live-{k}")
+            self._advisor.release_session(str(k))
 
     def _lookup(self, id: UUID) -> _MockSession:
         with self._lock:
@@ -319,10 +313,12 @@ class MockLiveDrillStore:
             current_step=session.store.mock_source.stage,
             total_steps=(len(session.store.mock_source.milestones)
                          if session.request.historical_case else 3 if session.request.network == "RECONNECTING" else 2),
-            ai_modes=tuple(session.planner.outcomes.get(f"live-{snapshot.session_id}", ())),
+            ai_modes=(),
             battery=session.request.battery,
             snapshot=snapshot,
             historical=self._historical_view(session),
+            movement_assessment=session.assessments[-1] if session.assessments else None,
+            movement_assessment_history=tuple(session.assessments),
         )
 
     @staticmethod
@@ -351,7 +347,7 @@ class MockLiveDrillStore:
             if len(self._sessions) >= self._max:
                 from .storage import SessionCapacityReached
                 raise SessionCapacityReached("mock live exercise capacity reached")
-        instrumented = RecordingMockPlanner(self._planner)
+        instrumented = self._planner
         store = MockLiveStore(request, instrumented)
         # Replay sample contains area IDs that are intentionally absent in the
         # canonical Live registry. Use only registered synthetic Tokyo scope.
@@ -363,19 +359,24 @@ class MockLiveDrillStore:
             "lat": None, "lng": None,
             "area_ids": (area, "JP"), "observed_at": None, "source": None,
         })
+        if request.use_gemini:
+            mock_location=mock_location.model_copy(update={'label':'所在地未設定 (MOCK)','area_ids':()})
+        if request.location_context and (request.location_context.source!='GPS'
+                or datetime.now(timezone.utc)-request.location_context.observed_at<timedelta(seconds=120)):
+            location=request.location_context
+            label=next(a.label for a in load_japan_area_registry() if a.id==location.area_ids[0])
+            mock_location=mock_location.model_copy(update={'label':label,'area_ids':location.area_ids,
+                'source':LocationSource(location.source),'observed_at':location.observed_at})
         seed = base.model_copy(update={
             "current_location": mock_location,
-            "accommodation_location": mock_location,
+            "accommodation_location": (base.accommodation_location.model_copy(update={'label':'未設定 (MOCK)',
+                'lat':None,'lng':None,'area_ids':(),'observed_at':None,'source':None}) if request.use_gemini else mock_location),
             "current_destination": None,
             "self_reported_safety_status": (SelfReportedSafetyStatus.NEEDS_ASSISTANCE if request.mobility == "CANNOT_MOVE" else SelfReportedSafetyStatus.UNCERTAIN),
             "accessibility_constraints": ("MOBILITY_SUPPORT",) if request.mobility == "CANNOT_MOVE" else (),
             "current_plan_summary": "SIMULATION ONLY",
         })
         snap = await store.start_async(StartLiveRequest(language=request.language, profile=seed))
-        instrumented.register(f"live-{snap.session_id}", request)
-        if historical:
-            instrumented._conditions[f"live-{snap.session_id}"]["historical_case_id"] = historical.id
-            instrumented._conditions[f"live-{snap.session_id}"]["historical_disaster_reference"] = historical.source_url
         session = _MockSession(store, instrumented, request, monotonic() + MOCK_TTL, asyncio.Lock())
         with self._lock:
             self._purge()
@@ -388,6 +389,23 @@ class MockLiveDrillStore:
         session = self._lookup(id)
         return self._response(session, session.store.get(id))
 
+    async def record_distress(self, id: UUID, request: DistressRequest) -> MockLiveResponse:
+        session = self._lookup(id)
+        async with session.lock:
+            snap = await session.store.record_distress(id, request)
+            return self._response(session, snap)
+
+    async def record_ai_escalation(self, id: UUID) -> bool:
+        session = self._lookup(id)
+        async with session.lock:
+            return await session.store.record_ai_escalation(id)
+
+    async def record_advice_trace(self, id: UUID, applied) -> MockLiveResponse:
+        session = self._lookup(id)
+        async with session.lock:
+            snap = await session.store.record_advice_trace(id, applied)
+            return self._response(session, snap)
+
     async def next(self, id: UUID) -> MockLiveResponse:
         session = self._lookup(id)
         async with session.lock:
@@ -398,16 +416,17 @@ class MockLiveDrillStore:
                 from .storage import InvalidReplayTransition
                 raise InvalidReplayTransition("mock live exercise completed")
             session.store.mock_source.stage = stage + 1
-            if session.request.historical_case:
-                milestone = session.store.mock_source.milestones[stage]
-                session.planner._conditions[f"live-{id}"]["historical_step"] = {
-                    "kind": milestone.kind, "date_jst": milestone.at_jst,
-                    "description": milestone.en,
-                    "supported_by_safety_core": milestone.kind in {"EARTHQUAKE", "AFTERSHOCK"},
-                }
             try:
                 snap = await session.store.refresh_async(id)
             except Exception:
                 session.store.mock_source.stage = stage
                 raise
+            if session.request.use_gemini:
+                kind=(session.store.mock_source.milestones[stage].kind if session.request.historical_case else 'EARTHQUAKE')
+                envelope=build_advice_envelope(session.request.location_context,session.request.conditions,
+                    event_kind=kind,mobility=session.request.mobility,network=session.request.network,evidence=session.request.evidence,
+                    step=stage+1,session_id=str(id),plan_id=str(snap.situation.current_plan_id) if snap.situation.current_plan_id else None,
+                    tsunami_active=any(m.kind in ('TSUNAMI_WARNING','TSUNAMI_UPGRADE') for m in session.store.mock_source.milestones[:stage+1]),
+                    now=datetime.now(timezone.utc))
+                session.assessments.append(await self._advisor.assess(envelope))
             return self._response(session, snap)

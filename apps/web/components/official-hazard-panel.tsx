@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { tsunamiReferenceSchema, type Language, type TsunamiReferenceResponse } from '@/lib/contracts';
-import { assessOfficialHazards, hazardKeys, isTsunamiDesignated, type HazardPack, type HazardLocation, type OfficialPlace } from '@/lib/official-hazards';
+import { assessOfficialHazards, hazardKeys, isTsunamiDesignated, type HazardPack, type HazardLocation, type OfficialPlace, type HazardManifest } from '@/lib/official-hazards';
 
 export const hazardText={
   'zh-TW':{title:'官方海嘯及避難場所資料',scope:'石卷試點 · 其他地區未完成資料驗收',caution:'安全性：無法判定 · 場所開放及路線未核實',
@@ -57,10 +57,12 @@ function LiveTsunamiReference({language}:{language:Language}){
   </section>;
 }
 
-export function OfficialHazardPanel({language,pack,loading,error,point,showInundation,showPlaces,onInundation,onPlaces,onRetry,onGPS,onClear,onFocus,onPlace,gpsState}:{
+export function OfficialHazardPanel({language,pack,loading,error,point,showInundation,showPlaces,onInundation,onPlaces,onRetry,onGPS,onClear,onFocus,onPlace,gpsState,liveReference,placesReference}:{
   language:Language;pack:HazardPack|null;loading:boolean;error:boolean;point:HazardLocation|null;
   showInundation:boolean;showPlaces:boolean;onInundation:(v:boolean)=>void;onPlaces:(v:boolean)=>void;
   onRetry:()=>void;onGPS:()=>void;onClear:()=>void;onFocus:()=>void;onPlace:(p:OfficialPlace)=>void;gpsState:string;
+  liveReference?:ReactNode;
+  placesReference?:ReactNode;
 }){
   const t=hazardText[language];const [filter,setFilter]=useState(false),[search,setSearch]=useState(''),[limit,setLimit]=useState(12),[now,setNow]=useState(()=>Date.now());
   useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),15000);return()=>clearInterval(timer);},[]);
@@ -68,7 +70,7 @@ export function OfficialHazardPanel({language,pack,loading,error,point,showInund
   const places=pack?.places.filter(p=>(!filter||isTsunamiDesignated(p))&&`${p.name} ${p.address??''}`.includes(search.trim()))??[];
   return <aside className="official-hazard-panel" aria-label={t.title}>
     <h1>{t.title}</h1><p>{t.scope}</p><p className="hazard-safety">{t.caution}</p>
-    <LiveTsunamiReference language={language}/>
+    {liveReference??<LiveTsunamiReference language={language}/>}
     {loading&&<p role="status">{t.loading}</p>}{error&&<p role="alert">{t.error}</p>}
     {!pack&&<button onClick={onRetry} disabled={loading}>{t.retry}</button>}
     {pack&&<>
@@ -81,16 +83,18 @@ export function OfficialHazardPanel({language,pack,loading,error,point,showInund
       <section className="hazard-query" aria-live="polite" data-testid="official-hazard-assessment">
         <h2>{assessment?t.statuses[assessment.status]:t.statuses.UNKNOWN}</h2>
         <p>{point?point.source==='GPS'?t.gpsPoint:t.point:t.choose}</p>
-        {point&&<p>{point.lat.toFixed(5)}, {point.lng.toFixed(5)} · ±{Math.round(point.accuracy_m)} m</p>}
+        {point&&<p>{point.lat.toFixed(5)}, {point.lng.toFixed(5)}{point.source==='GPS'?` · ±${Math.round(point.accuracy_m!)} m`:
+          point.source==='OFFICIAL_PLACE'?` · ${language==='ja'?'施設位置精度：不明':language==='en'?'Facility position accuracy: unknown':'場所座標精度：未提供'}`:''}</p>}
         {point?.source==='GPS'&&Number.isFinite(new Date(point.captured_at).getTime())&&<p>{t.retrieved}: {new Date(point.captured_at).toISOString()}</p>}
-        <p>{assessment?t.reasons[assessment.reason as keyof typeof t.reasons]:t.choose}</p>
+        <p>{assessment?.reason==='SOURCE_LOCATION_ACCURACY_UNKNOWN'?(language==='ja'?'施設座標の精度が不明で、地点の浸水を判定できません。':language==='en'?'Facility coordinate accuracy is unknown; point inundation cannot be determined.':'場所座標精度未提供，不能判定此點的浸水情況。'):assessment?t.reasons[assessment.reason as keyof typeof t.reasons]:t.choose}</p>
         {!!assessment?.depth_labels.length&&<p>{t.depth}: {assessment.depth_labels.join(' / ')}</p>}
       </section>
       <p className="hazard-muted">{t.summary}</p>{pack.manifest.coverage_status==='PARTIAL'&&<p>{t.partial}</p>}
       <details><summary>{t.source}</summary><p>{pack.manifest.dataset_id} · {t.review}: {pack.manifest.review_due_at.slice(0,10)}</p>
+        {pack.manifest.scenario&&<ScenarioDetails language={language} manifest={pack.manifest}/>}
         {pack.manifest.sources.map(source=><div key={source.id}><a href={source.url} target="_blank" rel="noopener noreferrer">{source.title}</a><p>{t.basis}: {source.basis_date??'—'} · {t.retrieved}: {source.retrieved_at}</p><p>{source.notes}</p></div>)}
       </details>
-      <section><h2>{t.list} · {places.length}</h2><label className="hazard-filter"><input type="checkbox" checked={filter} onChange={e=>{setFilter(e.target.checked);setLimit(12);}}/>{t.filter}</label>
+      {!placesReference&&<section><h2>{t.list} · {places.length}</h2><label className="hazard-filter"><input type="checkbox" checked={filter} onChange={e=>{setFilter(e.target.checked);setLimit(12);}}/>{t.filter}</label>
         <input className="hazard-search" type="search" aria-label={t.search} placeholder={t.search} value={search} maxLength={80} onChange={e=>{setSearch(e.target.value);setLimit(12);}}/>
         <ul className="hazard-place-list">{places.slice(0,limit).map(place=><li key={place.id}>
           <button onClick={()=>onPlace(place)}>{place.name}</button><p>{place.kind==='EMERGENCY_SITE'?t.emergency:t.shelter} · {place.address}</p>
@@ -100,7 +104,21 @@ export function OfficialHazardPanel({language,pack,loading,error,point,showInund
             <p>{place.notes}</p><p>ID: {place.common_id??place.id}</p><a href={pack.manifest.sources.find(s=>s.id===place.source_id)?.url}>{pack.manifest.sources.find(s=>s.id===place.source_id)?.title}</a>
           </details>
         </li>)}</ul>{places.length>limit&&<button onClick={()=>setLimit(x=>x+12)}>{t.more}</button>}
-      </section>
+      </section>}
     </>}
+    {placesReference}
   </aside>;
+}
+
+function ScenarioDetails({language,manifest}:{language:Language;manifest:HazardManifest}){
+  const s=manifest.scenario;if(!s)return null;
+  const conditions={
+    'zh-TW':{MAXIMUM_CLASS_ADVERSE:'最大規模海嘯及不利條件的靜態想定，並非本次事件預測。',LARGER_OR_OUTSIDE_POSSIBLE:'仍可能有更大海嘯、範圍外浸水或更深浸水。',LATER_WAVE_MAXIMUM:'較後波次亦可能才達到最大。',RIVER_LAKE_CHANGES_NOT_SHOWN:'圖中未包括河川及湖泊水位變化。'},
+    ja:{MAXIMUM_CLASS_ADVERSE:'最大クラスの津波・悪条件を想定。本件の予測ではありません。',LARGER_OR_OUTSIDE_POSSIBLE:'より大きな津波、範囲外や深い浸水もあり得ます。',LATER_WAVE_MAXIMUM:'第二波以降に最大となる場合もあります。',RIVER_LAKE_CHANGES_NOT_SHOWN:'河川・湖沼の水位変化は図示されていません。'},
+    en:{MAXIMUM_CLASS_ADVERSE:'Static maximum-class tsunami scenario under adverse conditions, not a prediction for this incident.',LARGER_OR_OUTSIDE_POSSIBLE:'Larger waves, flooding outside polygons and deeper flooding remain possible.',LATER_WAVE_MAXIMUM:'The maximum may occur in a later wave.',RIVER_LAKE_CHANGES_NOT_SHOWN:'River/lake water-level changes are not shown.'},
+  };
+  return <><p>{language==='ja'?'静的想定・公表日':language==='en'?'Static scenario announced':'靜態想定公布日期'}: {s.announced_on}</p>
+    <ul>{s.conditions.map(c=><li key={c}>{conditions[language][c]}</li>)}</ul>
+    <p>CRS: {s.source_crs} → {s.output_crs} · {manifest.positional_accuracy_m} m ({manifest.positional_accuracy_kind})</p>
+    <p>{s.terrain_basis} · {manifest.coverage_status}</p></>;
 }

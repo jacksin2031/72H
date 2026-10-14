@@ -22,6 +22,7 @@ def test_health_version_and_start_without_body():
     assert response.status_code == 201
     snapshot = response.json()
     assert set(snapshot) == {
+        "distress",
         "profile",
         "area_catalog",
         "situation",
@@ -77,6 +78,7 @@ def test_registered_scenario_api_selects_osaka_and_rejects_unknown_keys():
     assert {item["key"] for item in options.json()} == {
         "tokyo-earthquake-v1",
         "osaka-earthquake-v1",
+        "miyagi-tsunami-v1",
     }
     assert all(set(item) == {"key", "name"} for item in options.json())
 

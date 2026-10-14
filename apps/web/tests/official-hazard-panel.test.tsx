@@ -45,6 +45,17 @@ it('does not render selectable places or a geographic clearance after a corrupt 
   expect(gps).not.toHaveBeenCalled();
 });
 
+it('shows unknown facility precision without claiming a zero-error position',async()=>{
+  await render(pack);
+  await act(async()=>root!.render(<OfficialHazardPanel language="zh-TW" pack={pack} loading={false} error={false}
+    point={{lat:38,lng:141,accuracy_m:null,captured_at:Date.now(),source:'OFFICIAL_PLACE'}}
+    showInundation showPlaces onInundation={()=>{}} onPlaces={()=>{}} onRetry={()=>{}} onGPS={()=>{}}
+    onClear={()=>{}} onFocus={()=>{}} onPlace={()=>{}} gpsState="idle"/>));
+  const query=container!.querySelector('[data-testid="official-hazard-assessment"]')!.textContent;
+  expect(query).toContain('場所座標精度：未提供');expect(query).not.toContain('±0');
+  expect(query).toContain('不能判定');
+});
+
 it('assesses a newly selected point against current time before the next freshness timer tick',async()=>{
   let clock=Date.parse('2026-10-11T08:00:00Z');
   vi.spyOn(Date,'now').mockImplementation(()=>clock);

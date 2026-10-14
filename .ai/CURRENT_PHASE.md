@@ -1,5 +1,135 @@
 # 72H — Current Development Phase
 
+## P2.8 求助輔助 distress assist (2026-10-14 JST)
+
+分支：`codex/p2-8-distress-assist`。狀態：PARTIAL — 本機實作完成；真機驗收與
+Cloud Run 驗收待辦。驗收紀錄：[docs/VNEXT_P2_8_VALIDATION.md](../docs/VNEXT_P2_8_VALIDATION.md)。
+
+NOT RUN：真機驗收（ASUS ROG Phone 6，PENDING）、Cloud Run 驗收、使用者訊號閘門
+的真實 Gemini 冒煙測試（僅有 fake-model 測試）。未部署。
+
+## P2.7 post-Core explanations / evacuation road candidates (2026-10-13 JST)
+
+On `codex/p2-7-explanation-evacuation-routes` (uncommitted), LIVE/REPLAY/Mock Live
+plans are published by the deterministic Safety Core only; Gemini/ADK runs after
+Core gating and returns whitelisted explanation clause / reference IDs. Frontend
+acceptance mirrors the backend contract (`fact_ids`, WAIT_FOR_EVIDENCE actions,
+96 paragraphs) and rejects explanations once the plan or cited evidence expires on
+the snapshot's logical clock. Over-limit plans return NOT_RUN instead of HTTP 500.
+The Ishinomaki OSM road pack was rebuilt at `2026-10-13T16:13:38+09:00`
+(2,629 ways / 9,187 nodes / 10,318 edges); the builder script is not in the repo.
+Local gates: 392 frontend passed / 3 existing skips, 314 backend passed,
+typecheck/build/secret scan. Cloud Run + real Gemini explanation acceptance,
+browser acceptance and independent safety review are NOT RUN. No deployment.
+
+## P2.6 local designated-place partition / opening boundary (2026-10-12 JST)
+
+On `codex/p2-6-designated-places`, the pinned Ishinomaki partition retains 395
+CSV role records and separate 85 tsunami / 74 shelter GeoJSON snapshot points.
+CSV common IDs never join unkeyed GeoJSON by fuzzy name/address/coordinates.
+Eight hazard classes, role distinctions and raw states are preserved; the
+earthquake tile's actual 404 stays unavailable. Map and list share filters.
+Public place coordinates have UNKNOWN accuracy, never a fabricated +/-0m.
+
+The replaceable municipal opening adapter and read-only API enforce reviewed
+exact identity/scope, publication TTL, revisions/conflict and UNKNOWN failure.
+Default opening source is UNCONFIGURED. No actual municipal opening feed or
+GSI-ID crosswalk is verified; no Safety Core / movement permission is added.
+Local gates: 361 frontend passed / 3 existing skips, 297 backend passed,
+typecheck/build/secret/diff checks and mobile/desktop/offline browser acceptance.
+Build `ynrieZx3OUSAsN-SGbU4q`; evidence
+`docs/VNEXT_P2_6_DESIGNATED_PLACES_VALIDATION.md`.
+Local reference package COMPLETE; nationwide / opening coverage and the full
+P2.4-P2.7 roadmap remain PARTIAL. Next: P2.7 post-Core constrained explanations.
+No deployment, real-device or current-incident safety acceptance is claimed.
+
+## P2.5 local official reference layers (2026-10-12 JST)
+
+On `codex/p2-5-disaster-layers`, the read-only disaster-map API preserves
+actual observation hierarchy, source hashes/lifecycles and separate clocks.
+Versioned JMA coastal lines join 66 base forecast codes and official composite
+members. Regional maximum labels use 181 validated regional geometries from
+188 matching official codes; invalid/unassigned geometries and unlocated
+stations remain unknown. No intensity fill, invented station location,
+point safety verdict or movement authority is added.
+
+Public reference caches retain ages offline, block old/future responses and
+require post-interruption source fetches on reconnect. Hazard assets revalidate
+on pin upgrades; API/private requests remain outside Service Worker caches.
+Local gates: 351 frontend passed / 3 existing skips, 276 backend passed,
+typecheck/build/secret/diff checks and 390/1280 browser acceptance.
+Build `a9srLFKOTJlmF6W7CAbr3`; evidence
+`docs/VNEXT_P2_5_DISASTER_LAYER_VALIDATION.md`.
+
+P2.5 local reference-layer package COMPLETE; coverage and the entire P2.4–P2.7
+roadmap remain PARTIAL. Next: P2.6 GSI GeoJSON, catalog roles/updates and
+authoritative opening evidence, then P2.7 deterministic-plan explanation.
+No deployment, real-device or current-incident safety acceptance is claimed.
+
+## P2.4 C/D local recovery and projection (2026-10-12 JST)
+
+On `codex/p2-4-recovery-projection`, recoverable SQLite/raw-byte/CAS journals,
+bounded GCS byte-budget adapter, resumable long-feed queues and interruption
+gates are connected to the actual Live pipeline. EQ and tsunami recovery must
+both be ready before reconnect reconciliation can complete. API and three-language
+source UI expose separate official/receipt/verification clocks and reference-only
+lifecycles. Real JMA acceptance corrected remote-quake missing-observation handling
+and VTSE41 forecast ValidDateTime support; expiry never lifts a hazard or extends TTL.
+Evidence: `docs/VNEXT_P2_4_RECOVERY_PROJECTION_VALIDATION.md`.
+P2.4 local A/B/C/D gates passed; the whole P2.4–P2.7 roadmap remains PARTIAL.
+P2.5–P2.7, actual GCS credentials, deployment and physical-device gates remain
+outstanding. Live session persistence/restart UX is a separate recorded limitation.
+The older A/B-only status below is historical and superseded by this entry.
+
+## Authorized P2.4 A+B local implementation (2026-10-12 JST)
+
+User authorized the first official-event lifecycle package. On
+`codex/p2-4-event-lifecycle`, strict internal JMA envelopes and a pure lifecycle
+reducer are connected to sync/async Live evidence, revision retirement and
+per-unit reconnect gates. VXSE53/VTSE41 support official republication and
+withdrawal; unsupported InfoType訂正 is rejected according to the current
+product table. Withdrawal remains UNKNOWN, never a hazard-lifting verdict.
+Legacy snapshot IDs migrate conservatively without rewriting plan history.
+Evidence: `docs/VNEXT_P2_4_EVENT_LIFECYCLE_VALIDATION.md`.
+This is the A+B bounded package; P2.4 C/D persistence, gap recovery and full
+API/UI projection, plus P2.5–P2.7, remain pending. Overall roadmap: PARTIAL.
+No deployment or current-incident acceptance is claimed.
+
+## Next-phase roadmap — P2.4 to P2.7 (2026-10-11 JST)
+
+The user proposed the next development order: official disaster event engine
+(P2.4, highest priority), verified hazard map layers (P2.5), hazard-specific
+designated places (P2.6), and post-Safety-Core AI explanations (P2.7).
+The audited roadmap is `docs/VNEXT_P2_4_P2_7_ROADMAP.md`, baseline `bae1782`.
+Planning was completed on 2026-10-11. The A+B implementation update above
+supersedes the historical parser finding; the overall phases remain incomplete.
+The current candidate planner still requires migration to explanation-only AI.
+The older P2.4 Ishinomaki pilot below remains historical PARTIAL evidence,
+reusable under the new P2.5/P2.6 definitions. No new deployment is claimed.
+
+## Map places and roads (2026-10-11 JST)
+
+User requested geographic places and roads. `codex/map-places-roads` adds
+restrained GSI vector roads, railways, rivers, geographic names, stations and
+facilities to the shared reference/simulation map, with scale-aware collision
+placement, local overview labels and a responsive information card. GPS tile
+protection defaults on across all shared-map views. Local tests, typecheck,
+build and browser acceptance passed; see `docs/VNEXT_MAP_PLACES_ROADS.md`.
+These geographic references do not grant passability, route safety or movement
+permission. Detailed layers need network. No deployment is claimed.
+
+## Time-driven seismic wavefronts (2026-10-11 JST)
+
+The user requested earthquake propagation according to historical time instead
+of repeating decorative circles. `codex/time-driven-seismic-waves` replaces the
+CSS loop with geodesic P/S fronts driven by the shared simulation clock and
+documented source time/depth, including the separate 311 Ibaraki aftershock.
+This is an explicitly labelled constant-speed estimate, not measured waveforms,
+intensity or safety assessment. Finite visual clock continuation does not create
+new evidence, plans, API events or movement permission. Local tests, typecheck,
+build and browser acceptance passed; evidence is in
+`docs/VNEXT_TIME_DRIVEN_SEISMIC_WAVES.md`. No deployment is claimed.
+
 ## All-branch source consolidation (2026-10-11 JST)
 
 User authorized integrating all branches. All 24 initial local branch tips and
@@ -427,3 +557,12 @@ and perform deployed clean-browser/offline acceptance before configuring judging
 access. Model credentials, project IAM/billing and Docker/cloud build are still
 unverified. No live-feed, persistence or broad feature expansion is authorized
 by completing the local gate alone.
+
+## Authorized local simulation extension — 2026-10-13
+
+The user separately authorized location-aware Gemini earthquake simulation.
+This branch implements and locally validates that bounded reference-only path;
+actual ADC-backed Gemini/ADK execution is verified for this local environment.
+It does not establish cloud/runtime deployment or complete the full P2.7 migration.
+See [scope](../docs/VNEXT_SIMULATION_GEMINI_LOCATION.md) and
+[validation](../docs/VNEXT_SIMULATION_GEMINI_LOCATION_VALIDATION.md).

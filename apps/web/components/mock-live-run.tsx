@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { type Language } from '@/lib/contracts';
 import type { DisasterTestInput } from '@/lib/disaster-test';
 import { ACCELERATION_OPTIONS, canPlayRealtime, jstInputFromEpoch, validAcceleratedPrelude, selectHistoricalRange, type Acceleration, type TimeMode } from '@/lib/historical-playback';
+import { defaultSimulationConditions, type SimulationLocation, type SimulationConditions } from '@/lib/simulation-advice';
+import { SimulationLocationControls } from './simulation-location-controls';
 
 const milestoneSchema = z.object({
   at_jst: z.string(),
@@ -119,6 +121,8 @@ export function MockLiveRun({ input, language, accessKey }: { input: DisasterTes
   const [endJst, setEndJst] = useState('');
   const [catalog, setCatalog] = useState<HistoricalCase[]>([]);
   const [loading, setLoading] = useState(true);
+  const [locationContext,setLocationContext]=useState<SimulationLocation|null>(null);
+  const [conditions,setConditions]=useState<SimulationConditions>(defaultSimulationConditions);
   useEffect(() => {
     const abort = new AbortController();
     fetch('/api/mock-live/cases', { cache: 'no-store', signal: abort.signal })
@@ -153,12 +157,15 @@ export function MockLiveRun({ input, language, accessKey }: { input: DisasterTes
       title: chosen?.label[language] ?? t.custom,
       milestones: selectedEvents.map(m => ({ ...m })),
       timeMode, acceleratedStart, acceleration, startJst, endJst,
+      locationContext, conditions,
     });
     router.push('/simulation');
   };
   return <section className="lab-mock-live" data-testid="mock-live-panel">
     <h3>{t.title}</h3>
     <p className="lab-muted"><strong>SIMULATION ONLY</strong> — {t.blocked}</p>
+    <SimulationLocationControls language={language} location={locationContext} conditions={conditions}
+      onLocation={setLocationContext} onConditions={setConditions}/>
     {input.kind !== 'EARTHQUAKE' && <p role="status">{t.unsupported}</p>}
     <label className="lab-history-select">{t.history}
       <select data-testid="historical-case" value={historicalCase} onChange={e => setHistoricalCase(e.target.value)}>

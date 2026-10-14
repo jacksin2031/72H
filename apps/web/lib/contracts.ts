@@ -53,13 +53,32 @@ export const planSchema = z.object({
 });
 export const actionSchema = z.object({
   id, plan_id: id, category: z.enum(['NOW', 'NEXT', 'AVOID']), text, reason: text,
-  intent_id: z.enum(['protect_and_monitor', 'review_official_guidance', 'wait_for_transport_update', 'recheck_transport_status', 'avoid_disrupted_route', 'do_not_assume_route_safety', 'evacuate_to_designated_shelter']).nullable().optional(),
+  intent_id: z.enum(['protect_and_monitor', 'review_official_guidance', 'wait_for_transport_update', 'recheck_transport_status', 'avoid_disrupted_route', 'do_not_assume_route_safety', 'evacuate_to_designated_shelter', 'shelter_in_place_vertical', 'tsunami_evacuate_now']).nullable().optional(),
   risk_level: z.enum(['LOW', 'MEDIUM', 'HIGH']), evidence_ids: ids, dependency_keys: ids,
   dependency_values: z.record(id, z.union([text, z.number().finite(), z.boolean(), z.null()])).default({}),
   status: z.enum(['ACTIVE', 'INVALID', 'EXPIRED', 'BLOCKED', 'SUPERSEDED']),
   safety_decision: z.enum(['ALLOW', 'MODIFY', 'BLOCK', 'WAIT_FOR_EVIDENCE']),
 });
 export const replayScenarioOptionSchema = z.object({ key: id, name: text });
+export const distressTagSchema = z.enum(['WATER_RISING','TRAPPED','INJURED','MOBILITY_LIMITED','WITH_DEPENDENTS','LOST_NO_DESTINATION','ROUTE_BLOCKED_REPORTED']);
+export type DistressTag = z.infer<typeof distressTagSchema>;
+const distressReportSchema = z.object({ id, tags: z.array(distressTagSchema).min(1).max(7), input_mode: z.enum(['BUTTON','VOICE','TEXT']), reported_at: timestamp, source: z.literal('USER_REPORTED') });
+export const distressStatusSchema = z.object({
+  level: z.enum(['NONE','USER_REPORTED','OFFICIAL_TSUNAMI','OFFICIAL_STALE']),
+  reports: z.array(distressReportSchema).max(16),
+  trigger_evidence_ids: ids,
+  deadline_at: timestamp.nullable(),
+  ai_escalated: z.boolean(),
+  synthetic: z.boolean(),
+  // Official basis for OFFICIAL_TSUNAMI / OFFICIAL_STALE; older snapshots omit them.
+  warning_class: z.enum(['MAJOR_WARNING','WARNING','ADVISORY','FORECAST','NONE','UNKNOWN']).nullable().default(null),
+  last_official_at: timestamp.nullable().default(null),
+  trigger_expires_at: timestamp.nullable().default(null),
+  // OFFICIAL_STALE only: expired official evidence, or current evidence with a location fix older than 2 min.
+  stale_reason: z.enum(['EVIDENCE_EXPIRED','LOCATION_STALE']).nullable().default(null),
+});
+export type DistressStatus = z.infer<typeof distressStatusSchema>;
+const defaultDistress: DistressStatus = { level: 'NONE', reports: [], trigger_evidence_ids: [], deadline_at: null, ai_escalated: false, synthetic: false, warning_class: null, last_official_at: null, trigger_expires_at: null, stale_reason: null };
 export const snapshotSchema = z.object({
   profile: z.object({ id, preferred_language: z.enum(['ja', 'en', 'zh-TW']), current_location: location, accommodation_location: location, current_destination: location.nullable(), party_size: z.number().int().positive(), self_reported_safety_status: z.enum(['SAFE', 'UNCERTAIN', 'NEEDS_ASSISTANCE', 'UNKNOWN']), current_plan_summary: text.default(''), accessibility_constraints: z.array(text).max(32).default([]), created_at: timestamp, updated_at: timestamp }),
   area_catalog: z.array(areaDefinitionSchema).max(512).default([]),
@@ -72,6 +91,7 @@ export const snapshotSchema = z.object({
   scenario_events: z.array(z.object({ id, event_type: text, occurred_at: timestamp, offset_seconds: z.number().nonnegative(), label: text })).max(100),
   mobility: z.array(z.object({ id, status: z.enum(['AVAILABLE', 'DISRUPTED', 'UNKNOWN']), evidence_ids: ids })).max(128),
   plan_evaluations: z.array(z.object({ plan_id: id, status: z.enum(['KEEP', 'PARTIAL_INVALIDATION', 'INVALIDATED', 'EXPIRED']), evaluated_at: timestamp, reason: text.nullable(), invalid_action_ids: ids })).max(512),
+  distress: distressStatusSchema.default(defaultDistress),
 }).superRefine((state, ctx) => {
   const evidenceIds = new Set(state.evidence.map(e => e.id));
   const planIds = new Set(state.plans.map(p => p.id));
@@ -135,11 +155,52 @@ const liveEventSchema = z.object({
     ctx.addIssue({ code: 'custom', message: 'Live event receipt cannot precede occurrence' });
   }
 });
+export const officialRecoverySchema = z.object({
+  persistence: z.enum(['MEMORY', 'SQLITE', 'GCS']), storage_status: z.enum(['HEALTHY', 'UNCONFIGURED', 'FAILED']),
+  scan_status: z.enum(['NOT_STARTED', 'SCANNING', 'WINDOW_VERIFIED', 'GAP', 'UNKNOWN']),
+  connection_status: z.enum(['REACHABLE', 'UNAVAILABLE', 'UNKNOWN']).default('UNKNOWN'),
+  last_successful_fetch_at: timestamp.nullable().default(null),
+  pending_details: z.number().int().min(0).max(1024), archived_reports: z.number().int().min(0).max(4096),
+  checkpoint_version: z.number().int().nonnegative(), last_checked_at: timestamp.nullable(), last_verified_at: timestamp.nullable(),
+  window_start_at: timestamp.nullable(), coverage_origin_at: timestamp.nullable(), restored: z.boolean(), limitations: z.array(text).max(8),
+  reconciliation_required_since: timestamp.nullable().default(null),
+}).superRefine((recovery, ctx) => {
+  if (recovery.scan_status === 'WINDOW_VERIFIED' && (recovery.pending_details > 0 || recovery.last_verified_at === null || recovery.reconciliation_required_since !== null)) {
+    ctx.addIssue({ code: 'custom', message: 'Incomplete official recovery cannot be verified' });
+  }
+  if (recovery.storage_status === 'FAILED' && recovery.scan_status !== 'UNKNOWN') {
+    ctx.addIssue({ code: 'custom', message: 'Failed persistence cannot support verified recovery' });
+  }
+});
+export const officialReportSchema = z.object({
+  report_id: z.string().regex(/^[a-f0-9]{24}--[a-f0-9]{24}$/), group_id: z.string().regex(/^[a-f0-9]{24}$/),
+  product: z.enum(['VXSE53', 'VTSE41']), title: z.string().min(1).max(80), source_name: text,
+  reference_url: officialUrl.refine(url => { const parsed = new URL(url); return parsed.hostname === 'www.data.jma.go.jp'
+    && parsed.pathname.startsWith('/developer/xml/data/') && !parsed.search && !parsed.hash; }),
+  event_ids: z.array(z.string().regex(/^\d{14}$/)).min(1).max(8), serial: z.string().max(16).nullable(),
+  operation: z.enum(['ISSUE', 'CANCEL']), lifecycle: z.enum(['CURRENT', 'STALE', 'WITHDRAWN', 'SUPERSEDED', 'CONFLICT', 'UNKNOWN']),
+  issued_at: timestamp, reported_at: timestamp, received_at: timestamp, target_at: timestamp.nullable(), occurred_at: timestamp.nullable(),
+  official_valid_until: timestamp.nullable(), evidence_expires_at: timestamp, target_codes: z.array(z.string().min(1).max(32)).max(128),
+  is_head: z.boolean(), superseded_by: id.nullable(), raw_sha256: z.string().regex(/^[a-f0-9]{64}$/),
+  parser_version: text, information_version: text, code_mapping_version: text,
+  authority: z.literal('REFERENCE_ONLY'), eligible_for_action: z.literal(false),
+}).superRefine((report, ctx) => {
+  if (report.report_id !== `${report.group_id}--${report.raw_sha256.slice(0, 24)}`
+    || Date.parse(report.reported_at) > Date.parse(report.issued_at) || Date.parse(report.issued_at) > Date.parse(report.received_at)
+    || (report.lifecycle === 'CURRENT' && !report.is_head)) {
+    ctx.addIssue({ code: 'custom', message: 'Official reference identity/time inconsistent' });
+  }
+});
 export const liveSourceSchema = z.object({
   source_key: id, source_name: text, source_url: officialUrl,
   status: z.enum(['FRESH', 'STALE', 'UNAVAILABLE', 'BACKOFF', 'CIRCUIT_OPEN', 'INVALID_RESPONSE', 'UNSUPPORTED']),
   retrieved_at: timestamp.nullable(), last_published_at: timestamp.nullable(), next_retry_at: timestamp.nullable(),
   record_count: z.number().int().nonnegative().max(4096), detail: text,
+  recovery: officialRecoverySchema.nullable().default(null),
+}).superRefine((source, ctx) => {
+  if (source.status === 'FRESH' && source.recovery && source.recovery.scan_status !== 'WINDOW_VERIFIED') {
+    ctx.addIssue({ code: 'custom', message: 'Incomplete recovery cannot present a fresh official source' });
+  }
 });
 const tsunamiOperation = z.enum(['ISSUE', 'UPDATE', 'CANCEL', 'CORRECTION', 'UNKNOWN']);
 const tsunamiAreaStatus = z.enum(['ACTIVE', 'CANCELLED', 'UNKNOWN']);
@@ -164,6 +225,7 @@ export const tsunamiReferenceSchema = z.object({
     name: text.min(1).max(240), url: officialUrl,
     published_at: timestamp.nullable(), fetched_at: timestamp.nullable(),
     operation: tsunamiOperation, serial: z.string().max(16).nullable(),
+    recovery: officialRecoverySchema.nullable().default(null),
   }),
   forecast_areas: z.array(z.object({
     area_code: z.string().regex(/^\d{3}$/), area_name: text.min(1).max(240),
@@ -172,6 +234,7 @@ export const tsunamiReferenceSchema = z.object({
     max_height: tsunamiMaxHeightSchema, arrival_at: timestamp.nullable(),
   })).max(128),
   safety_authority: z.literal('NONE'),
+  official_reports: z.array(officialReportSchema).max(128).default([]),
 }).superRefine((reference, ctx) => {
   const codes = reference.forecast_areas.map(area => area.area_code);
   if (new Set(codes).size !== codes.length) ctx.addIssue({ code: 'custom', message: 'Tsunami forecast area codes must be unique' });
@@ -275,7 +338,14 @@ export const liveSnapshotSchema = z.object({
   trace: snapshotSchema.shape.trace, plan_evaluations: snapshotSchema.shape.plan_evaluations,
   destinations: z.array(destinationRecordSchema).max(512).default([]), routes: z.array(routePresentationSchema).max(128).default([]),
   spatial_guidance: spatialGuidanceSchema,
+  official_reports: z.array(officialReportSchema).max(128).default([]),
+  official_sources: z.array(liveSourceSchema).max(2).default([]),
+  distress: distressStatusSchema.default(defaultDistress),
 }).superRefine((snapshot, ctx) => {
+  if (snapshot.situation.network_state === 'ONLINE_VERIFIED'
+    && [snapshot.source, ...snapshot.official_sources].some(source => source.recovery && source.recovery.scan_status !== 'WINDOW_VERIFIED')) {
+    ctx.addIssue({ code: 'custom', message: 'Incomplete official recovery cannot support ONLINE_VERIFIED' });
+  }
   const evidenceIds = new Set(snapshot.evidence.map(item => item.id));
   const destinationIds = new Set(snapshot.destinations.map(item => item.id));
   const planIds = new Set(snapshot.plans.map(item => item.id));
@@ -423,6 +493,7 @@ export type Evidence = z.infer<typeof evidenceSchema>;
 export type Plan = z.infer<typeof planSchema>;
 export type Action = z.infer<typeof actionSchema>;
 export type LiveSource = z.infer<typeof liveSourceSchema>;
+export type OfficialReport = z.infer<typeof officialReportSchema>;
 export type TsunamiReferenceResponse = z.infer<typeof tsunamiReferenceSchema>;
 export type DestinationRecord = z.infer<typeof destinationRecordSchema>;
 export type DestinationProjection = z.infer<typeof destinationProjectionSchema>;

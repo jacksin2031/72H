@@ -1,9 +1,9 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { webcrypto } from 'node:crypto';
-import { assessOfficialHazards, officialPlaceSchema, hazardManifestSchema, isTsunamiDesignated, loadOfficialHazardPack, type HazardPack, type HazardLocation } from '../lib/official-hazards';
+import { assessOfficialHazards, officialPlaceLocation, officialPlaceSchema, hazardManifestSchema, isTsunamiDesignated, loadOfficialHazardPack, type HazardPack, type HazardLocation } from '../lib/official-hazards';
 
 const now=Date.parse('2026-10-12T00:00:00Z');
-const fix=(lng:number,lat:number,accuracy_m=0):HazardLocation=>({lng,lat,accuracy_m,captured_at:now,source:'MAP_POINT'});
+const fix=(lng:number,lat:number,accuracy_m=0):HazardLocation&{source:'MAP_POINT';accuracy_m:number}=>({lng,lat,accuracy_m,captured_at:now,source:'MAP_POINT'});
 const square=(w:number,s:number,e:number,n:number):[number,number][]=>[[w,s],[e,s],[e,n],[w,n],[w,s]];
 const pack:HazardPack={manifest:{schema_version:1,dataset_id:'TEST_ONLY',region_name:'Synthetic geometry test',area_id:'JP-04',
   reviewed_at:'2026-10-11T00:00:00Z',review_due_at:'2027-01-09T00:00:00Z',positional_accuracy_m:25,positional_accuracy_kind:'MAX_BOUND',coverage_status:'PARTIAL',sources:[],assets:[]},
@@ -12,6 +12,13 @@ const pack:HazardPack={manifest:{schema_version:1,dataset_id:'TEST_ONLY',region_
 afterEach(()=>vi.unstubAllGlobals());
 
 describe('official scenario geometry never certifies safety',()=>{
+  it('does not invent a zero-error precision for an official facility reference coordinate',()=>{
+    expect(typeof officialPlaceLocation).toBe('function');
+    const location=officialPlaceLocation({lat:141,lng:38},now);
+    expect(location.source).toBe('OFFICIAL_PLACE');expect(location.accuracy_m).toBeNull();
+    const valid=officialPlaceLocation({lat:38.002,lng:141.002},now);
+    expect(assessOfficialHazards(pack,valid,now)).toMatchObject({status:'UNKNOWN',reason:'SOURCE_LOCATION_ACCURACY_UNKNOWN',route_authorized:false});
+  });
   it('retains polygon holes and incomplete survey coverage',()=>{
     expect(assessOfficialHazards(pack,fix(141.002,38.002),now).status).toBe('INSIDE_KNOWN');
     const hole=assessOfficialHazards(pack,fix(141.01,38.01),now);
