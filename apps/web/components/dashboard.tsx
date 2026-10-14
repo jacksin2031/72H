@@ -160,16 +160,16 @@ export function Dashboard({ view: initialView }: { view: string }) {
 
   const exerciseBand = <StatusBand tone="exercise" label={exerciseLabel[language]} />;
   if (view === 'demo' && snapshot && previewScene) return <AppShell tab="now" language={language} band={exerciseBand}><div className={`shell theme-${theme} power-${battery.power.mode.toLowerCase()}`}>
-    <main>
+    <div>
       <div className="simulation"><strong>SYNTHETIC_REPLAY · {t.demoNotice}</strong><button type="button" onClick={() => setPreviewScene(false)}>{at.backJudge}</button></div>
       <VNextExperience snapshot={snapshot} language={language} now={continuityTime} connection={connection} verificationAnchor={verificationAnchor.current}
         power={battery.power} level={battery.level} override={battery.override} choose={battery.choose} view="dashboard" deviceLocation={deviceLocation} />
-    </main>
+    </div>
   </div></AppShell>;
 
   const replayControls = view === 'demo' && snapshot && battery.power.mode !== 'SURVIVAL' ? <><button disabled={busy || !battery.power.allowNonCriticalNetwork || snapshot.replay.status === 'COMPLETED'} onClick={() => void update(`${snapshot.replay.id}/${snapshot.replay.status === 'RUNNING' ? 'pause' : 'resume'}`)}>{snapshot.replay.status === 'RUNNING' ? t.pause : t.resume}</button><button disabled={busy || !battery.power.allowNonCriticalNetwork || !['RUNNING', 'PAUSED'].includes(snapshot.replay.status)} onClick={() => void update(`${snapshot.replay.id}/next`)}>{t.next} →</button><button disabled={busy || !battery.power.allowNonCriticalNetwork} onClick={() => void update(`${snapshot.replay.id}/reset`)}>{t.reset}</button><select aria-label="Replay speed" value={snapshot.replay.speed} disabled={busy || !battery.power.allowNonCriticalNetwork || snapshot.replay.status === 'COMPLETED'} onChange={e => void update(`${snapshot.replay.id}/speed`, { speed: Number(e.target.value) })}><option value={1}>1×</option><option value={2}>2×</option><option value={4}>4×</option></select><small>{snapshot.replay.current_event_index} / {snapshot.scenario_events.length}</small></> : undefined;
   return <AppShell tab={tabForView(view)} language={language} band={exerciseBand} exerciseControls={replayControls}><div className={`shell theme-${theme} power-${battery.power.mode.toLowerCase()}`}>
-    <main>
+    <div>
       <header className="topbar"><span className="eyebrow">72H{snapshot ? ' / ' + snapshot.profile.current_location.label : ''}</span><select aria-label="Language" value={language} onChange={event => { const value = event.target.value as Language; setLanguage(value); localStorage.setItem('72h-language', value); }}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option></select></header>
       <div className="simulation"><strong>{t.demoNotice}</strong><span>{t.demoDetail}</span></div>
       {initialView === 'demo' && snapshot && <nav className="controls" aria-label={vt.demoMode}>
@@ -214,6 +214,6 @@ export function Dashboard({ view: initialView }: { view: string }) {
       </>}
       {view !== 'dashboard' && battery.power.mode !== 'SURVIVAL' && <section className="record-list emergency-pack"><h2>{emergencyPack[language].title}</h2><p className="muted">{emergencyPack[language].label} · v{emergencyPack.version} · {emergencyPack.reviewed_at}</p><p>{emergencyPack[language].shaking}</p><p>{emergencyPack[language].phone}</p><p>{emergencyPack[language].phrase}</p>{emergencyPack.sources.map(s => <a key={s.url} href={s.url} target="_blank" rel="noreferrer">{s.name} ↗ </a>)}</section>}
       {view !== 'dashboard' && <footer>72H · From Alert to Action. <span>{t.noMovement}</span></footer>}
-    </main>
+    </div>
   </div></AppShell>;
 }

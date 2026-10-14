@@ -600,7 +600,7 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
   if (locationSync && view !== 'more' && !criticalProtection) return <LocationSyncGate state={locationSync} messages={messages} retry={onRetryLocation} canRetry={canStart && !busy} chooseArea={onChooseArea} />;
   if (!snapshot || !projection) return <>
     <LocationOnboarding language={language} messages={messages} location={deviceLocation} busy={busy} canStart={canStart} submit={onProfile} />
-    {view === 'more' && <><Link className="reference-map-link" href="/map">{language === 'ja' ? '全国の避難場所・参考地図' : language === 'en' ? 'Japan evacuation places & reference map' : '全日本避難場所及參考地圖'} →</Link><details className="more-lab-entry"><summary>{messages.testToolsLabel}</summary>
+    {view === 'more' && <><Link className="demo-entry-link" href="/demo">{language === 'ja' ? '演習とデモ' : language === 'en' ? 'Exercises & demo' : '演練與示範'} →</Link><Link className="reference-map-link" href="/map">{language === 'ja' ? '全国の避難場所・参考地図' : language === 'en' ? 'Japan evacuation places & reference map' : '全日本避難場所及參考地圖'} →</Link><details className="more-lab-entry"><summary>{messages.testToolsLabel}</summary>
       <Link href="/disaster-test">{messages.disasterTestDestination} →</Link>
     </details></>}
   </>;
@@ -679,7 +679,7 @@ export function MobileScene({ view, snapshot, language, chooseLanguage, messages
     {view === 'notifications' && <NotificationsScene notifications={notifications} messages={messages} dismiss={dismissNotification} />}
     {view === 'sources' && <SourceReview snapshot={snapshot} language={language} messages={messages} projection={projection}
       now={now} connection={connection} refresh={onRefresh} busy={busy} canRefresh={canStart && !sessionLost} />}
-    {view === 'more' && <section className="live-more-scene"><h1>{messages.more}</h1>
+    {view === 'more' && <section className="live-more-scene"><h1>{messages.more}</h1><Link className="demo-entry-link" href="/demo">{language === 'ja' ? '演習とデモ' : language === 'en' ? 'Exercises & demo' : '演練與示範'} →</Link>
       {morePanel === 'home' && <>
         <section className="more-location-card" aria-labelledby="more-location-title">
           <div className="more-area-summary"><small id="more-location-title">{messages.locationAreaHeading}</small><h2>{areaPresentation.area.label}</h2>
@@ -1288,7 +1288,7 @@ export function LiveDashboard({ view }: { view: string }) {
       {distressOpen && <DistressEntry snapshot={snapshot} language={language} scope="live" fix={fixFromDevicePosition(deviceLocation.position)} onSnapshot={adoptDistress}
         refreshLocation={deviceLocation.permissionGranted ? () => void deviceLocation.locate() : undefined} />}
       {!criticalMobileTakeover && <LiveHeaderStatus hasSession={!!snapshot} busy={busy} networkLabel={networkLabel} messages={messages} />}
-      {view === 'more' && <label className="live-language">{messages.language}<select aria-label={messages.language} value={language} onChange={event => chooseLanguage(event.target.value as Language)}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option></select></label>}
+      {(view === 'more' || !snapshot) && <label className="live-language">{messages.language}<select aria-label={messages.language} value={language} onChange={event => chooseLanguage(event.target.value as Language)}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option></select></label>}
       {error && <p className="error" role="alert">{error}</p>}
       {sessionLost && snapshot && !criticalMobileTakeover && <section className="session-loss-banner" role="status">
         <strong>{messages.sessionLost}</strong><p>{messages.lastVerified}: {displayTime(snapshot.situation.latest_evidence_at, language)}</p>

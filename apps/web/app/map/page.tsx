@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Language } from '@/lib/contracts';
 import { SimulationReferenceMap } from '@/components/simulation-reference-map';
 import { AppShell } from '@/components/ui';
+import { readSavedLanguage } from '@/lib/saved-language';
 import { documentedEpicenters } from '@/lib/geospatial-exposure';
 import { loadOfficialHazardPack, officialPlaceLocation, type HazardPack, type HazardLocation, type OfficialPlace } from '@/lib/official-hazards';
 import { OfficialHazardPanel } from '@/components/official-hazard-panel';
@@ -49,12 +50,13 @@ export default function JapanMapPage() {
   const choosePlace=useCallback((place:OfficialPlace)=>{
     geo.clear();setManualPoint(officialPlaceLocation(place));setFocus({lat:place.lat,lng:place.lng});
   },[geo.clear]);
+  useEffect(()=>{setLanguage(readSavedLanguage('zh-TW'));},[]);
   useEffect(()=>{
     if(process.env.NODE_ENV==='production'&&'serviceWorker' in navigator){
       void navigator.serviceWorker.register('/sw.js').catch(()=>{});
     }
   },[]);
-  return <AppShell tab="map" language={language}><div className="japan-reference-page japan-official-page">
+  return <AppShell tab="map" language={language} fullBleed><div className="japan-reference-page japan-official-page">
     <div className="official-hazard-layout"><div className="japan-reference-viewport">
       <SimulationReferenceMap language={language} protectDeviceLocation epicenter={documentedEpicenters[historicCase]??null}
         userLocation={geo.location} referencePoint={manualPoint} officialPack={pack} showInundation={showInundation} showPlaces={showPlaces}

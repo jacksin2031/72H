@@ -37,3 +37,8 @@ div.ui-row{cursor:default}
 .ui-tabs a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:48px;color:var(--text-2);font-size:12px;text-decoration:none}
 .ui-tabs a[aria-current=page]{color:var(--text);font-weight:700}
 .ui-exercise-controls{position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:25;display:flex;gap:var(--sp-2);justify-content:center;padding:var(--sp-2) var(--gutter);background:var(--bg);border-top:1px solid var(--line)}
+.ui-main-full{max-width:none;padding:0}
+.ui-app-has-band{--band-h:44px}
+.ui-app-has-controls{padding-bottom:calc(64px + 120px + env(safe-area-inset-bottom))}
+.ui-exercise-controls{flex-wrap:wrap}
+.ui-exercise-controls button,.ui-exercise-controls select{min-height:48px;font-size:14px;padding:8px 12px}
