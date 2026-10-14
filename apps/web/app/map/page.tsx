@@ -1,10 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Language } from '@/lib/contracts';
 import { SimulationReferenceMap } from '@/components/simulation-reference-map';
-import { UiIcon } from '@/components/ui-icon';
+import { AppShell } from '@/components/ui';
 import { documentedEpicenters } from '@/lib/geospatial-exposure';
 import { loadOfficialHazardPack, officialPlaceLocation, type HazardPack, type HazardLocation, type OfficialPlace } from '@/lib/official-hazards';
 import { OfficialHazardPanel } from '@/components/official-hazard-panel';
@@ -55,13 +54,7 @@ export default function JapanMapPage() {
       void navigator.serviceWorker.register('/sw.js').catch(()=>{});
     }
   },[]);
-  return <main className="japan-reference-page japan-official-page">
-    <header><Link href="/more" aria-label={language==='ja'?'戻る':language==='en'?'Back':'返回'}><UiIcon name="arrow" /></Link>
-      <strong>{language==='ja'?'日本全国の参考地図':language==='en'?'All Japan reference map':'全日本參考地圖'}</strong>
-      <select aria-label="Language" value={language} onChange={event=>setLanguage(event.target.value as Language)}>
-        <option value="zh-TW">繁體中文</option><option value="ja">日本語</option><option value="en">English</option>
-      </select>
-    </header>
+  return <AppShell tab="map" language={language}><div className="japan-reference-page japan-official-page">
     <div className="official-hazard-layout"><div className="japan-reference-viewport">
       <SimulationReferenceMap language={language} protectDeviceLocation epicenter={documentedEpicenters[historicCase]??null}
         userLocation={geo.location} referencePoint={manualPoint} officialPack={pack} showInundation={showInundation} showPlaces={showPlaces}
@@ -87,5 +80,5 @@ export default function JapanMapPage() {
         if(pack?.manifest.bbox){const [w,s,e,n]=pack.manifest.bbox;setFocus({lng:(w+e)/2,lat:(s+n)/2,zoom:10});}
         else if(pack?.places[0])setFocus({lat:pack.places[0].lat,lng:pack.places[0].lng});
       }} onPlace={choosePlace}/></div></div>
-  </main>;
+  </div></AppShell>;
 }

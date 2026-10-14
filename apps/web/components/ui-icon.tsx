@@ -1,11 +1,12 @@
 import React from 'react';
 
-export type IconName = 'home' | 'plan' | 'more' | 'bell' | 'warning' | 'arrow' | 'close' | 'events' | 'settings' | 'overview' | 'location' | 'plus' | 'minus';
+export type IconName = 'home' | 'map' | 'plan' | 'more' | 'bell' | 'warning' | 'arrow' | 'close' | 'events' | 'settings' | 'overview' | 'location' | 'plus' | 'minus';
 
 /** Fixed viewBox and stroke keep icons aligned across fonts, languages and zoom levels. */
 export function UiIcon({ name }: { name: IconName }) {
   const paths: Record<IconName, React.ReactNode> = {
     home: <><path d="m3 10 9-7 9 7" /><path d="M5 9v12h5v-7h4v7h5V9" /></>,
+    map: <><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z" /><path d="M9 4v14M15 6v14" /></>,
     plan: <><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M9 8h6M9 12h6M9 16h4" /></>,
     more: <><circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /></>,
     bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></>,

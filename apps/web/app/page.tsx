@@ -1,2 +1,2 @@
-import { Dashboard } from '@/components/dashboard';
-export default function Home() { return <Dashboard view="dashboard" />; }
+import { LiveDashboard } from '@/components/live-dashboard';
+export default function Home() { return <LiveDashboard view="dashboard" />; }

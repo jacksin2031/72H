@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { UiIcon } from './ui-icon';
+import { AppShell, StatusBand } from './ui';
+import { tabForView } from '@/lib/app-tabs';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { snapshotSchema, type Language, type Snapshot } from '@/lib/contracts';
 import { messages } from '@/lib/i18n';
@@ -22,7 +24,7 @@ import { fixFromDevicePosition } from '@/lib/distress-guidance';
 import { useTheme } from '@/lib/use-theme';
 import { adaptiveMessages } from '@/lib/adaptive-i18n';
 
-const routes = ['dashboard', 'plan', 'more'] as const;
+const exerciseLabel: Record<Language, string> = { 'zh-TW': '演練', ja: '演習', en: 'Exercise' };
 function time(value: string | null, language: Language) {
   return value ? new Date(value).toLocaleTimeString(language, { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' }) : '—';
 }
@@ -156,20 +158,17 @@ export function Dashboard({ view: initialView }: { view: string }) {
     return () => clearTimeout(timer);
   }, [snapshot, connection, continuityTime]);
 
-  if (view === 'demo' && snapshot && previewScene) return <div className={`shell theme-${theme} power-${battery.power.mode.toLowerCase()}`}>
+  const exerciseBand = <StatusBand tone="exercise" label={exerciseLabel[language]} />;
+  if (view === 'demo' && snapshot && previewScene) return <AppShell tab="now" language={language} band={exerciseBand}><div className={`shell theme-${theme} power-${battery.power.mode.toLowerCase()}`}>
     <main>
       <div className="simulation"><strong>SYNTHETIC_REPLAY · {t.demoNotice}</strong><button type="button" onClick={() => setPreviewScene(false)}>{at.backJudge}</button></div>
       <VNextExperience snapshot={snapshot} language={language} now={continuityTime} connection={connection} verificationAnchor={verificationAnchor.current}
         power={battery.power} level={battery.level} override={battery.override} choose={battery.choose} view="dashboard" deviceLocation={deviceLocation} />
     </main>
-  </div>;
+  </div></AppShell>;
 
-  return <div className={`shell theme-${theme} power-${battery.power.mode.toLowerCase()}`}>
-    <aside className="sidebar">
-      <Link className="brand" href="/">72<span>H</span><small>{t.tagline}</small></Link>
-      <nav aria-label="Main">{routes.map((route, index) => <a key={route} className={view === route ? 'selected' : ''} href={`/${route}`} aria-current={view === route ? 'page' : undefined}><span className="nav-number">0{index + 1}</span>{navLabels[route]}</a>)}</nav>
-      <div className="sidebar-foot"><span className="dot" />{t.demoNotice}{snapshot && <p>{snapshot.profile.current_location.label} → {snapshot.profile.current_destination?.label ?? snapshot.profile.accommodation_location.label}</p>}</div>
-    </aside>
+  const replayControls = view === 'demo' && snapshot && battery.power.mode !== 'SURVIVAL' ? <><button disabled={busy || !battery.power.allowNonCriticalNetwork || snapshot.replay.status === 'COMPLETED'} onClick={() => void update(`${snapshot.replay.id}/${snapshot.replay.status === 'RUNNING' ? 'pause' : 'resume'}`)}>{snapshot.replay.status === 'RUNNING' ? t.pause : t.resume}</button><button disabled={busy || !battery.power.allowNonCriticalNetwork || !['RUNNING', 'PAUSED'].includes(snapshot.replay.status)} onClick={() => void update(`${snapshot.replay.id}/next`)}>{t.next} →</button><button disabled={busy || !battery.power.allowNonCriticalNetwork} onClick={() => void update(`${snapshot.replay.id}/reset`)}>{t.reset}</button><select aria-label="Replay speed" value={snapshot.replay.speed} disabled={busy || !battery.power.allowNonCriticalNetwork || snapshot.replay.status === 'COMPLETED'} onChange={e => void update(`${snapshot.replay.id}/speed`, { speed: Number(e.target.value) })}><option value={1}>1×</option><option value={2}>2×</option><option value={4}>4×</option></select><small>{snapshot.replay.current_event_index} / {snapshot.scenario_events.length}</small></> : undefined;
+  return <AppShell tab={tabForView(view)} language={language} band={exerciseBand} exerciseControls={replayControls}><div className={`shell theme-${theme} power-${battery.power.mode.toLowerCase()}`}>
     <main>
       <header className="topbar"><span className="eyebrow">72H{snapshot ? ' / ' + snapshot.profile.current_location.label : ''}</span><select aria-label="Language" value={language} onChange={event => { const value = event.target.value as Language; setLanguage(value); localStorage.setItem('72h-language', value); }}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option></select></header>
       <div className="simulation"><strong>{t.demoNotice}</strong><span>{t.demoDetail}</span></div>
@@ -198,7 +197,7 @@ export function Dashboard({ view: initialView }: { view: string }) {
           earthquake={(() => { const event = snapshot.events.findLast(item => snapshot.situation.active_event_ids.includes(item.id)); return event ? { id: event.id, occurredAt: event.occurred_at, synthetic: true } : null; })()} />}
         <VNextExperience snapshot={snapshot} language={language} now={continuityTime} connection={connection} verificationAnchor={verificationAnchor.current} power={battery.power} level={battery.level} override={battery.override} choose={battery.choose} view={view} showLocalTrace={view === 'trace'} deviceLocation={deviceLocation} />
         {view === 'demo' && battery.power.mode !== 'SURVIVAL' && <><ScenarioPicker language={language} currentKey={snapshot.replay.scenario_key} enabled={battery.power.allowNonCriticalNetwork && connection !== 'offline'} busy={busy} button={t.newDemo} start={key => void update('start', { language, scenario_key: key })} /><div className="context-grid"><div><small>{t.location}</small><strong>{snapshot.profile.current_location.label}</strong></div><div><small>{t.destination}</small><strong>{snapshot.profile.accommodation_location.label}</strong></div><div><small>{t.simulatedTime} / JST</small><strong>{time(snapshot.replay.current_time, language)}</strong></div><div><small>{t.lastVerified}</small><strong>{time(snapshot.situation.latest_evidence_at, language)}</strong></div></div>
-        <div className="controls"><button disabled={busy || !battery.power.allowNonCriticalNetwork || snapshot.replay.status === 'COMPLETED'} onClick={() => void update(`${snapshot.replay.id}/${snapshot.replay.status === 'RUNNING' ? 'pause' : 'resume'}`)}>{snapshot.replay.status === 'RUNNING' ? t.pause : t.resume}</button><button disabled={busy || !battery.power.allowNonCriticalNetwork || !['RUNNING', 'PAUSED'].includes(snapshot.replay.status)} onClick={() => void update(`${snapshot.replay.id}/next`)}>{t.next} →</button><button disabled={busy || !battery.power.allowNonCriticalNetwork} onClick={() => void update(`${snapshot.replay.id}/reset`)}>{t.reset}</button><select aria-label="Replay speed" value={snapshot.replay.speed} disabled={busy || !battery.power.allowNonCriticalNetwork || snapshot.replay.status === 'COMPLETED'} onChange={e => void update(`${snapshot.replay.id}/speed`, { speed: Number(e.target.value) })}><option value={1}>1×</option><option value={2}>2×</option><option value={4}>4×</option></select><small>{snapshot.replay.current_event_index} / {snapshot.scenario_events.length}</small></div></>}
+</>}
         {view === 'demo' && battery.power.mode !== 'SURVIVAL' && <>
           <div className="section-head"><h2>{current ? `${snapshot.situation.current_plan_id !== current.id || connection !== 'online' ? `${t.lastPlan} · ` : ''}Plan v${current.version}` : t.pending}</h2><span>{projection?.planStatus || 'WAITING_FOR_EVIDENCE'}</span></div>
           {current && <p className="muted">{t.lastVerified}: {time(current.created_at, language)} · {t.expires}: {time(current.expires_at, language)}</p>}
@@ -216,5 +215,5 @@ export function Dashboard({ view: initialView }: { view: string }) {
       {view !== 'dashboard' && battery.power.mode !== 'SURVIVAL' && <section className="record-list emergency-pack"><h2>{emergencyPack[language].title}</h2><p className="muted">{emergencyPack[language].label} · v{emergencyPack.version} · {emergencyPack.reviewed_at}</p><p>{emergencyPack[language].shaking}</p><p>{emergencyPack[language].phone}</p><p>{emergencyPack[language].phrase}</p>{emergencyPack.sources.map(s => <a key={s.url} href={s.url} target="_blank" rel="noreferrer">{s.name} ↗ </a>)}</section>}
       {view !== 'dashboard' && <footer>72H · From Alert to Action. <span>{t.noMovement}</span></footer>}
     </main>
-  </div>;
+  </div></AppShell>;
 }

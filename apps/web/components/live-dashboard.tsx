@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { UiIcon, type IconName } from './ui-icon';
+import { UiIcon } from './ui-icon';
+import { AppShell, StatusBand } from './ui';
+import { tabForView } from '@/lib/app-tabs';
 import { OfficialSourceReview } from './official-source-review';
 import {PlanExplanationPanel} from './plan-explanation-panel';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -1254,16 +1256,6 @@ export function LiveDashboard({ view }: { view: string }) {
   const networkLabel = connection === 'offline' ? messages.offline
     : connection === 'reconnecting' || projection?.networkState === 'RECONNECTING' ? messages.reconnecting
       : projection?.networkState === 'ONLINE_VERIFIED' && snapshot && isPrimarySourceCurrent(snapshot, projection) ? messages.sourceFresh : messages.sourceStale;
-  const nav = [
-    { key: 'dashboard', label: messages.home, icon: 'home' as IconName },
-    { key: 'plan', label: messages.plan, icon: 'plan' as IconName },
-    { key: 'more', label: messages.more, icon: 'more' as IconName },
-  ];
-  const desktopNav = [
-    { key: 'dashboard', label: messages.home }, { key: 'plan', label: messages.plan },
-    { key: 'sources', label: messages.source }, { key: 'notifications', label: messages.notifications },
-    { key: 'more', label: messages.more },
-  ];
   const canUseNetwork = (typeof navigator === 'undefined' || navigator.onLine) && connection !== 'offline' && power.power.allowNonCriticalNetwork && !busy;
   const chooseLanguage = (next: Language) => {
     setLanguage(next);
@@ -1288,17 +1280,15 @@ export function LiveDashboard({ view }: { view: string }) {
         locationSync={locationSync} onRetryLocation={() => void retryLocationUpdate()}
         onLocalLocationChecked={() => setLocationGate({ phase: 'failed', update: null })} onChooseArea={chooseLocationArea} />;
 
-  return <div className={`live-shell theme-${theme} power-${power.power.mode.toLowerCase()} role-${role} ${snapshot ? 'has-live-session' : 'no-live-session'}`}>
-    {!criticalMobileTakeover && <header className="live-topbar"><Link className="live-brand" href="/dashboard">72<span>H</span></Link>
-      <LiveHeaderStatus hasSession={!!snapshot} busy={busy} networkLabel={networkLabel} messages={messages} />
-      {role === 'desktop' && <nav className="desktop-primary-nav" aria-label={messages.preparedness}>{desktopNav.map(item => <Link key={item.key} href={`/${item.key}`} aria-current={view === item.key ? 'page' : undefined}>{item.label}</Link>)}</nav>}
-      <label className="live-language">{messages.language}<select aria-label={messages.language} value={language} onChange={event => chooseLanguage(event.target.value as Language)}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option></select></label>
-    </header>}
-    <main className="live-main">
+  const takeoverBand = criticalMobileTakeover ? <StatusBand tone="danger" label={projection?.primaryAction?.text || messages.emergency} /> : undefined;
+  return <AppShell tab={tabForView(view)} language={language} band={takeoverBand}>
+    <div className={`live-shell live-main theme-${theme} power-${power.power.mode.toLowerCase()} role-${role} ${snapshot ? 'has-live-session' : 'no-live-session'}`}>
       {/* Reachable in every presentation and power mode, including urgent takeovers and SURVIVAL. */}
       <button type="button" className="distress-entry-button" aria-expanded={distressOpen} onClick={() => setDistressOpen(open => !open)}>{sosText[language].title}</button>
       {distressOpen && <DistressEntry snapshot={snapshot} language={language} scope="live" fix={fixFromDevicePosition(deviceLocation.position)} onSnapshot={adoptDistress}
         refreshLocation={deviceLocation.permissionGranted ? () => void deviceLocation.locate() : undefined} />}
+      {!criticalMobileTakeover && <LiveHeaderStatus hasSession={!!snapshot} busy={busy} networkLabel={networkLabel} messages={messages} />}
+      {view === 'more' && <label className="live-language">{messages.language}<select aria-label={messages.language} value={language} onChange={event => chooseLanguage(event.target.value as Language)}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option></select></label>}
       {error && <p className="error" role="alert">{error}</p>}
       {sessionLost && snapshot && !criticalMobileTakeover && <section className="session-loss-banner" role="status">
         <strong>{messages.sessionLost}</strong><p>{messages.lastVerified}: {displayTime(snapshot.situation.latest_evidence_at, language)}</p>
@@ -1306,12 +1296,7 @@ export function LiveDashboard({ view }: { view: string }) {
       </section>}
       {locationResolving && snapshot && <p className="location-resolution-status" role="status">{messages.locationCheckingArea}</p>}
       {mainContent}
-      {role === 'mobile' && !criticalMobileTakeover && <nav className="mobile-primary-nav" aria-label={language === 'ja' ? 'メイン' : language === 'zh-TW' ? '主選單' : 'Main navigation'}>
-        {nav.map(item => <Link key={item.key} href={`/${item.key}`} aria-current={view === item.key ? 'page' : undefined} className={view === item.key ? 'selected' : ''}>
-          <UiIcon name={item.icon} /><small>{item.label}</small>
-        </Link>)}
-      </nav>}
       {role === 'desktop' && snapshot && <div className="desktop-handoff-link"><Link href="/more">{messages.handoff} →</Link></div>}
-    </main>
-  </div>;
+    </div>
+  </AppShell>;
 }
