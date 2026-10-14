@@ -53,7 +53,7 @@ export const planSchema = z.object({
 });
 export const actionSchema = z.object({
   id, plan_id: id, category: z.enum(['NOW', 'NEXT', 'AVOID']), text, reason: text,
-  intent_id: z.enum(['protect_and_monitor', 'review_official_guidance', 'wait_for_transport_update', 'recheck_transport_status', 'avoid_disrupted_route', 'do_not_assume_route_safety', 'evacuate_to_designated_shelter', 'shelter_in_place_vertical', 'tsunami_evacuate_now']).nullable().optional(),
+  intent_id: z.enum(['protect_and_monitor', 'review_official_guidance', 'wait_for_transport_update', 'recheck_transport_status', 'avoid_disrupted_route', 'do_not_assume_route_safety', 'evacuate_to_designated_shelter', 'shelter_in_place_vertical', 'tsunami_evacuate_now', 'stay_high_until_official_clear', 'avoid_coast_and_rivers']).nullable().optional(),
   risk_level: z.enum(['LOW', 'MEDIUM', 'HIGH']), evidence_ids: ids, dependency_keys: ids,
   dependency_values: z.record(id, z.union([text, z.number().finite(), z.boolean(), z.null()])).default({}),
   status: z.enum(['ACTIVE', 'INVALID', 'EXPIRED', 'BLOCKED', 'SUPERSEDED']),

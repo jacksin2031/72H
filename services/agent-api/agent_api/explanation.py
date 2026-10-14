@@ -844,6 +844,16 @@ _INTENT_TEXT = {
         "en": "Because an official tsunami warning covers your area, the plan asks you to go now to an officially designated tsunami site, or, if you cannot reach one in time, to the 3rd floor or higher of a solid building or to high ground.",
         "zh-TW": "因為官方海嘯警報涵蓋你所在的地區，計劃建議立刻前往官方指定的海嘯避難場所；如果來不及，立刻往堅固建築物的 3 樓以上或高處移動。",
     },
+    SafeIntentId.STAY_HIGH_UNTIL_OFFICIAL_CLEAR: {
+        "ja": "計画は、高い場所に着いたら公式に津波警報が解除されるまでとどまるよう示しています。",
+        "en": "The plan asks you to stay high up until the official tsunami warning is lifted.",
+        "zh-TW": "計劃建議到達高處後留在原地，直到官方解除海嘯警報。",
+    },
+    SafeIntentId.AVOID_COAST_AND_RIVERS: {
+        "ja": "計画は、津波警報中は海岸・川・低い場所に近づかないよう示しています。",
+        "en": "The plan asks you to stay away from the coast, rivers and low ground while the tsunami warning is in force.",
+        "zh-TW": "計劃建議海嘯警報期間遠離海岸、河川及低窪地方。",
+    },
 }
 
 _GENERIC_INTENT_TEXT = {
