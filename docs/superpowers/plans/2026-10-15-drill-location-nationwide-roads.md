@@ -1026,6 +1026,7 @@ git commit -m "feat(roads): hazard-filtered nearest designated places with refer
 - 固定說明只出現一次：「道路參考線不是避難路線，最安全路線未判定。」
 - 署名：「© OpenStreetMap contributors」。
 - 演練時列表上方加 `Tag`「演練」。
+- `tiles.persisted===false` 時多一行 meta：「無法離線保存」（三語）。
 
 - [ ] **Step 1: 寫失敗的測試**
 
