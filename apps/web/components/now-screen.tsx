@@ -5,9 +5,10 @@ import {Disclosure,Section,Tag} from './ui';
 
 const T={'zh-TW':{basis:'依據',next:'接下來',avoid:'避免',exercise:'演練'},ja:{basis:'根拠',next:'次に',avoid:'避ける',exercise:'演習'},en:{basis:'Basis',next:'Next',avoid:'Avoid',exercise:'Exercise'}} as const;
 
-export function NowScreen({language,hero,heroTone,basis,next,avoid,updatedLabel,exercise,openBasis,basisDetails,help}:{
+/** note: the page's single "not a safety verdict" line, shown once directly under the basis line. */
+export function NowScreen({language,hero,heroTone,basis,next,avoid,updatedLabel,exercise,openBasis,basisDetails,help,note=null}:{
   language:Language;hero:string;heroTone:'normal'|'danger'|'warn';basis:string|null;next:string[];avoid:string[];
-  updatedLabel:string;exercise:boolean;openBasis:boolean;basisDetails:ReactNode;help:ReactNode}){
+  updatedLabel:string;exercise:boolean;openBasis:boolean;basisDetails:ReactNode;help:ReactNode;note?:string|null}){
   const t=T[language];
   return <div className="now">
     <h1 className={`now-hero now-hero-${heroTone}`} data-now="hero">{hero}</h1>
@@ -15,6 +16,7 @@ export function NowScreen({language,hero,heroTone,basis,next,avoid,updatedLabel,
       {basis&&<p className="now-meta">{basis}</p>}{exercise&&<Tag tone="exercise">{t.exercise}</Tag>}
       <Disclosure summary={t.basis} defaultOpen={openBasis} id="basis">{basisDetails}</Disclosure>
     </div>
+    {note&&<p className="now-meta now-note" data-now="note">{note}</p>}
     <div className="now-help" data-now="help">{help}</div>
     {next.length>0&&<div data-now="next"><Section title={t.next}><ul className="now-list">{next.map((x,i)=><li key={i}>{x}</li>)}</ul></Section></div>}
     {avoid.length>0&&<div data-now="avoid"><Section title={t.avoid}><ul className="now-list">{avoid.map((x,i)=><li key={i}>{x}</li>)}</ul></Section></div>}

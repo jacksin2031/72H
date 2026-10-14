@@ -2,7 +2,7 @@
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { liveNowScreenVisible, liveTakeoverBandLabel, MobileScene, MoreHub } from '../components/live-dashboard';
+import { liveNowScreenVisible, liveTakeoverBandLabel, liveStatusBand, MobileScene, MoreHub } from '../components/live-dashboard';
 import { liveMessages } from '../lib/live-i18n';
 import { liveMoreMessages } from '../lib/live-more-i18n';
 import { projectLiveSnapshot } from '../lib/live-presentation';
@@ -364,7 +364,7 @@ describe('Now screen in the live mobile scene', () => {
     const props = withPlan(sceneProps({ view, connection: 'online' }));
     const page = await mount({ ...props, help: <button type="button" className="help-probe">I need help</button> });
     const order = [...page.querySelectorAll('[data-now]')].map(item => item.getAttribute('data-now'));
-    expect(order).toEqual(['hero', 'basis', 'help', 'next', 'avoid', 'updated']);
+    expect(order).toEqual(['hero', 'basis', 'note', 'help', 'next', 'avoid', 'updated']);
     const hero = page.querySelector('[data-now="hero"]')!;
     expect(hero.tagName).toBe('H1');
     expect(hero.textContent).toBe(props.projection!.primaryAction!.text);
@@ -545,5 +545,24 @@ describe('More hub: privacy sentence and desktop wiring', () => {
     await click(page.querySelector('.more-location-card button.primary')!);
     expect(onRetryLocation).toHaveBeenCalledOnce();
     expect(onRefresh).not.toHaveBeenCalled();
+  });
+});
+
+describe('I1: one status-band rule for mobile and desktop including MAP_ASSISTED',()=>{
+  it('names a current official tsunami alert with the real deadline, even outside takeover',()=>{
+    const snapshot=movementLiveSnapshot();
+    snapshot.distress={level:'OFFICIAL_TSUNAMI',reports:[],trigger_evidence_ids:['warning'],deadline_at:new Date(LIVE_NOW+300_000).toISOString(),ai_escalated:false,synthetic:false,warning_class:'MAJOR_WARNING',last_official_at:new Date(LIVE_NOW-60_000).toISOString(),trigger_expires_at:new Date(LIVE_NOW+600_000).toISOString(),stale_reason:null};
+    const projection=projectLiveSnapshot(snapshot,LIVE_NOW,'online',derivePower(75,false));
+    expect(projection.mapGate).toBe(true);
+    expect(liveStatusBand({snapshot,projection,now:LIVE_NOW,connection:'online',language:'en',messages:liveMessages.en})).toEqual({tone:'danger',label:'Major Tsunami Warning',deadlineAt:LIVE_NOW+300_000});
+  });
+  it('uses warn with the last verification time offline, and never a current alert countdown after expiry',()=>{
+    const snapshot=movementLiveSnapshot();
+    const projection=projectLiveSnapshot(snapshot,LIVE_NOW,'offline',derivePower(75,false));
+    const band=liveStatusBand({snapshot,projection,now:LIVE_NOW,connection:'offline',language:'en',messages:liveMessages.en});
+    expect(band?.tone).toBe('warn');expect(band?.label).toContain('Offline · last verified');expect(band?.deadlineAt).toBeNull();
+    const later=LIVE_NOW+3600_000;
+    const stale=projectLiveSnapshot(snapshot,later,'online',derivePower(75,false));
+    expect(liveStatusBand({snapshot,projection:stale,now:later,connection:'online',language:'en',messages:liveMessages.en})?.tone).toBe('warn');
   });
 });

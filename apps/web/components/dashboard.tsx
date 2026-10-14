@@ -2,7 +2,10 @@
 
 import { AppShell, Button, Disclosure, Section, StatusBand } from './ui';
 import { MapScreen } from './map-screen';
-import { EmergencyMap } from './emergency-map';
+import { SimulationReferenceMap } from './simulation-reference-map';
+import { noActiveAlertsAllowed, nowHeroText, officialAlert } from '@/lib/now-status';
+import { formatCountdown } from '@/lib/distress-guidance';
+import { HelpOverlay } from './help-overlay';
 import { AdaptiveHome } from './adaptive-home';
 import { DeviceLocationControls } from './device-location';
 import type { AppTab } from '@/lib/app-tabs';
@@ -167,11 +170,13 @@ export function Dashboard({ view }: { view: string }) {
   }, [snapshot, connection, continuityTime]);
 
   // Band: purple 演練 always; red with the official level when the replayed state carries an official tsunami warning.
-  const warningName = snapshot?.distress.level === 'OFFICIAL_TSUNAMI'
-    ? snapshot.distress.warning_class === 'MAJOR_WARNING' ? distressText[language].warningMajor : snapshot.distress.warning_class === 'WARNING' ? distressText[language].warningWarning : null
-    : null;
-  const band = warningName
-    ? <StatusBand tone="danger" label={`${exerciseLabel[language]} · ${warningName}`} />
+  const alert = snapshot ? officialAlert(snapshot.distress, continuityTime, language) : null;
+  const warningName = alert?.name;
+  const replayOffline = !!snapshot && (connection !== 'online' || projection?.networkState.startsWith('OFFLINE') || projection?.networkState === 'RECONNECTING');
+  const band = replayOffline
+    ? <StatusBand tone="warn" label={`${exerciseLabel[language]} · ${lm.nowOfflineVerified} ${time(snapshot!.situation.latest_evidence_at,language)}`} />
+    : alert
+    ? <StatusBand tone="danger" label={`${exerciseLabel[language]} · ${alert.name}`} countdown={alert.deadlineAt ? formatCountdown(alert.deadlineAt-continuityTime) : null} />
     : <StatusBand tone="exercise" label={exerciseLabel[language]} />;
   const controlsEnabled = !!snapshot && !busy && battery.power.allowNonCriticalNetwork;
   const exerciseControls = view === 'demo' && snapshot && battery.power.mode !== 'SURVIVAL' ? <>
@@ -206,12 +211,13 @@ export function Dashboard({ view }: { view: string }) {
   const texts = (category: 'NEXT' | 'AVOID') => usable.filter(a => a.category === category).map(a => a.text);
   const critical = CRITICAL_MODES.includes(presentation.mode);
   const unverified = projection.networkState !== 'ONLINE_VERIFIED' || projection.evidence.some(e => e.freshness_status !== 'CURRENT');
-  const noAlerts = !current && snapshot.situation.active_event_ids.length === 0 && snapshot.distress.level === 'NONE' && connection === 'online' && projection.networkState === 'ONLINE_VERIFIED';
-  const hero = presentation.primaryAction?.text || (critical ? lm.emergency : noAlerts ? lm.noActiveAlerts : lm.pending);
+  const primarySourceCurrent = projection.evidence.some(e => e.trust_status === 'VERIFIED_OFFICIAL' && e.freshness_status === 'CURRENT' && !e.conflict && e.affected_area_ids.some(id => snapshot.profile.current_location.area_ids.includes(id)));
+  const noAlerts = noActiveAlertsAllowed({hasPlan:!!current, activeEventCount:snapshot.situation.active_event_ids.length, distressLevel:snapshot.distress.level, connection, networkState:projection.networkState, primarySourceCurrent});
+  const hero = nowHeroText({actionText:presentation.primaryAction?.text, alert, language, critical, noAlerts, messages:lm as {emergency:string;noActiveAlerts:string;pending:string}});
   const heroTone = critical || warningName ? 'danger' : connection !== 'online' || unverified ? 'warn' : 'normal';
   const activeEvent = snapshot.events.findLast(event => snapshot.situation.active_event_ids.includes(event.id));
   const basisEvidence = projection.evidence.filter(e => e.trust_status === 'VERIFIED_OFFICIAL').at(-1) ?? null;
-  const basis = basisEvidence ? lm.basisPublished.replace('{source}', [basisEvidence.source_name, activeEvent ? lm[`event${activeEvent.event_type}`] : ''].filter(Boolean).join(' '))
+  const basis = alert && snapshot.distress.last_official_at ? distressText[language].basis.replace('{warning}',alert.name).replace('{time}',time(snapshot.distress.last_official_at,language)) : basisEvidence ? lm.basisPublished.replace('{source}', [basisEvidence.source_name, activeEvent ? lm[`event${activeEvent.event_type}`] : ''].filter(Boolean).join(' '))
     .replace('{time}', time(basisEvidence.published_at, language)) : null;
   const updatedPrefix = connection === 'offline' ? lm.nowOfflineVerified : unverified ? lm.nowLastVerified : lm.nowUpdated;
   const updatedLabel = `${updatedPrefix} ${time(snapshot.situation.latest_evidence_at, language)}`;
@@ -220,7 +226,7 @@ export function Dashboard({ view }: { view: string }) {
   const categoryLabel = (category: string) => category === 'NOW' ? t.now : category === 'NEXT' ? t.nextActions : t.avoid;
 
   const basisDetails = <>
-    <p className="now-meta">{t.demoDetail} {t.noMovement}</p>
+    <p className="now-meta">{t.demoDetail}</p>
     {!survival && <>
       <Section title={t.plan}><div className="plan-history">{snapshot.plans.map(p => {
         const pe = snapshot.plan_evaluations.findLast(e => e.plan_id === p.id);
@@ -255,25 +261,25 @@ export function Dashboard({ view }: { view: string }) {
   </>;
   const help = <>
     <Button variant="danger" className="distress-entry-button" aria-expanded={distressOpen} onClick={() => setDistressOpen(open => !open)}>{sosText[language].title}</Button>
-    {distressOpen && <DistressEntry snapshot={snapshot} language={language} scope="replay" fix={fixFromDevicePosition(deviceLocation.position)} now={continuityTime} onSnapshot={adoptDistress}
-      refreshLocation={deviceLocation.permissionGranted ? () => void deviceLocation.locate() : undefined} />}
+
   </>;
   // Same position as Live: the safety check sits right under the Now screen (AdaptiveHome embedded); consent stays reachable
   // here because the exercise has no More settings of its own.
-  const safetyCheck = <ReplaySafetyCheck check={check} setCheck={setCheck} language={language} visible={presentation.showSafetyCheck} />;
-  const exerciseMap = <MapScreen language={language} layers={[]} legend={null} region={null} routeSection={null}
-    map={<EmergencyMap language={language} conserve={battery.power.mode !== 'NORMAL'} profile={snapshot.profile} location={deviceLocation}
-      earthquake={activeEvent ? { id: activeEvent.id, occurredAt: activeEvent.occurred_at, synthetic: true } : null} />}
+  const safetyCheck = <ReplaySafetyCheck check={check} setCheck={setCheck} language={language} visible={presentation.showSafetyCheck} hideTitle />;
+  const exerciseMap = <MapScreen language={language} layers={[]} legend={lm.notSafetyVerdict} region={null} routeSection={null}
+    map={<SimulationReferenceMap language={language} showInformation={false} legend="none" regionPicker={false} userLocation={deviceLocation.position ? {lat:deviceLocation.position.latitude,lng:deviceLocation.position.longitude,accuracy_m:deviceLocation.position.accuracy_m,captured_at:deviceLocation.position.captured_at,source:'BROWSER_GEOLOCATION'} : null} />}
     peek={`${t.location}: ${snapshot.profile.current_location.label}`}
     sections={[{ title: t.location, content: <DeviceLocationControls location={deviceLocation} language={language} /> }]} />;
   return <AppShell tab={tab} language={language} band={band} exerciseControls={exerciseControls} fullBleed={tab === 'map'}
     onTab={setTab} localTabs={['now', 'map']}>
     {status}
+    <button type="button" hidden={tab !== 'map' || distressOpen} className="ui-help-pin" aria-label={sosText[language].title} onClick={()=>setDistressOpen(true)}>{sosText[language].title}</button>
+    {distressOpen && <HelpOverlay language={language} onClose={()=>setDistressOpen(false)}><DistressEntry snapshot={snapshot} language={language} scope="replay" fix={fixFromDevicePosition(deviceLocation.position)} now={continuityTime} onSnapshot={adoptDistress} refreshLocation={deviceLocation.permissionGranted ? () => void deviceLocation.locate() : undefined}/></HelpOverlay>}
     {tab === 'map' && <div data-testid="exercise-map">{battery.power.allowMap ? exerciseMap : <p className="now-meta">{vnextMessages[language].mapUnavailable}</p>}</div>}
     {/* The Now screen stays mounted (hidden) on the Map tab, so safety-check timers and an open help panel keep their state. */}
     <div hidden={tab === 'map'}>
       <NowScreen language={language} hero={hero} heroTone={heroTone} basis={basis} next={texts('NEXT')} avoid={texts('AVOID')}
-        updatedLabel={updatedLabel} exercise openBasis={view === 'trace'} basisDetails={basisDetails} help={help} />
+        updatedLabel={updatedLabel} note={lm.notSafetyVerdict} exercise openBasis={view === 'trace'} basisDetails={basisDetails} help={help} />
       <AdaptiveHome embedded presentation={presentation} snapshot={snapshot} language={language} networkState={projection.networkState}
         planStatus={projection.planStatus} notifications={0} actions={usable} checkControls={safetyCheck} powerMode={battery.power.mode}
         location={deviceLocation} mapClosed={false} now={continuityTime} />

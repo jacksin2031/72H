@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import type {ReactNode} from 'react';
+import {useEffect,useRef,type ReactNode} from 'react';
 import type {Language} from '@/lib/contracts';
 import {APP_TABS,type AppTab} from '@/lib/app-tabs';
 import {useTheme} from '@/lib/use-theme';
@@ -10,7 +10,15 @@ import {UiIcon} from '../ui-icon';
 /** language null: the saved language is not read yet; the shell renders without any language-dependent text so the page is never blank. */
 export function AppShell({tab,language,band,exerciseControls,fullBleed,onTab,localTabs,children}:{tab:AppTab;language:Language|null;band?:ReactNode;exerciseControls?:ReactNode;fullBleed?:boolean;onTab?:(tab:AppTab)=>void;localTabs?:AppTab[];children:ReactNode}){
   useTheme(); // applies the saved theme on every page wrapped by the shell
-  return <div className={`ui-app${band?' ui-app-has-band':''}${exerciseControls?' ui-app-has-controls':''}`}>
+  const app=useRef<HTMLDivElement>(null);
+  useEffect(()=>{
+    const element=app.current;if(!element)return;
+    const bandElement=element.querySelector<HTMLElement>('.ui-band'),controls=element.querySelector<HTMLElement>('.ui-exercise-controls'),peek=element.querySelector<HTMLElement>('.ui-sheet-head');
+    const measure=()=>{if(peek)element.style.setProperty('--sheet-peek-h',`${peek.getBoundingClientRect().height}px`);if(bandElement)element.style.setProperty('--band-h',`${bandElement.getBoundingClientRect().height}px`);if(controls)element.style.setProperty('--controls-h',`${controls.getBoundingClientRect().height}px`);};
+    if(typeof ResizeObserver==='undefined')return;
+    const observer=new ResizeObserver(measure);if(bandElement)observer.observe(bandElement);if(controls)observer.observe(controls);if(peek)observer.observe(peek);measure();return()=>observer.disconnect();
+  },[!!band,!!exerciseControls,tab,language]);
+  return <div ref={app} className={`ui-app${band?' ui-app-has-band':''}${exerciseControls?' ui-app-has-controls':''}`}>
     {band}
     <main className={fullBleed?'ui-main ui-main-full':'ui-main'}>{children}</main>
     {exerciseControls&&<div className="ui-exercise-controls">{exerciseControls}</div>}

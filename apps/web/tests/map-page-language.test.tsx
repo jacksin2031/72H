@@ -13,11 +13,15 @@ vi.mock('@/components/evacuation-route-panel',()=>({EvacuationRoutePanel:()=><p 
 vi.mock('@/lib/use-simulation-geo',()=>({useSimulationGeo:()=>({location:null,state:'idle',clear:()=>{},request:()=>{}})}));
 vi.mock('@/lib/use-disaster-map',()=>({useDisasterMap:()=>({})}));
 vi.mock('@/lib/use-designated-places',()=>({useDesignatedPlaces:()=>({places:[]})}));
-vi.mock('@/lib/official-hazards',()=>({loadOfficialHazardPack:()=>new Promise(()=>{}),officialPlaceLocation:()=>null}));
+vi.mock('@/lib/official-hazards',async original=>({...await original<typeof import('../lib/official-hazards')>(),loadOfficialHazardPack:()=>new Promise(()=>{}),officialPlaceLocation:()=>null}));
+const helpCache=vi.hoisted(()=>({snapshot:null as import('../lib/contracts').LiveSnapshot|null,saved:[] as import('../lib/contracts').LiveSnapshot[],adopt:null as ((raw:unknown)=>void)|null}));
+vi.mock('@/lib/continuity',()=>({loadLiveSnapshot:async()=>helpCache.snapshot?{snapshot:helpCache.snapshot}:null,saveLiveSnapshot:async(s:import('../lib/contracts').LiveSnapshot)=>{helpCache.saved.push(s);}}));
+vi.mock('@/components/distress-entry',()=>({DistressEntry:(p:{onSnapshot:(raw:unknown)=>void})=>{helpCache.adopt=p.onSnapshot;return <p data-testid="help-content">help</p>}}));
 import JapanMapPage from '../app/map/page';
 let host:HTMLDivElement;let root:ReturnType<typeof createRoot>;
-afterEach(async()=>{await act(async()=>root.unmount());host.remove();localStorage.clear();mapProps.length=0;});
+afterEach(async()=>{helpCache.snapshot=null;helpCache.saved.length=0;helpCache.adopt=null;history.replaceState({},'', '/');await act(async()=>root.unmount());host.remove();localStorage.clear();mapProps.length=0;});
 async function render(){
+  try{if(!localStorage.getItem('72h-language'))localStorage.setItem('72h-language','zh-TW');}catch{}
   host=document.createElement('div');document.body.append(host);root=createRoot(host);
   await act(async()=>root.render(<JapanMapPage/>));
 }
@@ -38,7 +42,7 @@ it('lays the map out as one screen: four layer chips, one legend line, one sheet
   expect([...host.querySelectorAll('.map-chips .ui-chip')].map(c=>c.getAttribute('aria-pressed'))).toEqual(['true','true','true','false']);
   expect(host.querySelectorAll('.map-legend')).toHaveLength(1);
   expect(host.querySelectorAll('.ui-sheet')).toHaveLength(1);
-  expect(host.querySelector('.ui-sheet-head')?.textContent).toBe('附近 0 處指定避難場所');
+  expect(host.querySelector('.ui-sheet-head')?.textContent).toBe('已載入 0 處指定避難場所');
   expect(host.querySelector('.map-region select[aria-label="地圖地區"]')).not.toBeNull();
   expect(host.querySelector('select[aria-label="歷史地震"]')).toBeNull();
   expect(mapProps.at(-1)).toMatchObject({protectDeviceLocation:true,legend:'none',regionPicker:false,epicenter:null});
@@ -85,12 +89,46 @@ it('before the saved language is read it renders the shell and the hidden h1 but
   // No zh-TW (or any language's) words: tab labels, title, chips, legend and sheet are all suppressed.
   for(const text of ['現在','地圖','更多','全日本參考地圖','浸水想定','避難場所','僅供參考','主選單'])expect(html,text).not.toContain(text);
 });
-it('a storage error while reading the saved language still renders the full map shell (falls back to zh-TW)',async()=>{
+it('a storage error while reading the saved language still renders the full map shell (falls back to Japanese)',async()=>{
   vi.spyOn(Storage.prototype,'getItem').mockImplementation(()=>{throw new Error('blocked');});
   await render();
   expect(host.querySelector('.ui-app')).not.toBeNull();
-  expect([...host.querySelectorAll('nav.ui-tabs a')].map(a=>a.textContent)).toEqual(['現在','地圖','更多']);
-  expect(host.querySelector('h1.ui-visually-hidden')?.textContent).toBe('全日本參考地圖');
+  expect([...host.querySelectorAll('nav.ui-tabs a')].map(a=>a.textContent)).toEqual(['今','地図','その他']);
+  expect(host.querySelector('h1.ui-visually-hidden')?.textContent).toBe('日本全国の参考地図');
   expect(host.querySelectorAll('.map-chips .ui-chip')).toHaveLength(4);
   vi.restoreAllMocks();
+});
+
+it('I5: unsaved language defaults to Japanese and a valid query takes precedence',async()=>{
+  const spy=vi.spyOn(Storage.prototype,'getItem').mockReturnValue(null);
+  await render();
+  expect(host.querySelector('h1')?.textContent).toBe('日本全国の参考地図');
+  history.replaceState({},'', '/map?language=en');
+  await act(async()=>root.unmount());host.remove();
+  await render();
+  expect(host.querySelector('h1')?.textContent).toBe('All Japan reference map');
+  spy.mockRestore();
+});
+it('I2: Map has one help entry, opens accessible help without a session, and returns focus on close',async()=>{
+  await render();
+  const pin=host.querySelector<HTMLButtonElement>('.ui-help-pin')!;pin.focus();
+  await act(async()=>pin.click());
+  expect(host.querySelector('[role=dialog] [data-testid=help-content]')).not.toBeNull();
+  expect(host.querySelector('.ui-help-pin:not([hidden])')).toBeNull();
+  await act(async()=>host.querySelector<HTMLButtonElement>('[role=dialog] button')!.click());
+  expect(host.querySelector('[role=dialog]')).toBeNull();
+  expect(document.activeElement).toBe(host.querySelector('.ui-help-pin'));
+});
+
+it('Map reports persist only a validated same-session response that does not move backwards',async()=>{
+  const {movementLiveSnapshot}=await import('./live-fixtures');
+  const original=movementLiveSnapshot();helpCache.snapshot=original;
+  await render();
+  await act(async()=>host.querySelector<HTMLButtonElement>('.ui-help-pin')!.click());
+  const older={...original,situation:{...original.situation,updated_at:new Date(Date.parse(original.situation.updated_at)-1000).toISOString()}};
+  await act(async()=>helpCache.adopt!(older));expect(helpCache.saved).toHaveLength(0);
+  await act(async()=>helpCache.adopt!({...original,session_id:'22222222-2222-4222-8222-222222222222'}));expect(helpCache.saved).toHaveLength(0);
+  const next={...original,situation:{...original.situation,updated_at:new Date(Date.parse(original.situation.updated_at)+1000).toISOString()}};
+  await act(async()=>helpCache.adopt!(next));
+  expect(helpCache.saved).toHaveLength(1);expect(helpCache.saved[0].session_id).toBe(original.session_id);expect(helpCache.saved[0].situation.updated_at).toBe(next.situation.updated_at);
 });

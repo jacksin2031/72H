@@ -33,7 +33,7 @@ vi.mock('../lib/adaptive-ui', async orig => {
 });
 // The exercise map: a light stand-in that records the synthetic earthquake it is given.
 const mapCalls = vi.hoisted(() => [] as unknown[]);
-vi.mock('../components/emergency-map', () => ({ EmergencyMap: (p: { earthquake: unknown }) => { mapCalls.push(p.earthquake); return <section className="map-section" data-testid="emergency-map-stub" />; } }));
+vi.mock('../components/simulation-reference-map', () => ({ SimulationReferenceMap: (p: Record<string,unknown>) => { mapCalls.push(p); return <section data-testid="national-map-stub" />; } }));
 import { Dashboard } from '../components/dashboard';
 
 let root: Root | null = null;
@@ -118,7 +118,7 @@ it('"next update" drives the screen through the replay API state, not a hard-cod
   expect(page.querySelector('.error')).toBeNull();
 });
 
-it('/demo Now and Map tabs switch in place (no navigation), the Map tab shows the exercise map with the synthetic event, and the band stays', async () => {
+it('/demo Now and Map tabs switch in place (no navigation), the Map tab shows the national reference map without fabricated event coordinates, and the band stays', async () => {
   served = activeSnapshot();
   served.events = [{ id: 'quake', event_type: 'EARTHQUAKE', occurred_at: served.replay.current_time, affected_areas: ['Tokyo'], affected_area_ids: ['JP-13'], source_name: 'Synthetic JMA', raw_reference: 'synthetic' }];
   served.situation = { ...served.situation, active_event_ids: ['quake'] };
@@ -131,8 +131,9 @@ it('/demo Now and Map tabs switch in place (no navigation), the Map tab shows th
   expect(now.getAttribute('aria-current')).toBe('page');
   await act(async () => map.click());
   expect(map.getAttribute('aria-current')).toBe('page');
-  expect(page.querySelector('[data-testid=exercise-map] .map-screen [data-testid=emergency-map-stub]')).not.toBeNull();
-  expect(mapCalls.at(-1)).toEqual({ id: 'quake', occurredAt: served.replay.current_time, synthetic: true });
+  expect(page.querySelector('[data-testid=exercise-map] .map-screen [data-testid=national-map-stub]')).not.toBeNull();
+  expect(mapCalls.at(-1)).toMatchObject({showInformation:false,legend:'none',regionPicker:false});
+  expect(page.querySelector('button.ui-help-pin')?.textContent).toBe('助けが必要');
   expect(page.querySelector('.ui-band-exercise')?.textContent).toBe('演習');
   expect(page.querySelector('.ui-exercise-controls')).not.toBeNull();
   await act(async () => now.click());
@@ -156,4 +157,65 @@ it('/demo shows the safety check on the Now screen (as Live), not in the agent-l
   // Every presentation derived after the change (hero and the disclosure alike) sees the consented check.
   expect(seenChecks.length).toBeGreaterThan(0);
   expect(seenChecks.every(check => check.consent)).toBe(true);
+});
+
+it('I3: at replay start (no evidence, plan or event) the exercise hero never claims "no active alerts"', async () => {
+  served = activeSnapshot();
+  served.evidence = []; served.evidence_projections = []; served.plans = []; served.plan_actions = []; served.plan_evaluations = [];
+  served.events = [];
+  served.situation = { ...served.situation, current_plan_id: null, active_event_ids: [], network_state: 'ONLINE_VERIFIED' };
+  const page = await mount('demo');
+  const hero = page.querySelector('[data-now=hero]')?.textContent;
+  expect(hero).not.toBe('現在、警報はありません');
+  expect(hero).toBe('確認済みの情報を待っています。');
+});
+
+it('D1: during a replayed official tsunami warning the hero carries the official protective instruction (as Live), and the band names the level with its real countdown', async () => {
+  served = activeSnapshot();
+  const at = Date.parse(served.replay.current_time);
+  served.distress = { level: 'OFFICIAL_TSUNAMI', reports: [], trigger_evidence_ids: [served.evidence[0].id], deadline_at: new Date(at + 25 * 60_000).toISOString(),
+    ai_escalated: false, synthetic: true, warning_class: 'WARNING', last_official_at: new Date(at - 60_000).toISOString(),
+    trigger_expires_at: new Date(at + 60 * 60_000).toISOString(), stale_reason: null };
+  served.plans = []; served.plan_actions = []; served.situation = { ...served.situation, current_plan_id: null };
+  const page = await mount('demo');
+  expect(page.querySelector('[data-now=hero]')?.textContent).toBe('今すぐ上の階・高い場所へ。水から離れてください。');
+  const band = page.querySelector('.ui-band-danger')!;
+  expect(band.querySelector('strong')?.textContent).toBe('演習 · 津波警報');
+  expect(band.querySelector('[role=timer]')?.textContent).toBe('25:00');
+  // The exercise label is kept on the Now screen too.
+  expect(page.querySelector('[data-now=basis] .ui-tag-exercise')?.textContent).toBe('演習');
+});
+
+it('I4: exactly one visible "not a safety verdict" meta line, directly under the basis line', async () => {
+  const page = await mount('demo');
+  const note = page.querySelector('[data-now=note]')!;
+  expect(note).not.toBeNull();
+  expect(note.classList.contains('now-meta')).toBe(true);
+  expect(note.closest('details')).toBeNull();
+  expect(note.previousElementSibling?.getAttribute('data-now')).toBe('basis');
+  expect(note.textContent).toBe('これは安全の判定ではありません。現地の状況と公式の指示に従ってください。');
+  expect((page.textContent ?? '').split('安全性の証明ではありません').length - 1).toBe(0);
+});
+
+it('I2: help opens from the replay Map tab, stays mounted across tabs, and can be closed',async()=>{
+  const page=await mount('demo');
+  await act(async()=>{(page.querySelectorAll<HTMLButtonElement>('nav.ui-tabs button')[1]).click();});
+  await act(async()=>{page.querySelector<HTMLButtonElement>('.ui-help-pin')!.click();});
+  const dialog=page.querySelector('[role=dialog]')!;
+  expect(dialog.closest('[hidden]')).toBeNull();
+  expect(page.querySelector('.ui-help-pin:not([hidden])')).toBeNull();
+  await act(async()=>{page.querySelectorAll<HTMLButtonElement>('nav.ui-tabs button')[0].click();});
+  expect(page.querySelector('[role=dialog]')).toBe(dialog);
+  await act(async()=>{dialog.querySelector<HTMLButtonElement>('button')!.click();});
+  expect(page.querySelector('[role=dialog]')).toBeNull();
+});
+
+it('I1: offline replay Map exposes exercise provenance and last verification in its visible band',async()=>{
+  const page=await mount('demo');
+  await act(async()=>window.dispatchEvent(new Event('offline')));
+  await act(async()=>page.querySelectorAll<HTMLButtonElement>('nav.ui-tabs button')[1].click());
+  const band=page.querySelector('.ui-band-warn')!;
+  expect(band.textContent).toContain('演習 · オフライン · 最終確認');
+  expect(band.closest('[hidden]')).toBeNull();
+  expect(page.querySelector('.ui-band-danger')).toBeNull();
 });

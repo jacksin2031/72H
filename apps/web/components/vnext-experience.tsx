@@ -118,7 +118,7 @@ export function VNextExperience({ snapshot, language, now, connection, verificat
     {presentation.showLocation && <DeviceLocationControls location={deviceLocation} language={language} />}
   </section> : undefined;
   // Survival keeps NOW on every route; More remains the escape to essential settings.
-  if (view !== 'dashboard' && (power.mode !== 'SURVIVAL' || view === 'more')) return <>
+  if (view !== 'dashboard' && (power.mode !== 'SURVIVAL' || view === 'more' || view === 'demo' || view === 'trace')) return <>
     {view === 'notifications' && inbox}
     {view === 'more' && <>
       <details className="settings-panel"><summary>{at.power}</summary>{powerControls}</details>
@@ -142,12 +142,12 @@ export function VNextExperience({ snapshot, language, now, connection, verificat
 }
 
 /** Safety-check consent and responses for the replay (the same controls on /demo's Now screen and in the settings panel). */
-export function ReplaySafetyCheck({ check, setCheck, language, visible }: { check: SafetyCheckState; setCheck: Dispatch<SetStateAction<SafetyCheckState>>; language: Language; visible: boolean }) {
+export function ReplaySafetyCheck({ check, setCheck, language, visible, hideTitle=false }: { check: SafetyCheckState; setCheck: Dispatch<SetStateAction<SafetyCheckState>>; language: Language; visible: boolean; hideTitle?:boolean }) {
   const t = vnextMessages[language];
   const statusText = check.status === 'UNRESPONSIVE_UNKNOWN' ? t.silence : check.status === 'NEEDS_ASSISTANCE' ? t.help : check.status === 'CANNOT_MOVE' ? t.cannotMove : check.status === 'SAFE_CONFIRMED' ? t.safe : t.check;
   return <section className={`check-card ${check.status === 'AWAITING_RESPONSE' ? 'check-required' : ''}`} data-testid="replay-safety-check">
     <label><input type="checkbox" checked={check.consent} onChange={e => setCheck(state => reduceSafetyCheck(state, { type: 'CONSENT', enabled: e.target.checked }))} /> {t.consent}</label>
-    {visible && <><h2>{t.check}</h2><p role="status">{statusText} · {check.attempts}/3</p>
+    {visible && <>{!hideTitle&&<h2>{t.check}</h2>}<p role="status">{statusText} · {check.attempts}/3</p>
       {['AWAITING_RESPONSE', 'UNRESPONSIVE_UNKNOWN'].includes(check.status) && <div className="check-buttons">{(['SAFE_CONFIRMED', 'NEEDS_ASSISTANCE', 'CANNOT_MOVE'] as const).map((response, index) => <button key={response} type="button" onClick={() => setCheck(state => reduceSafetyCheck(state, { type: 'RESPOND', response, now: Date.now() }))}>{[t.safe, t.help, t.cannotMove][index]}</button>)}</div>}</>}
     <p className="muted">{t.checkLimit}</p>
   </section>;

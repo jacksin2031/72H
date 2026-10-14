@@ -16,6 +16,8 @@ import { SimulationAdvicePanel } from './simulation-advice-panel';
 import { PlanExplanationPanel } from './plan-explanation-panel';
 import { AppShell, Button, Disclosure, ListRow, Section, StatusBand } from './ui';
 import { NowScreen } from './now-screen';
+import { HelpOverlay } from './help-overlay';
+import { liveMessages } from '@/lib/live-i18n';
 import { MapScreen } from './map-screen';
 import { MAP_REGIONS, mapOverviewLabel, mapRegionLabel } from '@/lib/map-regions';
 import { sosText } from '@/lib/distress';
@@ -120,7 +122,10 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
   // The played tsunami milestone names the level on the band, exactly like Live's danger band (演練 · <level>).
   const warningLabel=warning?config.milestones.slice(0,done).findLast(m=>m.kind==='TSUNAMI_WARNING')?.label[language]??t.tsunamiWarningSummary:null;
 
-  const band=warningLabel
+  const offlineExercise = !connected || config.input.network !== 'ONLINE';
+  const band=offlineExercise
+    ?<StatusBand tone="warn" label={`${t.exercise} · ${liveMessages[language].nowOfflineVerified} ${state?.snapshot.situation.latest_evidence_at ? new Date(state.snapshot.situation.latest_evidence_at).toLocaleString(language,{timeZone:'Asia/Tokyo'}) : '—'}`}/>
+    :warningLabel
     ?<StatusBand tone="danger" label={`${t.exercise} · ${warningLabel}`}/>
     :<StatusBand tone="exercise" label={upcoming?`${t.exercise} · ${doneEvent?t.nextEvent:t.before}`:t.exercise} countdown={upcoming?count(seconds):null}/>;
   const exerciseControls=<>
@@ -138,7 +143,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
     ?`${current.kind==='EARTHQUAKE'?t.earthquake:current.label[language]} · ${current.at_jst.slice(11,16)} · ${config.title}${current.fed_to_safety_core?'':' · '+t.unsupported}`
     :`${config.title}${upcoming?` · ${t.nextEvent} ${upcoming.at_jst.slice(11,16)} ${upcoming.label[language]}`:''}`;
   const basisDetails=<>
-    <p className="now-meta">{t.warning} · {t.safety}</p>
+    <p className="now-meta">{t.warning}</p>
     <Section title={t.timeline}><ol className="ui-exercise-list" data-testid="simulation-timeline">{config.milestones.map((m,i)=><li key={m.at_jst+'-'+i} data-event-state={i<done?'processed':'pending'}>
       {m.at_jst.slice(11,16)} · {m.label[language]}
       <small>{i<done?t.eventDone:i===done?t.nextEvent:t.upcoming} · {m.fed_to_safety_core?t.ai:t.unsupported} · <a href={m.source_url} rel="noopener noreferrer" target="_blank">{t.consult} ↗</a></small>
@@ -151,10 +156,9 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
   </>;
   const help=<>
     {doneEvent&&<SimulationAdvicePanel advice={advice} executionMode={lastMode} language={language} cannotMove={config.input.mobility==='CANNOT_MOVE'} stale={Boolean(state?.movement_assessment&&!advice)}/>}
-    {state&&<>
+    {<>
       <Button variant="danger" className="distress-entry-button" aria-expanded={distressOpen} onClick={()=>setDistressOpen(open=>!open)}>{sosText[language].title}</Button>
-      {distressOpen&&<DistressEntry snapshot={state.snapshot} language={language} scope="mock-live" accessKey={config.accessKey} fix={fix}
-        onSnapshot={raw=>{const parsed=mockLiveResponseSchema.safeParse(raw);if(parsed.success&&parsed.data.snapshot.session_id===state.snapshot.session_id)onState?.(parsed.data);}}/>}
+
     </>}
   </>;
 
@@ -182,12 +186,15 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
       </div>
       :<div data-testid="simulation-now"><NowScreen language={language} hero={hero} heroTone={warningLabel?'danger':error||!connected?'warn':'normal'} basis={basis}
         next={doneEvent?byCategory('NEXT'):[]} avoid={doneEvent?byCategory('AVOID'):[]}
-        updatedLabel={`${t.clock} ${timeText.slice(0,16)} JST`} exercise openBasis={tab==='events'} basisDetails={basisDetails} help={help}/></div>;
+        updatedLabel={`${t.clock} ${timeText.slice(0,16)} JST`} note={liveMessages[language].notSafetyVerdict} exercise openBasis={tab==='events'} basisDetails={basisDetails} help={help}/></div>;
 
   return <div data-testid="simulation-dashboard">
     <AppShell tab={tabFor(tab)} language={language} band={band} exerciseControls={exerciseControls} fullBleed={tab==='map'}
       onTab={next=>setTab(next==='map'?'map':next==='more'?'more':'home')}>
       {errorLine}
+      <button type="button" hidden={tab==='home'||tab==='plan'||tab==='events'||distressOpen} className="ui-help-pin" aria-label={sosText[language].title} onClick={()=>setDistressOpen(true)}>{sosText[language].title}</button>
+      {distressOpen&&<HelpOverlay language={language} onClose={()=>setDistressOpen(false)}><DistressEntry snapshot={state?.snapshot??null} language={language} scope="mock-live" accessKey={config.accessKey} fix={fix}
+        onSnapshot={raw=>{const parsed=mockLiveResponseSchema.safeParse(raw);if(parsed.success&&state&&parsed.data.snapshot.session_id===state.snapshot.session_id&&parsed.data.current_step>=state.current_step)onState?.(parsed.data);}}/></HelpOverlay>}
       {screen}
     </AppShell>
   </div>;

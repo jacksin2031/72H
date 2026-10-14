@@ -4,9 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Language } from '@/lib/contracts';
 import { SimulationReferenceMap } from '@/components/simulation-reference-map';
 import { MAP_REGIONS, mapRegionLabel, mapOverviewLabel } from '@/lib/map-regions';
+import { DistressEntry } from '@/components/distress-entry';
+import { HelpOverlay } from '@/components/help-overlay';
+import { sosText } from '@/lib/distress';
+import { loadLiveSnapshot, saveLiveSnapshot } from '@/lib/continuity';
+import { liveSnapshotSchema, type LiveSnapshot } from '@/lib/contracts';
 import { AppShell } from '@/components/ui';
 import { MapScreen } from '@/components/map-screen';
-import { readSavedLanguage } from '@/lib/saved-language';
+import { readPageLanguage } from '@/lib/saved-language';
 import { loadOfficialHazardPack, officialPlaceLocation, type HazardPack, type HazardLocation, type OfficialPlace } from '@/lib/official-hazards';
 import { OfficialHazardPanel } from '@/components/official-hazard-panel';
 import { JapanShelterPanel } from '@/components/japan-shelter-panel';
@@ -23,18 +28,18 @@ import { forecastLegendState, forecastLegendText } from '@/lib/map-legend';
 const screenText={
   'zh-TW':{title:'全日本參考地圖',inundation:'浸水想定',places:'避難場所',lines:'海嘯預報區',regions:'震度地域',
     legendInundation:'浸水想定：官方靜態想定，非即時',legendPlaces:'避難場所：官方指定，開放未核實',legendRegions:'震度地域：地域最大值，非逐點實測',
-    note:'僅供參考：不可作避難導航，也不是安全判定',peek:(n:number)=>`附近 ${n} 處指定避難場所`,placesTitle:'避難場所',officialTitle:'官方資料'},
+    note:'僅供參考：不可作避難導航，也不是安全判定',peek:(n:number)=>`已載入 ${n} 處指定避難場所`,placesTitle:'避難場所',officialTitle:'官方資料'},
   ja:{title:'日本全国の参考地図',inundation:'浸水想定',places:'避難場所',lines:'津波予報区',regions:'震度地域',
     legendInundation:'浸水想定：公式の静的想定・リアルタイムではない',legendPlaces:'避難場所：公式指定・開設は未確認',legendRegions:'震度地域：地域の最大値・各地点の実測ではない',
-    note:'参考情報：避難ナビ・安全判定には使えません',peek:(n:number)=>`付近の指定避難場所 ${n} か所`,placesTitle:'避難場所',officialTitle:'公式情報'},
+    note:'参考情報：避難ナビ・安全判定には使えません',peek:(n:number)=>`読み込み済みの指定避難場所 ${n} か所`,placesTitle:'避難場所',officialTitle:'公式情報'},
   en:{title:'All Japan reference map',inundation:'Inundation',places:'Places',lines:'Tsunami areas',regions:'Intensity regions',
     legendInundation:'Inundation: official static scenario, not live',legendPlaces:'Places: official designations, opening unverified',legendRegions:'Intensity regions: regional maxima, not point readings',
-    note:'Reference only: not for evacuation navigation or a safety determination',peek:(n:number)=>`${n} designated places nearby`,placesTitle:'Evacuation places',officialTitle:'Official data'},
+    note:'Reference only: not for evacuation navigation or a safety determination',peek:(n:number)=>`${n} loaded designated places`,placesTitle:'Evacuation places',officialTitle:'Official data'},
 } as const;
 
 /** Public geography and reviewed official reference data. GPS is opt-in and device-local; no movement authority. */
 export default function JapanMapPage() {
-  const [language,setLanguage]=useState<Language>('zh-TW'),[languageReady,setLanguageReady]=useState(false);
+  const [language,setLanguage]=useState<Language>('ja'),[languageReady,setLanguageReady]=useState(false);
   const [pack,setPack]=useState<HazardPack|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(false),[attempt,setAttempt]=useState(0);
   const [showInundation,setShowInundation]=useState(true),[showPlaces,setShowPlaces]=useState(true);
   const [manualPoint,setManualPoint]=useState<HazardLocation|null>(null),[focus,setFocus]=useState<{lat:number;lng:number;zoom?:number}|null>(null);
@@ -42,6 +47,9 @@ export default function JapanMapPage() {
   const [referenceRoute,setReferenceRoute]=useState<RoadCandidate|null>(null);
   const [regionRequest,setRegionRequest]=useState<{value:string}|null>(null);
   const geo=useSimulationGeo();
+  const [helpOpen,setHelpOpen]=useState(false),[helpSnapshot,setHelpSnapshot]=useState<LiveSnapshot|null>(null);
+  useEffect(()=>{let alive=true;void loadLiveSnapshot().then(saved=>{if(alive)setHelpSnapshot(saved?.snapshot??null);}).catch(()=>{});return()=>{alive=false;};},[]);
+  const adoptHelp=(raw:unknown)=>{const parsed=liveSnapshotSchema.safeParse(raw);if(parsed.success&&helpSnapshot&&parsed.data.session_id===helpSnapshot.session_id&&Date.parse(parsed.data.situation.updated_at)>=Date.parse(helpSnapshot.situation.updated_at)){setHelpSnapshot(parsed.data);void saveLiveSnapshot(parsed.data).catch(()=>{});}};
   const [showIntensityRegions,setShowIntensityRegions]=useState(false);
   const official=useDisasterMap(showIntensityRegions);
   const [showForecastLines,setShowForecastLines]=useState(true);
@@ -61,7 +69,7 @@ export default function JapanMapPage() {
   const choosePlace=useCallback((place:OfficialPlace)=>{
     geo.clear();setManualPoint(officialPlaceLocation(place));setFocus({lat:place.lat,lng:place.lng});
   },[geo.clear]);
-  useEffect(()=>{setLanguage(readSavedLanguage('zh-TW'));setLanguageReady(true);},[]);
+  useEffect(()=>{setLanguage(readPageLanguage('ja'));setLanguageReady(true);},[]);
   useEffect(()=>{
     if(process.env.NODE_ENV==='production'&&'serviceWorker' in navigator){
       void navigator.serviceWorker.register('/sw.js').catch(()=>{});
@@ -89,6 +97,9 @@ export default function JapanMapPage() {
   </AppShell>;
   return <AppShell tab="map" language={language} fullBleed>
     <h1 className="ui-visually-hidden">{t.title}</h1>
+    <button type="button" hidden={helpOpen} className="ui-help-pin" aria-label={sosText[language].title} onClick={()=>setHelpOpen(true)}>{sosText[language].title}</button>
+    {helpOpen&&<HelpOverlay language={language} onClose={()=>setHelpOpen(false)}><DistressEntry snapshot={helpSnapshot} language={language} scope="live" onSnapshot={adoptHelp}
+      fix={geo.location?{...geo.location,manual:geo.location.source==='MANUAL_EXERCISE'}:null}/></HelpOverlay>}
     <MapScreen language={language}
       map={<SimulationReferenceMap language={language} protectDeviceLocation epicenter={null} legend="none" regionPicker={false} regionRequest={regionRequest}
         userLocation={geo.location} referencePoint={manualPoint} officialPack={pack} showInundation={showInundation} showPlaces={showPlaces}

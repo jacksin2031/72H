@@ -25,7 +25,7 @@ div.ui-row{cursor:default}
 .ui-disclosure summary::after{content:"›";margin-left:var(--sp-2);transition:transform var(--motion)}
 .ui-disclosure[open] summary::after{transform:rotate(90deg)}
 .ui-disclosure-body{padding-bottom:var(--sp-4)}
-.ui-band{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);min-height:44px;padding:0 var(--gutter);font-weight:700}
+.ui-band{overflow-wrap:anywhere;flex-wrap:wrap;padding-block:var(--sp-2);position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);min-height:44px;padding:0 var(--gutter);font-weight:700}
 .ui-band-danger{background:var(--danger);color:var(--bg)}
 .ui-band-warn{background:var(--warn);color:var(--bg)}
 .ui-band-exercise{background:var(--exercise);color:var(--bg)}
@@ -37,30 +37,31 @@ div.ui-row{cursor:default}
 .ui-app{min-height:100dvh;background:var(--bg);color:var(--text);padding-bottom:calc(64px + env(safe-area-inset-bottom))}
 .ui-main{max-width:var(--content-max);margin:0 auto;padding:0 var(--gutter) var(--sp-6)}
 .ui-tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(3,1fr);height:calc(64px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:var(--bg);border-top:1px solid var(--line)}
-.ui-tabs a,.ui-tabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:48px;color:var(--text-2);font-size:12px;text-decoration:none}
-.ui-tabs button{background:none;border:0;font:inherit;font-size:12px;cursor:pointer}
+.ui-tabs a,.ui-tabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:48px;color:var(--text-2);font-size:var(--fs-meta);text-decoration:none}
+.ui-tabs button{background:none;border:0;font:inherit;font-size:var(--fs-meta);cursor:pointer}
 .ui-tabs a[aria-current=page],.ui-tabs button[aria-current=page]{color:var(--text);font-weight:700}
 .ui-exercise-controls{position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:25;display:flex;gap:var(--sp-2);justify-content:center;padding:var(--sp-2) var(--gutter);background:var(--bg);border-top:1px solid var(--line)}
 .ui-main-full{max-width:none;padding:0}
-.ui-app-has-band{--band-h:44px}
-.ui-app-has-controls{padding-bottom:calc(64px + 64px + env(safe-area-inset-bottom))}
-.ui-exercise-controls{flex-wrap:nowrap;align-items:center;justify-content:flex-start;height:64px;overflow-x:auto}
+.ui-app{--band-h:0px;--controls-h:64px}.ui-app-has-band{--band-h:44px}
+.ui-app-has-controls{padding-bottom:calc(64px + var(--controls-h,64px) + env(safe-area-inset-bottom))}
+.ui-exercise-controls{flex-wrap:wrap;align-items:center;justify-content:flex-start;min-height:64px;height:auto;overflow-x:visible}
 .ui-exercise-controls>*{flex:0 0 auto}
 .ui-exercise-controls select{min-height:48px;padding:0 var(--sp-3);border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);color:var(--text)}
 .ui-exercise-meta{color:var(--text-2);font-size:var(--fs-meta);font-variant-numeric:tabular-nums;white-space:nowrap}
 /* Now screen (Task 5): one cardless column, max width from .ui-main. */
-.now-hero{margin:var(--sp-5) 0 var(--sp-2);font-size:var(--fs-hero);font-weight:700;line-height:1.25}
+.now-hero{margin:var(--sp-4) 0 var(--sp-2);font-size:var(--fs-hero);font-weight:700;line-height:1.25}
 .now-hero-danger{color:var(--text)}
 .now-hero-warn{color:var(--warn)}
 .now-meta{margin:0;color:var(--text-2);font-size:var(--fs-meta)}
 .now-basis{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2)}
-.now-basis .ui-disclosure{flex-basis:100%}
-.now-help{margin:var(--sp-5) 0}
+.now-basis>.now-meta{flex-basis:100%}
+.now-basis .ui-disclosure{flex-basis:auto}
+.now-help{margin:var(--sp-3) 0}
 .now-list{margin:0;padding-left:1.2em}
 .now-list li+li{margin-top:var(--sp-2)}
 /* Pinned help control: shown when the full "I need help" button is off screen or absent; sits just above the tabs. */
 .ui-help-pin{position:fixed;right:var(--gutter);bottom:calc(64px + env(safe-area-inset-bottom) + var(--sp-3));z-index:31;display:inline-flex;align-items:center;justify-content:center;min-width:48px;min-height:48px;padding:0 var(--sp-4);border:0;border-radius:999px;background:var(--danger);color:var(--bg);font:inherit;font-weight:700;cursor:pointer}
-.ui-app-has-controls .ui-help-pin{bottom:calc(64px + 64px + env(safe-area-inset-bottom) + var(--sp-3))}
+.ui-app-has-controls .ui-help-pin{bottom:calc(64px + var(--controls-h,64px) + env(safe-area-inset-bottom) + var(--sp-3))}
 /* Distress / SOS panel (Task 6): cardless, one column; no card chrome or shadows. */
 .distress-panel{margin:var(--sp-5) 0;overflow-wrap:anywhere}
 .distress-panel a{color:var(--info)}
@@ -100,15 +101,15 @@ a.ui-btn-secondary{color:var(--info)}
 .map-screen{position:fixed;inset:0 0 calc(64px + env(safe-area-inset-bottom)) 0;background:var(--bg)}
 .map-canvas,.map-canvas>*{position:absolute;inset:0}
 .ui-app-has-band .map-screen{top:var(--band-h)}
-.ui-app-has-controls .map-screen{bottom:calc(64px + 64px + env(safe-area-inset-bottom))}
-.ui-app-has-controls .ui-sheet{bottom:calc(64px + 64px + env(safe-area-inset-bottom))}
+.ui-app-has-controls .map-screen{bottom:calc(64px + var(--controls-h,64px) + env(safe-area-inset-bottom))}
+.ui-app-has-controls .ui-sheet{bottom:calc(64px + var(--controls-h,64px) + env(safe-area-inset-bottom))}
 .map-region{position:absolute;top:var(--sp-3);left:var(--gutter);right:72px;z-index:5}
 .map-region select{min-height:48px;max-width:100%;padding:0 var(--sp-3);border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);color:var(--text);font:inherit}
 .map-chips{position:absolute;left:0;right:0;bottom:68px;z-index:6;display:flex;gap:var(--sp-2);overflow-x:auto;padding:var(--sp-1) var(--gutter)} /* block padding keeps the 2px+2px focus ring unclipped */
 .map-chips .ui-chip{flex:0 0 auto;background:var(--bg)}
 .map-chips .ui-chip[aria-pressed=true]{background:var(--text)}
 .map-legend{position:absolute;left:var(--gutter);right:var(--gutter);bottom:128px;z-index:6;margin:0;padding:var(--sp-1) var(--sp-2);background:color-mix(in srgb,var(--bg) 85%,transparent);color:var(--text-2);font-size:var(--fs-meta)}
-.map-canvas .sim-map-footnote{top:72px;bottom:auto}
+.map-canvas .sim-map-footnote{top:72px;bottom:auto;right:72px}
 .map-screen .ui-sheet{color:var(--text)}
 /* Sheet content (former card panels): plain text, rows and inputs; no frames. */
 .ui-sheet-body h3{margin:var(--sp-4) 0 var(--sp-2);font-size:var(--fs-body)}
@@ -282,3 +283,34 @@ a.ui-btn-secondary{color:var(--info)}
 .exercise-map{position:relative;height:clamp(240px,40dvh,360px);margin:var(--sp-3) 0;border-radius:var(--radius);overflow:hidden}
 /* Survival power mode keeps record lists out of the minimal screen (as before the globals.css removal). */
 .power-survival .record-list{display:none}
+
+/* Final device fixes: reserve scroll room for fixed help and keep native form rows aligned. */
+.ui-app:has(.ui-help-pin:not([hidden])) .ui-main:not(.ui-main-full){padding-bottom:calc(48px + var(--sp-6))}
+.ui-help-overlay{position:fixed;inset:0;z-index:40;background:var(--bg);color:var(--text);overflow-y:auto;overscroll-behavior:contain;padding:var(--sp-3) var(--gutter) calc(var(--sp-6) + env(safe-area-inset-bottom))}
+.ui-help-overlay>.distress-panel{max-width:var(--content-max);margin:var(--sp-3) auto}
+.emergency-contacts-setup{margin:var(--sp-5) 0}
+.sos-contact-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-3);margin:var(--sp-3) 0}
+.sos-contact-row label{display:grid;gap:var(--sp-1);min-width:0}
+.sos-contact-row input{width:100%;min-width:0}
+.ui-app label:has(>input[type=checkbox]){display:flex;align-items:center;gap:var(--sp-2);min-height:48px}
+.ui-app label>input[type=checkbox]{width:20px;height:20px;margin:0;flex:0 0 20px}
+.live-source-links p{display:grid;gap:var(--sp-1);margin:var(--sp-3) 0}
+.live-source-links a,.official-source-review a{display:inline-flex;align-items:center;min-height:48px;color:var(--info);overflow-wrap:anywhere}
+.live-source-links small{display:block;color:var(--text-2);font-size:var(--fs-meta)}
+.live-topbar-state{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-1);margin:var(--sp-3) 0;font-size:var(--fs-meta)}
+.check-buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));gap:var(--sp-2);margin:var(--sp-3) 0}
+.check-buttons button{min-height:48px;padding:var(--sp-2);border:1px solid var(--line);border-radius:var(--radius);background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--text);text-align:center}
+@media(max-width:380px){.sos-contact-row{grid-template-columns:minmax(0,1fr)}.ui-exercise-controls{column-gap:var(--sp-1)}.ui-exercise-controls .ui-btn{padding-inline:var(--sp-1)}}
+
+.ui-help-pin[hidden]{display:none}
+
+/* Measured sheet peek + exercise controls: the help pin never shares their row. */
+.ui-app:has(.ui-sheet) .ui-help-pin{bottom:calc(64px + env(safe-area-inset-bottom) + var(--sheet-peek-h,56px) + var(--sp-3))}
+.ui-app-has-controls:has(.ui-sheet) .ui-help-pin{bottom:calc(64px + var(--controls-h,64px) + env(safe-area-inset-bottom) + var(--sheet-peek-h,56px) + var(--sp-3))}
+.ui-app:has(.ui-sheet[data-open]) .ui-help-pin{top:calc(var(--band-h,0px) + 72px);bottom:auto}
+.map-chips{bottom:calc(var(--sheet-peek-h,56px) + 12px)}
+.map-legend{bottom:calc(var(--sheet-peek-h,56px) + 72px)}
+
+/* Map help has its own top row beside the region picker; it never covers chips, legend, sheet or zoom. */
+.ui-app:has(.map-screen) .ui-help-pin{top:calc(var(--band-h,0px) + var(--sp-3));bottom:auto;right:72px;left:auto;max-width:128px}
+.ui-app:has(.map-screen) .map-region{right:calc(72px + 128px + var(--sp-2))}

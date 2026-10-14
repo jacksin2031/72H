@@ -7,3 +7,9 @@ export function readSavedLanguage(fallback: Language): Language {
   } catch { /* Storage can be blocked; the default language remains usable. */ }
   return fallback;
 }
+
+/** Query language takes precedence, matching Live. Invalid values fall back to the saved language. */
+export function readPageLanguage(fallback: Language): Language {
+  const query = new URLSearchParams(window.location.search).get('language');
+  return query === 'ja' || query === 'en' || query === 'zh-TW' ? query : readSavedLanguage(fallback);
+}

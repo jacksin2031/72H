@@ -6,7 +6,10 @@ import { AppShell, Button, Disclosure, ListRow, StatusBand } from './ui';
 import { MORE_ROW_LABELS, MORE_ROW_ORDER, MoreScreen, type MoreRowKey } from './more-screen';
 import { ExerciseSubpage } from './exercise-subpage';
 import packageInfo from '../package.json';
+import { HelpOverlay } from './help-overlay';
 import { NowScreen } from './now-screen';
+import { noActiveAlertsAllowed, nowHeroText, officialAlert, statusBandSpec } from '@/lib/now-status';
+import { formatCountdown } from '@/lib/distress-guidance';
 import { shouldOpenBasis, tabForView } from '@/lib/app-tabs';
 import { OfficialSourceReview } from './official-source-review';
 import {PlanExplanationPanel} from './plan-explanation-panel';
@@ -53,7 +56,7 @@ export function LiveHeaderStatus({ hasSession, busy, networkLabel, messages }: {
   hasSession: boolean; busy: boolean; networkLabel: string; messages: Record<string, string>;
 }) {
   return <div className="live-topbar-state"><strong>{hasSession ? messages.monitor : busy ? messages.refreshing : messages.setupRequired}</strong>
-    {hasSession && <span>{networkLabel}</span>}
+    {hasSession && <><span aria-hidden="true"> · </span><span>{networkLabel}</span></>}
   </div>;
 }
 
@@ -603,22 +606,33 @@ export function liveGuidance(view: string, snapshot: LiveSnapshot, projection: L
 }
 
 /** The hero text; the takeover band uses the same function so the two can never disagree. */
-export function liveHeroText({ snapshot, projection, primaryAction, connection, messages }: {
+export function liveHeroText({ snapshot, projection, primaryAction, connection, messages, now = Date.parse(snapshot.situation.updated_at), language = snapshot.profile.preferred_language }: {
   snapshot: LiveSnapshot; projection: LiveProjectionValue; primaryAction: LiveProjectionValue['presentation']['primaryAction'];
-  connection: Connection; messages: Record<string, string>;
+  connection: Connection; messages: Record<string, string>; now?:number; language?:Language;
 }) {
   const critical = CRITICAL_PROTECTION_MODES.includes(projection.presentation.mode);
   // "No active alerts" is a claim about the world: only with a current source, a live verified connection,
   // no plan, no active event and no distress level.
-  const noAlerts = !projection.plan && snapshot.situation.active_event_ids.length === 0 && snapshot.distress.level === 'NONE'
-    && connection === 'online' && projection.networkState === 'ONLINE_VERIFIED' && isPrimarySourceCurrent(snapshot, projection);
-  return primaryAction?.text || (critical ? messages.emergency : noAlerts ? messages.noActiveAlerts : messages.pending);
+  const noAlerts = noActiveAlertsAllowed({hasPlan:!!projection.plan,activeEventCount:snapshot.situation.active_event_ids.length,distressLevel:snapshot.distress.level,
+    connection,networkState:projection.networkState,primarySourceCurrent:isPrimarySourceCurrent(snapshot,projection)});
+  return nowHeroText({actionText:primaryAction?.text,alert:connection==='online'&&projection.networkState==='ONLINE_VERIFIED'?officialAlert(snapshot.distress,now,language):null,
+    language,critical,noAlerts,messages:messages as {emergency:string;noActiveAlerts:string;pending:string}});
 }
 
 export function liveTakeoverBandLabel({ view, snapshot, projection, locationSync, connection, messages }: {
   view: string; snapshot: LiveSnapshot; projection: LiveProjectionValue; locationSync: boolean; connection: Connection; messages: Record<string, string>;
 }) {
   return liveHeroText({ snapshot, projection, connection, messages, primaryAction: liveGuidance(view, snapshot, projection, locationSync).primaryAction });
+}
+
+export function liveStatusBand({snapshot,projection,connection,now,language,messages}:{snapshot:LiveSnapshot;projection:LiveProjectionValue;connection:Connection;now:number;language:Language;messages:Record<string,string>}){
+  const alert = connection === 'online' && projection.networkState === 'ONLINE_VERIFIED' ? officialAlert(snapshot.distress,now,language) : null;
+  const bandSpec = statusBandSpec({alert,criticalEventName:snapshot.events.findLast(e=>snapshot.situation.active_event_ids.includes(e.id))?.event_type === 'EARTHQUAKE' ? messages.eventEARTHQUAKE : null,
+    critical:connection === 'online' && projection.networkState === 'ONLINE_VERIFIED' && (CRITICAL_PROTECTION_MODES.includes(projection.presentation.mode) || projection.mapGate),
+    offline:connection !== 'online' || projection.networkState.startsWith('OFFLINE') || projection.networkState === 'RECONNECTING',
+    stale:projection.stale || snapshot.distress.level === 'OFFICIAL_STALE' || projection.networkState !== 'ONLINE_VERIFIED',
+    labels:{offline:`${messages.nowOfflineVerified} ${clockTime(snapshot.situation.latest_evidence_at,language,now)}`,stale:messages.bandStale,officialAlert:messages.bandOfficialAlert}});
+  return bandSpec;
 }
 
 function LiveNow({ view, snapshot, projection, primaryAction, language, messages, connection, now, power, busy, refresh, canRefresh, help,
@@ -633,7 +647,7 @@ function LiveNow({ view, snapshot, projection, primaryAction, language, messages
   const texts = (category: 'NEXT' | 'AVOID') => actions.filter(action => action.category === category).map(action => action.text);
   const critical = CRITICAL_PROTECTION_MODES.includes(projection.presentation.mode);
   const activeEvent = snapshot.events.findLast(event => snapshot.situation.active_event_ids.includes(event.id));
-  const hero = liveHeroText({ snapshot, projection, primaryAction, connection, messages });
+  const hero = liveHeroText({ snapshot, projection, primaryAction, connection, messages, now, language });
   const unverified = projection.stale || projection.networkState !== 'ONLINE_VERIFIED';
   const heroTone = critical ? 'danger' : connection !== 'online' || unverified ? 'warn' : 'normal';
   const published = snapshot.source.last_published_at;
@@ -659,7 +673,7 @@ function LiveNow({ view, snapshot, projection, primaryAction, language, messages
       </details>
     </>;
   return <NowScreen language={language} hero={hero} heroTone={heroTone} basis={basis} next={hideNext ? [] : texts('NEXT')} avoid={texts('AVOID')}
-    updatedLabel={updatedLabel} exercise={false} openBasis={shouldOpenBasis(view)} basisDetails={basisDetails} help={help} />;
+    updatedLabel={updatedLabel} note={messages.notSafetyVerdict} exercise={false} openBasis={shouldOpenBasis(view)} basisDetails={basisDetails} help={help} />;
 }
 
 const themeChoices = ['dark', 'system', 'contrast'] as const;
@@ -1407,16 +1421,16 @@ export function LiveDashboard({ view }: { view: string }) {
         locationSync={locationSync} onRetryLocation={() => void retryLocationUpdate()}
         onLocalLocationChecked={() => setLocationGate({ phase: 'failed', update: null })} onChooseArea={chooseLocationArea} help={helpInNow ? helpEntry : null} />;
 
-  const takeoverBand = criticalMobileTakeover && snapshot && projection ? <StatusBand tone="danger" label={liveTakeoverBandLabel({
-    view: mobileView, snapshot, projection, locationSync: !!locationSync, connection, messages })} /> : undefined;
-  return <AppShell tab={tabForView(mobileView)} language={language} band={takeoverBand}>
+  const bandSpec = snapshot && projection ? liveStatusBand({snapshot,projection,connection,now,language,messages}) : null;
+  const band = bandSpec ? <StatusBand tone={bandSpec.tone} label={bandSpec.label} countdown={bandSpec.deadlineAt ? formatCountdown(bandSpec.deadlineAt-now) : null}/> : undefined;
+  return <AppShell tab={tabForView(mobileView)} language={language} band={band}>
     <div className={`live-shell live-main theme-${theme} power-${power.power.mode.toLowerCase()} role-${role} ${snapshot ? 'has-live-session' : 'no-live-session'}`}>
-      {!helpInNow && helpButton(false)}
-      {distressOpen && <div ref={distressPanel} tabIndex={-1} className="distress-panel-anchor" aria-label={sosText[language].title}>
+
+      {distressOpen && <HelpOverlay language={language} onClose={()=>setDistressOpen(false)}><div ref={distressPanel} tabIndex={-1} className="distress-panel-anchor" aria-label={sosText[language].title}>
         <DistressEntry snapshot={snapshot} language={language} scope="live" fix={fixFromDevicePosition(deviceLocation.position)} onSnapshot={adoptDistress}
           refreshLocation={deviceLocation.permissionGranted ? () => void deviceLocation.locate() : undefined} />
-      </div>}
-      {showHelpPin && <button type="button" className="ui-help-pin" aria-label={sosText[language].title} aria-expanded={false}
+      </div></HelpOverlay>}
+      {<button hidden={!showHelpPin} type="button" className="ui-help-pin" aria-label={sosText[language].title} aria-expanded={false}
         onClick={toggleDistress}>{language === 'ja' ? '助けて' : language === 'en' ? 'Help' : '求助'}</button>}
       {!criticalMobileTakeover && <LiveHeaderStatus hasSession={!!snapshot} busy={busy} networkLabel={networkLabel} messages={messages} />}
       {!snapshot && <label className="live-language">{messages.language}<select aria-label={messages.language} value={language} onChange={event => chooseLanguage(event.target.value as Language)}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option></select></label>}

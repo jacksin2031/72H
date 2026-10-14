@@ -122,3 +122,8 @@
 - `adb reverse tcp:3000` 與 `adb forward tcp:9222` 已移除（`adb reverse --list`／`forward --list` 皆為空）。
 - `git checkout -- apps/web/next-env.d.ts` 已執行。
 - 沒有 commit 任何程式、腳本或 `next-env.d.ts`；沒有加入密鑰。
+
+
+## 7. 最後修正輪（2026-10-14 JST，Codex）
+
+I1–I5、D1–D6、M1–M4 的本地修正及驗證記錄在 [UI_REDESIGN_FINAL_FIX_VALIDATION.md](UI_REDESIGN_FINAL_FIX_VALIDATION.md)。M5 按使用者要求擱置。原始真機 FAIL／NOT RUN 記錄保持不變，本輪尚未真機重驗、未部署。

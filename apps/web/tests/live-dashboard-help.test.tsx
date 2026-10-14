@@ -91,13 +91,13 @@ it('shows a pinned help control when there is no Now slot, and it toggles the sa
   expect(pin.textContent).toBe('Help');
   await act(async () => pin.click());
   expect(page.querySelector('.distress-probe')).not.toBeNull();
-  expect(page.querySelector('.ui-help-pin')).toBeNull();
+  expect(page.querySelector('.ui-help-pin:not([hidden])')).toBeNull();
 });
 
 it('hides the pinned control while the Now slot button is mounted and IntersectionObserver is unavailable', async () => {
   const page = await render('dashboard');
   expect(page.querySelector('[data-now="help"] .distress-entry-button')).not.toBeNull();
-  expect(page.querySelector('.ui-help-pin')).toBeNull();
+  expect(page.querySelector('.ui-help-pin:not([hidden])')).toBeNull();
 });
 
 it('shows the pinned control when the Now slot button scrolls out of view', async () => {
@@ -108,7 +108,19 @@ it('shows the pinned control when the Now slot button scrolls out of view', asyn
   };
   const page = await render('dashboard');
   await act(async () => report!([{ isIntersecting: true }]));
-  expect(page.querySelector('.ui-help-pin')).toBeNull();
+  expect(page.querySelector('.ui-help-pin:not([hidden])')).toBeNull();
   await act(async () => report!([{ isIntersecting: false }]));
-  expect(page.querySelector('.ui-help-pin')).not.toBeNull();
+  expect(page.querySelector('.ui-help-pin:not([hidden])')).not.toBeNull();
+});
+
+it('D4: More renders just one visible help entry; the overlay has a close control',async()=>{
+  const page=await render('more');
+  expect(page.querySelector('.distress-entry-button')).toBeNull();
+  const pin=page.querySelector<HTMLButtonElement>('.ui-help-pin:not([hidden])')!;pin.focus();
+  await act(async()=>pin.click());
+  const close=page.querySelector<HTMLButtonElement>('[role=dialog] button')!;
+  expect(close.textContent).toBe('Close');
+  await act(async()=>close.click());
+  expect(page.querySelector('[role=dialog]')).toBeNull();
+  expect(document.activeElement).toBe(page.querySelector('.ui-help-pin'));
 });

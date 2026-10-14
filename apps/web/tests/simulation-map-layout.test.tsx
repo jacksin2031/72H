@@ -85,3 +85,15 @@ describe('P2.1 map-first risk panel',()=>{
   expect(sheet.hasAttribute('data-open')).toBe(false);
  });
 });
+
+it('I2: simulation Map and More can open help before a session exists, with the same mounted panel',async()=>{
+  await render(1);
+  await act(async()=>el!.querySelector<HTMLButtonElement>('.ui-help-pin:not([hidden])')!.click());
+  const panel=el!.querySelector('[role=dialog]')!;
+  expect(panel).not.toBeNull();
+  await act(async()=>el!.querySelectorAll<HTMLButtonElement>('nav.ui-tabs button')[2].click());
+  expect(el!.querySelector('[role=dialog]')).toBe(panel);
+  await act(async()=>panel.querySelector<HTMLButtonElement>('button')!.click());
+  expect(el!.querySelector('.ui-help-pin:not([hidden])')).not.toBeNull();
+  expect(el!.querySelector('[data-testid=simulation-settings]')).not.toBeNull();
+});
