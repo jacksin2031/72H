@@ -66,3 +66,44 @@ The map page carries exactly one "not for evacuation navigation / not a safety d
 | 關於 subpage version row (new) | (none) | add | 版本 / バージョン / Version + package version |
 | 位置與隱私 privacy text (`locationPrivacy`, 4 sentences) | shown in full on the subpage | shorten to the first sentence; the full text moves into the 了解更多 Disclosure | 精確座標只在此裝置上使用。 / 正確な座標はこの端末内でのみ使います。 / Exact coordinates stay on this device. |
 | 演練與示範 map legend card | default reference-map caution card | delete (the subpage's exercise note is the single caution) | (none) |
+
+# Task 9: Exercise screens (/demo, /trace, /simulation, /disaster-test)
+
+The exercise screens now use the same AppShell, NowScreen, MapScreen and ListRow as the live screens. The only exercise-specific marks are the purple 演練 / 演習 / Exercise band, the same word as a `Tag` next to the basis line, and the exercise control bar. Technical words (Agent log, Judge, AI / Safety Core, planning mode, SYNTHETIC_REPLAY) appear only in the last Disclosure of the basis details. Each page keeps a single "not real / no movement authorization" line, as `now-meta` text at the top of the basis details.
+
+| Location | Original | Action | New text |
+|---|---|---|---|
+| /demo, /trace top banner `SYNTHETIC_REPLAY · 地震シミュレーション` + demoDetail (ja / en / zh-TW) | banner block above the page | replace with the band; detail moves under the basis | Band: 演習 / Exercise / 演練; basis details first line: demoDetail + noMovement (unchanged text) |
+| /demo header (72H / location, language select) | topbar with its own language select | delete (the 語言 subpage is the only language control); location moves to 演習の設定 / Exercise setup / 演練設定 | `現在地: … · 宿泊先: … · シナリオ時刻: … JST` (existing labels) |
+| /demo review nav (デモ · 計画の履歴 · 情報源 · エージェントの記録) | 4 buttons | delete; plan history, sources and progress are Sections in the basis details, the agent log is the last Disclosure | (none) |
+| /demo "preview scene", map toggle, "All Japan reference map" link, trace link | 4 controls | delete (one entry per feature: map is a tab, the live-scene preview is the Now screen itself) | (none) |
+| /demo heading `EARTHQUAKE / REPLAY` + status pill (network state) | eyebrow + pill | delete; network state moves into the last Disclosure | (none) |
+| /demo plan header `Plan vN` / `WAITING_FOR_EVIDENCE` + NOW / NEXT / AVOID panels with risk badges and "理由と情報源" | 3 card panels | replace with the shared Now mapping: hero = NOW action, 次に / 避ける lists; versions with risk and reasons stay in 計画の履歴 inside the basis | Hero / Next / Avoid (Live wording: `liveMessages` pending / emergency / noActiveAlerts / basisPublished / nowUpdated) |
+| /demo planning-mode line (Gemini / ADK · 決定論的…) | under the plan header | move to the last Disclosure | 計画の作成方法 / Planning mode / 計畫產生方式: (unchanged mode text) |
+| /demo replay controls | 一時停止 · 次の更新 → · 最初から · speed · i / n | reorder, restyle as secondary buttons in the exercise bar | 次の更新 → ｜ 一時停止 (再開) ｜ 最初から · 1× · i / n |
+| /demo offline banner | boxed banner | keep text, plain warn meta line above the Now screen | unchanged |
+| /demo footer `72H · From Alert to Action. 経路の利用可能性は…` | footer | delete footer; noMovement kept once in the basis details | (see first row) |
+| /demo emergency pack | bottom card | keep, as a Section in the basis details | unchanged |
+| /demo, /trace VNext status, safety check, notification inbox, power, local trace | blocks under the plan | move to the last Disclosure (演習の詳細（エージェント記録 · Judge）/ Exercise details (agent log · Judge) / 演練詳細（Agent 紀錄 · Judge）) | new summary text as listed |
+| /trace | separate record page | /trace = the exercise Now screen with the basis and the last Disclosure open | (none) |
+| /simulation header (72H · SIMULATION, settings icon) and own 4-item bottom nav (ホーム / 行動計画 / イベント / その他) | header + nav | delete; AppShell tabs (今 / 地図 / その他) switch in place inside the running exercise | (none) |
+| /simulation pre-event dateline, big countdown, `地震発生まで` | hero block | move into the band: label + countdown timer | 演習 · 地震発生まで  01:00:00 / Exercise · Until the earthquake / 演練 · 距離地震發生 |
+| /simulation clock / speed | dateline | move to the exercise bar | `14:46:30 JST` · `600× · i / n` |
+| /simulation `NOW · 最優先`, `NEXT · 次の行動`, `AVOID · 避ける` labels | panel labels | replace with NowScreen sections | 次に / 避ける (shared) |
+| /simulation map teaser, event dock, timeline/map switch | home blocks | delete (map is a tab; next event is in the basis line and the band) | Basis: `<title> · 次のイベント HH:MM <label>` |
+| /simulation timeline (events tab) | own page with expandable rows | move to a 時系列 / Timeline Section in the basis details (events tab opens it) | unchanged labels |
+| /simulation footnote `✦ <AI execution>` and 設定 row `AI / Safety Core` | visible lines | move to the last Disclosure: 演習の詳細（AI / Safety Core） / Exercise details (AI / Safety Core) / 演練詳細（AI／Safety Core） | new summary text |
+| /simulation `演習画面 · 実際の警報ではありません` (footer, plan note, settings) | 3 copies | keep once: first line of the basis details (and once on the More tab) | unchanged |
+| /simulation map: own sheet heading `位置とリスク` + `リスク詳細とGPS` / `地図を広く表示` + status pill + alert line | custom sheet | shared MapScreen sheet; peek is one line, section title is the old heading | Peek: `安全な経路・避難所の認証なし · 安全性：判定不能` (tsunami: `津波警報（歴史演習） · 避難安全性は未判定 · 安全性：判定不能`); legend line = the GSI note |
+| /simulation map back button `戻る`, `時系列 →` | buttons | delete (tabs) | (none) |
+| /simulation tsunami warning | amber line in the sheet | add the danger band like a live alert | 演習 · 津波警報 (label of the played milestone) |
+| /simulation `演習を終了` / `終了して設定に戻る` | header pill + settings button | one secondary button in the exercise bar (and on the More tab) | 演習を終了 / End drill / 結束演習 |
+| /simulation expired page `72H · SIMULATION` | h1 | reword | 演練已結束 / Exercise ended |
+| /disaster-test `← 設定に戻る` link and language select | header | delete (More tab; language subpage) | (none) |
+| /disaster-test `テストモード — 実際の警報ではありません` banner | banner | replace with the band | 演習 / Exercise / 演練 |
+| /disaster-test sticky status `TEST · L4 · 50%` | sticky bar | move into the Now basis line | `地震 · レベル L4 · 50%` |
+| /disaster-test `NOW · 模擬表示` preview card, `模擬画面` header, ` · UI ONLY` suffix | card | replace with the shared Now screen (local preview, `data-local-preview`) | Title line: `災害シミュレーション · 模擬画面` |
+| /disaster-test NEXT / AVOID details | collapsed details | NowScreen 次に / 避ける sections | unchanged action text |
+| /disaster-test explanation paragraph, simulated-fresh note, 119/110 note | visible paragraphs | move into the basis details | unchanged |
+| /disaster-test safety gates `避難地図・移動許可は常に無効…` | grey box | keep visible as one warn meta line under the safety check | unchanged |
+| /disaster-test Replay / P1.5 run button | primary | secondary (the page's one primary is the full simulation launch) | unchanged text |

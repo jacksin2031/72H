@@ -114,6 +114,7 @@ describe('mobile More and Plan navigation', () => {
     const rows = [...page.querySelectorAll<HTMLElement>('.ui-row')];
     expect(rows.map(r => r.querySelector('.ui-row-label')?.textContent)).toEqual(['日本語', 'English', '繁體中文']);
     expect(rows.map(r => r.querySelector('.ui-row-tail')?.textContent ?? '')).toEqual(['', '✓', '']);
+    expect(rows.map(r => r.getAttribute('aria-current'))).toEqual([null, 'true', null]);
     await click(rows[2]);
     expect(chooseLanguage).toHaveBeenCalledWith('zh-TW');
   });
@@ -131,6 +132,7 @@ describe('mobile More and Plan navigation', () => {
     const rows = [...page.querySelectorAll<HTMLElement>('.ui-row')];
     expect(rows).toHaveLength(3);
     expect(rows[0].querySelector('.ui-row-tail')?.textContent).toBe('✓');
+    expect(rows.map(r => r.getAttribute('aria-current'))).toEqual(['true', null, null]);
     await click(rows[2]);
     expect(chooseTheme).toHaveBeenCalledWith('contrast');
   });

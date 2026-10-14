@@ -51,7 +51,9 @@ describe('isolated disaster test lab', () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ok: true, json: async () => []})));
     await act(async () => { root!.render(<SimulationProvider><DisasterTestLab /></SimulationProvider>); });
     expect(container.querySelector('[data-testid="disaster-test-lab"]')).not.toBeNull();
-    expect(container.textContent).toContain('TEST');
+    // Marked as an exercise exactly like the live screens: the 演練 band (ja: 演習) plus the exercise Tag on the Now preview.
+    expect(container.querySelector('.ui-band-exercise')?.textContent).toBe('演習');
+    expect(container.querySelector('[data-testid="simulation-now"] .ui-tag-exercise')?.textContent).toBe('演習');
     expect(container.querySelector('[data-testid="simulation-now"]')).not.toBeNull();
     expect(container.querySelectorAll('input[type="range"]')).toHaveLength(1);
     const selects = container.querySelectorAll('select');
@@ -60,7 +62,7 @@ describe('isolated disaster test lab', () => {
     const critical = buttons.find(button => button.textContent?.includes('重大') || button.textContent?.includes('Critical') || button.textContent?.includes('重大'));
     const select = container.querySelector<HTMLSelectElement>('[data-testid="severity"]')!;
     await act(async () => { select.value = '4'; select.dispatchEvent(new Event('change', { bubbles: true })); });
-    expect(container.querySelector('.lab-safety-check')).not.toBeNull();
+    expect(container.querySelector('[data-testid="lab-safety-check"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="safety-gates"]')?.textContent).not.toBe('');
     expect(critical === undefined || critical instanceof HTMLButtonElement).toBe(true);
     expect(container.querySelector('a[href^="tel:"]')).toBeNull();

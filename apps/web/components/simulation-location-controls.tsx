@@ -5,7 +5,6 @@ import { AreaFallbackPicker } from './location-onboarding';
 import { resolveDeviceArea } from '@/lib/area-resolution';
 import { useSimulationGeo } from '@/lib/use-simulation-geo';
 import { simulationAdviceText, simulationConditionsSchema, type SimulationLocation, type SimulationConditions } from '@/lib/simulation-advice';
-import './simulation-advice.css';
 
 export const simulationConditionText={
   'zh-TW':{gps:'使用目前 GPS 地區',clear:'清除位置',resolving:'正在裝置內解析地區…',failed:'無法確認 GPS 地區，請手動選擇。',choose:'選擇目前所在地區',pref:'都道府縣',pick:'選擇都道府縣',city:'市區町村',broad:'只選都道府縣',confirm:'確認所在地區',conditions:'所在地的演練條件',

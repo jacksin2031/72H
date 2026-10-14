@@ -75,7 +75,22 @@ it('real sheet panels carry no navigation note of their own (the legend line is 
     expect(src,f).not.toMatch(/導航|ナビ|[Nn]avigation/);
   }
 });
-it('renders nothing before the saved language is read, so no zh-TW frame flashes for a ja or en user',async()=>{
+it('before the saved language is read it renders the shell and the hidden h1 but no language text, so no zh-TW frame flashes for a ja or en user',async()=>{
   const {renderToString}=await import('react-dom/server');
-  expect(renderToString(<JapanMapPage/>)).toBe('');
+  const html=renderToString(<JapanMapPage/>);
+  expect(html).toContain('ui-app');
+  expect(html).toContain('ui-tabs');
+  expect(html).toMatch(/<h1 class="ui-visually-hidden"><\/h1>/);
+  expect(html).toContain('map-screen');
+  // No zh-TW (or any language's) words: tab labels, title, chips, legend and sheet are all suppressed.
+  for(const text of ['現在','地圖','更多','全日本參考地圖','浸水想定','避難場所','僅供參考','主選單'])expect(html,text).not.toContain(text);
+});
+it('a storage error while reading the saved language still renders the full map shell (falls back to zh-TW)',async()=>{
+  vi.spyOn(Storage.prototype,'getItem').mockImplementation(()=>{throw new Error('blocked');});
+  await render();
+  expect(host.querySelector('.ui-app')).not.toBeNull();
+  expect([...host.querySelectorAll('nav.ui-tabs a')].map(a=>a.textContent)).toEqual(['現在','地圖','更多']);
+  expect(host.querySelector('h1.ui-visually-hidden')?.textContent).toBe('全日本參考地圖');
+  expect(host.querySelectorAll('.map-chips .ui-chip')).toHaveLength(4);
+  vi.restoreAllMocks();
 });

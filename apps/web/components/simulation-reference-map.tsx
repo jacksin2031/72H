@@ -15,6 +15,7 @@ import {
   GSI_ATTRIBUTION_URL, JAPAN_DEFAULT_CENTER, JAPAN_VIEW_BOUNDS,
   NATURAL_EARTH_LICENSE_URL,
 } from '@/lib/japan-reference-map';
+import './simulation-map-ui.css';
 
 const LAND_ASSET='/maps/japan-land-50m.geojson';
 const LAND_BYTES=284073;

@@ -46,37 +46,42 @@ async function render(done:number){
  el=document.createElement('div');document.body.append(el);
  root=createRoot(el);
  await act(async()=>root!.render(<Harness done={done}/>));
- const sheet=el.querySelector<HTMLElement>('[data-testid="simulation-map-sheet"]');
- const button=el.querySelector<HTMLButtonElement>('[data-testid="simulation-risk-toggle"]');
+ // The exercise map uses the shared MapScreen sheet (same component as /map).
+ const sheet=el.querySelector<HTMLElement>('[data-testid="simulation-map-screen"] .ui-sheet');
+ const button=el.querySelector<HTMLButtonElement>('[data-testid="simulation-map-screen"] .ui-sheet-head');
  if(!sheet||!button)throw Error('Map risk panel or toggle absent');
  return {sheet,button};
 }
 describe('P2.1 map-first risk panel',()=>{
  it('defaults to compact map view and expands into a fully detailed GPS/risk panel on demand',async()=>{
   const {sheet,button}=await render(1);
-  expect(sheet.dataset.sheetState).toBe('collapsed');
+  expect(sheet.hasAttribute('data-open')).toBe(false);
   expect(button.getAttribute('aria-expanded')).toBe('false');
   expect(el!.querySelector('[data-testid=simulation-risk-panel]')).toBeNull();
   expect(sheet.textContent).toContain('安全性：無法判定');
   expect(sheet.textContent).toContain('沒有已核實避難所或安全路線');
   await act(async()=>button.click());
-  expect(sheet.dataset.sheetState).toBe('expanded');
+  expect(sheet.hasAttribute('data-open')).toBe(true);
   expect(button.getAttribute('aria-expanded')).toBe('true');
   expect(el!.querySelector('[data-testid=simulation-risk-panel]')).not.toBeNull();
   expect(el!.querySelector('[data-testid=simulation-request-gps]')).not.toBeNull();
   expect(el!.querySelector('a[href^="tel:"]')).toBeNull();
   await act(async()=>button.click());
-  expect(sheet.dataset.sheetState).toBe('collapsed');
+  expect(sheet.hasAttribute('data-open')).toBe(false);
   expect(el!.querySelector('[data-testid=simulation-risk-panel]')).toBeNull();
  });
  it('a played tsunami warning is conspicuous even when the bottom sheet is collapsed',async()=>{
   const {sheet,button}=await render(2);
   expect(button.getAttribute('aria-expanded')).toBe('false');
-  const status=el!.querySelector('.sim-v2-tsunami-active');
-  expect(status).not.toBeNull();
+  // Conspicuous like a live alert: the red band names the played level, and the collapsed sheet line says safety is unverified.
+  const band=el!.querySelector('.ui-band-danger');
+  expect(band).not.toBeNull();
+  expect(band?.getAttribute('role')).toBe('status');
+  expect(band?.textContent).toContain('海嘯警報');
+  const status=sheet.querySelector('.ui-sheet-head');
   expect(status?.textContent).toContain('歷史海嘯警報已發生');
   expect(status?.textContent).toContain('尚未確認避難安全');
   expect(el!.querySelector('[data-testid=simulation-risk-panel]')).toBeNull();
-  expect(sheet.dataset.sheetState).toBe('collapsed');
+  expect(sheet.hasAttribute('data-open')).toBe(false);
  });
 });

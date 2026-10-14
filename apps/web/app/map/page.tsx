@@ -19,8 +19,6 @@ import {EvacuationRoutePanel} from '@/components/evacuation-route-panel';
 import type {RoadCandidate} from '@/lib/evacuation-road-graph';
 import { forecastLines } from '@/lib/disaster-map';
 import { forecastLegendState, forecastLegendText } from '@/lib/map-legend';
-import '@/components/simulation-flat-ui.css';
-import '@/components/simulation-map-ui.css';
 
 const screenText={
   'zh-TW':{title:'全日本參考地圖',inundation:'浸水想定',places:'避難場所',lines:'海嘯預報區',regions:'震度地域',
@@ -83,8 +81,12 @@ export default function JapanMapPage() {
   const legend=[...layers.filter(l=>l.on&&(l.key!=='inundation'||pack)).map(l=>l.legend),t.note].join(' · ');
   // Road candidates need an origin: the section appears once a point (GPS, map point or place) is chosen, and stays while a candidate is drawn.
   const routeSection=point||referenceRoute?<EvacuationRoutePanel language={language} state={designations} origin={point} onOrigin={choosePoint} onFocus={setFocus} onRoute={setReferenceRoute}/>:null;
-  // Render nothing until the saved language is read, so a ja / en user never sees one frame of zh-TW text (a lazy initialiser would mismatch server HTML).
-  if(!languageReady)return null;
+  // Until the saved language is read, the shell, the hidden h1 and the map surface render with no language-dependent text,
+  // so the page is never blank and a ja / en user never sees one frame of zh-TW text (a lazy initialiser would mismatch server HTML).
+  if(!languageReady)return <AppShell tab="map" language={null} fullBleed>
+    <h1 className="ui-visually-hidden"/>
+    <div className="map-screen" aria-busy="true"/>
+  </AppShell>;
   return <AppShell tab="map" language={language} fullBleed>
     <h1 className="ui-visually-hidden">{t.title}</h1>
     <MapScreen language={language}

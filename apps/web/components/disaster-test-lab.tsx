@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { Language } from '@/lib/contracts';
 import {
@@ -9,7 +8,10 @@ import {
   type TestNetwork, type TestSeverity,
 } from '@/lib/disaster-test';
 import { AgentDrillPanel } from './agent-drill-panel';
-import './disaster-test.css';
+import { AppShell, Button, Section, StatusBand } from './ui';
+import { NowScreen } from './now-screen';
+
+const exerciseLabel: Record<Language, string> = { 'zh-TW': '演練', ja: '演習', en: 'Exercise' };
 
 const copy = {
   ja: {
@@ -98,76 +100,66 @@ export function DisasterTestLab() {
     : output.critical ? t.emergency
       : output.requiresSafetyCheck ? t.check
         : input.severity ? t.monitor : t.none;
-  return <main className="disaster-lab" data-testid="disaster-test-lab">
-    <header className="lab-header">
-      <Link href="/more">← {t.back}</Link>
-      <label><span className="sr-only">Language</span><select aria-label="Language" value={language} onChange={event => setLanguage(event.target.value as Language)}>
-        <option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option>
-      </select></label>
-    </header>
-    <div className="lab-test-banner" role="status"><strong>{t.test}</strong><p>{t.explanation}</p></div>
-    <h1>{t.title}</h1>
-    <div className="lab-sticky-status" role="status">
-      <strong>TEST · L{input.severity} · {input.battery === null ? '—' : input.battery + '%'}</strong>
-      <span>{primary} · {powerName}</span>
-    </div>
-    <AgentDrillPanel input={input} language={language} />
-    <section className="lab-preview" aria-label={t.preview} data-local-preview="true">
-      <div className="lab-preview-top"><strong>{t.preview}</strong><span>TEST / L{input.severity}</span></div>
-      <p className="lab-preview-state">{t[input.kind.toLowerCase() as 'earthquake']} · {t.level} L{input.severity} · {input.battery === null ? '—' : input.battery + '%'}</p>
-      <p data-testid="power-mode" className="lab-power">{t.powerMode}: <strong>{powerName}</strong></p>
-      <section className="lab-now" data-testid="simulation-now"><small>{t.now}</small><h2>{primary}</h2>
-        <p>{output.informationUnverified ? t.unverified : t.simulatedFresh}</p>
-        {input.mobility === 'CANNOT_MOVE' && <p><strong>{t.cannotMove}</strong></p>}
-      </section>
-      {output.requiresSafetyCheck ? <section className="lab-safety-check">
-        <h3>{t.checkTitle}</h3>
-        <div>{([['safe', t.safe], ['help', t.needHelp], ['stuck', t.stuck]] as const).map(([key, label]) =>
-          <button type="button" key={key} aria-pressed={answer === key} onClick={() => setAnswer(key)}>{label}</button>)}</div>
-        {answer && <p role="status">{t.checkResult}: {answer === 'safe' ? t.safe : answer === 'help' ? t.needHelp : t.stuck}</p>}
-      </section> : <p className="lab-muted">{t.noCheck}</p>}
-      <details className="lab-secondary"><summary>{t.next} / {t.avoid}</summary>
-        <p><strong>{t.next}:</strong> {t.nextAction}</p>
-        <p><strong>{t.avoid}:</strong> {t.avoidAction}</p>
-      </details>
-      <p className="lab-hard-gates" data-testid="safety-gates">{t.mapBlocked} · {t.map}: {t.disabled} · {t.notify}: {t.no}</p>
-      <p className="lab-no-dial">{t.noRealEmergency}</p>
-    </section>
-
-    <section aria-labelledby="lab-presets-title" className="lab-presets">
-      <h2 id="lab-presets-title">{t.presets}</h2>
-      <div className="lab-preset-buttons">{disasterPresets.map(preset => <button key={preset.key} type="button" onClick={() => { setInput(preset.input); setAnswer(''); }}>{t[preset.key as keyof typeof t]}</button>)}</div>
-    </section>
-    <section className="lab-settings" aria-labelledby="lab-settings-title">
-      <h2 id="lab-settings-title">{t.settings}</h2>
-      <div className="lab-fields">
-        <label>{t.disaster}<select data-testid="hazard" value={input.kind} onChange={e => set('kind', e.target.value as DisasterKind)}>
-          <option value="EARTHQUAKE">{t.earthquake}</option><option value="TSUNAMI">{t.tsunami}</option>
-          <option value="TYPHOON">{t.typhoon}</option><option value="FLOOD">{t.flood}</option>
-          <option value="LANDSLIDE">{t.landslide}</option><option value="FIRE">{t.fire}</option>
-        </select></label>
-        <label>{t.severity}<select data-testid="severity" value={input.severity} onChange={e => set('severity', Number(e.target.value) as TestSeverity)}>
-          {[0, 1, 2, 3, 4].map(value => <option value={value} key={value}>L{value}</option>)}
-        </select></label>
-        <div className="lab-battery">
-          <label htmlFor="lab-battery">{t.battery}: {input.battery === null ? '—' : input.battery + '%'}</label>
-          <input id="lab-battery" data-testid="battery" type="range" min={0} max={100} step={1} value={input.battery ?? 50}
-            disabled={input.battery === null} onChange={e => set('battery', Number(e.target.value))} />
-          <label className="lab-check"><input type="checkbox" checked={input.battery === null}
-            onChange={e => set('battery', e.target.checked ? null : 50)} />{t.batteryUnknown}</label>
-        </div>
-        <label>{t.network}<select data-testid="network" value={input.network} onChange={e => set('network', e.target.value as TestNetwork)}>
-          <option value="ONLINE">{t.networkOnline}</option><option value="OFFLINE">{t.networkOffline}</option><option value="RECONNECTING">{t.networkReconnect}</option>
-        </select></label>
-        <label>{t.evidence}<select data-testid="evidence" value={input.evidence} onChange={e => set('evidence', e.target.value as TestEvidence)}>
-          <option value="FRESH">{t.evidenceFresh}</option><option value="STALE">{t.evidenceStale}</option><option value="UNKNOWN">{t.evidenceUnknown}</option>
-        </select></label>
-        <label>{t.mobility}<select data-testid="mobility" value={input.mobility} onChange={e => set('mobility', e.target.value as TestMobility)}>
-          <option value="ABLE">{t.able}</option><option value="CANNOT_MOVE">{t.cannotMove}</option>
-        </select></label>
+  const batteryText = input.battery === null ? '—' : input.battery + '%';
+  // Local UI-only preview of the projection, drawn with the same Now screen as Live; it never calls the API.
+  const basisDetails = <>
+    <p className="now-meta">{t.explanation}</p>
+    <p className="now-meta">{output.informationUnverified ? t.unverified : t.simulatedFresh}</p>
+    <p className="now-meta">{t.noRealEmergency}</p>
+  </>;
+  const help = <>
+    {output.requiresSafetyCheck ? <div data-testid="lab-safety-check">
+      <h2 className="ui-section-title">{t.checkTitle}</h2>
+      <div className="distress-tags">{([['safe', t.safe], ['help', t.needHelp], ['stuck', t.stuck]] as const).map(([key, label]) =>
+        <button type="button" className="ui-chip" key={key} aria-pressed={answer === key} onClick={() => setAnswer(key)}>{label}</button>)}</div>
+      {answer && <p role="status">{t.checkResult}: {answer === 'safe' ? t.safe : answer === 'help' ? t.needHelp : t.stuck}</p>}
+    </div> : <p className="now-meta">{t.noCheck}</p>}
+    {input.mobility === 'CANNOT_MOVE' && <p><strong>{t.cannotMove}</strong></p>}
+    <p className="now-meta now-meta-warn" data-testid="safety-gates">{t.mapBlocked} · {t.map}: {t.disabled} · {t.notify}: {t.no}</p>
+  </>;
+  return <AppShell tab="more" language={language} band={<StatusBand tone="exercise" label={exerciseLabel[language]} />}>
+    <div data-testid="disaster-test-lab">
+      <p className="now-meta"><strong>{t.title}</strong> · {t.preview}</p>
+      <div data-testid="simulation-now" data-local-preview="true">
+        <NowScreen language={language} hero={primary} heroTone={output.critical ? 'danger' : input.severity ? 'warn' : 'normal'}
+          basis={`${t[input.kind.toLowerCase() as 'earthquake']} · ${t.level} L${input.severity} · ${batteryText}`}
+          next={[t.nextAction]} avoid={[t.avoidAction]} updatedLabel={`${t.powerMode}: ${powerName}`}
+          exercise openBasis={false} basisDetails={basisDetails} help={help} />
       </div>
-      <p className="lab-help">{t.threshold}</p>
-    </section>
-    <button className="lab-reset" type="button" onClick={() => { setInput(defaultDisasterTest); setAnswer(''); }}>{t.reset}</button>
-  </main>;
+      <Section title={t.presets}>
+        <div className="lab-preset-buttons">{disasterPresets.map(preset => <Button key={preset.key} variant="secondary" onClick={() => { setInput(preset.input); setAnswer(''); }}>{t[preset.key as keyof typeof t]}</Button>)}</div>
+      </Section>
+      <Section title={t.settings}>
+        <div className="ui-exercise-fields">
+          <label>{t.disaster}<select data-testid="hazard" value={input.kind} onChange={e => set('kind', e.target.value as DisasterKind)}>
+            <option value="EARTHQUAKE">{t.earthquake}</option><option value="TSUNAMI">{t.tsunami}</option>
+            <option value="TYPHOON">{t.typhoon}</option><option value="FLOOD">{t.flood}</option>
+            <option value="LANDSLIDE">{t.landslide}</option><option value="FIRE">{t.fire}</option>
+          </select></label>
+          <label>{t.severity}<select data-testid="severity" value={input.severity} onChange={e => set('severity', Number(e.target.value) as TestSeverity)}>
+            {[0, 1, 2, 3, 4].map(value => <option value={value} key={value}>L{value}</option>)}
+          </select></label>
+          <div>
+            <label htmlFor="lab-battery">{t.battery}: {batteryText}</label>
+            <input id="lab-battery" data-testid="battery" type="range" min={0} max={100} step={1} value={input.battery ?? 50}
+              disabled={input.battery === null} onChange={e => set('battery', Number(e.target.value))} />
+            <label className="lab-check"><input type="checkbox" checked={input.battery === null}
+              onChange={e => set('battery', e.target.checked ? null : 50)} />{t.batteryUnknown}</label>
+          </div>
+          <label>{t.network}<select data-testid="network" value={input.network} onChange={e => set('network', e.target.value as TestNetwork)}>
+            <option value="ONLINE">{t.networkOnline}</option><option value="OFFLINE">{t.networkOffline}</option><option value="RECONNECTING">{t.networkReconnect}</option>
+          </select></label>
+          <label>{t.evidence}<select data-testid="evidence" value={input.evidence} onChange={e => set('evidence', e.target.value as TestEvidence)}>
+            <option value="FRESH">{t.evidenceFresh}</option><option value="STALE">{t.evidenceStale}</option><option value="UNKNOWN">{t.evidenceUnknown}</option>
+          </select></label>
+          <label>{t.mobility}<select data-testid="mobility" value={input.mobility} onChange={e => set('mobility', e.target.value as TestMobility)}>
+            <option value="ABLE">{t.able}</option><option value="CANNOT_MOVE">{t.cannotMove}</option>
+          </select></label>
+        </div>
+        <p className="now-meta">{t.threshold}</p>
+        <Button variant="secondary" onClick={() => { setInput(defaultDisasterTest); setAnswer(''); }}>{t.reset}</Button>
+      </Section>
+      <AgentDrillPanel input={input} language={language} />
+    </div>
+  </AppShell>;
 }

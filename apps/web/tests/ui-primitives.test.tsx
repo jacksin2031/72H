@@ -37,3 +37,9 @@ it('BottomSheet toggles via an aria-expanded header button',async()=>{
   let open=false;const h=await render(<BottomSheet peek="附近 12 處" open={open} onToggle={()=>{open=!open;}}>list</BottomSheet>);
   expect(h.querySelector('.ui-sheet button')?.getAttribute('aria-expanded')).toBe('false');
 });
+it('ListRow marks the selected row of a single-choice list with aria-current="true" and only that row',async()=>{
+  const h=await render(<><ListRow label="日本語" selected trailing="✓" onClick={()=>{}}/><ListRow label="English" trailing="none" onClick={()=>{}}/></>);
+  const rows=[...h.querySelectorAll('button.ui-row')];
+  expect(rows[0].getAttribute('aria-current')).toBe('true');
+  expect(rows[1].hasAttribute('aria-current')).toBe(false);
+});

@@ -772,8 +772,8 @@ export function MoreHub({ view, snapshot, projection, language, chooseLanguage, 
     </>;
 
   const subpages: Record<MoreRowKey, ReactNode> = {
-    language: <>{languageChoices.map(([value, label]) => <ListRow key={value} label={label} trailing={language === value ? '✓' : 'none'} onClick={() => chooseLanguage?.(value)} />)}</>,
-    appearance: <><p>{messages.textScaleHelp}</p>{themeChoices.map(value => <ListRow key={value} label={themeLabel(value)} trailing={theme === value ? '✓' : 'none'} onClick={() => chooseTheme(value)} />)}</>,
+    language: <>{languageChoices.map(([value, label]) => <ListRow key={value} label={label} selected={language === value} trailing={language === value ? '✓' : 'none'} onClick={() => chooseLanguage?.(value)} />)}</>,
+    appearance: <><p>{messages.textScaleHelp}</p>{themeChoices.map(value => <ListRow key={value} label={themeLabel(value)} selected={theme === value} trailing={theme === value ? '✓' : 'none'} onClick={() => chooseTheme(value)} />)}</>,
     power: <PowerControls language={language} power={power} level={level} override={override} choose={choose} />,
     contacts: <EmergencyContactsSetup language={language} onDone={() => setSub(null)} />,
     privacy: locationSubpage,

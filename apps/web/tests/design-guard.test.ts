@@ -24,6 +24,13 @@ describe('design tokens',()=>{
         expect(contrastRatio(t.bg,t[fill]),`${theme} bg-on-${fill}`).toBeGreaterThanOrEqual(4.5);
     }
   });
+  it('declares a focus colour with at least 3:1 against the background in both themes',()=>{
+    for(const theme of ['dark','contrast'] as const){
+      const t=TOKENS[theme];
+      expect(t.focus,`${theme} focus`).toBeTruthy();
+      expect(contrastRatio(t.focus,t.bg),`${theme} focus`).toBeGreaterThanOrEqual(3);
+    }
+  });
   it('never loads a web font (offline-safe)',()=>{
     expect(css).not.toMatch(/@import|@font-face|fonts\.googleapis/);
   });
@@ -33,7 +40,7 @@ function cssFiles(dir:string):string[]{
   return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?(e.name==='node_modules'||e.name==='.next'?[]:cssFiles(resolve(dir,e.name))):e.name.endsWith('.css')?[resolve(dir,e.name)]:[]);
 }
 /** Files not yet migrated. Shrinks every phase; must end as ['components/simulation-map-ui.css']. */
-export const LEGACY_CSS_ALLOWLIST=['app/globals.css','components/simulation-map-ui.css','components/simulation-flat-ui.css','components/simulation-dashboard.css','components/disaster-test.css','components/simulation-advice.css','components/plan-explanation.css'];
+export const LEGACY_CSS_ALLOWLIST=['components/simulation-map-ui.css'];
 const ALLOWED_RADIUS=new Set(['components/ui/ui.css','app/tokens.css','components/simulation-map-ui.css']);
 const WEB=resolve(__dirname,'..');
 describe('cardless guard',()=>{
@@ -50,5 +57,27 @@ describe('cardless guard',()=>{
   });
   it('the legacy allowlist only shrinks (every listed file still exists)',()=>{
     for(const f of LEGACY_CSS_ALLOWLIST)expect(files,f).toContain(f);
+  });
+  it('has a global :focus-visible outline that uses the --focus token',()=>{
+    const all=files.map(source).join(String.fromCharCode(10));
+    expect(all).toMatch(/(^|[},\s]):focus-visible\s*\{[^}]*outline:[^};]*var\(--focus\)/);
+  });
+  it('no unscoped button:hover background that could override pressed chips or filled buttons',()=>{
+    for(const f of files.filter(f=>!LEGACY_CSS_ALLOWLIST.includes(f)))
+      expect(source(f),f).not.toMatch(/(^|[},\s])button:hover[^{]*\{[^}]*background/);
+  });
+  it('tokens win: no stylesheet resets body font-family, font-size or line-height outside tokens.css',()=>{
+    for(const f of files.filter(f=>f!=='app/tokens.css'))
+      expect(source(f),f).not.toMatch(/(^|[},\s])body\s*\{[^}]*(font-family|font-size|line-height)/);
+  });
+});
+
+describe('exercise screens share the Live components (U2)',()=>{
+  it('exercise screens reuse the same Now/Map components as Live',()=>{
+    for(const f of ['components/dashboard.tsx','components/simulation-screens.tsx','components/disaster-test-lab.tsx']){
+      const src=readFileSync(resolve(WEB,f),'utf8');
+      expect(src,f).toMatch(/AppShell/);
+      expect(src,f).toMatch(/NowScreen|MapScreen/);
+    }
   });
 });
