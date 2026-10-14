@@ -147,3 +147,6 @@ a.ui-btn-secondary{color:var(--info)}
 .sim-map-geo-note span{color:var(--warn)}
 .sim-geo-marker{display:grid;place-items:center;width:24px;height:24px;border:3px solid var(--text);border-radius:50%;background:var(--info);color:var(--bg);font-size:15px;font-weight:800;line-height:1}
 .sim-geo-epicenter{background:var(--danger)}
+.more-title{margin:var(--sp-5) 0 var(--sp-3);font-size:var(--fs-title);font-weight:600}
+.more-sub{display:flex;flex-direction:column;gap:var(--sp-3)}
+.more-sub>.ui-btn{align-self:flex-start}

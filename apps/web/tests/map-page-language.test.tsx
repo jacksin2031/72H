@@ -75,3 +75,7 @@ it('real sheet panels carry no navigation note of their own (the legend line is 
     expect(src,f).not.toMatch(/導航|ナビ|[Nn]avigation/);
   }
 });
+it('renders nothing before the saved language is read, so no zh-TW frame flashes for a ja or en user',async()=>{
+  const {renderToString}=await import('react-dom/server');
+  expect(renderToString(<JapanMapPage/>)).toBe('');
+});

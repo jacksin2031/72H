@@ -36,7 +36,7 @@ const screenText={
 
 /** Public geography and reviewed official reference data. GPS is opt-in and device-local; no movement authority. */
 export default function JapanMapPage() {
-  const [language,setLanguage]=useState<Language>('zh-TW');
+  const [language,setLanguage]=useState<Language>('zh-TW'),[languageReady,setLanguageReady]=useState(false);
   const [pack,setPack]=useState<HazardPack|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(false),[attempt,setAttempt]=useState(0);
   const [showInundation,setShowInundation]=useState(true),[showPlaces,setShowPlaces]=useState(true);
   const [manualPoint,setManualPoint]=useState<HazardLocation|null>(null),[focus,setFocus]=useState<{lat:number;lng:number;zoom?:number}|null>(null);
@@ -63,7 +63,7 @@ export default function JapanMapPage() {
   const choosePlace=useCallback((place:OfficialPlace)=>{
     geo.clear();setManualPoint(officialPlaceLocation(place));setFocus({lat:place.lat,lng:place.lng});
   },[geo.clear]);
-  useEffect(()=>{setLanguage(readSavedLanguage('zh-TW'));},[]);
+  useEffect(()=>{setLanguage(readSavedLanguage('zh-TW'));setLanguageReady(true);},[]);
   useEffect(()=>{
     if(process.env.NODE_ENV==='production'&&'serviceWorker' in navigator){
       void navigator.serviceWorker.register('/sw.js').catch(()=>{});
@@ -83,6 +83,8 @@ export default function JapanMapPage() {
   const legend=[...layers.filter(l=>l.on&&(l.key!=='inundation'||pack)).map(l=>l.legend),t.note].join(' · ');
   // Road candidates need an origin: the section appears once a point (GPS, map point or place) is chosen, and stays while a candidate is drawn.
   const routeSection=point||referenceRoute?<EvacuationRoutePanel language={language} state={designations} origin={point} onOrigin={choosePoint} onFocus={setFocus} onRoute={setReferenceRoute}/>:null;
+  // Render nothing until the saved language is read, so a ja / en user never sees one frame of zh-TW text (a lazy initialiser would mismatch server HTML).
+  if(!languageReady)return null;
   return <AppShell tab="map" language={language} fullBleed>
     <h1 className="ui-visually-hidden">{t.title}</h1>
     <MapScreen language={language}

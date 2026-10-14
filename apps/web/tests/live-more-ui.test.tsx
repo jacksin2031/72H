@@ -48,6 +48,14 @@ async function click(element: Element) {
   await act(async () => { (element as HTMLElement).click(); });
 }
 
+/** Opens a More row (English labels). */
+async function openRow(page: HTMLElement, label: string) {
+  const row = [...page.querySelectorAll<HTMLElement>('.ui-row')].find(item => item.querySelector('.ui-row-label')?.textContent === label);
+  expect(row, label).toBeDefined();
+  await click(row!);
+}
+const backButton = (page: HTMLElement) => page.querySelector<HTMLButtonElement>('.more-sub > .ui-btn-secondary')!;
+
 afterEach(async () => {
   if (root) await act(async () => root!.unmount());
   root = null;
@@ -57,26 +65,31 @@ afterEach(async () => {
 });
 
 describe('mobile More and Plan navigation', () => {
-  it('keeps the disaster simulator behind a collapsed diagnostics disclosure, not a fifth primary setting', async () => {
+  it('lists the nine settings rows as a plain list, with no legacy destination cards or lab disclosure', async () => {
     const page = await mount(sceneProps());
-    expect(page.querySelectorAll('.more-destination')).toHaveLength(4);
-    const reference=page.querySelector<HTMLAnchorElement>('a.reference-map-link[href="/map"]');
-    expect(reference).not.toBeNull();
-    expect(reference!.closest('details')).toBeNull();
-    const details = page.querySelector<HTMLDetailsElement>('.more-lab-entry');
-    expect(details?.open).toBe(false);
-    expect(details?.querySelector('summary')?.textContent).toBe('Testing & diagnostics');
-    expect(details?.querySelector('a')?.getAttribute('href')).toBe('/disaster-test');
+    expect([...page.querySelectorAll('.ui-row .ui-row-label')].map(e => e.textContent)).toEqual([
+      'Language', 'Appearance', 'Power mode', 'Emergency contacts', 'Location & privacy', 'Notifications', 'Sources', 'Exercises & demo', 'About']);
+    expect(page.querySelectorAll('.more-destination')).toHaveLength(0);
+    expect(page.querySelector('.more-lab-entry')).toBeNull();
+    expect(page.querySelector('.live-more-scene')).toBeNull();
+  });
+
+  it('keeps the disaster simulator under Exercises & demo, labelled as an exercise', async () => {
+    const page = await mount(sceneProps());
+    await openRow(page, 'Exercises & demo');
+    expect([...page.querySelectorAll('a.ui-row')].map(a => a.getAttribute('href'))).toEqual(['/demo', '/simulation', '/disaster-test']);
+    expect(page.querySelector('.ui-tag-exercise')?.textContent).toBe('Exercise');
+    expect(page.querySelector('select[aria-label="Historical earthquake"]')).not.toBeNull();
   });
 
   it('collapses location diagnostics while keeping the accurate area and GPS action visible', async () => {
     const page = await mount(sceneProps());
+    await openRow(page, 'Location & privacy');
     const details = page.querySelector<HTMLDetailsElement>('.more-location-meta');
     expect(details).not.toBeNull();
     expect(details?.open).toBe(false);
     expect(details?.querySelector('summary')?.textContent).toContain('Location details');
     expect(page.querySelector('.more-location-card button.primary')).not.toBeNull();
-    expect(page.querySelectorAll('.more-destination')).toHaveLength(4);
   });
 
   it('puts an empty plan into one concise state without mounting three blank category cards', async () => {
@@ -93,41 +106,75 @@ describe('mobile More and Plan navigation', () => {
     expect(tools?.querySelector('summary')?.textContent).toBe('History and advanced options');
   });
 
-  it('keeps language selection in the accessible Display destination', async () => {
+  it('keeps language selection in the Language subpage only, with a check on the current language', async () => {
     const chooseLanguage = vi.fn();
     const page = await mount(sceneProps({ chooseLanguage }));
-    await click(page.querySelector('[data-more-panel="display"]')!);
-    const selector = page.querySelector<HTMLSelectElement>('.settings-language select');
-    expect(selector?.value).toBe('en');
-    await act(async () => { selector!.value = 'zh-TW'; selector!.dispatchEvent(new Event('change', { bubbles: true })); });
+    expect(page.querySelector('select')).toBeNull();
+    await openRow(page, 'Language');
+    const rows = [...page.querySelectorAll<HTMLElement>('.ui-row')];
+    expect(rows.map(r => r.querySelector('.ui-row-label')?.textContent)).toEqual(['日本語', 'English', '繁體中文']);
+    expect(rows.map(r => r.querySelector('.ui-row-tail')?.textContent ?? '')).toEqual(['', '✓', '']);
+    await click(rows[2]);
     expect(chooseLanguage).toHaveBeenCalledWith('zh-TW');
   });
 
-  it('keeps More compact, with one primary location action and four destinations', async () => {
+  it('has no language select (or any select) on the main More list', async () => {
     const page = await mount(sceneProps());
-    expect(page.querySelectorAll('.more-destination')).toHaveLength(4);
-    expect(page.querySelectorAll('.more-location-card button.primary')).toHaveLength(1);
-    expect(page.textContent).toContain('Area selected by you');
-    expect(page.textContent).toContain('Emergency basics');
-    expect(page.querySelector('.more-emergency-footer a[href="tel:119"]')).not.toBeNull();
+    expect(page.querySelector('select')).toBeNull();
+    expect(page.querySelector('.live-language, .settings-language')).toBeNull();
+  });
+
+  it('switches appearance from the Appearance subpage', async () => {
+    const chooseTheme = vi.fn();
+    const page = await mount(sceneProps({ chooseTheme }));
+    await openRow(page, 'Appearance');
+    const rows = [...page.querySelectorAll<HTMLElement>('.ui-row')];
+    expect(rows).toHaveLength(3);
+    expect(rows[0].querySelector('.ui-row-tail')?.textContent).toBe('✓');
+    await click(rows[2]);
+    expect(chooseTheme).toHaveBeenCalledWith('contrast');
+  });
+
+  it('keeps More compact: nine rows, no card or footer on the list, emergency numbers under About', async () => {
+    const page = await mount(sceneProps());
+    expect(page.querySelectorAll('.ui-row')).toHaveLength(9);
+    expect(page.querySelector('.more-location-card')).toBeNull();
+    expect(page.querySelector('.more-emergency-footer')).toBeNull();
+    expect(page.querySelectorAll('button.primary, .ui-btn-primary')).toHaveLength(0);
     expect(page.textContent).not.toContain('Judge / Demo');
     expect(page.textContent).not.toContain('Continue on mobile');
     expect(page.querySelector('.route-preview-card')).toBeNull();
+    await openRow(page, 'Location & privacy');
+    expect(page.querySelectorAll('.more-location-card button.primary')).toHaveLength(1);
+    expect(page.textContent).toContain('Area selected by you');
+    await click(backButton(page));
+    await openRow(page, 'About');
+    expect(page.textContent).toContain('Emergency basics');
+    expect(page.querySelector('.emergency-contact a[href="tel:119"]')).not.toBeNull();
+    expect(page.querySelector('.ui-row-value')?.textContent).toMatch(/^\d+\.\d+\.\d+/);
+  });
+
+  it('opens Notifications by default on the notifications view and hides the list', async () => {
+    const page = await mount(sceneProps({ view: 'notifications' }));
+    expect(page.querySelector('.live-notifications')).not.toBeNull();
+    expect(page.querySelector('.more-title')).toBeNull();
+    await click(backButton(page));
+    expect(page.querySelectorAll('.ui-row')).toHaveLength(9);
   });
 
   it('retains a session-scoped profile draft across More back navigation and keeps it after save failure', async () => {
     const props = sceneProps({ onProfileUpdate: async () => false });
     const page = await mount(props);
-    await click(page.querySelector('.more-destination')!);
+    await openRow(page, 'Location & privacy');
     await click([...page.querySelectorAll('button')].find(button => button.textContent === 'Edit settings')!);
     const accommodation = page.querySelector('.live-profile-form input:not([type="checkbox"])') as HTMLInputElement;
     const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
     await act(async () => { setValue.call(accommodation, 'Local QA draft'); accommodation.dispatchEvent(new Event('input', { bubbles: true })); });
     const draftKey = `72h-live-profile-draft:${props.snapshot!.session_id}`;
     expect(sessionStorage.getItem(draftKey)).toContain('Local QA draft');
-    await click(page.querySelector('.more-back')!);
-    expect(document.activeElement).toBe(page.querySelector('[data-more-panel="personal"]'));
-    await click(page.querySelector('.more-destination')!);
+    await click(backButton(page));
+    expect(document.activeElement).toBe(page.querySelectorAll('.ui-row')[4]);
+    await openRow(page, 'Location & privacy');
     expect((page.querySelector('.live-profile-form input:not([type="checkbox"])') as HTMLInputElement).value).toBe('Local QA draft');
     const form = page.querySelector('.live-profile-form')!;
     await act(async () => { form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); });
@@ -147,6 +194,7 @@ describe('mobile More and Plan navigation', () => {
       locationSync: { phase: 'failed', update: null },
     });
     const page = await mount(props);
+    await openRow(page, 'Location & privacy');
     expect(page.textContent).toContain('could not be updated');
     await click(page.querySelector('.more-location-card button.primary')!);
     expect(locate).toHaveBeenCalledOnce();
@@ -154,7 +202,6 @@ describe('mobile More and Plan navigation', () => {
     expect(retry).not.toHaveBeenCalled();
     expect(page.textContent).toContain('GPS was checked on this device only');
     expect(page.textContent).toContain('Area selected by you');
-    expect(page.querySelectorAll('.more-destination')).toHaveLength(4);
 
     const syncedSnapshot = structuredClone(props.snapshot!);
     syncedSnapshot.profile.current_location = { ...syncedSnapshot.profile.current_location, source: 'GPS',
@@ -230,16 +277,17 @@ describe('mobile More and Plan navigation', () => {
 
   it('keeps Privacy controls local and retains no point by default', async () => {
     const page = await mount(sceneProps());
-    await click(page.querySelector('[data-more-panel="privacy"]')!);
+    await openRow(page, 'Location & privacy');
     expect(page.querySelector('.device-location input[type="checkbox"]')).not.toBeNull();
     expect((page.querySelector('.device-location input[type="checkbox"]') as HTMLInputElement).checked).toBe(false);
     expect(page.querySelector('.device-location button')).toBeNull();
-    expect(page.querySelector('.more-back')).not.toBeNull();
+    expect(backButton(page)).not.toBeNull();
   });
 
   it('disables the single More GPS action while a device location request is active', async () => {
     const base = sceneProps();
     const page = await mount(sceneProps({ deviceLocation: { ...base.deviceLocation, busy: true } }));
+    await openRow(page, 'Location & privacy');
     expect(page.querySelector<HTMLButtonElement>('.more-location-card button.primary')?.disabled).toBe(true);
   });
 
@@ -262,7 +310,7 @@ describe('mobile More and Plan navigation', () => {
     } });
     try {
       const page = await mount(sceneProps());
-      await click(page.querySelector('[data-more-panel="offline"]')!);
+      await openRow(page, 'About');
       await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
       expect(cacheKeys).toHaveBeenCalledOnce();
       expect(cacheMatch).toHaveBeenCalledWith('/dashboard');

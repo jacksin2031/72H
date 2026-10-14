@@ -53,3 +53,14 @@ The map page carries exactly one "not for evacuation navigation / not a safety d
 | OfficialHazardPanel h2 | 石卷海嘯浸水想定 / 石巻の津波浸水想定 / Ishinomaki inundation scenario | demote to h3 | unchanged text |
 | DisasterMapPanel / LiveTsunamiReference h2 | 官方事件圖層 · LIVE 參考 / JMA 即時海嘯資訊 (and ja/en) | demote to h3 | unchanged text |
 | Historical epicenter picker (顯示歷史震央 / 過去の震央を表示 / Show historical epicenter) | select on the map | remove from /map (Task 8 re-adds under More → Exercises & demo) | (none on /map) |
+| Historical epicenter picker (過去の地震 select + option set) | removed from /map in Task 7 | move to More → 演練與示範 / 演習とデモ / Exercises & demo, with an 演練 / 演習 / Exercise tag and an exercise-only reference map | unchanged option text; new note: 歷史震央僅作演練參考，不是目前的災害資訊。 / 過去の震央は演習用の参考で、現在の災害情報ではありません。 / Historical epicenters are exercise references, not current disaster information. |
+| More heading `messages.more` plus top-of-page language `<label>` + `<select>` | language select shown on /more | delete (the 語言 / 言語 / Language subpage is the only language control; the first-run onboarding screen without a session keeps its select) | 更多 / その他 / More |
+| More destination cards (本人・家族 / 表示・アクセシビリティ / オフラインへの備え / プライバシー) | 4 card buttons | delete; replaced by nine plain rows | 語言 · 外觀 · 電量模式 · 緊急聯絡人 · 位置與隱私 · 通知 · 資訊來源 · 演練與示範 · 關於 (ja / en in components/more-screen.tsx) |
+| More top links 演練與示範 → and 全日本避難場所及參考地圖 → | two link lines | delete (map is a tab) / move (演練與示範 becomes a row) | (none) |
+| More 測試・診斷 `details.more-lab-entry` (災害シミュレーション（模擬のみ）) | collapsed disclosure | move into 演練與示範 subpage as the 災害測試 / 災害テスト / Disaster test link | 災害測試 / 災害テスト / Disaster test |
+| More location card (area, GPS button, change area), personal summary, profile edit | main list | move into 位置與隱私 subpage; privacy sentence kept, device-location controls move behind 了解更多 / 詳しく見る / Learn more | unchanged except 了解更多 |
+| More 表示 subpanel: text-size help, theme select, language select | settings panel | split: theme becomes 3 check rows in 外觀; text-size help kept under 外觀; language select deleted (see above); PowerControls move to 電量模式 | unchanged help text |
+| More emergency footer (119 · 110 · 72H link, 緊急時の基本) | main list footer | move into 關於 subpage next to the offline readiness panel and emergency guide | unchanged |
+| Desktop settings block (desktop-settings: profile form, location, safety check, route preview, handoff, offline, plan history, emergency guide, refresh) | one long panel | delete; desktop uses the same nine-row More. Route preview and plan history stay in the Now basis details. | (none) |
+| More subpage back control | `.more-back` 「その他に戻る」 button | shorten | ‹ 返回 / ‹ 戻る / ‹ Back |
+| 關於 subpage version row (new) | (none) | add | 版本 / バージョン / Version + package version |
