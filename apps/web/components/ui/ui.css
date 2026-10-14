@@ -42,3 +42,13 @@ div.ui-row{cursor:default}
 .ui-app-has-controls{padding-bottom:calc(64px + 120px + env(safe-area-inset-bottom))}
 .ui-exercise-controls{flex-wrap:wrap}
 .ui-exercise-controls button,.ui-exercise-controls select{min-height:48px;font-size:14px;padding:8px 12px}
+/* Now screen (Task 5): one cardless column, max width from .ui-main. */
+.now-hero{margin:var(--sp-5) 0 var(--sp-2);font-size:var(--fs-hero);font-weight:700;line-height:1.25}
+.now-hero-danger{color:var(--text)}
+.now-hero-warn{color:var(--warn)}
+.now-meta{margin:0;color:var(--text-2);font-size:var(--fs-meta)}
+.now-basis{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2)}
+.now-basis .ui-disclosure{flex-basis:100%}
+.now-help{margin:var(--sp-5) 0}
+.now-list{margin:0;padding-left:1.2em}
+.now-list li+li{margin-top:var(--sp-2)}

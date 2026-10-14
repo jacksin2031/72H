@@ -24,4 +24,4 @@
 .distress-pending input{width:1.4rem;height:1.4rem}
 .distress-emphasis{padding-left:1.2rem}
 .distress-panel summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
-.distress-entry-button{position:sticky;top:var(--band-h,0px);z-index:50;display:block;width:100%;min-height:52px;margin:0 0 .6rem;font:inherit;font-size:1.15rem;font-weight:900;background:#ffd400;color:#000;border:0;border-radius:12px}
+.distress-entry-button{position:sticky;top:var(--band-h,0px);z-index:50;margin:0 0 .6rem}

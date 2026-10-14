@@ -2,7 +2,7 @@
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { MobileScene } from '../components/live-dashboard';
+import { liveNowScreenVisible, MobileScene } from '../components/live-dashboard';
 import { liveMessages } from '../lib/live-i18n';
 import { liveMoreMessages } from '../lib/live-more-i18n';
 import { projectLiveSnapshot } from '../lib/live-presentation';
@@ -84,8 +84,10 @@ describe('mobile More and Plan navigation', () => {
     props.snapshot!.plan_actions = [];
     const page = await mount(props);
     expect(page.querySelectorAll('.action-panel')).toHaveLength(0);
-    expect(page.querySelectorAll('.plan-empty-state')).toHaveLength(1);
-    const tools = page.querySelector<HTMLDetailsElement>('.plan-tools');
+    expect(page.querySelectorAll('[data-now="hero"]')).toHaveLength(1);
+    expect(page.querySelector('[data-now="next"]')).toBeNull();
+    expect(page.querySelector('[data-now="avoid"]')).toBeNull();
+    const tools = page.querySelector<HTMLDetailsElement>('[data-now="basis"] details.plan-tools');
     expect(tools).not.toBeNull();
     expect(tools?.open).toBe(false);
     expect(tools?.querySelector('summary')?.textContent).toBe('History and advanced options');
@@ -283,12 +285,118 @@ describe('mobile More and Plan navigation', () => {
 
   it('keeps advanced route candidate UI deliberate and preserves its warning', async () => {
     const page = await mount(sceneProps({ view: 'plan' }));
+    const tools = page.querySelector<HTMLDetailsElement>('details.plan-tools')!;
+    expect(tools.open).toBe(false);
     expect(page.querySelector('.route-preview-card')).toBeNull();
-    await click([...page.querySelectorAll('button')].find(button => button.textContent === 'Review advanced candidates')!);
+    await act(async () => { tools.open = true; tools.dispatchEvent(new Event('toggle')); });
     expect(page.querySelector('.route-preview-card')).not.toBeNull();
+    expect(page.querySelector('.route-preview-card')!.closest('details')).toBe(tools);
     expect(page.textContent).toContain('this is not a safety guarantee');
     expect(page.textContent).toContain('Preview candidate map');
-    await click(page.querySelector('.more-back')!);
-    expect(document.activeElement).toBe(page.querySelector('[data-plan-panel="advanced"]'));
+  });
+});
+
+describe('Now screen in the live mobile scene', () => {
+  function withPlan(props: ReturnType<typeof sceneProps>) {
+    const snapshot = props.snapshot!;
+    const now = snapshot.plan_actions[0];
+    snapshot.plan_actions = [now,
+      { ...now, id: 'action-live-next', category: 'NEXT', text: 'Tell your family where you are.', risk_level: 'LOW' },
+      { ...now, id: 'action-live-avoid', category: 'AVOID', text: 'Do not go near the coast.', risk_level: 'LOW' }];
+    return { ...props, projection: projectLiveSnapshot(snapshot, LIVE_NOW, props.connection, derivePower(75, false)) };
+  }
+
+  it.each(['dashboard', 'plan', 'sources'] as const)('renders one hero instruction first on the %s view, with basis, help, next and avoid', async view => {
+    const props = withPlan(sceneProps({ view, connection: 'online' }));
+    const page = await mount({ ...props, help: <button type="button" className="help-probe">I need help</button> });
+    const order = [...page.querySelectorAll('[data-now]')].map(item => item.getAttribute('data-now'));
+    expect(order).toEqual(['hero', 'basis', 'help', 'next', 'avoid', 'updated']);
+    const hero = page.querySelector('[data-now="hero"]')!;
+    expect(hero.tagName).toBe('H1');
+    expect(hero.textContent).toBe(props.projection!.primaryAction!.text);
+    expect(page.querySelectorAll('h1')).toHaveLength(1);
+    expect(page.querySelector('.now-card')).toBeNull();
+    expect(page.querySelector('[data-now="basis"] .now-meta')?.textContent).toBe('JMA_DISASTER_XML · published 11:59');
+    expect(page.querySelector('[data-now="help"] .help-probe')).not.toBeNull();
+    expect(page.querySelector('[data-now="next"]')?.textContent).toContain('Tell your family where you are.');
+    expect(page.querySelector('[data-now="avoid"]')?.textContent).toContain('Do not go near the coast.');
+    expect(page.querySelector('[data-now="updated"]')?.textContent).toBe('Updated 11:59');
+    const details = page.querySelector<HTMLDetailsElement>('[data-now="basis"] details#basis')!;
+    expect(details.open).toBe(view !== 'dashboard');
+    expect(details.querySelector('.plan-history')).not.toBeNull();
+    expect(details.querySelector('.live-review-list')).not.toBeNull();
+    expect(details.querySelector('.plan-history')!.compareDocumentPosition(details.querySelector('.live-review-list')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('keeps the AI explanation (with its label) inside the basis details', async () => {
+    const page = await mount(withPlan(sceneProps({ view: 'plan', connection: 'online' })));
+    const panel = page.querySelector('[data-now="basis"] [data-testid="plan-explanation-panel"]');
+    expect(panel).not.toBeNull();
+    expect(panel!.querySelector('[data-testid="plan-explanation-mode"]')?.textContent).toBeTruthy();
+  });
+
+  it('does not mount the AI explanation (or its network request) while the basis details are closed', async () => {
+    const page = await mount(withPlan(sceneProps({ view: 'dashboard', connection: 'online' })));
+    expect(page.querySelector('[data-testid="plan-explanation-panel"]')).toBeNull();
+    const details = page.querySelector<HTMLDetailsElement>('details#basis')!;
+    await act(async () => { details.open = true; details.dispatchEvent(new Event('toggle')); });
+    expect(page.querySelector('[data-testid="plan-explanation-panel"]')).not.toBeNull();
+  });
+
+  it('shows the offline last-verified time and a warning tone while offline', async () => {
+    const page = await mount(withPlan(sceneProps({ view: 'dashboard', connection: 'offline' })));
+    expect(page.querySelector('[data-now="updated"]')?.textContent).toBe('Offline · last verified 11:59');
+    expect(page.querySelector('[data-now="hero"]')?.classList.contains('now-hero-warn')).toBe(true);
+  });
+
+  it('includes the date when the last verified time is not from today', async () => {
+    const props = withPlan(sceneProps({ view: 'dashboard', connection: 'offline' }));
+    const page = await mount({ ...props, now: LIVE_NOW + 2 * 24 * 60 * 60_000 });
+    expect(page.querySelector('[data-now="updated"]')?.textContent).toBe('Offline · last verified 10/6 11:59');
+  });
+
+  it('says there are no active alerts only when there is no plan, no active event and the source is current', async () => {
+    const props = sceneProps({ view: 'dashboard', connection: 'online' });
+    const snapshot = props.snapshot!;
+    snapshot.plans = []; snapshot.plan_actions = [];
+    snapshot.situation = { ...snapshot.situation, current_plan_id: null, active_event_ids: [] };
+    const projection = projectLiveSnapshot(snapshot, LIVE_NOW, 'online', derivePower(75, false));
+    const page = await mount({ ...props, snapshot, projection });
+    expect(page.querySelector('[data-now="hero"]')?.textContent).toBe('No active alerts');
+    await act(async () => { root!.render(<MobileScene {...props} snapshot={snapshot} connection="offline"
+      projection={projectLiveSnapshot(snapshot, LIVE_NOW, 'offline', derivePower(75, false))} />); });
+    expect(page.querySelector('[data-now="hero"]')?.textContent).not.toBe('No active alerts');
+  });
+
+  it('uses the danger tone for a critical protection takeover and keeps help reachable', async () => {
+    const props = withPlan(sceneProps({ view: 'dashboard', connection: 'online' }));
+    const projection = { ...props.projection!, presentation: { ...props.projection!.presentation, mode: 'EMERGENCY_PROTECT' as const } };
+    const page = await mount({ ...props, projection, help: <button type="button" className="help-probe">I need help</button> });
+    expect(page.querySelector('[data-now="hero"]')?.classList.contains('now-hero-danger')).toBe(true);
+    expect(page.querySelector('[data-now="help"] .help-probe')).not.toBeNull();
+  });
+
+  it('does not render the Now screen on More', async () => {
+    const page = await mount(sceneProps({ view: 'more' }));
+    expect(page.querySelector('[data-now]')).toBeNull();
+  });
+});
+
+describe('liveNowScreenVisible', () => {
+  it('matches where the scenes render the Now screen, so help is never lost', () => {
+    const v = (role: string, view: string, hasData: boolean, mode: string | undefined, locationSync: boolean) =>
+      liveNowScreenVisible({ role, view, hasData, mode, locationSync });
+    expect(v('mobile', 'dashboard', true, 'MONITORING', false)).toBe(true);
+    expect(v('mobile', 'plan', true, 'MONITORING', false)).toBe(true);
+    expect(v('mobile', 'sources', true, 'MONITORING', false)).toBe(true);
+    expect(v('mobile', 'more', true, 'MONITORING', false)).toBe(false);
+    expect(v('mobile', 'notifications', true, 'MONITORING', false)).toBe(false);
+    expect(v('mobile', 'dashboard', false, undefined, false)).toBe(false);
+    expect(v('mobile', 'dashboard', true, 'MONITORING', true)).toBe(false);
+    expect(v('mobile', 'dashboard', true, 'EMERGENCY_PROTECT', true)).toBe(true);
+    expect(v('mobile', 'plan', true, 'EMERGENCY_PROTECT', true)).toBe(false);
+    expect(v('desktop', 'sources', true, 'MONITORING', false)).toBe(true);
+    expect(v('desktop', 'dashboard', true, 'EMERGENCY_PROTECT', true)).toBe(false);
+    expect(v('unknown', 'dashboard', true, 'MONITORING', false)).toBe(false);
   });
 });
