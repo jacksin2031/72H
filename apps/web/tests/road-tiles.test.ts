@@ -1,0 +1,212 @@
+import {readFileSync} from 'node:fs';
+import {describe,expect,it,vi} from 'vitest';
+import {loadRoadTilesAround,tileIdFor,tilesAround,type TileStore} from '../lib/road-tiles';
+
+const P={lat:38.41,lng:141.28};
+const CENTRE='r1920c5651';
+const EAST='r1920c5652';
+
+async function sha(value:object){
+  const bytes=new TextEncoder().encode(JSON.stringify(value));
+  const digest=await crypto.subtle.digest('SHA-256',bytes);
+  return [...new Uint8Array(digest)].map((byte)=>byte.toString(16).padStart(2,'0')).join('');
+}
+
+function tileBounds(id:string){
+  const match=/^r(\d+)c(\d+)$/.exec(id)!;
+  const south=Number(match[1])*0.02,west=Number(match[2])*0.025;
+  const round=(value:number)=>Math.round(value*1_000_000)/1_000_000;
+  return [round(south-0.002),round(west-0.002),round(south+0.022),round(west+0.027)] as const;
+}
+
+async function tile(id:string,retrieved='2026-10-15T00:00:00+00:00'){
+  const match=/^r(\d+)c(\d+)$/.exec(id)!;
+  const row=Number(match[1]),col=Number(match[2]);
+  const bounds=tileBounds(id);
+  const shared=id===CENTRE||id===EAST;
+  const nodeBase=shared?9_000_000_000_001:row*1_000_000_000+col*10+1;
+  const wayId=shared?8_000_000_000_001:row*1_000_000_000+col*10+5;
+  const nodes=shared
+    ? [[nodeBase,38.41,141.299],[nodeBase+1,38.41,141.301]]
+    : [[nodeBase,bounds[0]+0.01,bounds[1]+0.01],[nodeBase+1,bounds[0]+0.01,bounds[1]+0.011,{'highway':'crossing'}]];
+  const body={schema_version:2,pack_id:`osm-tile-${id}-v1`,role:'ROAD_REFERENCE_ONLY',movement_authorized:false,built_at:retrieved,
+    bounds,capacity:[20000,40000],counts:[2,1,1],
+    source:{name:'OpenStreetMap contributors',endpoint:'https://overpass-api.de/api/interpreter',copyright_url:'https://www.openstreetmap.org/copyright',license:'ODbL-1.0',license_url:'https://opendatacommons.org/licenses/odbl/1-0/',osm_base_timestamp:null,retrieved_at:retrieved,raw_sha256:'0'.repeat(64),query_sha256:'0'.repeat(64)},
+    nodes,ways:[[wayId,{highway:'residential','oneway:foot':'yes'}]],edges:[[0,1,0,1]]};
+  return {...body,content_sha256:await sha(body)};
+}
+
+const memStore=()=>{
+  const m=new Map<string,unknown>();
+  const store:TileStore={get:async(key)=>m.get(key)??null,put:async(key,value)=>{m.set(key,value);}};
+  return {m,store};
+};
+
+function committedTile(name:string){
+  return JSON.parse(readFileSync(new URL(`./fixtures/${name}`,import.meta.url),'utf8')) as Record<string,unknown>;
+}
+
+describe('tile ids',()=>{
+  it('maps a point to its grid tile and returns a row-major 3×3 neighbourhood',()=>{
+    expect(tileIdFor(P.lat,P.lng)).toBe(CENTRE);
+    expect(tilesAround(P.lat,P.lng)).toEqual([
+      'r1919c5650','r1919c5651','r1919c5652',
+      'r1920c5650',CENTRE,EAST,
+      'r1921c5650','r1921c5651','r1921c5652',
+    ]);
+  });
+});
+
+describe('loadRoadTilesAround',()=>{
+  it('downloads at most three tiles concurrently, validates and merges without adjacent-tile ID collisions',async()=>{
+    const {m,store}=memStore();let active=0,maxActive=0;
+    const fetchTile=vi.fn(async(id:string)=>{
+      active+=1;maxActive=Math.max(maxActive,active);
+      await new Promise((resolve)=>setTimeout(resolve,1));
+      const response=Response.json(await tile(id));active-=1;return response;
+    });
+    const result=await loadRoadTilesAround(P,{fetchTile,store,now:new Date('2026-10-16T00:00:00Z'),online:true});
+    expect(result.status).toBe('READY');expect(fetchTile).toHaveBeenCalledTimes(9);expect(m.size).toBe(9);expect(maxActive).toBeLessThanOrEqual(3);
+    if(result.status==='READY'){
+      expect(result.graph.role).toBe('ROAD_REFERENCE_ONLY');expect(result.graph.movement_authorized).toBe(false);
+      expect(result.graph.nodes).toHaveLength(16);expect(result.graph.ways).toHaveLength(8);expect(result.graph.edges).toHaveLength(8);
+      expect(result.graph.edges.every((edge)=>edge.direction==='FORWARD')).toBe(true);
+      expect(result.graph.sources).toHaveLength(9);expect(result.missing).toEqual([]);expect(result.stale).toBe(false);
+      expect(result.oldestRetrievedAt).toBe('2026-10-15T00:00:00+00:00');expect(result.persisted).toBe(false);
+    }
+  });
+
+  it('accepts and converts the committed backend-generated tile with its backend SHA-256',async()=>{
+    const {store}=memStore();
+    const real=committedTile('road-tile-r1920c5651.json');
+    const fetchTile=vi.fn(async(id:string)=>Response.json(id===CENTRE?real:await tile(id)));
+    const result=await loadRoadTilesAround(P,{fetchTile,store,now:new Date('2026-10-16T00:00:00Z'),online:true});
+    expect(result.status).toBe('READY');
+    if(result.status==='READY'){
+      expect(result.graph.nodes.some((node)=>node.tags.highway==='crossing')).toBe(true);
+      expect(result.graph.sources.find((source)=>source.pack_id===`osm-tile-${CENTRE}-v1`)?.osm_base_timestamp).toBe('2026-10-15T00:00:00Z');
+    }
+  });
+
+  it('accepts a backend tile with null base timestamp, oneway codes, and 1000 Unicode code points',async()=>{
+    const {store}=memStore();
+    const real=committedTile('road-tile-r1920c5651-oneway-null-base.json');
+    const fetchTile=vi.fn(async(id:string)=>Response.json(id===CENTRE?real:await tile(id)));
+    const result=await loadRoadTilesAround(P,{fetchTile,store,now:new Date('2026-10-16T00:00:00Z'),online:true});
+    expect(result.status).toBe('READY');
+    if(result.status==='READY'){
+      expect(result.graph.sources.find((source)=>source.pack_id===`osm-tile-${CENTRE}-v1`)?.osm_base_timestamp).toBeNull();
+      expect(result.graph.edges.some((edge)=>edge.direction==='FORWARD')).toBe(true);
+      const name=result.graph.ways.find((way)=>way.osm_id===201)?.tags.name??'';
+      expect(name).toHaveLength(2000);expect([...name]).toHaveLength(1000);
+    }
+  });
+
+  it('rejects and does not store a tile whose hash does not match',async()=>{
+    const {m,store}=memStore();
+    const fetchTile=vi.fn(async(id:string)=>Response.json({...await tile(id),content_sha256:'f'.repeat(64)}));
+    const result=await loadRoadTilesAround(P,{fetchTile,store,online:true});
+    expect(result).toEqual({status:'UNAVAILABLE',reason:'INVALID_DATA'});expect(m.size).toBe(0);
+  });
+
+  it('reuses fresh stored tiles without fetching',async()=>{
+    const {store}=memStore();
+    for(const id of tilesAround(P.lat,P.lng))await store.put(id,await tile(id));
+    const fetchTile=vi.fn();
+    const result=await loadRoadTilesAround(P,{fetchTile,store,now:new Date('2026-10-16T00:00:00Z'),online:true});
+    expect(fetchTile).not.toHaveBeenCalled();expect(result.status).toBe('READY');
+  });
+
+  it('offline uses stored tiles only and reports missing neighbours',async()=>{
+    const {store}=memStore();
+    for(const id of tilesAround(P.lat,P.lng).slice(3,6))await store.put(id,await tile(id));
+    const fetchTile=vi.fn();const result=await loadRoadTilesAround(P,{fetchTile,store,online:false});
+    expect(fetchTile).not.toHaveBeenCalled();expect(result.status).toBe('READY');
+    if(result.status==='READY')expect(result.missing).toHaveLength(6);
+  });
+
+  it('requires the centre tile when offline, even if neighbouring tiles are cached',async()=>{
+    const {store}=memStore();
+    for(const id of tilesAround(P.lat,P.lng).filter((value)=>value!==CENTRE).slice(0,2))await store.put(id,await tile(id));
+    await expect(loadRoadTilesAround(P,{store,online:false})).resolves.toEqual({status:'UNAVAILABLE',reason:'OFFLINE_NO_DATA'});
+  });
+
+  it('returns OFFLINE_NO_DATA when no cached tiles exist',async()=>{
+    const {store}=memStore();
+    await expect(loadRoadTilesAround(P,{store,online:false})).resolves.toEqual({status:'UNAVAILABLE',reason:'OFFLINE_NO_DATA'});
+  });
+
+  it('a 429 for a non-centre tile produces a partial READY result with that tile missing',async()=>{
+    const {store}=memStore();const missing='r1919c5650';
+    const fetchTile=vi.fn(async(id:string)=>id===missing?new Response('',{status:429}):Response.json(await tile(id)));
+    const result=await loadRoadTilesAround(P,{fetchTile,store,online:true});
+    expect(result.status).toBe('READY');
+    if(result.status==='READY')expect(result.missing).toEqual([missing]);
+  });
+
+  it('returns TEMPORARILY_UNAVAILABLE when the online centre request fails without a cached centre',async()=>{
+    const {store}=memStore();
+    const fetchTile=vi.fn(async(id:string)=>id===CENTRE?new Response('',{status:503}):Response.json(await tile(id)));
+    await expect(loadRoadTilesAround(P,{fetchTile,store,online:true})).resolves.toEqual({status:'UNAVAILABLE',reason:'TEMPORARILY_UNAVAILABLE'});
+  });
+
+  it('uses a stale cached centre after an online failure and labels stale fallback data',async()=>{
+    const {store}=memStore();await store.put(CENTRE,await tile(CENTRE,'2026-08-01T00:00:00+00:00'));
+    const fetchTile=vi.fn(async(id:string)=>id===CENTRE?new Response('',{status:503}):Response.json(await tile(id)));
+    const result=await loadRoadTilesAround(P,{fetchTile,store,now:new Date('2026-10-15T00:00:00Z'),online:true});
+    expect(result.status).toBe('READY');
+    if(result.status==='READY'){
+      expect(result.stale).toBe(true);expect(result.oldestRetrievedAt).toBe('2026-08-01T00:00:00+00:00');
+      expect(result.missing).toEqual([]);
+    }
+  });
+
+  it('marks expired tiles stale and records a failed non-centre refresh as missing',async()=>{
+    const {store}=memStore();const ids=tilesAround(P.lat,P.lng);
+    for(const id of ids)await store.put(id,await tile(id,'2026-08-01T00:00:00+00:00'));
+    const missing=ids[0];const fetchTile=vi.fn(async(id:string)=>{
+      if(id===missing||id===CENTRE)return new Response('',{status:503});
+      return Response.json(await tile(id));
+    });
+    const result=await loadRoadTilesAround(P,{fetchTile,store,now:new Date('2026-10-15T00:00:00Z'),online:true});
+    expect(result.status).toBe('READY');
+    if(result.status==='READY'){
+      expect(result.stale).toBe(true);expect(result.oldestRetrievedAt.startsWith('2026-08-01')).toBe(true);
+      expect(result.missing).toEqual([missing]);
+    }
+  });
+
+  it('a too-dense response from any tile makes the whole load unavailable',async()=>{
+    const {m,store}=memStore();
+    const fetchTile=vi.fn(async(id:string)=>id===EAST?new Response('{"detail":"ROAD_TILE_TOO_DENSE"}',{status:413}):Response.json(await tile(id)));
+    await expect(loadRoadTilesAround(P,{fetchTile,store,online:true})).resolves.toEqual({status:'UNAVAILABLE',reason:'TOO_DENSE'});
+    expect(m.size).toBe(0);
+  });
+
+  it('sends only tile IDs and one module-scoped X-Road-Session UUID on default fetches',async()=>{
+    const {store}=memStore();const fetchMock=vi.fn(async(input:RequestInfo|URL,_init?:RequestInit)=>{
+      const match=/\/api\/roads\/tile\/(r\d+c\d+)$/.exec(String(input));
+      if(!match)throw new Error('Unexpected road tile URL');
+      return Response.json(await tile(match[1]));
+    });
+    vi.stubGlobal('fetch',fetchMock);
+    try{
+      const result=await loadRoadTilesAround(P,{store,online:true});
+      expect(result.status).toBe('READY');expect(fetchMock).toHaveBeenCalledTimes(9);
+      const sessions=fetchMock.mock.calls.map(([,init])=>new Headers(init?.headers).get('X-Road-Session'));
+      expect(sessions.every((value)=>value!==null&&/^[0-9a-f-]{36}$/i.test(value))).toBe(true);
+      expect(new Set(sessions).size).toBe(1);
+    }finally{vi.unstubAllGlobals();}
+  });
+
+  it('an aborted load stops without writing any fetched tile',async()=>{
+    const {m,store}=memStore();const abort=new AbortController();
+    const fetchTile=vi.fn(async(_id:string,signal?:AbortSignal)=>{
+      abort.abort(new Error('cancelled'));
+      if(signal?.aborted)throw signal.reason;
+      return Response.json(await tile(CENTRE));
+    });
+    await expect(loadRoadTilesAround(P,{signal:abort.signal,fetchTile,store,online:true})).rejects.toThrow();
+    expect(m.size).toBe(0);
+  });
+});
