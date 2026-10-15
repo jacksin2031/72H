@@ -5,9 +5,12 @@ import {hazardKeys,type HazardLocation} from '@/lib/official-hazards';
 import type {DesignationHazard} from '@/lib/designated-places';
 import type {DesignatedPlacesState} from '@/lib/use-designated-places';
 import {selectEvacuationDestinations,assessEvacuationRouteReadiness,usableEvacuationOrigin,type EvacuationCheckId} from '@/lib/evacuation-route-assessment';
-import {loadEvacuationRoadGraph,ishinomakiReferenceGraph,type RoadGraphPack,type RoadCandidate} from '@/lib/evacuation-road-graph';
-import {findRoadCandidates,type RoadReferenceGraph} from '@/lib/road-graph-core';
+import {loadEvacuationRoadGraph,ishinomakiReferenceGraph,EVACUATION_ROAD_BOUNDS,type RoadGraphPack,type RoadCandidate} from '@/lib/evacuation-road-graph';
+import {findRoadCandidates,isWithinBounds,type RoadReferenceGraph} from '@/lib/road-graph-core';
+import {roadDestinations,type RoadHazard} from '@/lib/road-destinations';
+import {resolveDeviceArea} from '@/lib/area-resolution';
 import {hazardText} from './official-hazard-panel';
+import {RoadReferenceSection,roadReferenceRoutes,useRoadReference,type RoadReference} from './road-reference-section';
 import {Disclosure} from './ui';
 
 const text={
@@ -28,10 +31,25 @@ const checkSummary={
  ja:{unverified:(n:number)=>`未確認 ${n} 件`,all:'7 項目の確認状況'},
  en:{unverified:(n:number)=>`${n} items unverified`,all:'All 7 checks'},
 } as const;
+// Nationwide road reference tiles: tsunami / earthquake designations only; any other hazard is never coerced into one of them.
+const roadText={
+ 'zh-TW':{title:'附近道路參考線',chooseHazard:'請選擇海嘯或地震以顯示道路參考線',unsupported:'此災害類別沒有道路參考線（只支援海嘯及地震）',
+  fallback:(ts:string)=>`道路區塊暫時無法取得；改用已核對的內建石卷道路資料（OSM 基準 ${ts}）`},
+ ja:{title:'周辺の道路参考線',chooseHazard:'道路参考線を表示するには津波または地震を選択してください',unsupported:'この災害種別では道路参考線を表示できません（津波・地震のみ対応）',
+  fallback:(ts:string)=>`道路タイルを取得できないため、検証済みの内蔵石巻道路データを使用しています（OSM基準 ${ts}）`},
+ en:{title:'Nearby road references',chooseHazard:'Select tsunami or earthquake to show road references',unsupported:'Road references are not available for this hazard (tsunami and earthquake only)',
+  fallback:(ts:string)=>`Road tiles are unavailable; using the verified built-in Ishinomaki road data (OSM base ${ts})`},
+} as const;
+const roadHazardOf=(hazard:DesignationHazard):RoadHazard|null=>hazard==='tsunami'||hazard==='earthquake'?hazard:null;
 
 /** Sheet content: the map screen's Section supplies the heading. Road candidates are ROAD_REFERENCE_ONLY; movement is never authorized. */
-export function EvacuationRoutePanel({language,state,origin,onOrigin,onFocus,onRoute}:{language:Language;state:DesignatedPlacesState;origin:HazardLocation|null;
- onOrigin:(point:{lat:number;lng:number})=>void;onFocus:(point:{lat:number;lng:number;zoom?:number})=>void;onRoute:(route:RoadCandidate|null)=>void}){
+/** Road reference tiles use only a chosen map point or official place, never device GPS (privacy: tile ids would disclose the device's area).
+ *  The prefecture is resolved locally from that point. The embedded Ishinomaki pack replaces missing tiles only inside its exact bounds and
+ *  only when tiles are temporarily or offline unavailable, never over TOO_DENSE / INVALID_DATA / NO_ROADS. onReferenceRoutes receives at most
+ *  three ROAD_REFERENCE_ONLY lines; suppressNotice: the host shows the single disclaimer and OSM attribution in its map chrome. */
+export function EvacuationRoutePanel({language,state,origin,onOrigin,onFocus,onRoute,onReferenceRoutes,suppressNotice=false}:{language:Language;state:DesignatedPlacesState;origin:HazardLocation|null;
+ onOrigin:(point:{lat:number;lng:number})=>void;onFocus:(point:{lat:number;lng:number;zoom?:number})=>void;onRoute:(route:RoadCandidate|null)=>void;
+ onReferenceRoutes?:(routes:RoadCandidate[])=>void;suppressNotice?:boolean}){
  const t=text[language],hazard=state.hazard;
  const [graph,setGraph]=useState<RoadGraphPack|null>(null),[loadError,setLoadError]=useState(false),[loading,setLoading]=useState(true);
  const [destinationId,setDestinationId]=useState(''),[candidates,setCandidates]=useState<readonly RoadCandidate[]>([]),[attempted,setAttempted]=useState(false);
@@ -52,23 +70,59 @@ export function EvacuationRoutePanel({language,state,origin,onOrigin,onFocus,onR
  useEffect(()=>{if(!usableEvacuationOrigin(origin,state.now)){setCandidates([]);onRoute(null);}},[origin,state.now,onRoute]);
  const assessment=assessEvacuationRouteReadiness({place:destination,hazard,origin,catalogCurrent:currentCatalog,opening:state.opening,
   connected:state.connected,now:state.now,resumeAt:state.resumeAt,roadCandidateCount:candidates.length,graphCurrent:graphCurrent&&!loadError});
+ const r=roadText[language],roadHazard=roadHazardOf(hazard);
+ const chosenPoint=origin&&(origin.source==='MAP_POINT'||origin.source==='OFFICIAL_PLACE')?{lat:origin.lat,lng:origin.lng}:null;
+ const pointKey=chosenPoint?`${chosenPoint.lat}:${chosenPoint.lng}`:'';
+ const [area,setArea]=useState<{key:string;prefecture:string|null}|null>(null);
+ useEffect(()=>{
+  if(!pointKey)return;
+  let alive=true;const [lat,lng]=pointKey.split(':').map(Number);
+  void resolveDeviceArea({latitude:lat,longitude:lng,accuracy_m:0})
+   .then(result=>{if(alive)setArea({key:pointKey,prefecture:result.area_ids.find(id=>/^JP-\d{2}$/.test(id))?.slice(3)??null});})
+   .catch(()=>{if(alive)setArea({key:pointKey,prefecture:null});});
+  return()=>{alive=false;};
+ },[pointKey]);
+ const resolvedArea=area&&area.key===pointKey?area:null;
+ // Unsupported hazard or no chosen point: no request (a pending one is aborted) and no old result survives.
+ const roadPoint=roadHazard&&chosenPoint&&resolvedArea?chosenPoint:null;
+ const hookReference=useRoadReference(roadPoint,roadHazard??'tsunami',resolvedArea?.prefecture??null);
+ const fallback=useMemo(()=>{
+  if(!roadPoint||!roadHazard||hookReference.state!=='READY'||hookReference.tiles?.status!=='UNAVAILABLE')return null;
+  if(hookReference.tiles.reason!=='TEMPORARILY_UNAVAILABLE'&&hookReference.tiles.reason!=='OFFLINE_NO_DATA')return null;
+  if(!referenceGraph||!graphCurrent||loadError||!isWithinBounds(roadPoint,EVACUATION_ROAD_BOUNDS))return null;
+  return roadDestinations(referenceGraph,roadPoint,(hookReference.result?.destinations??[]).map(d=>d.place),roadHazard);
+ },[roadPoint?.lat,roadPoint?.lng,roadHazard,hookReference.state,hookReference.tiles,hookReference.result,referenceGraph,graphCurrent,loadError]);
+ const reference:RoadReference=chosenPoint&&roadHazard&&!resolvedArea?{state:'LOADING',tiles:null,result:null,retry:hookReference.retry}
+  :fallback?{...hookReference,result:fallback}:hookReference;
+ const referenceRoutes=useMemo(()=>fallback
+  ?fallback.destinations.flatMap(d=>d.road&&d.road.role==='ROAD_REFERENCE_ONLY'&&d.road.movement_authorized===false?[d.road]:[]).slice(0,3)
+  :roadReferenceRoutes(hookReference,roadHazard!==null),[fallback,hookReference.state,hookReference.tiles,hookReference.result,roadHazard]);
+ useEffect(()=>{onReferenceRoutes?.(referenceRoutes);},[referenceRoutes,onReferenceRoutes]);
+ useEffect(()=>()=>onReferenceRoutes?.([]),[onReferenceRoutes]);
  const generate=()=>{
   setAttempted(true);onRoute(null);
   if(!graph||!referenceGraph||!graphCurrent||!origin||!destination||!currentCatalog||!usableEvacuationOrigin(origin,state.now)){setCandidates([]);return;}
   const result=findRoadCandidates(referenceGraph,origin,destination);setCandidates(result.candidates);
  };
  return <section id="evacuation-routes" className="evacuation-route-panel" data-testid="evacuation-route-panel">
-  <p className="hazard-muted">{t.scope}</p><p className="hazard-safety" role="status">{t.undetermined}</p>
+  <p className="hazard-safety" role="status">{t.undetermined}</p>
   <label>{t.hazard}<select aria-label={t.hazard} value={hazard} onChange={e=>{state.setHazard(e.target.value as DesignationHazard);setDestinationId('');}}>
    <option value="ALL">{t.chooseHazard}</option>{hazardKeys.map((h,i)=><option key={h} value={h}>{hazardText[language].hazardNames[i]}</option>)}</select></label>
+  <div data-testid="road-reference">
+   <p className="hazard-muted">{r.title}</p>
+   {roadHazard?<RoadReferenceSection language={language} exercise={false} hazard={roadHazard} reference={reference} suppressNotice={suppressNotice}/>
+    :<p className="road-reference-status" role="status">{hazard==='ALL'?r.chooseHazard:r.unsupported}</p>}
+   {fallback&&graph&&<p className="road-reference-status" role="status">{r.fallback(graph.manifest.source.osm_base_timestamp)}</p>}
+  </div>
+  <p className="hazard-muted">{t.scope}</p>
   <label>{t.destination}<select aria-label={t.destination} value={destination?.id??''} onChange={e=>setDestinationId(e.target.value)}>
    <option value="">{t.choosePlace}</option>{places.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
   <p>{t.origin}: {origin&&origin.source!=='OFFICIAL_PLACE'?origin.source==='GPS'?t.gps:t.manual:t.none}</p>
   {loading&&<p>{t.loading}</p>}{loadError&&<p role="status">{t.error}</p>}
-  <button type="button" disabled={!graphCurrent} onClick={()=>{
+  {(!origin||isWithinBounds(origin,EVACUATION_ROAD_BOUNDS))&&<button type="button" disabled={!graphCurrent} onClick={()=>{
    // A fixed, public demo point, never a device-location claim.
    const point=graph!.manifest.pilot_starting_point;onOrigin({lat:point.lat,lng:point.lng});onFocus({lat:point.lat,lng:point.lng,zoom:15});
-  }}>{t.trial}</button>
+  }}>{t.trial}</button>}
   <button type="button" onClick={generate} disabled={!graphCurrent||!destination||!currentCatalog||!usableEvacuationOrigin(origin,state.now)}>{t.generate}</button>
   {assessment.checks.filter(c=>c.status==='BLOCKED').map(check=><p key={check.id} className="hazard-safety" role="status">{t.checks[check.id as EvacuationCheckId]}：{t.blocked}</p>)}
   <p data-testid="route-unverified">{checkSummary[language].unverified(assessment.checks.filter(c=>c.status==='UNKNOWN').length)}</p>
@@ -82,7 +136,7 @@ export function EvacuationRoutePanel({language,state,origin,onOrigin,onFocus,onR
    {!!candidate.road_names.length&&<p>{candidate.road_names.join(' → ')}</p>}<p>{t.gapWarning}</p>
    <button type="button" onClick={()=>{onRoute(candidate);if(origin)onFocus({...origin,zoom:15});}}>{t.show}</button>
   </article>)}{candidates.length>0&&<button type="button" onClick={()=>onRoute(null)}>{t.clear}</button>}
-  <details><summary>{t.source}</summary><p>© OpenStreetMap contributors · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL</a></p>
+  <details><summary>{t.source}</summary><p>OpenStreetMap · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL</a></p>
    {graph&&<p>{graph.manifest.pack_id} · {graph.manifest.source.osm_base_timestamp}<br/>{graph.manifest.review_due_at}<br/>{graph.manifest.asset_sha256.slice(0,16)}</p>}
    <p>{t.gapWarning} {t.disclaimer}</p></details>
  </section>;

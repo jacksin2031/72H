@@ -24,6 +24,7 @@ import {EvacuationRoutePanel} from '@/components/evacuation-route-panel';
 import type {RoadCandidate} from '@/lib/evacuation-road-graph';
 import { forecastLines } from '@/lib/disaster-map';
 import { forecastLegendState, forecastLegendText } from '@/lib/map-legend';
+import { RoadReferenceNotice } from '@/components/road-reference-section';
 
 const screenText={
   'zh-TW':{title:'全日本參考地圖',inundation:'浸水想定',places:'避難場所',lines:'海嘯預報區',regions:'震度地域',
@@ -45,6 +46,7 @@ export default function JapanMapPage() {
   const [manualPoint,setManualPoint]=useState<HazardLocation|null>(null),[focus,setFocus]=useState<{lat:number;lng:number;zoom?:number}|null>(null);
   const [referencePlaces,setReferencePlaces]=useState<OfficialPlace[]>([]),[viewBounds,setViewBounds]=useState<[number,number,number,number]|null>(null);
   const [referenceRoute,setReferenceRoute]=useState<RoadCandidate|null>(null);
+  const [nearbyRoutes,setNearbyRoutes]=useState<RoadCandidate[]>([]);
   const [regionRequest,setRegionRequest]=useState<{value:string}|null>(null);
   const geo=useSimulationGeo();
   const [helpOpen,setHelpOpen]=useState(false),[helpSnapshot,setHelpSnapshot]=useState<LiveSnapshot|null>(null);
@@ -89,7 +91,10 @@ export default function JapanMapPage() {
   // One legend line: what each visible layer is, then the page's single navigation / safety note (shown even with every layer off).
   const legend=[...layers.filter(l=>l.on&&(l.key!=='inundation'||pack)).map(l=>l.legend),t.note].join(' · ');
   // Road candidates need an origin: the section appears once a point (GPS, map point or place) is chosen, and stays while a candidate is drawn.
-  const routeSection=point||referenceRoute?<EvacuationRoutePanel language={language} state={designations} origin={point} onOrigin={choosePoint} onFocus={setFocus} onRoute={setReferenceRoute}/>:null;
+  // Nearby road reference lines come only from a chosen map point / place (never GPS); the page's single road disclaimer and OSM
+  // attribution sit in the map chrome whenever the section (and so any line) can be shown.
+  const routeSection=point||referenceRoute?<EvacuationRoutePanel language={language} state={designations} origin={point} onOrigin={choosePoint} onFocus={setFocus}
+    onRoute={setReferenceRoute} onReferenceRoutes={setNearbyRoutes} suppressNotice/>:null;
   // Until the saved language is read, the shell, the hidden h1 and the map surface render with no language-dependent text,
   // so the page is never blank and a ja / en user never sees one frame of zh-TW text (a lazy initialiser would mismatch server HTML).
   if(!languageReady)return <AppShell tab="map" language={null} fullBleed>
@@ -100,13 +105,13 @@ export default function JapanMapPage() {
     <h1 className="ui-visually-hidden">{t.title}</h1>
     <button type="button" hidden={helpOpen} className="ui-help-pin" aria-label={sosText[language].title} onClick={()=>setHelpOpen(true)}>{sosText[language].title}</button>
     {helpOpen&&<HelpOverlay language={language} onClose={()=>setHelpOpen(false)}><DistressEntry snapshot={helpSnapshot} language={language} scope="live" onSnapshot={adoptHelp}
-      fix={geo.location?{...geo.location,manual:geo.location.source==='MANUAL_EXERCISE'}:null}/></HelpOverlay>}
+      fix={geo.location?{...geo.location,manual:geo.location.source==='MANUAL_EXERCISE'}:null} protectDeviceLocation/></HelpOverlay>}
     <MapScreen language={language}
       map={<SimulationReferenceMap language={language} protectDeviceLocation epicenter={null} legend="none" regionPicker={false} regionRequest={regionRequest}
         userLocation={geo.location} referencePoint={manualPoint} officialPack={pack} showInundation={showInundation} showPlaces={showPlaces}
         disasterReference={official.data} forecastLinePack={official.pack} referenceConnected={official.connected} referenceNow={official.now} showForecastLines={showForecastLines}
         intensityRegionPack={official.regions} showIntensityRegions={showIntensityRegions}
-        referencePlaces={mapPlaces} viewBounds={viewBounds} referenceRoute={referenceRoute}
+        referencePlaces={mapPlaces} viewBounds={viewBounds} referenceRoute={referenceRoute} referenceRoutes={referenceRoute?undefined:nearbyRoutes}
         focusPoint={focus} onReferencePoint={choosePoint} onPlace={choosePlace}/>}
       region={<select aria-label={mapRegionLabel(language)} defaultValue="" onChange={event=>setRegionRequest({value:event.target.value})}>
         <option value="">{mapOverviewLabel(language)}</option>
@@ -116,6 +121,7 @@ export default function JapanMapPage() {
       legend={legend}
       peek={t.peek(mapPlaces.length)}
       routeSection={routeSection}
+      notice={routeSection?<RoadReferenceNotice language={language}/>:null}
       sections={[
         {title:t.placesTitle,content:<>
           <DesignatedPlacesPanel language={language} state={designations} onPlace={choosePlace}/>
