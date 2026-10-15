@@ -29,7 +29,7 @@ def test_rejects_coordinates_and_bad_ids(tmp_path):
     async def fetch(q): raise AssertionError("must not call Overpass")
     c, _ = client(fetch, tmp_path)
     for path in ["r1920c5651x", "38.41,141.28", "r9999c1"]:
-        assert c.get(f"/api/roads/tile/{path}").status_code in (400, 404)
+        assert c.get(f"/api/roads/tile/{path}").status_code == 400
     assert c.get("/api/roads/tile/r1920c5651?lat=38.4&lng=141.2").status_code == 400
 
 
@@ -109,18 +109,87 @@ def test_tampered_cache_is_refetched(tmp_path):
     assert len(calls) == 2 and r.json()["movement_authorized"] is False
 
 
-def test_overpass_requests_are_spaced_at_least_2s(tmp_path):
+def test_overpass_requests_are_spaced_at_least_2s(tmp_path, monkeypatch):
     import asyncio
+    import agent_api.road_tile_service as mod
     sleeps = []
     async def fake_sleep(s): sleeps.append(s)
     async def fetch(q): return 200, RAW
     svc = RoadTileService(fetch=fetch, cache_dir=tmp_path, clock=lambda: 100.0)
-    import agent_api.road_tile_service as mod
-    orig = mod.asyncio.sleep; mod.asyncio.sleep = fake_sleep
-    try:
-        async def run():
-            await svc.get("r1920c5651", "s"); await svc.get("r1920c5652", "s")
-        asyncio.run(run())
-    finally:
-        mod.asyncio.sleep = orig
+    monkeypatch.setattr(mod.asyncio, "sleep", fake_sleep)
+    async def run():
+        await svc.get("r1920c5651", "s"); await svc.get("r1920c5652", "s")
+    asyncio.run(run())
     assert sleeps == [2.0]
+
+
+def test_remark_in_200_is_503_and_not_cached(tmp_path):
+    async def fetch(q): return 200, b'{"osm3s":{},"remark":"runtime error: timeout","elements":[]}'
+    c, _ = client(fetch, tmp_path)
+    assert c.get("/api/roads/tile/r1920c5651").status_code == 503
+    assert not list(tmp_path.glob("*.json"))
+
+
+def test_concurrent_same_tile_misses_coalesce(tmp_path):
+    import asyncio
+    calls = []
+    async def fetch(q): calls.append(q); await asyncio.sleep(0); return 200, RAW
+    svc = RoadTileService(fetch=fetch, cache_dir=tmp_path, min_interval_s=0)
+    async def run():
+        return await asyncio.gather(*[svc.get("r1920c5651", f"s{i}") for i in range(5)])
+    assert len(asyncio.run(run())) == 5 and len(calls) == 1
+
+
+def test_timeout_budget_fits_under_proxy_abort():
+    import agent_api.road_tile_service as mod
+    assert mod.UPSTREAM_TIMEOUT_S == 25 and mod.MAX_WAITERS == 8
+    assert mod.LOCK_WAIT_S + mod.MIN_INTERVAL_S + mod.UPSTREAM_TIMEOUT_S <= 30 == mod.TOTAL_BUDGET_S
+
+
+def test_ninth_waiter_gets_503_immediately(tmp_path):
+    import asyncio
+    from agent_api.road_tile_service import TileUnavailable
+    async def run():
+        gate = asyncio.Event()
+        async def fetch(q): await gate.wait(); return 200, RAW
+        svc = RoadTileService(fetch=fetch, cache_dir=tmp_path, min_interval_s=0, global_per_minute=1000)
+        tasks = []
+        for i in range(9):  # 1 holder + 8 queued
+            tasks.append(asyncio.create_task(svc.get(f"r1920c{5651 + i}", f"s{i}")))
+            for _ in range(5): await asyncio.sleep(0)
+        with pytest.raises(TileUnavailable):
+            await svc.get("r1920c5700", "late")
+        gate.set()
+        return await asyncio.gather(*tasks)
+    assert len(asyncio.run(run())) == 9
+
+
+def test_lock_wait_deadline_gives_503(tmp_path, monkeypatch):
+    import asyncio
+    import agent_api.road_tile_service as mod
+    real = asyncio.wait_for
+    async def fake_wait_for(aw, timeout):
+        if timeout == mod.LOCK_WAIT_S:  # the queued acquire: expire instantly
+            aw.close()
+            raise asyncio.TimeoutError
+        return await real(aw, timeout)
+    monkeypatch.setattr(mod.asyncio, "wait_for", fake_wait_for)
+    async def fetch(q): raise AssertionError("must not fetch after queue timeout")
+    c, _ = client(fetch, tmp_path)
+    r = c.get("/api/roads/tile/r1920c5651")
+    assert r.status_code == 503 and r.json()["detail"] == "ROAD_DATA_TEMPORARILY_UNAVAILABLE"
+
+
+def test_global_cap_defeats_rotating_session_keys(tmp_path):
+    async def fetch(q): return 200, RAW
+    c, _ = client(fetch, tmp_path)
+    codes = [c.get("/api/roads/tile/r1920c5651", headers={"X-Road-Session": f"k{i}"}).status_code for i in range(125)]
+    assert codes.count(200) == 120 and codes[120:] == [429] * 5
+
+
+def test_session_table_is_bounded(tmp_path):
+    async def fetch(q): return 200, RAW
+    c, svc = client(fetch, tmp_path, global_per_minute=10_000)
+    for i in range(2100):
+        assert c.get("/api/roads/tile/r1920c5651", headers={"X-Road-Session": f"k{i}"}).status_code == 200
+    assert len(svc._hits) <= 2048

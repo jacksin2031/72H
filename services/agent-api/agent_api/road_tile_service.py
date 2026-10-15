@@ -4,7 +4,7 @@ Output is ROAD_REFERENCE_ONLY data. Upstream failures are never retried and neve
 """
 from __future__ import annotations
 import asyncio, json, os, tempfile, time
-from collections import deque
+from collections import OrderedDict, deque
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Awaitable, Callable
@@ -16,7 +16,12 @@ from .road_tiles import ENDPOINT, TileTooDense, build_tile_graph, content_hash_m
 USER_AGENT = "72H-road-reference/1.0 (+https://github.com/jacksin2031/72H)"
 CACHE_TTL = timedelta(days=30)
 MIN_INTERVAL_S = 2.0
-UPSTREAM_TIMEOUT_S = 50
+UPSTREAM_TIMEOUT_S = 25
+LOCK_WAIT_S = 3.0
+TOTAL_BUDGET_S = 30.0  # lock wait + spacing + fetch; must stay under the web proxy's 35 s abort
+MAX_WAITERS = 8
+MAX_SESSIONS = 2048
+GLOBAL_PER_MINUTE = 120
 
 __all__ = ["RoadTileService", "TileUnavailable", "TileRateLimited", "TileTooDense"]
 
@@ -48,6 +53,9 @@ class RoadTileService:
         now: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
         per_session_per_minute: int = 30,
         min_interval_s: float = MIN_INTERVAL_S,
+        global_per_minute: int = GLOBAL_PER_MINUTE,
+        lock_wait_s: float = LOCK_WAIT_S,
+        upstream_timeout_s: float = UPSTREAM_TIMEOUT_S,
     ) -> None:
         self._fetch = fetch or _default_fetch
         self._cache_dir = cache_dir if cache_dir is not None else _default_cache_dir()
@@ -55,7 +63,12 @@ class RoadTileService:
         self._now = now
         self._limit = per_session_per_minute
         self._min_interval = min_interval_s
-        self._hits: dict[str, deque[float]] = {}
+        self._global_limit = global_per_minute
+        self._lock_wait = lock_wait_s
+        self._upstream_timeout = upstream_timeout_s
+        self._waiting = 0
+        self._hits: OrderedDict[str, deque[float]] = OrderedDict()
+        self._global_hits: deque[float] = deque()
         self._last_request: float | None = None
         self._lock: asyncio.Lock | None = None
         self._lock_loop: asyncio.AbstractEventLoop | None = None
@@ -68,20 +81,28 @@ class RoadTileService:
 
     def _check_rate(self, session_key: str) -> None:
         t = self._clock()
-        hits = self._hits.setdefault(session_key, deque())
+        while self._global_hits and t - self._global_hits[0] >= 60:
+            self._global_hits.popleft()
+        if len(self._global_hits) >= self._global_limit:
+            raise TileRateLimited("global")
+        hits = self._hits.pop(session_key, None)
+        if hits is None:
+            hits = deque()
         while hits and t - hits[0] >= 60:
             hits.popleft()
+        self._hits[session_key] = hits  # most recently used goes last
+        if len(self._hits) > MAX_SESSIONS:
+            self._hits.popitem(last=False)
         if len(hits) >= self._limit:
             raise TileRateLimited(session_key)
         hits.append(t)
-        if len(self._hits) > 1024:  # bound memory: drop sessions with no recent activity
-            for key in [k for k, v in self._hits.items() if not v or t - v[-1] >= 60]:
-                del self._hits[key]
+        self._global_hits.append(t)
 
     def _read_cache(self, tile_id: str) -> dict | None:
         try:
             graph = json.loads((self._cache_dir / f"{tile_id}.json").read_bytes())
-            if graph["pack_id"] != f"osm-tile-{tile_id}-v1" or not content_hash_matches(graph):
+            if (graph["pack_id"] != f"osm-tile-{tile_id}-v1" or graph["role"] != "ROAD_REFERENCE_ONLY"
+                    or graph["movement_authorized"] is not False or not content_hash_matches(graph)):
                 return None
             age = self._now() - datetime.fromisoformat(graph["source"]["retrieved_at"])
         except (OSError, ValueError, KeyError, TypeError):
@@ -103,7 +124,18 @@ class RoadTileService:
         cached = self._read_cache(tile_id)
         if cached is not None:
             return cached
-        async with self._upstream_lock():
+        if self._waiting >= MAX_WAITERS:
+            raise TileUnavailable("upstream queue full")
+        started = self._clock()
+        lock = self._upstream_lock()
+        self._waiting += 1
+        try:
+            await asyncio.wait_for(lock.acquire(), self._lock_wait)
+        except asyncio.TimeoutError as exc:
+            raise TileUnavailable("upstream queue wait exceeded") from exc
+        finally:
+            self._waiting -= 1
+        try:
             cached = self._read_cache(tile_id)  # another request may have filled it while we queued
             if cached is not None:
                 return cached
@@ -111,12 +143,17 @@ class RoadTileService:
                 wait = self._min_interval - (self._clock() - self._last_request)
                 if wait > 0:
                     await asyncio.sleep(wait)
+            budget = min(self._upstream_timeout, TOTAL_BUDGET_S - (self._clock() - started))
+            if budget <= 0:
+                raise TileUnavailable("upstream budget exhausted")
             try:
-                status, raw = await self._fetch(overpass_query(tile_bounds(row, col)))
+                status, raw = await asyncio.wait_for(self._fetch(overpass_query(tile_bounds(row, col))), budget)
             except Exception as exc:  # network errors, timeouts: no retry
                 raise TileUnavailable("upstream request failed") from exc
             finally:
                 self._last_request = self._clock()
+        finally:
+            lock.release()
         if status != 200:
             raise TileUnavailable(f"upstream status {status}")
         try:
