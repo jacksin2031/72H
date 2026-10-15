@@ -27,11 +27,19 @@ __all__ = ["RoadTileService", "TileUnavailable", "TileRateLimited", "TileTooDens
 
 
 class TileUnavailable(Exception):
-    pass
+    """503. ``reason`` is a short code safe to log: it never carries coordinates or session keys."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
 
 
 class TileRateLimited(Exception):
-    pass
+    """429. ``reason`` is RATE_LIMIT_SESSION or RATE_LIMIT_GLOBAL (never the session key)."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
 
 
 async def _default_fetch(query: str) -> tuple[int, bytes]:
@@ -84,7 +92,7 @@ class RoadTileService:
         while self._global_hits and t - self._global_hits[0] >= 60:
             self._global_hits.popleft()
         if len(self._global_hits) >= self._global_limit:
-            raise TileRateLimited("global")
+            raise TileRateLimited("RATE_LIMIT_GLOBAL")
         hits = self._hits.pop(session_key, None)
         if hits is None:
             hits = deque()
@@ -94,7 +102,7 @@ class RoadTileService:
         if len(self._hits) > MAX_SESSIONS:
             self._hits.popitem(last=False)
         if len(hits) >= self._limit:
-            raise TileRateLimited(session_key)
+            raise TileRateLimited("RATE_LIMIT_SESSION")
         hits.append(t)
         self._global_hits.append(t)
 
@@ -125,14 +133,14 @@ class RoadTileService:
         if cached is not None:
             return cached
         if self._waiting >= MAX_WAITERS:
-            raise TileUnavailable("upstream queue full")
+            raise TileUnavailable("QUEUE_FULL")
         started = self._clock()
         lock = self._upstream_lock()
         self._waiting += 1
         try:
             await asyncio.wait_for(lock.acquire(), self._lock_wait)
         except asyncio.TimeoutError as exc:
-            raise TileUnavailable("upstream queue wait exceeded") from exc
+            raise TileUnavailable("LOCK_DEADLINE") from exc
         finally:
             self._waiting -= 1
         try:
@@ -145,28 +153,32 @@ class RoadTileService:
                     await asyncio.sleep(wait)
             budget = min(self._upstream_timeout, TOTAL_BUDGET_S - (self._clock() - started))
             if budget <= 0:
-                raise TileUnavailable("upstream budget exhausted")
+                raise TileUnavailable("LOCK_DEADLINE")
             try:
                 status, raw = await asyncio.wait_for(self._fetch(overpass_query(tile_bounds(row, col))), budget)
-            except Exception as exc:  # network errors, timeouts: no retry
-                raise TileUnavailable("upstream request failed") from exc
+            except (asyncio.TimeoutError, httpx.TimeoutException) as exc:  # no retry
+                raise TileUnavailable("UPSTREAM_TIMEOUT") from exc
+            except Exception as exc:  # network errors: no retry
+                raise TileUnavailable("UPSTREAM_ERROR") from exc
             finally:
                 self._last_request = self._clock()
         finally:
             lock.release()
         if status != 200:
-            raise TileUnavailable(f"upstream status {status}")
+            raise TileUnavailable(f"UPSTREAM_STATUS_{int(status)}")
         try:
             data = json.loads(raw)
         except ValueError as exc:
-            raise TileUnavailable("upstream returned malformed JSON") from exc
-        if not isinstance(data, dict) or not isinstance(data.get("osm3s"), dict) or "remark" in data:
-            raise TileUnavailable("upstream payload invalid or incomplete")
+            raise TileUnavailable("MALFORMED") from exc
+        if not isinstance(data, dict) or not isinstance(data.get("osm3s"), dict):
+            raise TileUnavailable("MALFORMED")
+        if "remark" in data:
+            raise TileUnavailable("REMARK")
         try:
             graph = build_tile_graph(tile_id, data, raw, self._now())
         except TileTooDense:
             raise
         except (KeyError, TypeError, ValueError, AttributeError) as exc:
-            raise TileUnavailable("upstream payload could not be parsed") from exc
+            raise TileUnavailable("MALFORMED") from exc
         self._write_cache(tile_id, graph)
         return graph

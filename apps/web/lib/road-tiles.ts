@@ -423,6 +423,67 @@ function stateForTiles(tiles:readonly RoadTile[],missing:string[],now:number,per
   }
   return readyState(tiles,missing,now,persisted);
 }
+type TileFetcher=(id:string,signal?:AbortSignal)=>Promise<Response>;
+type SharedFetch={promise:Promise<FetchOutcome>;controller:AbortController;consumers:number};
+/** In-flight tile fetches, per fetcher and tile id, so concurrent loads share one request per tile (R21). */
+const inFlight=new WeakMap<TileFetcher,Map<string,SharedFetch>>();
+
+/** Fetches, bounds-reads and validates one tile. Throws only when its own (shared) signal is aborted. */
+async function fetchTileOutcome(id:string,fetchTile:TileFetcher,signal:AbortSignal):Promise<FetchOutcome>{
+  let response:Response;
+  try{response=await fetchTile(id,signal);}
+  catch{throwIfAborted(signal);return {kind:'missing'};}
+  throwIfAborted(signal);
+  if(response.status===413)return {kind:'too-dense'};
+  if(response.status===429||response.status>=500)return {kind:'missing'};
+  if(!response.ok)return {kind:'invalid'};
+  let value:unknown;
+  try{value=await readBoundedJson(response,signal);}
+  catch{throwIfAborted(signal);return {kind:'invalid'};}
+  const valid=await validateTile(value,id);
+  throwIfAborted(signal);
+  return valid?{kind:'ready',value:valid}:{kind:'invalid'};
+}
+
+/** Joins (or starts) the in-flight fetch for a tile. The shared request is aborted only when its last
+ *  consumer aborts; an aborted consumer rejects at once and never receives the shared outcome. */
+function sharedTileFetch(id:string,fetchTile:TileFetcher,signal?:AbortSignal):Promise<FetchOutcome>{
+  throwIfAborted(signal);
+  let byId=inFlight.get(fetchTile);
+  if(!byId){byId=new Map();inFlight.set(fetchTile,byId);}
+  const registry=byId;
+  const existing=registry.get(id);
+  const shared:SharedFetch=existing??{promise:Promise.resolve({kind:'missing'}),controller:new AbortController(),consumers:0};
+  shared.consumers+=1;
+  return new Promise<FetchOutcome>((resolve,reject)=>{
+    let settled=false;
+    const leave=()=>{
+      settled=true;signal?.removeEventListener('abort',onAbort);
+      shared.consumers-=1;
+    };
+    const onAbort=()=>{
+      if(settled)return;
+      leave();
+      if(shared.consumers===0){
+        if(registry.get(id)===shared)registry.delete(id);
+        shared.controller.abort(new DOMException('No consumer needs this road tile','AbortError'));
+      }
+      reject(signal?.reason??new DOMException('The operation was aborted','AbortError'));
+    };
+    signal?.addEventListener('abort',onAbort,{once:true});
+    if(!existing){
+      // Started after this consumer's abort listener exists, so a synchronous abort reaches the request.
+      registry.set(id,shared);
+      shared.promise=fetchTileOutcome(id,fetchTile,shared.controller.signal)
+        .finally(()=>{if(registry.get(id)===shared)registry.delete(id);});
+    }
+    shared.promise.then(
+      (outcome)=>{if(settled)return;leave();resolve(outcome);},
+      (error:unknown)=>{if(settled)return;leave();reject(error);},
+    );
+  });
+}
+
 export async function loadRoadTilesAround(point:RoadPoint,opts:LoadOptions={}):Promise<RoadTileState>{
   throwIfAborted(opts.signal);
   if(!isJapanPoint(point))return {status:'UNAVAILABLE',reason:'INVALID_DATA'};
@@ -469,19 +530,9 @@ export async function loadRoadTilesAround(point:RoadPoint,opts:LoadOptions={}):P
       const index=cursor++;
       if(index>=pending.length)return;
       const id=pending[index];
-      let response:Response;
-      try{response=await fetchTile(id,opts.signal);}
-      catch(error){throwIfAborted(opts.signal);outcomes.set(id,{kind:'missing'});continue;}
+      const outcome=await sharedTileFetch(id,fetchTile,opts.signal);
       throwIfAborted(opts.signal);
-      if(response.status===413){outcomes.set(id,{kind:'too-dense'});continue;}
-      if(response.status===429||response.status>=500){outcomes.set(id,{kind:'missing'});continue;}
-      if(!response.ok){outcomes.set(id,{kind:'invalid'});continue;}
-      let value:unknown;
-      try{value=await readBoundedJson(response,opts.signal);}
-      catch(error){throwIfAborted(opts.signal);outcomes.set(id,{kind:'invalid'});continue;}
-      const valid=await validateTile(value,id);
-      throwIfAborted(opts.signal);
-      outcomes.set(id,valid?{kind:'ready',value:valid}:{kind:'invalid'});
+      outcomes.set(id,outcome);
     }
   };
   await Promise.all(Array.from({length:Math.min(3,pending.length)},()=>worker()));

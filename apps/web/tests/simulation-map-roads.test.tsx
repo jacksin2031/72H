@@ -252,3 +252,19 @@ it('/demo chooses a volatile local point with the drill picker, then focuses it,
   expect(page.querySelector('.map-notice')).toBeNull();
   expect(occurrences(page.textContent,disclaimer)).toBe(1);
 });
+
+it('the step-2 earthquake→tsunami flip re-derives destinations without re-downloading tiles (R21)',async()=>{
+  host=document.createElement('div');document.body.append(host);root=createRoot(host);
+  const launch={...config,drillPoint:point1,locationContext:{source:'USER_SELECTED',area_ids:['JP-MUNI-04202','JP-04','JP'],label:'石巻市'} as never};
+  await act(async()=>root!.render(<ScreenHarness launch={launch} done={1}/>));
+  await act(async()=>{await new Promise(resolve=>setTimeout(resolve,260));});
+  expect(destinationCalls.at(-1)?.[3]).toBe('earthquake');
+  expect(roadCalls).toHaveLength(1);
+  const firstSignal=roadCalls[0]?.signal;
+  await act(async()=>root!.render(<ScreenHarness launch={launch} done={2}/>));
+  await act(async()=>{await new Promise(resolve=>setTimeout(resolve,260));});
+  expect(roadCalls).toHaveLength(1);
+  expect(firstSignal?.aborted).toBe(false);
+  expect(destinationCalls.at(-1)?.[3]).toBe('tsunami');
+  expect(host.querySelector('.ui-sheet-head')?.textContent).toContain('海嘯適用指定場所');
+});

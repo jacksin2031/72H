@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from uuid import UUID
+import logging
 import os
 import secrets
 
@@ -60,6 +61,14 @@ from .distress_extract import DistressCallBudget, DistressExtractor, ExtractRequ
 from .distress_advice import AdviceRequest, DistressAdvisor, escalation_skipped
 
 
+logger = logging.getLogger(__name__)
+
+
+def _log_road_tile_failure(tile_id: str, status_code: int, reason: str) -> None:
+    """Tile id and reason code only: never coordinates, session keys or client addresses."""
+    logger.warning("road tile %s failed: status=%d reason=%s", tile_id, status_code, reason)
+
+
 def create_app(
     store: ReplayStore | None = None,
     live_store: LiveStore | None = None,
@@ -105,10 +114,13 @@ def create_app(
         except ValueError:
             return JSONResponse(status_code=400, content={"detail": "ROAD_TILE_ID_INVALID"})
         except TileTooDense:
+            _log_road_tile_failure(tile_id, 413, "TOO_DENSE")
             return JSONResponse(status_code=413, content={"detail": "ROAD_TILE_TOO_DENSE"})
-        except TileRateLimited:
+        except TileRateLimited as exc:
+            _log_road_tile_failure(tile_id, 429, exc.reason)
             return JSONResponse(status_code=429, content={"detail": "ROAD_TILE_RATE_LIMITED"})
-        except TileUnavailable:
+        except TileUnavailable as exc:
+            _log_road_tile_failure(tile_id, 503, exc.reason)
             return JSONResponse(status_code=503, content={"detail": "ROAD_DATA_TEMPORARILY_UNAVAILABLE"})
         return JSONResponse(content=graph, headers={"Cache-Control": "public, max-age=86400"})
 

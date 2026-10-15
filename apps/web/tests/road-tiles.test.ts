@@ -428,3 +428,93 @@ describe('loadRoadTilesAround',()=>{
     expect(fetchTile).not.toHaveBeenCalled();
   });
 });
+
+describe('in-flight tile dedupe (R21)',()=>{
+  const NORTH={lat:38.43,lng:141.28};// one row north of P: its 3×3 shares six tiles with P's
+  const row=(r:number)=>[5650,5651,5652].map((c)=>`r${r}c${c}`);
+  const tick=()=>new Promise((resolve)=>setTimeout(resolve,30));
+  function gatedFetch(){
+    const gates=new Map<string,{promise:Promise<void>;open:()=>void}>();
+    const gate=(id:string)=>{
+      let entry=gates.get(id);
+      if(!entry){let open:()=>void=()=>{};const promise=new Promise<void>((resolve)=>{open=resolve;});entry={promise,open};gates.set(id,entry);}
+      return entry;
+    };
+    const signals:AbortSignal[]=[];
+    const fetchTile=vi.fn(async(id:string,signal?:AbortSignal)=>{
+      if(signal)signals.push(signal);
+      await gate(id).promise;
+      return Response.json(await tile(id));
+    });
+    return {fetchTile,signals,release:(...ids:string[])=>ids.forEach((id)=>gate(id).open())};
+  }
+  const requested=(fetchTile:{mock:{calls:unknown[][]}})=>fetchTile.mock.calls.map(([id])=>id as string);
+
+  it('two concurrent loads of the same 3×3 fetch each tile id once and both resolve READY',async()=>{
+    const {m,store}=memStore();
+    const {fetchTile,release}=gatedFetch();
+    const first=loadRoadTilesAround(P,{fetchTile,store,online:true,now:new Date('2026-10-16T00:00:00Z')});
+    const second=loadRoadTilesAround(P,{fetchTile,store,online:true,now:new Date('2026-10-16T00:00:00Z')});
+    await tick();
+    release(...tilesAround(P.lat,P.lng));
+    const [a,b]=await Promise.all([first,second]);
+    expect(a.status).toBe('READY');expect(b.status).toBe('READY');
+    expect(fetchTile).toHaveBeenCalledTimes(9);
+    expect(new Set(requested(fetchTile)).size).toBe(9);
+    expect(m.size).toBe(9);
+  });
+
+  it('two concurrent loads of overlapping 3×3 sets fetch every shared tile id once',async()=>{
+    const {store}=memStore();
+    const {fetchTile,release}=gatedFetch();
+    const south=loadRoadTilesAround(P,{fetchTile,store,online:true,now:new Date('2026-10-16T00:00:00Z')});
+    const north=loadRoadTilesAround(NORTH,{fetchTile,store,online:true,now:new Date('2026-10-16T00:00:00Z')});
+    await tick();
+    expect(requested(fetchTile).sort()).toEqual([...row(1919),...row(1920)].sort());
+    release(...row(1919));await tick();// the south load moves on to row 1920, already in flight for the north load
+    expect(fetchTile).toHaveBeenCalledTimes(6);
+    release(...row(1920));await tick();// both loads now need row 1921
+    expect(fetchTile).toHaveBeenCalledTimes(9);
+    release(...row(1921));await tick();
+    release(...row(1922));
+    const [a,b]=await Promise.all([south,north]);
+    expect(a.status).toBe('READY');expect(b.status).toBe('READY');
+    expect(fetchTile).toHaveBeenCalledTimes(12);
+    expect(new Set(requested(fetchTile)).size).toBe(12);
+  });
+
+  it('a shared fetch survives the abort of one of its two consumers; the aborted one never receives the result',async()=>{
+    const {m,store}=memStore();
+    const {fetchTile,signals,release}=gatedFetch();
+    const abortA=new AbortController(),abortB=new AbortController();
+    const a=loadRoadTilesAround(P,{fetchTile,store,online:true,signal:abortA.signal,now:new Date('2026-10-16T00:00:00Z')});
+    const b=loadRoadTilesAround(P,{fetchTile,store,online:true,signal:abortB.signal,now:new Date('2026-10-16T00:00:00Z')});
+    const aOutcome=a.then(()=>'resolved',(error:unknown)=>error);
+    await tick();
+    expect(fetchTile).toHaveBeenCalledTimes(3);
+    abortA.abort(new Error('point moved'));
+    expect(signals.every((signal)=>!signal.aborted)).toBe(true);
+    release(...tilesAround(P.lat,P.lng));
+    await expect(b).resolves.toMatchObject({status:'READY',missing:[]});
+    expect(await aOutcome).toEqual(new Error('point moved'));
+    expect(fetchTile).toHaveBeenCalledTimes(9);
+    expect(new Set(requested(fetchTile)).size).toBe(9);
+    expect(m.size).toBe(9);
+  });
+
+  it('aborting the last consumer of a shared fetch aborts it, and a later load fetches afresh',async()=>{
+    const {store}=memStore();
+    const {fetchTile,signals,release}=gatedFetch();
+    const abort=new AbortController();
+    const first=loadRoadTilesAround(P,{fetchTile,store,online:true,signal:abort.signal}).catch(()=>'aborted');
+    await tick();
+    abort.abort(new Error('gone'));
+    expect(signals).toHaveLength(3);
+    expect(signals.every((signal)=>signal.aborted)).toBe(true);
+    expect(await first).toBe('aborted');
+    release(...tilesAround(P.lat,P.lng));
+    const next=await loadRoadTilesAround(P,{fetchTile,store,online:true,now:new Date('2026-10-16T00:00:00Z')});
+    expect(next.status).toBe('READY');
+    expect(fetchTile).toHaveBeenCalledTimes(12);
+  });
+});

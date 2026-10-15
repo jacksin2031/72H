@@ -1,8 +1,8 @@
 'use client';
 
-import {useCallback,useEffect,useState,type ReactNode} from 'react';
+import {useCallback,useEffect,useMemo,useState,type ReactNode} from 'react';
 import type {Language} from '@/lib/contracts';
-import {loadJapanShelterCatalog,loadJapanShelterPrefecture,type JapanShelterCatalog} from '@/lib/japan-shelters';
+import {loadJapanShelterCatalog,loadJapanShelterPrefecture,type JapanShelterCatalog,type JapanShelterPlace} from '@/lib/japan-shelters';
 import {loadRoadTilesAround,type RoadTileState} from '@/lib/road-tiles';
 import {roadDestinations,type RoadDestination,type RoadHazard} from '@/lib/road-destinations';
 import type {RoadCandidate} from '@/lib/evacuation-road-graph';
@@ -14,40 +14,64 @@ export type RoadReference=RoadReferenceValue&{retry:()=>void};
 
 const idle:RoadReferenceValue={state:'IDLE',tiles:null,result:null};
 const loading:RoadReferenceValue={state:'LOADING',tiles:null,result:null};
+const failed:RoadReferenceValue={state:'ERROR',tiles:null,result:null};
 const ROAD_REFERENCE_DEBOUNCE_MS=250;
 
-/** Loads the selected point's bounded road tiles and prefecture designations in parallel. */
+type Loaded<T>={key:string;status:'LOADING'|'READY'|'ERROR';value:T|null};
+
+/** Loads the selected point's bounded road tiles and the prefecture's designated places.
+ *  Tiles are keyed by the point only (R21): a hazard or prefecture change re-derives destinations
+ *  from the already-loaded tiles and never starts, aborts or repeats a tile download. */
 export function useRoadReference(point:{lat:number;lng:number}|null,hazard:RoadHazard,prefectureCode:string|null):RoadReference{
   const [retryVersion,setRetryVersion]=useState(0);
-  const [entry,setEntry]=useState<{key:string;value:RoadReferenceValue}>({key:'',value:idle});
-  const key=point?`${point.lat}:${point.lng}:${hazard}:${prefectureCode??''}`:'idle';
   const retry=useCallback(()=>setRetryVersion(value=>value+1),[]);
+  const lat=point?.lat,lng=point?.lng;
+  const tileKey=point?`${lat}:${lng}:${retryVersion}`:'';
+  const placesKey=point&&prefectureCode?`${prefectureCode}:${retryVersion}`:'';
+  const [tileEntry,setTileEntry]=useState<Loaded<RoadTileState>>({key:'',status:'LOADING',value:null});
+  const [placesEntry,setPlacesEntry]=useState<Loaded<JapanShelterPlace[]>>({key:'',status:'LOADING',value:null});
 
+  // Tiles: point only, debounced, aborted and key-fenced on point change (R16).
   useEffect(()=>{
-    if(!point){setEntry({key:'idle',value:idle});return;}
+    if(lat===undefined||lng===undefined)return;
     const controller=new AbortController();
     let active=true;
-    setEntry({key,value:loading});
-    const fail=()=>{if(active&&!controller.signal.aborted)setEntry({key,value:{state:'ERROR',tiles:null,result:null}});};
-    if(!prefectureCode){fail();return()=>{active=false;controller.abort();};}
     const timer=setTimeout(()=>{
-      void (async()=>{
-        try{
-          const [tiles,catalog]:[RoadTileState,JapanShelterCatalog]=await Promise.all([
-            loadRoadTilesAround(point,{signal:controller.signal}),
-            loadJapanShelterCatalog(controller.signal),
-          ]);
-          const places=await loadJapanShelterPrefecture(catalog,prefectureCode,controller.signal);
-          if(!active||controller.signal.aborted)return;
-          const result=roadDestinations(tiles.status==='READY'?tiles.graph:null,point,places,hazard);
-          setEntry({key,value:{state:'READY',tiles,result}});
-        }catch{fail();}
-      })();
+      loadRoadTilesAround({lat,lng},{signal:controller.signal}).then(
+        tiles=>{if(active&&!controller.signal.aborted)setTileEntry({key:tileKey,status:'READY',value:tiles});},
+        ()=>{if(active&&!controller.signal.aborted)setTileEntry({key:tileKey,status:'ERROR',value:null});},
+      );
     },ROAD_REFERENCE_DEBOUNCE_MS);
     return()=>{active=false;clearTimeout(timer);controller.abort();};
-  },[point?.lat,point?.lng,hazard,prefectureCode,retryVersion]);
+  },[tileKey]);
 
-  const value=entry.key===key?entry.value:point?loading:idle;
+  // Designated places: prefecture only; never touches tiles.
+  useEffect(()=>{
+    if(!placesKey||!prefectureCode)return;
+    const controller=new AbortController();
+    let active=true;
+    void (async()=>{
+      try{
+        const catalog:JapanShelterCatalog=await loadJapanShelterCatalog(controller.signal);
+        const places=await loadJapanShelterPrefecture(catalog,prefectureCode,controller.signal);
+        if(active&&!controller.signal.aborted)setPlacesEntry({key:placesKey,status:'READY',value:places});
+      }catch{if(active&&!controller.signal.aborted)setPlacesEntry({key:placesKey,status:'ERROR',value:null});}
+    })();
+    return()=>{active=false;controller.abort();};
+  },[placesKey]);
+
+  const tiles=tileEntry.key===tileKey?tileEntry:null;
+  const places=placesEntry.key===placesKey?placesEntry:null;
+  const result=useMemo(()=>{
+    if(lat===undefined||lng===undefined||tiles?.status!=='READY'||places?.status!=='READY'||!tiles.value||!places.value)return null;
+    return roadDestinations(tiles.value.status==='READY'?tiles.value.graph:null,{lat,lng},places.value,hazard);
+  },[tiles,places,hazard,lat,lng]);
+
+  let value:RoadReferenceValue;
+  if(!point)value=idle;
+  else if(!prefectureCode||tiles?.status==='ERROR'||places?.status==='ERROR')value=failed;
+  else if(!result||!tiles?.value)value=loading;
+  else value={state:'READY',tiles:tiles.value,result};
   return {...value,retry};
 }
 
