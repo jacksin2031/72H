@@ -68,6 +68,16 @@ it('keeps the nearest five and calculates real roads only for the nearest three'
 
   expect(result.destinations.map((destination) => destination.place.id)).toEqual(['d0', 'd1', 'd2', 'd3', 'd4']);
   expect(result.destinations.slice(0, 3).every((destination) => destination.road !== null)).toBe(true);
+  expect(result.destinations[0].road).toMatchObject({
+    id: 'candidate-1',
+    coordinates: [[origin.lng, origin.lat], [points[1].lng, points[1].lat]],
+    distance_m: expect.any(Number),
+    origin_gap_m: 0,
+    destination_gap_m: 0,
+    road_names: ['Road 1'],
+    role: 'ROAD_REFERENCE_ONLY',
+    movement_authorized: false,
+  });
   expect(result.destinations.slice(3).every((destination) => destination.road === null)).toBe(true);
   expect(result.destinations.every((destination) => destination.reason === null)).toBe(true);
   expect(result.destinations.every((destination) => destination.place.open_status === 'UNKNOWN')).toBe(true);

@@ -7,7 +7,7 @@ export type RoadHazard = 'tsunami' | 'earthquake';
 export type RoadDestination = {
   place: JapanShelterPlace;
   straight_m: number;
-  road: RoadCandidate | null;
+  road: (RoadCandidate & { role: 'ROAD_REFERENCE_ONLY'; movement_authorized: false }) | null;
   reason: RoadCandidateReason | null;
 };
 
@@ -36,7 +36,17 @@ export function roadDestinations(
       return { place, straight_m, road: null, reason: null };
     }
     const result = findRoadCandidates(graph, origin, { lat: place.lat, lng: place.lng });
-    return { place, straight_m, road: result.candidates[0] ?? null, reason: result.reason };
+    const candidate = result.candidates[0];
+    return {
+      place,
+      straight_m,
+      road: candidate ? {
+        ...candidate,
+        role: result.map_layer,
+        movement_authorized: result.movement_authorized,
+      } : null,
+      reason: result.reason,
+    };
   });
 
   return { destinations, none: eligible.length === 0 };
