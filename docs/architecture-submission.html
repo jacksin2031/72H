@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><title>72H アーキテクチャ（提出版）</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+:root{--bg:#0B0D10;--panel:#141A20;--panel2:#1B232B;--line:rgba(255,255,255,.14);--text:#F2F4F6;--mute:#9AA3AD;
+  --amber:#FFB020;--ok:#3DDC97;--info:#6CB6FF;--ai:#B49CFF;--alert:#FF5A52;--gc:#4C8DF6}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans JP",system-ui,sans-serif}
+.page{width:1920px;height:1080px;padding:34px 44px;display:flex;flex-direction:column;gap:18px}
+header{display:flex;align-items:baseline;gap:24px}
+h1{margin:0;font-size:38px;font-weight:900;letter-spacing:.02em}
+h1 b{color:var(--amber)}
+header p{margin:0;color:var(--mute);font-size:18px}
+.main{flex:1;display:grid;grid-template-columns:330px 40px 1fr 40px 360px;gap:0;min-height:0}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0}
+.arrow{display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:30px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.box h3{margin:0 0 6px;font-size:19px;font-weight:700}
+.box p,.box li{margin:0;font-size:15px;color:var(--mute);line-height:1.5}
+.box ul{margin:0;padding-left:1.1em}
+.tag{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;letter-spacing:.06em;padding:1px 8px;border-radius:5px;border:1px solid currentColor;margin-bottom:6px}
+.frame{border:2px solid var(--gc);border-radius:18px;padding:14px 16px 16px;position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-height:0;height:100%}
+.frame>.label{font-size:18px;font-weight:700;color:var(--gc);display:flex;gap:10px;align-items:center}
+.frame>.label small{color:var(--mute);font-weight:400;font-size:14px}
+.flow{display:grid;grid-template-columns:1fr 26px 1fr 26px 1.25fr 26px 1fr;align-items:stretch}
+.flow .arrow{font-size:22px}
+.core{border:2px solid var(--amber);background:#1C1810}
+.core h3{color:var(--amber)}
+.ai{border:2px solid var(--ai);background:#17142A;border-radius:16px;padding:14px 16px}
+.ai .head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.ai .head h3{margin:0;font-size:20px;color:var(--ai)}
+.ai .head span{font-size:14px;color:var(--mute)}
+.roles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.role{background:rgba(180,156,255,.08);border:1px solid rgba(180,156,255,.35);border-radius:12px;padding:10px 12px}
+.role b{display:block;font-size:16px;margin-bottom:2px}
+.role i{font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ai)}
+.role p{margin:4px 0 0;font-size:13.5px;color:var(--mute);line-height:1.45}
+.gate{white-space:nowrap;display:flex;gap:12px;align-items:center;justify-content:center;font-size:14.5px;color:var(--text);padding:8px;border:1px dashed var(--line);border-radius:10px}
+.gate span{color:var(--mute)}
+.gate .up{color:var(--ai)} .gate .dn{color:var(--amber)}
+.proxy{display:flex;gap:10px;align-items:center}
+.gcbox{border-color:rgba(76,141,246,.55)}
+.gcbox h3{color:#9CC0FF}
+.ext h3{color:var(--text)}
+footer{display:flex;gap:14px}
+.pill{flex:1;text-align:center;padding:12px 10px;border-radius:12px;font-weight:700;font-size:18px;background:var(--panel);border:1px solid var(--line)}
+.pill.a{color:var(--ai);border-color:rgba(180,156,255,.5)} .pill.c{color:var(--amber);border-color:rgba(255,176,32,.5)} .pill.o{color:var(--ok);border-color:rgba(61,220,151,.5)}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.note{font-size:13px;color:var(--mute);text-align:right}
+</style></head>
+<body><div class="page">
+<header><h1>72<b>H</b> システム構成</h1><p>提出版（main / Cloud Run リビジョン h72-submit-b390b8a）· 災害時の行動支援エージェント</p></header>
+
+<div class="main">
+  <!-- device -->
+  <div class="col">
+    <div class="box"><span class="tag" style="color:var(--info)">利用者の端末 · PWA</span>
+      <h3>Next.js Web UI</h3><p>今 / 地図 / その他 · NOW・NEXT・AVOID と根拠<br>日本語 · English · 繁體中文 · 简体中文</p></div>
+    <div class="box"><h3>オフライン継続</h3><p>Service Worker + IndexedDB に<br>最後に確認した計画・根拠・地図パックを保存。情報の古さを表示し、新しい公式情報は作らない</p></div>
+    <div class="box"><h3>位置のプライバシー</h3><p>GPS 座標は端末内の Web Worker で地域 ID に変換。送るのは地域 ID と観測時刻だけ</p></div>
+    <div class="box"><h3>救助要請</h3><p>声・文字で状況を送信（救助機関への自動通報はしない）</p></div>
+  </div>
+  <div class="arrow">⇄</div>
+
+  <!-- cloud run -->
+  <div class="frame">
+    <div class="label">Google Cloud Run <small>asia-northeast1 · 1コンテナ · 専用サービスアカウント + ADC</small></div>
+    <div class="box proxy" style="padding:10px 14px"><h3 style="margin:0;white-space:nowrap">Next.js サーバー / API プロキシ</h3><p>Origin 検証 · サイズ上限 · 演習キーのヘッダー転送 → 内部の FastAPI へ（FastAPI は外部非公開）</p></div>
+    <div class="flow">
+      <div class="box"><span class="tag" style="color:var(--mute)">入力</span><h3>イベント</h3><p>気象庁の電文（参考）<br>合成リプレイ · 史実演習<br>交通情報 · 未確認 SNS</p></div>
+      <div class="arrow">→</div>
+      <div class="box"><span class="tag" style="color:var(--info)">EVIDENCE</span><h3>根拠の正規化</h3><p>出典 · 信頼状態<br>鮮度（TTL）· 矛盾<br>対象地域・種類</p></div>
+      <div class="arrow">→</div>
+      <div class="box core"><span class="tag" style="color:var(--amber)">決定論的</span><h3>Safety Core</h3><p>行動の適格性 · 依存関係 · 計画の失効と再計画 · 高リスク行動の可否<br>No Source → No High-Risk Action</p></div>
+      <div class="arrow">→</div>
+      <div class="box"><span class="tag" style="color:var(--ok)">出力</span><h3>不変の計画履歴</h3><p>NOW / NEXT / AVOID<br>版を追加（上書きしない）<br>構造化トレース</p></div>
+    </div>
+    <div class="gate"><span class="up">▲ AI：構造化された選択だけを提案</span><span>→ スキーマ検証 →</span><span class="dn">▼ Safety Core／決定論ゲートが採否を判定</span><span>（無効・時間切れは明示した保守的な固定文）</span></div>
+    <div class="ai">
+      <div class="head"><h3>AI レイヤー · Gemini（Vertex AI）× Google ADK</h3><span>試行・時間・トークン・セッション単位の上限 · 外部入力はデータとして扱う</span></div>
+      <div class="roles">
+        <div class="role"><b>説明の割り当て</b><i>ADK · post_safety_explainer</i><p>承認済みの行動に、確認済みの説明文と根拠 ID を選ぶ。自由文は書かない</p></div>
+        <div class="role"><b>救助要請の読み取り</b><i>Gemini · distress extract</i><p>声・文字から決められた状況タグだけを抽出</p></div>
+        <div class="role"><b>演習の所在地評価</b><i>ADK · simulation_location_advisor</i><p>その場で身を守る / 避難所 / 高い場所 / 支援要請 から評価</p></div>
+        <div class="role"><b>救助助言の調整</b><i>Gemini · distress advice</i><p>承認済み候補の並べ替え・強調のみ。危険度は下げられない</p></div>
+      </div>
+    </div>
+    <div class="trio">
+      <div class="box"><h3>リプレイも本物の処理経路</h3><p>演習・リプレイが差し替えるのはイベント入力と時刻だけ。根拠の検証・計画・Safety Core は本番と同じコードを通る</p></div>
+      <div class="box"><h3>再接続の照合ゲート</h3><p>RECONNECTING → 根拠の再取得 → 照合 → 必要なら再計画 → ONLINE_VERIFIED。再接続だけでは「最新」に戻さない</p></div>
+      <div class="box"><h3>説明可能性</h3><p>計画の失効理由・参照した根拠 ID を構造化トレースで公開。AI の内部推論は出さない</p></div>
+    </div>
+  </div>
+  <div class="arrow">⇄</div>
+
+  <!-- google cloud / external -->
+  <div class="col">
+    <div class="box gcbox"><span class="tag" style="color:#9CC0FF">GOOGLE CLOUD</span><h3>Vertex AI · Gemini</h3><p>ADK / google-genai 経由。ADC で認証し、ブラウザに鍵なし</p></div>
+    <div class="box gcbox"><h3>Secret Manager</h3><p>駅すぱあと API キー · 演習アクセスキー</p></div>
+    <div class="box gcbox"><h3>Cloud Build · Artifact Registry</h3><p>コミット単位の不変イメージ → トラフィックなしで検証 → 切り替え</p></div>
+    <div class="box ext"><span class="tag" style="color:var(--mute)">外部</span><h3>駅すぱあと MCP Server</h3><p>運行情報・経路候補のみ。「使える」は「安全」ではない</p></div>
+    <div class="box ext"><h3>公式・オープンデータ</h3><p>国土地理院 指定避難場所 · 国土数値情報（行政区域）· 気象庁 GIS · OpenStreetMap · Natural Earth</p></div>
+  </div>
+</div>
+
+<footer>
+  <div class="pill a">AI は提案する</div>
+  <div class="pill c">決めるのは Safety Core と確かな根拠</div>
+  <div class="pill o">計画は履歴に残し、変化を説明する</div>
+</footer>
+<div class="note">72H は公式の避難指示に代わるものではありません。演習・リプレイは合成データであることを常に表示します。</div>
+</div></body></html>

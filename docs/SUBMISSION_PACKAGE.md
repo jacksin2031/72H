@@ -60,6 +60,8 @@ vNext production acceptanceは **PASS** です。[DEMO_SCRIPT.md](DEMO_SCRIPT.md
 
 ## 提出アセットと最終チェック
 
+- Architecture PNG（提出版・2026-10-15）: [docs/architecture-submission.png](architecture-submission.png)（ソース: [architecture-submission.html](architecture-submission.html)）
+- Third-party licenses: [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md)
 - Architecture SVG: [docs/architecture-mvp.svg](architecture-mvp.svg)
 - Architecture PNG: [docs/architecture-mvp.png](architecture-mvp.png)
 - Demo narration / shot list: [docs/DEMO_SCRIPT.md](DEMO_SCRIPT.md)
