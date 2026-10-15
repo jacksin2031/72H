@@ -2,7 +2,7 @@
 import React,{act} from 'react';
 import {createRoot,type Root} from 'react-dom/client';
 import {afterEach,beforeEach,expect,it,vi} from 'vitest';
-import {useRoadReference,type RoadReference} from '../components/road-reference-section';
+import {RoadReferenceSection,useRoadReference,type RoadReference} from '../components/road-reference-section';
 import {loadRoadTilesAround,type RoadTileState} from '../lib/road-tiles';
 import {loadJapanShelterCatalog,loadJapanShelterPrefecture} from '../lib/japan-shelters';
 import {roadDestinations,type RoadHazard} from '../lib/road-destinations';
@@ -106,15 +106,43 @@ it('a point change still debounces, aborts the previous load and refetches (R16)
   }finally{vi.useRealTimers();}
 });
 
-it('without a prefecture the reference is an error, and retry reloads',async()=>{
+it('without a prefecture the reference is an error and no tile is requested; a prefecture then starts the load (R22)',async()=>{
   await render(P1,'tsunami',null);
   await settle();
   expect(latest?.state).toBe('ERROR');
+  expect(loadRoadTilesAround).not.toHaveBeenCalled();
   await render(P1,'tsunami','04');
   await settle();
   expect(latest?.state).toBe('READY');
+  expect(loadRoadTilesAround).toHaveBeenCalledTimes(1);
+  await render(P1,'earthquake','03');
+  await settle();
+  expect(loadRoadTilesAround).toHaveBeenCalledTimes(1);
   const calls=vi.mocked(loadRoadTilesAround).mock.calls.length;
   await act(async()=>latest!.retry());
   await settle();
   expect(vi.mocked(loadRoadTilesAround).mock.calls.length).toBe(calls+1);
+});
+
+it('a partial READY result offers the secondary retry, which reloads tiles for the same point (R22)',async()=>{
+  const partial:RoadTileState={...ready,missing:['r1919c5650']} as RoadTileState;
+  vi.mocked(loadRoadTilesAround).mockReset().mockResolvedValueOnce(partial).mockResolvedValueOnce(ready);
+  await render(P1,'tsunami','04');
+  await settle();
+  const section=document.createElement('div');document.body.append(section);
+  const sectionRoot=createRoot(section);
+  const draw=()=>act(async()=>sectionRoot.render(<RoadReferenceSection language="zh-TW" exercise={false} hazard="tsunami" reference={latest!}/>));
+  try{
+    await draw();
+    expect(section.textContent).toContain('部分道路資料未下載');
+    const retry=[...section.querySelectorAll('button')].find((button)=>button.textContent==='重試');
+    expect(retry).toBeTruthy();
+    await act(async()=>retry!.click());
+    await settle();
+    expect(loadRoadTilesAround).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(loadRoadTilesAround).mock.calls[1][0]).toEqual(P1);
+    await draw();
+    expect(section.textContent).not.toContain('部分道路資料未下載');
+    expect([...section.querySelectorAll('button')].some((button)=>button.textContent==='重試')).toBe(false);
+  }finally{await act(async()=>sectionRoot.unmount());section.remove();}
 });

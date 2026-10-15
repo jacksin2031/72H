@@ -20,20 +20,21 @@ const ROAD_REFERENCE_DEBOUNCE_MS=250;
 type Loaded<T>={key:string;status:'LOADING'|'READY'|'ERROR';value:T|null};
 
 /** Loads the selected point's bounded road tiles and the prefecture's designated places.
- *  Tiles are keyed by the point only (R21): a hazard or prefecture change re-derives destinations
+ *  Tiles are keyed by the point (and whether a prefecture exists) only (R21/R22): a hazard or prefecture change re-derives destinations
  *  from the already-loaded tiles and never starts, aborts or repeats a tile download. */
 export function useRoadReference(point:{lat:number;lng:number}|null,hazard:RoadHazard,prefectureCode:string|null):RoadReference{
   const [retryVersion,setRetryVersion]=useState(0);
   const retry=useCallback(()=>setRetryVersion(value=>value+1),[]);
   const lat=point?.lat,lng=point?.lng;
-  const tileKey=point?`${lat}:${lng}:${retryVersion}`:'';
+  // Tiles need a prefecture to be useful, but only its presence keys the load, never its value (R22).
+  const tileKey=point&&prefectureCode?`${lat}:${lng}:${retryVersion}`:'';
   const placesKey=point&&prefectureCode?`${prefectureCode}:${retryVersion}`:'';
   const [tileEntry,setTileEntry]=useState<Loaded<RoadTileState>>({key:'',status:'LOADING',value:null});
   const [placesEntry,setPlacesEntry]=useState<Loaded<JapanShelterPlace[]>>({key:'',status:'LOADING',value:null});
 
   // Tiles: point only, debounced, aborted and key-fenced on point change (R16).
   useEffect(()=>{
-    if(lat===undefined||lng===undefined)return;
+    if(!tileKey||lat===undefined||lng===undefined)return;
     const controller=new AbortController();
     let active=true;
     const timer=setTimeout(()=>{
@@ -149,7 +150,8 @@ export function RoadReferenceSection({language,exercise,hazard,reference,suppres
   const t=copy[language];
   const tileMessage=messageForTiles(reference.tiles,language);
   const retryable=reference.state==='ERROR'||reference.tiles?.status==='UNAVAILABLE'
-    &&reference.tiles.reason!=='TOO_DENSE'&&reference.tiles.reason!=='OFFLINE_NO_DATA'&&reference.tiles.reason!=='NO_ROADS';
+    &&reference.tiles.reason!=='TOO_DENSE'&&reference.tiles.reason!=='OFFLINE_NO_DATA'&&reference.tiles.reason!=='NO_ROADS'
+    ||reference.state==='READY'&&reference.tiles?.status==='READY'&&reference.tiles.missing.length>0;// partial: re-requests only missing tiles
   const messages:string[]=[];
   if(reference.state==='LOADING')messages.push(t.loading);
   else if(reference.state==='ERROR')messages.push(t.failed);

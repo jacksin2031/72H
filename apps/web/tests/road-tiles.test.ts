@@ -286,7 +286,8 @@ describe('loadRoadTilesAround',()=>{
     const {m,store}=memStore();
     const fetchTile=vi.fn(async(id:string)=>id===EAST?new Response('{"detail":"ROAD_TILE_TOO_DENSE"}',{status:413}):Response.json(await tile(id)));
     await expect(loadRoadTilesAround(P,{fetchTile,store,online:true})).resolves.toEqual({status:'UNAVAILABLE',reason:'TOO_DENSE'});
-    expect(m.size).toBe(0);
+    // R22: each validated tile is stored as it finishes; the too-dense tile never is.
+    expect(m.has(EAST)).toBe(false);expect(m.size).toBe(8);
   });
 
   it('sends only tile IDs and one module-scoped X-Road-Session UUID on default fetches',async()=>{
@@ -316,7 +317,7 @@ describe('loadRoadTilesAround',()=>{
     expect(m.size).toBe(0);
   });
 
-  it('aborts a pending default IndexedDB transaction before its tile commits',async()=>{
+  it('commits a default IndexedDB write for a finished tile even when the load aborts during it (R22)',async()=>{
     vi.resetModules();
     const roads=await import('../lib/road-tiles');
     const idb=fakeIndexedDb({commitDelayMs:50});
@@ -325,10 +326,14 @@ describe('loadRoadTilesAround',()=>{
       const abort=new AbortController();
       const load=roads.loadRoadTilesAround(P,{signal:abort.signal,fetchTile:async(id)=>Response.json(await tile(id)),online:true});
       await idb.firstPutStarted;
+      const firstId=await idb.firstPutStarted;
       abort.abort(new Error('cancelled during IndexedDB put'));
       await expect(load).rejects.toThrow('cancelled during IndexedDB put');
-      expect(idb.abortCount).toBe(1);
-      expect(idb.values.size).toBe(0);
+      await new Promise((resolve)=>setTimeout(resolve,150));
+      // R22: a finished tile is stored even though its only consumer aborted; nothing new is fetched afterwards.
+      expect(idb.abortCount).toBe(0);
+      expect(idb.values.has(firstId)).toBe(true);
+      expect(idb.values.size).toBeLessThanOrEqual(3);
     }finally{vi.unstubAllGlobals();}
   });
 
@@ -412,7 +417,8 @@ describe('loadRoadTilesAround',()=>{
     const invalid={...mixed,content_sha256:await sha(mixed)};
     const fetchTile=vi.fn(async(id:string)=>Response.json(id==='r1919c5651'?invalid:await tile(id)));
     await expect(loadRoadTilesAround(P,{fetchTile,store,online:true})).resolves.toEqual({status:'UNAVAILABLE',reason:'INVALID_DATA'});
-    expect(m.size).toBe(0);
+    // R22: each validated tile is stored as it finishes; the invalid tile never is.
+    expect(m.has('r1919c5651')).toBe(false);expect(m.size).toBe(8);
   });
   it('does not claim NO_ROADS for an online empty-centre neighbourhood with missing tiles',async()=>{
     const {m,store}=memStore();
@@ -516,5 +522,36 @@ describe('in-flight tile dedupe (R21)',()=>{
     const next=await loadRoadTilesAround(P,{fetchTile,store,online:true,now:new Date('2026-10-16T00:00:00Z')});
     expect(next.status).toBe('READY');
     expect(fetchTile).toHaveBeenCalledTimes(12);
+  });
+
+  it('the last consumer aborting stores tiles that already finished but not those still in flight (R22)',async()=>{
+    const {m,store}=memStore();
+    const {fetchTile,release}=gatedFetch();
+    const abort=new AbortController();
+    const load=loadRoadTilesAround(P,{fetchTile,store,online:true,signal:abort.signal}).then(()=>'resolved',()=>'aborted');
+    await tick();
+    const [done1,done2,inFlight]=requested(fetchTile);
+    release(done1,done2);await tick();
+    expect(m.has(done1)).toBe(true);expect(m.has(done2)).toBe(true);
+    abort.abort(new Error('point moved'));
+    expect(await load).toBe('aborted');
+    release(...tilesAround(P.lat,P.lng));await tick();
+    expect(m.has(inFlight)).toBe(false);
+    expect([...m.keys()].every((id)=>requested(fetchTile).includes(id))).toBe(true);
+  });
+
+  it('a retry after a partial result re-requests only the missing tile and reuses the stored ones (R22)',async()=>{
+    const {store}=memStore();const missing='r1919c5650';
+    let fail=true;
+    const fetchTile=vi.fn(async(id:string)=>id===missing&&fail?new Response('',{status:503}):Response.json(await tile(id)));
+    const now=new Date('2026-10-16T00:00:00Z');
+    const first=await loadRoadTilesAround(P,{fetchTile,store,online:true,now});
+    expect(first).toMatchObject({status:'READY',missing:[missing]});
+    expect(fetchTile).toHaveBeenCalledTimes(9);
+    fail=false;
+    const retried=await loadRoadTilesAround(P,{fetchTile,store,online:true,now});
+    expect(retried).toMatchObject({status:'READY',missing:[]});
+    expect(fetchTile).toHaveBeenCalledTimes(10);
+    expect(fetchTile.mock.calls[9][0]).toBe(missing);
   });
 });

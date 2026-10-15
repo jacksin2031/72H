@@ -425,11 +425,13 @@ function stateForTiles(tiles:readonly RoadTile[],missing:string[],now:number,per
 }
 type TileFetcher=(id:string,signal?:AbortSignal)=>Promise<Response>;
 type SharedFetch={promise:Promise<FetchOutcome>;controller:AbortController;consumers:number};
-/** In-flight tile fetches, per fetcher and tile id, so concurrent loads share one request per tile (R21). */
-const inFlight=new WeakMap<TileFetcher,Map<string,SharedFetch>>();
+/** In-flight tile fetches, per fetcher, store and tile id, so concurrent loads share one request per tile (R21).
+ *  The 3-request limit is per load; the hook runs one load at a time, and dedupe only lowers the total. */
+const inFlight=new WeakMap<TileFetcher,WeakMap<TileStore,Map<string,SharedFetch>>>();
 
-/** Fetches, bounds-reads and validates one tile. Throws only when its own (shared) signal is aborted. */
-async function fetchTileOutcome(id:string,fetchTile:TileFetcher,signal:AbortSignal):Promise<FetchOutcome>{
+/** Fetches, bounds-reads, validates and stores one tile. Throws only when its own (shared) signal is aborted
+ *  before the tile is validated; a validated tile is stored even if every consumer aborts meanwhile (R22). */
+async function fetchTileOutcome(id:string,fetchTile:TileFetcher,store:TileStore,signal:AbortSignal):Promise<FetchOutcome>{
   let response:Response;
   try{response=await fetchTile(id,signal);}
   catch{throwIfAborted(signal);return {kind:'missing'};}
@@ -442,15 +444,20 @@ async function fetchTileOutcome(id:string,fetchTile:TileFetcher,signal:AbortSign
   catch{throwIfAborted(signal);return {kind:'invalid'};}
   const valid=await validateTile(value,id);
   throwIfAborted(signal);
-  return valid?{kind:'ready',value:valid}:{kind:'invalid'};
+  if(!valid)return {kind:'invalid'};
+  try{await store.put(id,valid.tile);}
+  catch{/* A storage failure leaves the verified in-memory result usable. */}
+  return {kind:'ready',value:valid};
 }
 
 /** Joins (or starts) the in-flight fetch for a tile. The shared request is aborted only when its last
  *  consumer aborts; an aborted consumer rejects at once and never receives the shared outcome. */
-function sharedTileFetch(id:string,fetchTile:TileFetcher,signal?:AbortSignal):Promise<FetchOutcome>{
+function sharedTileFetch(id:string,fetchTile:TileFetcher,store:TileStore,signal?:AbortSignal):Promise<FetchOutcome>{
   throwIfAborted(signal);
-  let byId=inFlight.get(fetchTile);
-  if(!byId){byId=new Map();inFlight.set(fetchTile,byId);}
+  let byStore=inFlight.get(fetchTile);
+  if(!byStore){byStore=new WeakMap();inFlight.set(fetchTile,byStore);}
+  let byId=byStore.get(store);
+  if(!byId){byId=new Map();byStore.set(store,byId);}
   const registry=byId;
   const existing=registry.get(id);
   const shared:SharedFetch=existing??{promise:Promise.resolve({kind:'missing'}),controller:new AbortController(),consumers:0};
@@ -474,7 +481,7 @@ function sharedTileFetch(id:string,fetchTile:TileFetcher,signal?:AbortSignal):Pr
     if(!existing){
       // Started after this consumer's abort listener exists, so a synchronous abort reaches the request.
       registry.set(id,shared);
-      shared.promise=fetchTileOutcome(id,fetchTile,shared.controller.signal)
+      shared.promise=fetchTileOutcome(id,fetchTile,store,shared.controller.signal)
         .finally(()=>{if(registry.get(id)===shared)registry.delete(id);});
     }
     shared.promise.then(
@@ -530,7 +537,7 @@ export async function loadRoadTilesAround(point:RoadPoint,opts:LoadOptions={}):P
       const index=cursor++;
       if(index>=pending.length)return;
       const id=pending[index];
-      const outcome=await sharedTileFetch(id,fetchTile,opts.signal);
+      const outcome=await sharedTileFetch(id,fetchTile,store,opts.signal);
       throwIfAborted(opts.signal);
       outcomes.set(id,outcome);
     }
@@ -551,19 +558,7 @@ export async function loadRoadTilesAround(point:RoadPoint,opts:LoadOptions={}):P
 
   const usedIds=ids.filter((id)=>selected.has(id));
   const used=usedIds.map((id)=>selected.get(id)!.tile);
-  let result:RoadTileState;
-  try{result=stateForTiles(used,[...missing],now,store===defaultStore&&defaultStore.isPersistent(usedIds),true);}
+  // Fetched tiles were stored as each finished, so persistence is already settled here.
+  try{return stateForTiles(used,[...missing],now,store===defaultStore&&defaultStore.isPersistent(usedIds),true);}
   catch{return {status:'UNAVAILABLE',reason:'INVALID_DATA'};}
-
-  for(const [id,outcome] of outcomes){
-    throwIfAborted(opts.signal);
-    if(outcome.kind==='ready'){
-      try{await store.put(id,outcome.value.tile,opts.signal);}
-      catch{throwIfAborted(opts.signal);/* A storage failure leaves the verified in-memory result usable. */}
-      throwIfAborted(opts.signal);
-    }
-  }
-  throwIfAborted(opts.signal);
-  if(store===defaultStore&&result.status==='READY')result={...result,persisted:defaultStore.isPersistent(usedIds)};
-  return result;
 }
