@@ -2,7 +2,7 @@
 import React,{act} from 'react';
 import {createRoot,type Root} from 'react-dom/client';
 import {afterEach,beforeEach,expect,it,vi} from 'vitest';
-import {RoadReferenceSection,useRoadReference,type RoadReference} from '../components/road-reference-section';
+import {RoadReferenceSection,roadPeekText,roadReferenceRoutes,useRoadReference,type RoadReference} from '../components/road-reference-section';
 import {loadRoadTilesAround,type RoadTileState} from '../lib/road-tiles';
 import {loadJapanShelterCatalog,loadJapanShelterPrefecture} from '../lib/japan-shelters';
 import {roadDestinations,type RoadHazard} from '../lib/road-destinations';
@@ -18,15 +18,39 @@ const P2={lat:38.9,lng:141.57};
 let root:Root|null=null,host:HTMLDivElement|null=null;
 let latest:RoadReference|null=null;
 const signals:AbortSignal[]=[];
+let restoreServiceWorker=()=>{};
+
+function installServiceWorker(register:()=>Promise<ServiceWorkerRegistration>){
+  let controller:ServiceWorker|null=null;
+  const worker=new EventTarget() as unknown as ServiceWorkerContainer;
+  const registerSpy=vi.fn(register);
+  Object.defineProperties(worker,{controller:{get:()=>controller},register:{value:registerSpy}});
+  const previous=Object.getOwnPropertyDescriptor(navigator,'serviceWorker');
+  Object.defineProperty(navigator,'serviceWorker',{configurable:true,value:worker});
+  restoreServiceWorker=()=>{
+    if(previous)Object.defineProperty(navigator,'serviceWorker',previous);
+    else Reflect.deleteProperty(navigator,'serviceWorker');
+  };
+  return {worker,registerSpy,setController(value:ServiceWorker){controller=value;worker.dispatchEvent(new Event('controllerchange'));}};
+}
 
 function Probe({point,hazard,prefecture}:{point:{lat:number;lng:number}|null;hazard:RoadHazard;prefecture:string|null}){
   latest=useRoadReference(point,hazard,prefecture);
   return null;
 }
+function SectionProbe({point,hazard,prefecture}:{point:{lat:number;lng:number}|null;hazard:RoadHazard;prefecture:string|null}){
+  const reference=useRoadReference(point,hazard,prefecture);
+  latest=reference;
+  return <RoadReferenceSection language="zh-TW" exercise={false} hazard={hazard} reference={reference}/>;
+}
 async function render(point:{lat:number;lng:number}|null,hazard:RoadHazard,prefecture:string|null){
   if(!root){host=document.createElement('div');document.body.append(host);root=createRoot(host);}
   // A fresh object every render, as the real callers pass.
   await act(async()=>root!.render(<Probe point={point?{...point}:null} hazard={hazard} prefecture={prefecture}/>));
+}
+async function renderSection(point:{lat:number;lng:number}|null,hazard:RoadHazard,prefecture:string|null){
+  if(!root){host=document.createElement('div');document.body.append(host);root=createRoot(host);}
+  await act(async()=>root!.render(<SectionProbe point={point?{...point}:null} hazard={hazard} prefecture={prefecture}/>));
 }
 const settle=()=>act(async()=>{await new Promise(resolve=>setTimeout(resolve,300));});
 
@@ -38,7 +62,7 @@ beforeEach(()=>{
   vi.mocked(roadDestinations).mockReset().mockImplementation((_graph,_origin,places,hazard)=>({none:false,
     destinations:[{place:{id:`${hazard}:${(places[0] as {id:string}).id}`,name:'x'} as never,straight_m:1,road:null,reason:null}]}));
 });
-afterEach(async()=>{if(root)await act(async()=>root!.unmount());host?.remove();root=null;host=null;});
+afterEach(async()=>{if(root)await act(async()=>root!.unmount());host?.remove();root=null;host=null;restoreServiceWorker();vi.unstubAllEnvs();vi.useRealTimers();});
 
 const destinationId=()=>(latest?.result?.destinations[0]?.place as {id:string}|undefined)?.id;
 
@@ -118,10 +142,7 @@ it('without a prefecture the reference is an error and no tile is requested; a p
   await render(P1,'earthquake','03');
   await settle();
   expect(loadRoadTilesAround).toHaveBeenCalledTimes(1);
-  const calls=vi.mocked(loadRoadTilesAround).mock.calls.length;
-  await act(async()=>latest!.retry());
-  await settle();
-  expect(vi.mocked(loadRoadTilesAround).mock.calls.length).toBe(calls+1);
+  expect(loadJapanShelterPrefecture).toHaveBeenCalledTimes(2);
 });
 
 it('a partial READY result offers the secondary retry, which reloads tiles for the same point (R22)',async()=>{
@@ -137,12 +158,85 @@ it('a partial READY result offers the secondary retry, which reloads tiles for t
     expect(section.textContent).toContain('部分道路資料未下載');
     const retry=[...section.querySelectorAll('button')].find((button)=>button.textContent==='重試');
     expect(retry).toBeTruthy();
+    expect(loadJapanShelterCatalog).toHaveBeenCalledTimes(1);
     await act(async()=>retry!.click());
     await settle();
     expect(loadRoadTilesAround).toHaveBeenCalledTimes(2);
     expect(vi.mocked(loadRoadTilesAround).mock.calls[1][0]).toEqual(P1);
+    expect(loadJapanShelterCatalog).toHaveBeenCalledTimes(1);
     await draw();
     expect(section.textContent).not.toContain('部分道路資料未下載');
     expect([...section.querySelectorAll('button')].some((button)=>button.textContent==='重試')).toBe(false);
   }finally{await act(async()=>sectionRoot.unmount());section.remove();}
+});
+
+it('retries a failed designated-place pack without reloading the same point tiles',async()=>{
+  const partial:RoadTileState={...ready,missing:['r1919c5650']} as RoadTileState;
+  vi.mocked(loadRoadTilesAround).mockReset().mockResolvedValue(partial);
+  vi.mocked(loadJapanShelterCatalog).mockRejectedValueOnce(new Error('offline cache miss')).mockResolvedValueOnce({} as never);
+  await renderSection(P1,'tsunami','04');
+  await settle();
+  expect(latest?.state).toBe('ERROR');
+  expect(host?.textContent).toContain('無法取得此地區道路資料');
+  const retry=[...host!.querySelectorAll('button')].find((button)=>button.textContent==='重試');
+  expect(retry).toBeTruthy();
+  expect(loadRoadTilesAround).toHaveBeenCalledTimes(1);
+  await act(async()=>retry!.click());
+  await settle();
+  expect(loadJapanShelterCatalog).toHaveBeenCalledTimes(2);
+  expect(loadRoadTilesAround).toHaveBeenCalledTimes(1);
+  expect(latest?.state).toBe('READY');
+});
+
+it('keeps OFFLINE_NO_DATA visible when place loading fails and emits no road lines',async()=>{
+  vi.mocked(loadRoadTilesAround).mockResolvedValue({status:'UNAVAILABLE',reason:'OFFLINE_NO_DATA'});
+  vi.mocked(loadJapanShelterCatalog).mockRejectedValue(new Error('offline cache miss'));
+  await render(P1,'tsunami','04');
+  await settle();
+  expect(latest?.tiles).toEqual({status:'UNAVAILABLE',reason:'OFFLINE_NO_DATA'});
+  expect(roadPeekText('zh-TW','tsunami',latest!)).toBe('此地區沒有道路參考資料（離線）');
+  expect(roadReferenceRoutes(latest!,true)).toEqual([]);
+});
+
+it('shows OFFLINE_NO_DATA without a misleading retry when the place pack also fails offline',async()=>{
+  vi.mocked(loadRoadTilesAround).mockResolvedValue({status:'UNAVAILABLE',reason:'OFFLINE_NO_DATA'});
+  vi.mocked(loadJapanShelterCatalog).mockRejectedValue(new Error('offline cache miss'));
+  await renderSection(P1,'tsunami','04');
+  await settle();
+  expect(host?.textContent).toContain('此地區沒有道路參考資料（離線）');
+  expect(host?.textContent).not.toContain('無法取得此地區道路資料');
+  expect([...host!.querySelectorAll('button')].some((button)=>button.textContent==='重試')).toBe(false);
+});
+
+it('waits for a newly registered service worker to control a direct drill before loading public packs',async()=>{
+  vi.stubEnv('NODE_ENV','production');
+  const registration=installServiceWorker(async()=>({} as ServiceWorkerRegistration));
+  await render(P1,'tsunami','04');
+  await settle();
+  expect(registration.registerSpy).toHaveBeenCalledWith('/sw.js');
+  expect(loadJapanShelterCatalog).not.toHaveBeenCalled();
+  registration.setController({} as ServiceWorker);
+  await settle();
+  expect(loadJapanShelterCatalog).toHaveBeenCalledTimes(1);
+});
+
+it('continues online pack loading if service worker registration fails',async()=>{
+  vi.stubEnv('NODE_ENV','production');
+  const registration=installServiceWorker(async()=>{throw new Error('service worker unavailable');});
+  await render(P1,'tsunami','04');
+  await settle();
+  expect(registration.registerSpy).toHaveBeenCalledWith('/sw.js');
+  expect(loadJapanShelterCatalog).toHaveBeenCalledTimes(1);
+});
+
+it('falls back to online pack loading when a fresh service worker never claims the page',async()=>{
+  vi.useFakeTimers();
+  vi.stubEnv('NODE_ENV','production');
+  const registration=installServiceWorker(async()=>({} as ServiceWorkerRegistration));
+  await render(P1,'tsunami','04');
+  await act(async()=>{await vi.advanceTimersByTimeAsync(0);});
+  expect(registration.registerSpy).toHaveBeenCalledWith('/sw.js');
+  expect(loadJapanShelterCatalog).not.toHaveBeenCalled();
+  await act(async()=>{await vi.advanceTimersByTimeAsync(5000);});
+  expect(loadJapanShelterCatalog).toHaveBeenCalledTimes(1);
 });

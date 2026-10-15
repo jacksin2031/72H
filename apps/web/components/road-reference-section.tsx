@@ -2,6 +2,7 @@
 
 import {useCallback,useEffect,useMemo,useState,type ReactNode} from 'react';
 import type {Language} from '@/lib/contracts';
+import {ensureOfflineAssetControl} from '@/lib/offline-assets';
 import {loadJapanShelterCatalog,loadJapanShelterPrefecture,type JapanShelterCatalog,type JapanShelterPlace} from '@/lib/japan-shelters';
 import {loadRoadTilesAround,type RoadTileState} from '@/lib/road-tiles';
 import {roadDestinations,type RoadDestination,type RoadHazard} from '@/lib/road-destinations';
@@ -23,12 +24,12 @@ type Loaded<T>={key:string;status:'LOADING'|'READY'|'ERROR';value:T|null};
  *  Tiles are keyed by the point (and whether a prefecture exists) only (R21/R22): a hazard or prefecture change re-derives destinations
  *  from the already-loaded tiles and never starts, aborts or repeats a tile download. */
 export function useRoadReference(point:{lat:number;lng:number}|null,hazard:RoadHazard,prefectureCode:string|null):RoadReference{
-  const [retryVersion,setRetryVersion]=useState(0);
-  const retry=useCallback(()=>setRetryVersion(value=>value+1),[]);
+  const [tileRetryVersion,setTileRetryVersion]=useState(0);
+  const [placesRetryVersion,setPlacesRetryVersion]=useState(0);
   const lat=point?.lat,lng=point?.lng;
   // Tiles need a prefecture to be useful, but only its presence keys the load, never its value (R22).
-  const tileKey=point&&prefectureCode?`${lat}:${lng}:${retryVersion}`:'';
-  const placesKey=point&&prefectureCode?`${prefectureCode}:${retryVersion}`:'';
+  const tileKey=point&&prefectureCode?`${lat}:${lng}:${tileRetryVersion}`:'';
+  const placesKey=point&&prefectureCode?`${prefectureCode}:${placesRetryVersion}`:'';
   const [tileEntry,setTileEntry]=useState<Loaded<RoadTileState>>({key:'',status:'LOADING',value:null});
   const [placesEntry,setPlacesEntry]=useState<Loaded<JapanShelterPlace[]>>({key:'',status:'LOADING',value:null});
 
@@ -53,6 +54,10 @@ export function useRoadReference(point:{lat:number;lng:number}|null,hazard:RoadH
     let active=true;
     void (async()=>{
       try{
+        // A fresh direct drill entry may not yet be controlled by the worker.
+        // Wait for its claim before the public pack fetch so the existing SW cache sees it.
+        await ensureOfflineAssetControl(controller.signal);
+        if(!active||controller.signal.aborted)return;
         const catalog:JapanShelterCatalog=await loadJapanShelterCatalog(controller.signal);
         const places=await loadJapanShelterPrefecture(catalog,prefectureCode,controller.signal);
         if(active&&!controller.signal.aborted)setPlacesEntry({key:placesKey,status:'READY',value:places});
@@ -70,9 +75,20 @@ export function useRoadReference(point:{lat:number;lng:number}|null,hazard:RoadH
 
   let value:RoadReferenceValue;
   if(!point)value=idle;
-  else if(!prefectureCode||tiles?.status==='ERROR'||places?.status==='ERROR')value=failed;
+  else if(!prefectureCode||tiles?.status==='ERROR'||places?.status==='ERROR')value={...failed,tiles:tiles?.status==='READY'?tiles.value:null};
   else if(!result||!tiles?.value)value=loading;
   else value={state:'READY',tiles:tiles.value,result};
+  const retry=useCallback(()=>{
+    if(places?.status==='ERROR'){
+      setPlacesRetryVersion(version=>version+1);
+      return;
+    }
+    const tileValue=tiles?.status==='READY'?tiles.value:null;
+    const retryTiles=tiles?.status==='ERROR'
+      ||tileValue?.status==='READY'&&tileValue.missing.length>0
+      ||tileValue?.status==='UNAVAILABLE'&&tileValue.reason!=='TOO_DENSE'&&tileValue.reason!=='OFFLINE_NO_DATA'&&tileValue.reason!=='NO_ROADS';
+    if(retryTiles)setTileRetryVersion(version=>version+1);
+  },[tiles,places]);
   return {...value,retry};
 }
 
@@ -111,11 +127,11 @@ function messageForTiles(tiles:RoadTileState|null,language:Language):string|null
 
 export function roadPeekText(language:Language,hazard:RoadHazard,reference:RoadReference):string{
   const t=copy[language];
+  const tileMessage=messageForTiles(reference.tiles,language);
+  if(tileMessage)return tileMessage;
   if(reference.state==='IDLE')return t.noPoint;
   if(reference.state==='LOADING')return t.loading;
   if(reference.state==='ERROR')return t.failed;
-  const tileMessage=messageForTiles(reference.tiles,language);
-  if(tileMessage)return tileMessage;
   if(reference.result?.none)return t.noPlaces;
   const count=reference.result?.destinations.length??0;
   const hazardText=hazard==='tsunami'?t.tsunami:t.earthquake;
@@ -149,12 +165,13 @@ export function RoadReferenceSection({language,exercise,hazard,reference,suppres
   reference:RoadReference;suppressNotice?:boolean;pointControl?:ReactNode}){
   const t=copy[language];
   const tileMessage=messageForTiles(reference.tiles,language);
-  const retryable=reference.state==='ERROR'||reference.tiles?.status==='UNAVAILABLE'
-    &&reference.tiles.reason!=='TOO_DENSE'&&reference.tiles.reason!=='OFFLINE_NO_DATA'&&reference.tiles.reason!=='NO_ROADS'
-    ||reference.state==='READY'&&reference.tiles?.status==='READY'&&reference.tiles.missing.length>0;// partial: re-requests only missing tiles
+  const offlineNoRoadData=reference.tiles?.status==='UNAVAILABLE'&&reference.tiles.reason==='OFFLINE_NO_DATA';
+  const retryable=!offlineNoRoadData&&(reference.state==='ERROR'||reference.tiles?.status==='UNAVAILABLE'
+    &&reference.tiles.reason!=='TOO_DENSE'&&reference.tiles.reason!=='NO_ROADS'
+    ||reference.state==='READY'&&reference.tiles?.status==='READY'&&reference.tiles.missing.length>0);// partial: re-requests only missing tiles
   const messages:string[]=[];
   if(reference.state==='LOADING')messages.push(t.loading);
-  else if(reference.state==='ERROR')messages.push(t.failed);
+  else if(reference.state==='ERROR'&&!tileMessage)messages.push(t.failed);
   if(tileMessage&&!(reference.state==='ERROR'&&tileMessage===t.failed))messages.push(tileMessage);
   if(reference.state==='IDLE'&&!pointControl)messages.push(t.noPoint);
   if(reference.state==='READY'&&reference.result?.none)messages.push(t.noPlaces);
