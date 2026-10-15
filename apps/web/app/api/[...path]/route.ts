@@ -2,11 +2,12 @@ import { NextRequest } from 'next/server';
 import { sameOrigin } from '@/lib/request-origin';
 
 export const dynamic = 'force-dynamic';
-const allowed = /^(health|version|distress\/extract|reference\/(tsunami|disaster-map|place-opening\/\d{5})|replay\/(start|[a-zA-Z0-9_-]{1,80}(\/(pause|resume|next|reset|speed|explanation|distress(\/advice)?))?)|mock-live\/(start|cases|[a-zA-Z0-9_-]{1,80}(\/(next|explanation|distress(\/advice)?))?)|drill\/(start|[a-zA-Z0-9_-]{1,80}(\/next)?)|live\/(start|[a-zA-Z0-9_-]{1,80}(\/(refresh|routes\/search|location|profile|explanation|distress(\/advice)?))?))$/;
+const allowed = /^(health|version|distress\/extract|roads\/tile\/r\d{1,4}c\d{1,4}|reference\/(tsunami|disaster-map|place-opening\/\d{5})|replay\/(start|[a-zA-Z0-9_-]{1,80}(\/(pause|resume|next|reset|speed|explanation|distress(\/advice)?))?)|mock-live\/(start|cases|[a-zA-Z0-9_-]{1,80}(\/(next|explanation|distress(\/advice)?))?)|drill\/(start|[a-zA-Z0-9_-]{1,80}(\/next)?)|live\/(start|[a-zA-Z0-9_-]{1,80}(\/(refresh|routes\/search|location|profile|explanation|distress(\/advice)?))?))$/;
 export function isAllowedApiProxyPath(path: string) { return allowed.test(path); }
 export function isAllowedApiProxyRequest(path: string, method: string) {
   if (!isAllowedApiProxyPath(path) || !['GET', 'POST'].includes(method)) return false;
   if (path.startsWith('reference/')) return method === 'GET';
+  if (/^roads\/tile\/r\d{1,4}c\d{1,4}$/.test(path)) return method === 'GET';
   // Post-Core explanations are generated on demand and never fetched with GET.
   if (/^(replay|live|mock-live)\/[a-zA-Z0-9_-]{1,80}\/explanation$/.test(path)) return method === 'POST';
   if (path === 'distress/extract' || /^(replay|live|mock-live)\/[a-zA-Z0-9_-]{1,80}\/distress(\/advice)?$/.test(path)) return method === 'POST';
@@ -34,12 +35,12 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
   const backend = process.env.API_BASE_URL || 'http://127.0.0.1:8000';
   try {
     const response = await fetch(`${backend}/${suffix === 'health' || suffix === 'version' ? '' : 'api/'}${suffix}`, {
-      method: request.method, headers: { 'Content-Type': 'application/json', ...((suffix.startsWith('drill/') || suffix.startsWith('mock-live/')) ? { 'X-Drill-Key': request.headers.get('x-drill-key') || '' } : {}) },
+      method: request.method, headers: { 'Content-Type': 'application/json', ...(suffix.startsWith('roads/') ? { 'X-Road-Session': request.headers.get('x-road-session') || '' } : {}), ...((suffix.startsWith('drill/') || suffix.startsWith('mock-live/')) ? { 'X-Drill-Key': request.headers.get('x-drill-key') || '' } : {}) },
       body, cache: 'no-store', signal: AbortSignal.timeout(35000),
     });
     return new Response(await response.text(), {
       status: response.status,
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': suffix.startsWith('roads/') && response.ok ? 'public, max-age=86400' : 'no-store' },
     });
   } catch {
     return Response.json({ error: 'Backend unavailable' }, { status: 503, headers: { 'Cache-Control': 'no-store' } });

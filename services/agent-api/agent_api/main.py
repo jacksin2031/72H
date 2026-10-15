@@ -9,7 +9,7 @@ import secrets
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from fastapi import Body, Depends, FastAPI, HTTPException, Header, status
+from fastapi import Body, Depends, FastAPI, HTTPException, Header, Request, status
 from seventytwoh_contracts.models import (
     ApiVersion,
     DistressRequest,
@@ -51,6 +51,8 @@ from .planner import CandidatePlanner
 from .drill import DrillRequest
 from .drill_store import DrillStore
 from .mock_live import MockLiveDrillStore, MockLiveResponse, MockLiveRequest
+from .road_tile_service import RoadTileService, TileRateLimited, TileUnavailable
+from .road_tiles import TileTooDense
 from .historical_cases import list_historical_cases
 from .place_opening import PlaceOpeningStore, PlaceOpeningResponse
 from .explanation import ExplanationRequest, ExplanationResponse, ExplanationService
@@ -67,6 +69,7 @@ def create_app(
     explanation_service: ExplanationService | None = None,
     distress_extractor: DistressExtractor | None = None,
     distress_advisor: DistressAdvisor | None = None,
+    road_tiles: RoadTileService | None = None,
 ) -> FastAPI:
     if store is None and live_store is None:
         # Preserve one process-wide Gemini/ADK call budget across replay and live.
@@ -88,6 +91,27 @@ def create_app(
     application.state.live_store = live_session_store
     application.state.drill_store = isolated_drills
     application.state.mock_live_store = isolated_mock_live
+    road_tile_service = road_tiles or RoadTileService()
+    application.state.road_tiles = road_tile_service
+
+    @application.get("/api/roads/tile/{tile_id}")
+    async def road_tile(tile_id: str, request: Request, x_road_session: str | None = Header(default=None)):
+        """Reference-only OSM road tile. Never a route-safety or passability verdict."""
+        if request.url.query:
+            return JSONResponse(status_code=400, content={"detail": "ROAD_TILE_QUERY_NOT_ALLOWED"})
+        session_key = (x_road_session or "").strip()[:64] or "anonymous"
+        try:
+            graph = await road_tile_service.get(tile_id, session_key)
+        except ValueError:
+            return JSONResponse(status_code=400, content={"detail": "ROAD_TILE_ID_INVALID"})
+        except TileTooDense:
+            return JSONResponse(status_code=413, content={"detail": "ROAD_TILE_TOO_DENSE"})
+        except TileRateLimited:
+            return JSONResponse(status_code=429, content={"detail": "ROAD_TILE_RATE_LIMITED"})
+        except TileUnavailable:
+            return JSONResponse(status_code=503, content={"detail": "ROAD_DATA_TEMPORARILY_UNAVAILABLE"})
+        return JSONResponse(content=graph, headers={"Cache-Control": "public, max-age=86400"})
+
     explanation_engine = explanation_service or ExplanationService()
     application.state.explanation_service = explanation_engine
     opening_store = place_opening_store or PlaceOpeningStore()

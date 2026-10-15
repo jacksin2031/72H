@@ -167,8 +167,20 @@ def build_tile_graph(tile_id: str, overpass: dict, raw_bytes: bytes, retrieved_a
                    "query_sha256": hashlib.sha256(query.encode()).hexdigest()},
         "nodes": nodes, "ways": ways, "edges": edges,
     }
-    canonical = json.dumps(body, separators=(",", ":"), ensure_ascii=False).encode()
+    canonical = _canonical(body)
     if len(canonical) > MAX_BYTES:
         raise TileTooDense(tile_id)
     body["content_sha256"] = hashlib.sha256(canonical).hexdigest()
     return body
+
+
+def _canonical(body: dict) -> bytes:
+    return json.dumps(body, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def content_hash_matches(graph: dict) -> bool:
+    """True when graph["content_sha256"] matches the canonical form of the graph without that key."""
+    if not isinstance(graph, dict) or not isinstance(graph.get("content_sha256"), str):
+        return False
+    body = {k: v for k, v in graph.items() if k != "content_sha256"}
+    return hashlib.sha256(_canonical(body)).hexdigest() == graph["content_sha256"]
