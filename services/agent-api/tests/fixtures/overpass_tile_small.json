@@ -1,0 +1,99 @@
+{
+ "version": 0.6,
+ "generator": "hand-written fixture",
+ "osm3s": {
+  "timestamp_osm_base": "2026-10-15T00:00:00Z"
+ },
+ "elements": [
+  {
+   "type": "node",
+   "id": 101,
+   "lat": 38.405,
+   "lon": 141.28
+  },
+  {
+   "type": "node",
+   "id": 102,
+   "lat": 38.407000000000004,
+   "lon": 141.283,
+   "tags": {
+    "highway": "crossing"
+   }
+  },
+  {
+   "type": "node",
+   "id": 103,
+   "lat": 38.409,
+   "lon": 141.286
+  },
+  {
+   "type": "node",
+   "id": 104,
+   "lat": 38.411,
+   "lon": 141.289
+  },
+  {
+   "type": "node",
+   "id": 105,
+   "lat": 38.413000000000004,
+   "lon": 141.292
+  },
+  {
+   "type": "node",
+   "id": 106,
+   "lat": 38.415,
+   "lon": 141.295
+  },
+  {
+   "type": "node",
+   "id": 107,
+   "lat": 38.417,
+   "lon": 141.298
+  },
+  {
+   "type": "node",
+   "id": 108,
+   "lat": 38.419000000000004,
+   "lon": 141.301
+  },
+  {
+   "type": "way",
+   "id": 201,
+   "nodes": [
+    101,
+    102,
+    103,
+    104
+   ],
+   "tags": {
+    "highway": "footway",
+    "name": "fixture footway"
+   }
+  },
+  {
+   "type": "way",
+   "id": 202,
+   "nodes": [
+    104,
+    105
+   ],
+   "tags": {
+    "highway": "service",
+    "service": "driveway"
+   }
+  },
+  {
+   "type": "way",
+   "id": 203,
+   "nodes": [
+    106,
+    107,
+    108
+   ],
+   "tags": {
+    "highway": "residential",
+    "access": "private"
+   }
+  }
+ ]
+}
