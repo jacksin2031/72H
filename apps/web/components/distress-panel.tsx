@@ -8,7 +8,7 @@ import {extractDistress,reportDistress,requestAdvice,type AppliedAdvice,type Dis
 import {applyDeadline,degradeExpiredOfficial,dropExcluded,effectiveDistressLevel,formatCountdown,orderCandidates,reachFor,reachKey,roundOrigin,skewedNow,speechLang,type DistressOrigin} from '../lib/distress-guidance';
 import {adviceCandidates,DISTRESS_PARAMS,type TsunamiGuidance} from '../lib/distress-reachability';
 import type {SosProfile} from '../lib/emergency-contacts';
-import type {RoadGraphPack} from '../lib/evacuation-road-graph';
+import type {RoadReferenceGraph} from '../lib/road-graph-core';
 import {useDistressRecorder} from '../lib/use-distress-recorder';
 import {SosPanel} from './sos-panel';
 import {Button,Disclosure,Tag} from './ui';
@@ -21,7 +21,7 @@ export type DistressPanelProps={snapshot:DistressSnapshot;language:Language;scop
  /** null while the designated-place pack is loading. */
  places:readonly DesignatedPlace[]|null;
  /** undefined while loading; null when unavailable (straight-line estimate). */
- graph:RoadGraphPack|null|undefined;
+ graph:RoadReferenceGraph|null|undefined;
  sosProfile:SosProfile;
  /** Raw server JSON; the caller parses it with its scope's snapshot schema. */
  onSnapshot:(raw:unknown)=>void;

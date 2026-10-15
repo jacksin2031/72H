@@ -1,6 +1,6 @@
 import {readFile} from 'node:fs/promises';
 import {afterEach,beforeAll,describe,expect,it,vi} from 'vitest';
-import {EVACUATION_ROAD_GRAPH_PATH,findEvacuationRoadCandidates,loadEvacuationRoadGraph,type RoadGraphPack} from '../lib/evacuation-road-graph';
+import {EVACUATION_ROAD_GRAPH_PATH,findEvacuationRoadCandidates,ishinomakiReferenceGraph,loadEvacuationRoadGraph,type RoadGraphPack} from '../lib/evacuation-road-graph';
 import {adviceCandidates,DISTRESS_PARAMS,resolveTsunamiGuidance} from '../lib/distress-reachability';
 import type {DesignatedPlace} from '../lib/designated-places';
 
@@ -70,7 +70,7 @@ describe('road graph branch',()=>{
   it('uses road distance plus snap gaps when the graph applies',async()=>{
     const graph=await realPack();
     const dest=site('ROAD',38.4360,141.3037166);
-    const g=resolveTsunamiGuidance({origin:station,deadlineAt:NOW+3_600_000,now:NOW,tags:[],places:[dest],graph});
+    const g=resolveTsunamiGuidance({origin:station,deadlineAt:NOW+3_600_000,now:NOW,tags:[],places:[dest],graph:ishinomakiReferenceGraph(graph)});
     const r=findEvacuationRoadCandidates(graph,station,dest);
     expect(r.candidates.length).toBeGreaterThan(0);
     if(g.kind!=='GO_TO_SITE')throw new Error('expected site');
@@ -81,7 +81,7 @@ describe('road graph branch',()=>{
   it('falls back to straight-line when origin is outside pack bounds',async()=>{
     const graph=await realPack();
     const out={lat:38.0,lng:141.0,accuracy_m:10};
-    const g=resolveTsunamiGuidance({origin:out,deadlineAt:NOW+10*3_600_000,now:NOW,tags:[],places:[site('OUT',38.0030,141.0)],graph});
+    const g=resolveTsunamiGuidance({origin:out,deadlineAt:NOW+10*3_600_000,now:NOW,tags:[],places:[site('OUT',38.0030,141.0)],graph:ishinomakiReferenceGraph(graph)});
     expect(g.kind).toBe('GO_TO_SITE');
     if(g.kind==='GO_TO_SITE')expect(g.candidates[0].via_road).toBe(false);
   });
@@ -94,7 +94,7 @@ describe('road graph branch',()=>{
     const graph:RoadGraphPack={manifest:{...m,counts:{nodes:4,ways:2,edges:2}},nodes,ways,edges};
     const o={lat:38.433,lng:141.303,accuracy_m:10},d=site('DISC',38.434,141.304);
     expect(findEvacuationRoadCandidates(graph,o,d).reason).toBe('DISCONNECTED_GRAPH');
-    expect(resolveTsunamiGuidance({origin:o,deadlineAt:NOW+3_600_000,now:NOW,tags:[],places:[d],graph})).toMatchObject({kind:'VERTICAL_NOW',reason:'NO_REACHABLE_SITE'});
+    expect(resolveTsunamiGuidance({origin:o,deadlineAt:NOW+3_600_000,now:NOW,tags:[],places:[d],graph:ishinomakiReferenceGraph(graph)})).toMatchObject({kind:'VERTICAL_NOW',reason:'NO_REACHABLE_SITE'});
   });
   it('ignores sites with non-finite coordinates',()=>{
     const bad=site('BAD',NaN,141.3);

@@ -1,12 +1,12 @@
 import type {DistressStatus,DistressTag,Language} from './contracts';
 import type {DesignatedPlace} from './designated-places';
 import {resolveTsunamiGuidance,type ReachCandidate,type TsunamiGuidance} from './distress-reachability';
-import type {RoadGraphPack} from './evacuation-road-graph';
+import type {RoadReferenceGraph} from './road-graph-core';
 import {LIVE_LOCATION_MS} from './last-known-location';
 
 /** Pure helpers for the distress panel. All safety decisions stay deterministic. */
 export type DistressOrigin={lat:number;lng:number;accuracy_m:number|null};
-type ReachInput={origin:DistressOrigin|null;tags:readonly DistressTag[];places:readonly DesignatedPlace[];graph:RoadGraphPack|null;excluded?:readonly string[]};
+type ReachInput={origin:DistressOrigin|null;tags:readonly DistressTag[];places:readonly DesignatedPlace[];graph:RoadReferenceGraph|null;excluded?:readonly string[]};
 const FAR_DEADLINE=1e15;
 
 /** Expensive part (road graph search) without a deadline, so it can be memoized while the clock ticks. */

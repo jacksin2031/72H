@@ -5,7 +5,8 @@ import {loadDesignatedPlaces,selectDesignationPlaces,type DesignatedPlace} from 
 import type {DistressScope} from '../lib/distress-api';
 import {keepsLocationFresh,usableDistressOrigin} from '../lib/distress-guidance';
 import {loadSosProfile,type SosProfile} from '../lib/emergency-contacts';
-import {loadEvacuationRoadGraph,type RoadGraphPack} from '../lib/evacuation-road-graph';
+import {ishinomakiReferenceGraph,loadEvacuationRoadGraph} from '../lib/evacuation-road-graph';
+import type {RoadReferenceGraph} from '../lib/road-graph-core';
 import {DistressPanel,type DistressSnapshot} from './distress-panel';
 
 export type DistressFix={lat:number;lng:number;accuracy_m:number|null;captured_at:number;manual?:boolean}|null;
@@ -17,7 +18,7 @@ const EMPTY:SosProfile={contacts:[],needsAssistance:false,mobilityLimited:false}
  * Uses the place pack directly instead of useDesignatedPlaces() so no opening-status polling runs in emergency power modes. */
 export function DistressEntry({snapshot,language,scope,accessKey,fix,onSnapshot,now,refreshLocation}:{snapshot:DistressSnapshot;language:Language;
  scope:DistressScope;accessKey?:string;fix:DistressFix;onSnapshot:(raw:unknown)=>void;now?:number;refreshLocation?:()=>void}){
- const [places,setPlaces]=useState<DesignatedPlace[]|null>(null),[graph,setGraph]=useState<RoadGraphPack|null|undefined>(undefined);
+ const [places,setPlaces]=useState<DesignatedPlace[]|null>(null),[graph,setGraph]=useState<RoadReferenceGraph|null|undefined>(undefined);
  const [profile,setProfile]=useState<SosProfile>(EMPTY),[wall,setWall]=useState(()=>Date.now());
  const tsunami=snapshot?.distress.level==='OFFICIAL_TSUNAMI',keepFresh=!!snapshot&&keepsLocationFresh(snapshot.distress.level),asked=useRef(false);
  useEffect(()=>{
@@ -31,7 +32,7 @@ export function DistressEntry({snapshot,language,scope,accessKey,fix,onSnapshot,
  useEffect(()=>{
   if(!tsunami||graph!==undefined)return;
   const abort=new AbortController();
-  void loadEvacuationRoadGraph(AbortSignal.any([abort.signal,AbortSignal.timeout(15_000)])).then(g=>{if(!abort.signal.aborted)setGraph(g);})
+  void loadEvacuationRoadGraph(AbortSignal.any([abort.signal,AbortSignal.timeout(15_000)])).then(g=>{if(!abort.signal.aborted)setGraph(ishinomakiReferenceGraph(g));})
    .catch(()=>{if(!abort.signal.aborted)setGraph(null);});
   return()=>abort.abort();
  },[tsunami,graph]);

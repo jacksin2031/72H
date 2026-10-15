@@ -1,7 +1,7 @@
 import type {DistressTag} from './contracts';
 import type {DesignatedPlace} from './designated-places';
 import {selectEvacuationDestinations} from './evacuation-route-assessment';
-import {EVACUATION_ROAD_BOUNDS,findEvacuationRoadCandidates,type RoadGraphPack} from './evacuation-road-graph';
+import {findRoadCandidates,isWithinBounds,type RoadReferenceGraph} from './road-graph-core';
 
 /** Deterministic, device-local. Distance is never a safety ranking. */
 export const DISTRESS_PARAMS={walkMps:1.0,slowWalkMps:0.5,detourFactor:1.5,lowAccuracyM:50,maxAccuracyM:100,maxCandidates:12} as const;
@@ -18,10 +18,9 @@ function haversine(a:{lat:number;lng:number},b:{lat:number;lng:number}){
  return 2*6_371_008.8*Math.asin(Math.min(1,Math.sqrt(h)));
 }
 const GRAPH_NOT_APPLICABLE:ReadonlySet<string>=new Set(['OUTSIDE_PACK_BOUNDS','INVALID_GRAPH','ORIGIN_TOO_FAR_FROM_ROAD','DESTINATION_TOO_FAR_FROM_ROAD','SAME_GRAPH_NODE']);
-const inBounds=(p:{lat:number;lng:number})=>p.lat>=EVACUATION_ROAD_BOUNDS.south&&p.lat<=EVACUATION_ROAD_BOUNDS.north&&p.lng>=EVACUATION_ROAD_BOUNDS.west&&p.lng<=EVACUATION_ROAD_BOUNDS.east;
 
 export function resolveTsunamiGuidance(input:{origin:{lat:number;lng:number;accuracy_m:number|null}|null;deadlineAt:number;now:number;
- tags:readonly DistressTag[];places:readonly DesignatedPlace[];graph:RoadGraphPack|null;excluded?:readonly string[]}):TsunamiGuidance{
+ tags:readonly DistressTag[];places:readonly DesignatedPlace[];graph:RoadReferenceGraph|null;excluded?:readonly string[]}):TsunamiGuidance{
  const {origin,deadlineAt,now}=input;
  const available=(deadlineAt-now)/1000;
  if(!Number.isFinite(available)||available<=0)return {kind:'VERTICAL_NOW',reason:'NO_TIME',deadlineAt};
@@ -37,8 +36,9 @@ export function resolveTsunamiGuidance(input:{origin:{lat:number;lng:number;accu
   .sort((a,b)=>a.straight-b.straight).slice(0,DISTRESS_PARAMS.maxCandidates);
  const walkTo=(s:DesignatedPlace,straight:number):ReachCandidate|null=>{
   let distance=straight*DISTRESS_PARAMS.detourFactor,viaRoad=false;
-  if(input.graph&&inBounds(origin)&&inBounds(s)){
-   const road=findEvacuationRoadCandidates(input.graph,origin,s);
+  const graph=input.graph;
+  if(graph&&isWithinBounds(origin,graph.bounds)&&isWithinBounds(s,graph.bounds)){
+   const road=findRoadCandidates(graph,origin,s);
    const best=road.candidates[0];
    if(best){distance=best.distance_m+best.origin_gap_m+best.destination_gap_m;viaRoad=true;}
    // Only an allow-listed "graph not applicable" reason falls back to the straight-line estimate; any other

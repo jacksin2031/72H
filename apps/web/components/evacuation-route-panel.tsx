@@ -5,7 +5,8 @@ import {hazardKeys,type HazardLocation} from '@/lib/official-hazards';
 import type {DesignationHazard} from '@/lib/designated-places';
 import type {DesignatedPlacesState} from '@/lib/use-designated-places';
 import {selectEvacuationDestinations,assessEvacuationRouteReadiness,usableEvacuationOrigin,type EvacuationCheckId} from '@/lib/evacuation-route-assessment';
-import {loadEvacuationRoadGraph,findEvacuationRoadCandidates,type RoadGraphPack,type RoadCandidate} from '@/lib/evacuation-road-graph';
+import {loadEvacuationRoadGraph,ishinomakiReferenceGraph,type RoadGraphPack,type RoadCandidate} from '@/lib/evacuation-road-graph';
+import {findRoadCandidates,type RoadReferenceGraph} from '@/lib/road-graph-core';
 import {hazardText} from './official-hazard-panel';
 import {Disclosure} from './ui';
 
@@ -34,6 +35,8 @@ export function EvacuationRoutePanel({language,state,origin,onOrigin,onFocus,onR
  const t=text[language],hazard=state.hazard;
  const [graph,setGraph]=useState<RoadGraphPack|null>(null),[loadError,setLoadError]=useState(false),[loading,setLoading]=useState(true);
  const [destinationId,setDestinationId]=useState(''),[candidates,setCandidates]=useState<readonly RoadCandidate[]>([]),[attempted,setAttempted]=useState(false);
+ // A pack that fails the pinned or generic graph checks yields no reference graph and so no candidates.
+ const referenceGraph=useMemo(():RoadReferenceGraph|null=>{if(!graph)return null;try{return ishinomakiReferenceGraph(graph);}catch{return null;}},[graph]);
  const places=useMemo(()=>selectEvacuationDestinations(state.pack?.catalog??[],hazard),[state.pack,hazard]);
  const destination=places.find(p=>p.id===destinationId)??null;
  const originKey=origin?`${origin.source}:${origin.lat}:${origin.lng}:${origin.captured_at}`:'';
@@ -50,8 +53,8 @@ export function EvacuationRoutePanel({language,state,origin,onOrigin,onFocus,onR
   connected:state.connected,now:state.now,resumeAt:state.resumeAt,roadCandidateCount:candidates.length,graphCurrent:graphCurrent&&!loadError});
  const generate=()=>{
   setAttempted(true);onRoute(null);
-  if(!graph||!graphCurrent||!origin||!destination||!currentCatalog||!usableEvacuationOrigin(origin,state.now)){setCandidates([]);return;}
-  const result=findEvacuationRoadCandidates(graph,origin,destination);setCandidates(result.candidates);
+  if(!graph||!referenceGraph||!graphCurrent||!origin||!destination||!currentCatalog||!usableEvacuationOrigin(origin,state.now)){setCandidates([]);return;}
+  const result=findRoadCandidates(referenceGraph,origin,destination);setCandidates(result.candidates);
  };
  return <section id="evacuation-routes" className="evacuation-route-panel" data-testid="evacuation-route-panel">
   <p className="hazard-muted">{t.scope}</p><p className="hazard-safety" role="status">{t.undetermined}</p>
