@@ -56,6 +56,12 @@ from .official_events import official_event_group
 from .spatial import MovementSupport, resolve_movement_support
 
 TRUSTED_STATUSES = {TrustStatus.VERIFIED_OFFICIAL, TrustStatus.VERIFIED_PARTNER}
+# NEXT / AVOID under an official tsunami level replace the transport / return-trip template.
+TSUNAMI_CONTEXT_LEVELS = frozenset({DistressLevel.OFFICIAL_TSUNAMI, DistressLevel.OFFICIAL_STALE})
+TSUNAMI_FOLLOW_UP_INTENTS = frozenset({
+    SafeIntentId.STAY_HIGH_UNTIL_OFFICIAL_CLEAR,
+    SafeIntentId.AVOID_COAST_AND_RIVERS,
+})
 
 
 def disaster_status_claim_keys(state: CoreState) -> tuple[str, ...]:
@@ -777,8 +783,15 @@ def _evaluate_plan(
 
     invalid: list[str] = []
     reasons: list[str] = []
+    tsunami_context = resolve_distress(state, current_time, policy).level in TSUNAMI_CONTEXT_LEVELS
     for action in actions:
         action_invalid = False
+        if (
+            action.category in {PlanActionCategory.NEXT, PlanActionCategory.AVOID}
+            and (action.intent_id in TSUNAMI_FOLLOW_UP_INTENTS) != tsunami_context
+        ):
+            action_invalid = True
+            reasons.append("the official tsunami level changed; NEXT / AVOID must be re-evaluated")
         if location_changed and action.risk_level == RiskLevel.HIGH:
             action_invalid = True
             reasons.append("the current location changed; the previous high-risk action is no longer current")
@@ -1075,6 +1088,8 @@ def _new_action(
             return _distress_action(state, plan_id, distress, SafeIntentId.TSUNAMI_EVACUATE_NOW, evidence_by_id, policy)
         if distress.level in {DistressLevel.USER_REPORTED, DistressLevel.OFFICIAL_STALE}:
             return _distress_action(state, plan_id, distress, SafeIntentId.SHELTER_IN_PLACE_VERTICAL, evidence_by_id, policy)
+    if category != PlanActionCategory.NOW and distress is not None and distress.level in TSUNAMI_CONTEXT_LEVELS:
+        return _tsunami_follow_up_action(state, plan_id, category, distress, evidence_by_id, policy)
     route_key = route_status_claim_key(state)
     route_state = claims.get(route_key) if route_key else None
     route_value = current_claim_value(route_state)
@@ -1107,6 +1122,11 @@ def _new_action(
                 official_ids,
                 disaster_keys,
             )
+    elif category == PlanActionCategory.NEXT and route_key is None:
+        # No trip context (no destination): never the return-trip template.
+        intent_id = SafeIntentId.PROTECT_AND_MONITOR
+        text, reason = _NO_TRIP_WORDS[PlanActionCategory.NEXT][state.profile.preferred_language.value]
+        risk, dependencies, evidence_ids = RiskLevel.MEDIUM, (), ()
     elif category == PlanActionCategory.NEXT:
         if intent_id == SafeIntentId.RECHECK_TRANSPORT_STATUS:
             words = {
@@ -1126,6 +1146,9 @@ def _new_action(
                 route_ids,
                 route_dependencies,
             )
+    elif route_key is None:
+        text, reason = _NO_TRIP_WORDS[PlanActionCategory.AVOID][state.profile.preferred_language.value]
+        risk, dependencies, evidence_ids = RiskLevel.MEDIUM, (), ()
     else:
         if intent_id == SafeIntentId.DO_NOT_ASSUME_ROUTE_SAFETY:
             words = {
@@ -1306,6 +1329,83 @@ def _distress_action(
         reason=reason,
         risk_level=RiskLevel.HIGH if official else RiskLevel.LOW,
         confidence_class="HIGH" if official else "UNKNOWN",
+        evidence_ids=evidence_ids,
+        dependency_keys=(key,) if key else (),
+        dependency_expectations=(DependencyExpectation(key=key, expected_value="ACTIVE"),) if key else (),
+        status=PlanActionStatus.ACTIVE,
+        safety_decision=SafetyDecision.ALLOW,
+    )
+
+
+# NEXT / AVOID without a trip context (no destination): general guidance, no transport or return-trip wording.
+_NO_TRIP_WORDS = {
+    PlanActionCategory.NEXT: {
+        "ja": ("確認済みの公式情報を引き続き確認し、現場の指示に従ってください。",
+               "移動の予定が設定されていないため、交通情報ではなく公式情報の確認を優先します。"),
+        "en": ("Keep checking verified official updates and follow on-site instructions.",
+               "No trip is set, so official updates come before transport information."),
+        "zh-TW": ("持續留意已驗證的官方資訊，並遵循現場人員指示。",
+                  "目前沒有設定行程，因此優先確認官方資訊，而不是交通資訊。"),
+    },
+    PlanActionCategory.AVOID: {
+        "ja": ("確認済みの情報がないまま、周囲や経路が安全だと決めつけないでください。",
+               "現在の周囲の状況や経路の安全性を示す確認済み情報はありません。"),
+        "en": ("Do not assume your surroundings or any route are safe without verified information.",
+               "No verified information establishes that your surroundings or any route are safe."),
+        "zh-TW": ("沒有已驗證資訊之前，不要自行認定周邊或任何路線是安全的。",
+                  "目前沒有已驗證資訊可確認周邊或路線的安全。"),
+    },
+}
+
+# NEXT / AVOID under an official (or expired-official) tsunami level. Generic official tsunami
+# guidance: no destination, route, hazard zone or safe place is named or inferred.
+_TSUNAMI_FOLLOW_UP_WORDS = {
+    PlanActionCategory.NEXT: {
+        "ja": ("高い場所に着いたら、公式に津波警報が解除されるまでそこにとどまり、公式の更新を確認してください。",
+               "津波は繰り返し到達することがあります。解除は公式の発表で確認してください。"),
+        "en": ("Once you are high up, stay there until the official tsunami warning is lifted, and keep checking official updates.",
+               "Tsunami waves can arrive repeatedly; only an official announcement lifts the warning."),
+        "zh-TW": ("到達高處後留在原地，直到官方解除海嘯警報，並持續確認官方更新。",
+                  "海嘯可能多次來襲；只有官方發布才代表警報解除。"),
+    },
+    PlanActionCategory.AVOID: {
+        "ja": ("海岸や川の近く、低い場所に近づかないでください。様子を見に戻らないでください。",
+               "津波警報が出ている間、海岸や川沿いは危険が続く可能性があります。"),
+        "en": ("Stay away from the coast, rivers and low ground, and do not go back to look.",
+               "While a tsunami warning is in force, coasts and riverbanks can remain dangerous."),
+        "zh-TW": ("遠離海岸、河川及低窪地方，不要回去查看情況。",
+                  "海嘯警報生效期間，海岸及河岸可能持續危險。"),
+    },
+}
+
+
+def _tsunami_follow_up_action(
+    state: CoreState,
+    plan_id: str,
+    category: PlanActionCategory,
+    distress: DistressStatus,
+    evidence_by_id: dict[str, Evidence],
+    policy: SafetyPolicy,
+) -> PlanAction:
+    """LOW-risk NEXT / AVOID for an official tsunami level; bound to the trigger evidence when current."""
+    key = None
+    evidence_ids: tuple[str, ...] = ()
+    if distress.level == DistressLevel.OFFICIAL_TSUNAMI:
+        trigger = official_tsunami_trigger(state, state.current_time, policy)
+        if trigger is not None:
+            key = disaster_claim_key(trigger.area_id, "TSUNAMI", "status")
+            evidence_ids = tuple(item for item in distress.trigger_evidence_ids if item in evidence_by_id)
+    text, reason = _TSUNAMI_FOLLOW_UP_WORDS[category][state.profile.preferred_language.value]
+    return PlanAction(
+        id=f"act_{plan_id}_{category.value.casefold()}",
+        plan_id=plan_id,
+        category=category,
+        intent_id=(SafeIntentId.STAY_HIGH_UNTIL_OFFICIAL_CLEAR if category == PlanActionCategory.NEXT
+                   else SafeIntentId.AVOID_COAST_AND_RIVERS),
+        text=text,
+        reason=reason,
+        risk_level=RiskLevel.LOW,
+        confidence_class="LOW" if evidence_ids else "UNKNOWN",
         evidence_ids=evidence_ids,
         dependency_keys=(key,) if key else (),
         dependency_expectations=(DependencyExpectation(key=key, expected_value="ACTIVE"),) if key else (),

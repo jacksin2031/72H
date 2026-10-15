@@ -30,6 +30,11 @@ function parseMockLiveSnapshot(input: unknown): MockLiveSnapshot {
       throw new Error('Mock source must be explicitly synthetic with mock://72h/ provenance');
     }
   }
+  const officialSources = input.official_sources ?? [];
+  if (!Array.isArray(officialSources) || officialSources.some(source => !isRecord(source) || typeof source.source_url !== 'string'
+      || !source.source_url.startsWith('mock://72h/') || typeof source.source_name !== 'string' || !source.source_name.startsWith('SIMULATED'))) {
+    throw new Error('Mock official sources must be explicitly synthetic with mock://72h/ provenance');
+  }
   if (!Array.isArray(input.events) || input.events.some(item => !isRecord(item) || item.is_synthetic !== true) ||
       !Array.isArray(input.evidence) || input.evidence.some(item => !isRecord(item) ||
         item.is_synthetic !== true || item.eligible_for_high_risk !== false)) {
@@ -51,6 +56,7 @@ function parseMockLiveSnapshot(input: unknown): MockLiveSnapshot {
     source: { ...input.source as object, source_url: 'https://mock.invalid/jma' },
     destination_source: { ...input.destination_source as object, source_url: 'https://mock.invalid/destinations' },
     route_source: { ...input.route_source as object, source_url: 'https://mock.invalid/routes' },
+    official_sources: officialSources.map((source, index) => ({ ...source as object, source_url: `https://mock.invalid/official/${index}` })),
     events: input.events.map(item => ({ ...item, is_synthetic: false })),
     evidence: input.evidence.map(item => ({ ...item, is_synthetic: false })),
   });
@@ -59,6 +65,7 @@ function parseMockLiveSnapshot(input: unknown): MockLiveSnapshot {
     source: input.source as MockLiveSnapshot['source'],
     destination_source: input.destination_source as MockLiveSnapshot['destination_source'],
     route_source: input.route_source as MockLiveSnapshot['route_source'],
+    official_sources: officialSources as MockLiveSnapshot['official_sources'],
     events: input.events as MockLiveEvent[],
     evidence: input.evidence as MockEvidence[],
   };

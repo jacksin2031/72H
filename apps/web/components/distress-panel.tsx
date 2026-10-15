@@ -116,7 +116,8 @@ export function DistressPanel(p:DistressPanelProps){
  const lastOfficial=officialLevel&&distress.last_official_at?Date.parse(distress.last_official_at):NaN;
  const officialTime=Number.isFinite(lastOfficial)?formatClock(lastOfficial):'--:--';
  const warningName=distress.warning_class==='MAJOR_WARNING'?t.warningMajor:distress.warning_class==='WARNING'?t.warningWarning:null;
- const basis=officialLevel&&warningName&&Number.isFinite(lastOfficial)?t.basis.replace('{warning}',warningName).replace('{time}',officialTime):null;
+ // A synthetic (exercise) trigger is never presented as a live official basis.
+ const basis=officialLevel&&warningName&&Number.isFinite(lastOfficial)?(distress.synthetic?`${t.exercise} · `:'')+t.basis.replace('{warning}',warningName).replace('{time}',officialTime):null;
  const fixAt=Date.parse(p.snapshot?.profile?.current_location?.observed_at??'');
  const staleNotice=distress.level!=='OFFICIAL_STALE'?null:distress.stale_reason==='LOCATION_STALE'
   ?t.locationStaleNotice.replace('{time}',Number.isFinite(fixAt)?formatClock(fixAt):'--:--')

@@ -254,6 +254,9 @@ class SafeIntentId(StrEnum):
     EVACUATE_TO_DESIGNATED_SHELTER = "evacuate_to_designated_shelter"
     SHELTER_IN_PLACE_VERTICAL = "shelter_in_place_vertical"
     TSUNAMI_EVACUATE_NOW = "tsunami_evacuate_now"
+    # Follow-up NEXT / AVOID under an official tsunami level (LOW risk; never a movement authorization).
+    STAY_HIGH_UNTIL_OFFICIAL_CLEAR = "stay_high_until_official_clear"
+    AVOID_COAST_AND_RIVERS = "avoid_coast_and_rivers"
 
 
 class RiskLevel(StrEnum):

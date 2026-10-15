@@ -16,12 +16,15 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, StrictBool, model_validator
 from seventytwoh_contracts.models import (
     DistressRequest, LiveSnapshot, LiveSourceStatus, NetworkState, SelfReportedSafetyStatus, StartLiveRequest,
-    TsunamiOperation,LocationSource,
+    TsunamiAreaStatus, TsunamiMaxHeight, TsunamiOperation, TsunamiWarningClass, LocationSource,
 )
 from .drill import DrillRequest
-from .historical_cases import CASES, HistoricalId, HistoricCase, list_historical_cases
+from .historical_cases import CASES, TSUNAMI_KINDS, HistoricalId, HistoricCase, list_historical_cases
 from .live import LiveSessionNotFound, LiveStore
-from .live_sources import JmaEarthquakeReport, JmaPrefObservation, JmaFetchResult, JmaTsunamiFetchResult
+from .live_sources import (
+    JMA_PREFECTURES, JMA_TSUNAMI_SOURCE_KEY, JmaEarthquakeReport, JmaPrefObservation, JmaFetchResult,
+    JmaTsunamiArea, JmaTsunamiBulletin, JmaTsunamiFetchResult, _aggregate_tsunami_forecast_areas, jma_report_deadline,
+)
 from .planner import CandidatePlanner
 from .scenario import load_scenario
 from .simulation_advice import SimulationLocation,SimulationConditions,SimulationAdvisor,SimulationAssessment,build_advice_envelope
@@ -29,6 +32,7 @@ from .area_registry import load_japan_area_registry
 
 MOCK_MODE = "MOCK_LIVE"
 MOCK_JMA_NAME = "SIMULATED JMA provider (NOT official)"
+MOCK_JMA_TSUNAMI_NAME = "SIMULATED JMA tsunami provider (NOT official)"
 MAX_MOCK_SESSIONS = 8
 MOCK_TTL = 30 * 60
 
@@ -95,6 +99,12 @@ class MockLiveResponse(BaseModel):
     historical: HistoricalView | None = None
     movement_assessment: SimulationAssessment | None = None
     movement_assessment_history: tuple[SimulationAssessment,...] = ()
+    # Assessments replaced because the Safety Core plan changed after they were made (oldest first).
+    movement_assessment_superseded: tuple[SimulationAssessment,...] = ()
+
+
+MAX_SUPERSEDED_ASSESSMENTS = 24
+PLAN_CHANGED = "PLAN_CHANGED"
 
 
 class MockJmaSource:
@@ -119,8 +129,10 @@ class MockJmaSource:
                 if self.request.network == "OFFLINE":
                     return JmaFetchResult(LiveSourceStatus.UNAVAILABLE, now, None, None, (),
                                           "MOCK historical timeline: simulated outage; no fresh feed.")
-                return JmaFetchResult(LiveSourceStatus.FRESH, now, now, None, (),
-                                      f"MOCK historical supplemental event {milestone.kind}: unsupported by earthquake Safety Core.")
+                detail = ("MOCK historical tsunami event: no new earthquake report; the synthetic tsunami source carries it."
+                          if milestone.kind in TSUNAMI_KINDS else
+                          f"MOCK historical background event {milestone.kind}: not a Safety Core input.")
+                return JmaFetchResult(LiveSourceStatus.FRESH, now, now, None, (), detail)
             published = now - timedelta(hours=2) if self.request.evidence == "STALE" else now
             result_status = LiveSourceStatus.STALE if self.request.evidence == "STALE" else LiveSourceStatus.FRESH
             report = JmaEarthquakeReport(
@@ -158,21 +170,81 @@ class MockDestinationSource:
 
 
 class MockTsunamiSource:
-    """Keep Mock Live isolated from the real JMA tsunami adapter and network."""
+    """Synthetic tsunami bulletins for historical exercises; never the real JMA adapter or network.
+
+    It reads the replay stage from the shared MockJmaSource. Once a TSUNAMI_WARNING /
+    TSUNAMI_UPGRADE milestone has been reached it returns the latest synthetic bulletin
+    for that event (ISSUE, then UPDATE), as the live VTSE41 adapter keeps one bulletin
+    per information unit. Publication time is fixed on the runtime clock when the
+    milestone is first reached and never refreshed, so the normal JMA evidence deadline
+    makes it STALE and the Live reducers stop treating it as current.
+    """
+
+    def __init__(self, jma: "MockJmaSource | None" = None, *, now=None) -> None:
+        self.jma = jma
+        self._now = now or (lambda: datetime.now(timezone.utc))
+        self._published: dict[int, datetime] = {}
+
+    @staticmethod
+    def _empty(now: datetime, detail: str, status=LiveSourceStatus.UNSUPPORTED) -> JmaTsunamiFetchResult:
+        return JmaTsunamiFetchResult(
+            status=status, retrieved_at=now, last_published_at=None, next_retry_at=None,
+            operation=TsunamiOperation.UNKNOWN, serial=None, bulletins=(), forecast_areas=(),
+            conflict=False, detail=detail,
+        )
 
     def fetch_latest(self) -> JmaTsunamiFetchResult:
-        now = datetime.now(timezone.utc)
+        now = self._now()
+        jma = self.jma
+        historic = jma.historic if jma is not None else None
+        reached = tuple(
+            (index + 1, milestone) for index, milestone in enumerate(jma.milestones[:jma.stage])
+            if milestone.kind in TSUNAMI_KINDS
+        ) if historic else ()
+        if not reached:
+            return self._empty(now, "MOCK LIVE: no synthetic tsunami bulletin at this exercise stage.")
+        if jma.request.network == "OFFLINE" or jma.request.evidence == "UNKNOWN":
+            return self._empty(now, "MOCK historical timeline: simulated outage; no fresh tsunami feed.",
+                               LiveSourceStatus.UNAVAILABLE)
+        for item_stage, _ in reached:
+            self._published.setdefault(item_stage, now - timedelta(hours=2) if jma.request.evidence == "STALE" else now)
+        stage, milestone = reached[-1]
+        published = self._published[stage]
+        bulletin = JmaTsunamiBulletin(
+            event_id=f"historical-{historic.id}-tsunami",
+            serial=str(len(reached)),
+            info_type="発表",
+            operation=TsunamiOperation.UPDATE if len(reached) > 1 else TsunamiOperation.ISSUE,
+            published_at=published,
+            occurred_at=self._published[reached[0][0]],
+            # Case-absolute milestone index, so a time window never changes the provenance path.
+            reference_url=f"mock://72h/historical/{historic.id}/{historic.milestones.index(milestone) + 1}/tsunami",
+            forecast_areas=tuple(
+                JmaTsunamiArea(
+                    # Synthetic 9xx code (9 + prefecture code): never presented as a real JMA forecast-area code.
+                    code="9" + next(code for code, pref in JMA_PREFECTURES.items() if pref == name),
+                    name=name,
+                    status=TsunamiAreaStatus.ACTIVE,
+                    warning_class=TsunamiWarningClass(warning_class),
+                    max_height=TsunamiMaxHeight(),
+                    arrival_at=None,
+                )
+                for name, warning_class in milestone.tsunami_areas
+            ),
+        )
+        areas, conflict = _aggregate_tsunami_forecast_areas((bulletin,), now)
         return JmaTsunamiFetchResult(
-            status=LiveSourceStatus.UNSUPPORTED,
+            status=LiveSourceStatus.FRESH if now < jma_report_deadline(bulletin) else LiveSourceStatus.STALE,
             retrieved_at=now,
-            last_published_at=None,
+            last_published_at=published,
             next_retry_at=None,
-            operation=TsunamiOperation.UNKNOWN,
-            serial=None,
-            bulletins=(),
-            forecast_areas=(),
-            conflict=False,
-            detail="MOCK LIVE: no official tsunami data is requested or simulated.",
+            operation=bulletin.operation,
+            serial=bulletin.serial,
+            bulletins=(bulletin,),
+            forecast_areas=areas,
+            conflict=conflict,
+            detail=(f"HISTORICAL EXERCISE tsunami bulletin for {historic.id} (archived {milestone.at_jst}); "
+                    "synthetic, replayed on the runtime clock; not live JMA."),
         )
 
 
@@ -193,7 +265,7 @@ class MockLiveStore(LiveStore):
         self.mock_request = request
         super().__init__(
             jma_source=self.mock_source,
-            tsunami_source=MockTsunamiSource(),
+            tsunami_source=MockTsunamiSource(self.mock_source),
             destination_source=MockDestinationSource(),
             route_source=MockRouteSource(),
             planner=planner,
@@ -224,6 +296,28 @@ class MockLiveStore(LiveStore):
         })
         return event, evidence
 
+    def _tsunami_event_evidence_pair(self, state, bulletin, now, legacy_metadata=None):
+        pair = super()._tsunami_event_evidence_pair(state, bulletin, now, legacy_metadata)
+        if pair is None:
+            return None
+        event, evidence = pair
+        case = self.mock_source.historic.id if self.mock_source.historic else "custom"
+        event = event.model_copy(update={
+            "source_name": MOCK_JMA_TSUNAMI_NAME,
+            "severity_raw": "HISTORICAL EXERCISE " + event.severity_raw.removeprefix("JMA VTSE41 ")[:40],
+            "raw_reference": bulletin.reference_url,
+            "is_synthetic": True,
+        })
+        evidence = evidence.model_copy(update={
+            "source_name": MOCK_JMA_TSUNAMI_NAME,
+            "summary": (f"SYNTHETIC HISTORICAL EXERCISE: {case} tsunami warning replayed on an artificial runtime clock; "
+                        "not live JMA. Prefecture-level area only; it does not authorize movement or identify safe places."),
+            "raw_reference": bulletin.reference_url,
+            "is_synthetic": True,
+            "eligible_for_high_risk": False,
+        })
+        return event, evidence
+
     def _apply_source_results_locked(self, aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata):
         pairs, aliases = super()._apply_source_results_locked(
             aggregate, source_result, tsunami_result, destinations_payload, now, legacy_metadata
@@ -247,12 +341,16 @@ class MockLiveStore(LiveStore):
     def _snapshot(self, aggregate):
         snapshot = super()._snapshot(aggregate)
         # Never let real official origin labels be presented as actual reporting.
+        def simulated_source(item):
+            tsunami = item.source_key == JMA_TSUNAMI_SOURCE_KEY
+            return item.model_copy(update={
+                "source_name": MOCK_JMA_TSUNAMI_NAME if tsunami else MOCK_JMA_NAME,
+                "source_url": "mock://72h/jma-tsunami" if tsunami else "mock://72h/jma",
+                "detail": "SIMULATION ONLY. " + item.detail[:210],
+            })
         simulated = snapshot.model_copy(update={
-            "source": snapshot.source.model_copy(update={
-                "source_name": MOCK_JMA_NAME,
-                "source_url": "mock://72h/jma",
-                "detail": "SIMULATION ONLY. " + snapshot.source.detail[:210],
-            }),
+            "source": simulated_source(snapshot.source),
+            "official_sources": tuple(simulated_source(item) for item in snapshot.official_sources),
             "destination_source": snapshot.destination_source.model_copy(update={
                 "source_name": "SIMULATED shelter source (empty)",
                 "source_url": "mock://72h/shelter",
@@ -265,6 +363,7 @@ class MockLiveStore(LiveStore):
             }),
         })
         if (simulated.spatial_guidance.movement_authorized
+            or any(not item.source_url.startswith("mock://") for item in (simulated.source, *simulated.official_sources))
             or any(not item.is_synthetic for item in simulated.evidence)
             or any(not item.is_synthetic for item in simulated.events)
             or any(item.risk_level == "HIGH" and item.safety_decision == "ALLOW"
@@ -280,7 +379,10 @@ class _MockSession:
     request: MockLiveRequest
     expires: float
     lock: asyncio.Lock
+    store_session_id: UUID | None = None
     assessments: list[SimulationAssessment] = field(default_factory=list)
+    superseded: list[SimulationAssessment] = field(default_factory=list)
+    assessment_lock: RLock = field(default_factory=RLock)
 
 
 class MockLiveDrillStore:
@@ -307,8 +409,49 @@ class MockLiveDrillStore:
             session.expires = monotonic() + MOCK_TTL
             return session
 
-    def _response(self, session: _MockSession, snapshot: LiveSnapshot) -> MockLiveResponse:
+    @staticmethod
+    def _advice_envelope(session: _MockSession, step: int, plan_id: str | None, now: datetime) -> dict:
+        milestones = session.store.mock_source.milestones
+        return build_advice_envelope(
+            session.request.location_context, session.request.conditions,
+            event_kind=milestones[step - 1].kind if session.request.historical_case else "EARTHQUAKE",
+            mobility=session.request.mobility, network=session.request.network, evidence=session.request.evidence,
+            step=step, session_id=str(session.store_session_id), plan_id=plan_id,
+            tsunami_active=any(m.kind in TSUNAMI_KINDS for m in milestones[:step]),
+            now=now,
+        )
+
+    def _rebind_assessment(self, session: _MockSession, snapshot: LiveSnapshot) -> None:
+        """Keep the current assessment bound to the current Safety Core plan.
+
+        When the plan changes after an assessment was made (a distress report, an AI escalation,
+        or plan expiry), the old assessment no longer describes the current plan. It is moved to the
+        superseded log, never rewritten, and the step's current entry becomes a deterministic NOT_RUN
+        assessment bound to the new plan: no model call and no model decision is claimed.
+        """
+        plan_id = str(snapshot.situation.current_plan_id) if snapshot.situation.current_plan_id else None
+        with session.assessment_lock:
+            # Only the current step's assessment may be rebound: while a `next` is between advancing the
+            # stage and appending the new step's assessment, the previous step's entry must stay as it is.
+            if (not session.assessments or session.assessments[-1].plan_id == plan_id
+                    or session.assessments[-1].step != session.store.mock_source.stage):
+                return
+            old = session.assessments[-1]
+            envelope = self._advice_envelope(session, old.step, plan_id, datetime.now(timezone.utc))
+            rebound = SimulationAssessment(
+                **{key: envelope[key] for key in ("version", "session_id", "step", "plan_id", "area_ids", "area_label",
+                                                 "location_source", "location_observed_at", "created_at", "expires_at",
+                                                 "allowed_decisions", "facts", "limitation_ids")},
+                decision="UNKNOWN", fact_ids=tuple(f["id"] for f in envelope["facts"]),
+                ai_mode="NOT_RUN", reason_code=PLAN_CHANGED,
+            )
+            session.superseded = [*session.superseded, old][-MAX_SUPERSEDED_ASSESSMENTS:]
+            session.assessments[-1] = rebound
+
+    def _response(self, session: _MockSession, snapshot: LiveSnapshot, *, rebind: bool = True) -> MockLiveResponse:
         self._assert_not_live(snapshot)
+        if rebind:
+            self._rebind_assessment(session, snapshot)
         return MockLiveResponse(
             current_step=session.store.mock_source.stage,
             total_steps=(len(session.store.mock_source.milestones)
@@ -319,6 +462,7 @@ class MockLiveDrillStore:
             historical=self._historical_view(session),
             movement_assessment=session.assessments[-1] if session.assessments else None,
             movement_assessment_history=tuple(session.assessments),
+            movement_assessment_superseded=tuple(session.superseded),
         )
 
     @staticmethod
@@ -334,6 +478,7 @@ class MockLiveDrillStore:
             max_intensity=case.max_intensity,
             milestones=tuple(m.public() for m in milestones),
             current_milestone=(milestones[step - 1].public() if 0 < step <= len(milestones) else None),
+            advisory_is_not_safety_core_input=not (0 < step <= len(milestones) and milestones[step - 1].public()["fed_to_safety_core"]),
         )
 
     @staticmethod
@@ -377,7 +522,8 @@ class MockLiveDrillStore:
             "current_plan_summary": "SIMULATION ONLY",
         })
         snap = await store.start_async(StartLiveRequest(language=request.language, profile=seed))
-        session = _MockSession(store, instrumented, request, monotonic() + MOCK_TTL, asyncio.Lock())
+        session = _MockSession(store, instrumented, request, monotonic() + MOCK_TTL, asyncio.Lock(),
+                               store_session_id=snap.session_id)
         with self._lock:
             self._purge()
             if len(self._sessions) >= self._max:
@@ -385,9 +531,18 @@ class MockLiveDrillStore:
             self._sessions[snap.session_id] = session
         return self._response(session, snap)
 
-    def get(self, id: UUID) -> MockLiveResponse:
+    async def get(self, id: UUID) -> MockLiveResponse:
         session = self._lookup(id)
-        return self._response(session, session.store.get(id))
+        async with session.lock:
+            snapshot = await asyncio.to_thread(session.store.get, id)
+            return self._response(session, snapshot)
+
+    def has_session(self, id: UUID) -> bool:
+        try:
+            self._lookup(id)
+        except LiveSessionNotFound:
+            return False
+        return True
 
     async def record_distress(self, id: UUID, request: DistressRequest) -> MockLiveResponse:
         session = self._lookup(id)
@@ -420,13 +575,12 @@ class MockLiveDrillStore:
                 snap = await session.store.refresh_async(id)
             except Exception:
                 session.store.mock_source.stage = stage
+                session.store._tsunami._published.pop(stage + 1, None)
                 raise
             if session.request.use_gemini:
-                kind=(session.store.mock_source.milestones[stage].kind if session.request.historical_case else 'EARTHQUAKE')
-                envelope=build_advice_envelope(session.request.location_context,session.request.conditions,
-                    event_kind=kind,mobility=session.request.mobility,network=session.request.network,evidence=session.request.evidence,
-                    step=stage+1,session_id=str(id),plan_id=str(snap.situation.current_plan_id) if snap.situation.current_plan_id else None,
-                    tsunami_active=any(m.kind in ('TSUNAMI_WARNING','TSUNAMI_UPGRADE') for m in session.store.mock_source.milestones[:stage+1]),
-                    now=datetime.now(timezone.utc))
-                session.assessments.append(await self._advisor.assess(envelope))
+                plan_id = str(snap.situation.current_plan_id) if snap.situation.current_plan_id else None
+                envelope = self._advice_envelope(session, stage + 1, plan_id, datetime.now(timezone.utc))
+                assessment = await self._advisor.assess(envelope)
+                with session.assessment_lock:
+                    session.assessments.append(assessment)
             return self._response(session, snap)

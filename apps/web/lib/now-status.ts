@@ -57,3 +57,19 @@ export function statusBandSpec({ alert, criticalEventName, critical, offline, st
   if (stale) return { tone: 'warn', label: labels.stale, deadlineAt: null };
   return null;
 }
+
+/** The exercise Now hero, with Live's priority: the Safety Core decides first. Under any distress level (an official tsunami
+ *  level, an expired official level, or the person's own report) or a current plan whose NOW is the official tsunami action,
+ *  the hero is the Safety Core instruction: its allowed NOW action, else the built-in protective instruction (never a
+ *  destination). Only otherwise may the optional Gemini drill assessment lead; it stays below as a supplementary reference. */
+export function exerciseHeroText({ started, distress, now, language, planNowIntent, safetyCoreNowText, adviceText, messages }: {
+  started: boolean; distress: DistressStatus | null | undefined; now: number; language: Language;
+  planNowIntent: string | null | undefined; safetyCoreNowText: string; adviceText: string | null;
+  messages: { awaiting: string; waiting: string };
+}) {
+  if (!started) return messages.awaiting;
+  const level = distress ? degradeExpiredOfficial(distress, now).level : 'NONE';
+  if (level !== 'NONE' || planNowIntent === 'tsunami_evacuate_now') return safetyCoreNowText || distressText[language].vertical;
+  if (adviceText !== null) return adviceText;
+  return safetyCoreNowText || messages.waiting;
+}
