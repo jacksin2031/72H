@@ -378,7 +378,7 @@ export function SimulationReferenceMap({
     }
     if(!referenceRoute||referenceRoute.coordinates.length<2||referenceRoute.coordinates.length>2048
       ||referenceRoute.coordinates.some(p=>p.length!==2||!validPoint({lng:p[0],lat:p[1]})))return;
-    map.addSource('evacuation-reference-route',{type:'geojson',data:{type:'Feature',properties:{authority:'ROAD_REFERENCE_ONLY'},
+    map.addSource('evacuation-reference-route',{type:'geojson',data:{type:'Feature',properties:{authority:'ROAD_REFERENCE_ONLY',movement_authorized:false},
       geometry:{type:'LineString',coordinates:referenceRoute.coordinates.map(p=>[p[0],p[1]])}}});
     map.addLayer({id:'evacuation-reference-route-line',type:'line',source:'evacuation-reference-route',
       paint:{'line-color':'#afcbed','line-width':4,'line-dasharray':[2,2]}});

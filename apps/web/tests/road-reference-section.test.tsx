@@ -2,7 +2,7 @@
 import React,{act} from 'react';
 import {createRoot} from 'react-dom/client';
 import {afterEach,expect,it} from 'vitest';
-import {RoadReferenceSection,roadPeekText,type RoadReference} from '../components/road-reference-section';
+import {RoadReferenceNotice,RoadReferenceSection,roadPeekText,type RoadReference} from '../components/road-reference-section';
 (globalThis as {IS_REACT_ACT_ENVIRONMENT?:boolean}).IS_REACT_ACT_ENVIRONMENT=true;
 let host:HTMLDivElement;let root:ReturnType<typeof createRoot>;
 afterEach(async()=>{if(root)await act(async()=>root.unmount());host?.remove();});
@@ -49,4 +49,30 @@ it('error offers a retry button',async()=>{
   let retried=false;
   await render(<RoadReferenceSection language="zh-TW" exercise hazard="tsunami" reference={{state:'ERROR',retry:()=>{retried=true;},result:null,tiles:null}}/>);
   await act(async()=>(host.querySelector('.ui-btn-secondary') as HTMLButtonElement).click());expect(retried).toBe(true);
+});
+
+it('NO_ROADS shows a localized no-roads message in the peek and section, without a retry button',async()=>{
+  const noRoads={...ready(5),tiles:{status:'UNAVAILABLE' as const,reason:'NO_ROADS' as const}};
+  expect(roadPeekText('zh-TW','tsunami',noRoads)).toBe('此地區沒有可用的道路資料');
+  expect(roadPeekText('ja','tsunami',noRoads)).toBe('この地域には利用できる道路データがありません');
+  expect(roadPeekText('en','earthquake',noRoads)).toBe('No road data is available for this area');
+  await render(<RoadReferenceSection language="zh-TW" exercise hazard="tsunami" reference={{state:'READY',retry:()=>{},result:null,tiles:{status:'UNAVAILABLE',reason:'NO_ROADS'}}}/>);
+  expect(host.textContent).toContain('此地區沒有可用的道路資料');
+  expect(host.querySelector('button')).toBeNull();
+  // A temporary failure stays retryable.
+  await act(async()=>root.render(<RoadReferenceSection language="zh-TW" exercise hazard="tsunami" reference={{state:'READY',retry:()=>{},result:null,tiles:{status:'UNAVAILABLE',reason:'TEMPORARILY_UNAVAILABLE'}}}/>));
+  expect(host.querySelector('.ui-btn-secondary')).not.toBeNull();
+});
+
+it('suppresses its own disclaimer and attribution when the map chrome carries them; the notice renders both once',async()=>{
+  await render(<><RoadReferenceNotice language="zh-TW"/><RoadReferenceSection language="zh-TW" exercise hazard="tsunami" reference={ready(5)} suppressNotice/></>);
+  expect(host.textContent!.split('道路參考線不是避難路線，最安全路線未判定。').length-1).toBe(1);
+  expect(host.textContent!.split('© OpenStreetMap contributors').length-1).toBe(1);
+  expect(host.querySelector('.road-reference-section')?.textContent).not.toContain('© OpenStreetMap contributors');
+});
+
+it('a local point control replaces the dead no-point hint',async()=>{
+  await render(<RoadReferenceSection language="zh-TW" exercise hazard="tsunami" reference={{state:'IDLE',retry:()=>{},result:null,tiles:null}} pointControl={<button type="button">pick</button>}/>);
+  expect(host.textContent).toContain('pick');
+  expect(host.textContent).not.toContain('請選擇一個點以顯示道路參考線');
 });

@@ -30,7 +30,7 @@ vi.mock('maplibre-gl',()=>({
     removeLayer(id:string){this.layers.delete(id);mapHarness.operations.push('remove-layer:'+id);}
     removeSource(id:string){this.sources.delete(id);mapHarness.operations.push('remove-source:'+id);}
     addSource(id:string,options?:{data:WavefrontData}){this.sources.add(id);mapHarness.operations.push('add-source:'+id);
-      if(id.startsWith('official-'))mapHarness.referenceFrames.push({id,data:options?.data});
+      if(id.startsWith('official-')||id.includes('route'))mapHarness.referenceFrames.push({id,data:options?.data});
       if(id==='seismic-wavefronts'){mapHarness.waveFrames.push(options!.data);this.waveSource={setData:data=>mapHarness.waveFrames.push(data)};}}
     addLayer(layer:{id:string}){this.layers.add(layer.id);mapHarness.operations.push('add-layer:'+layer.id);}
   },
@@ -79,6 +79,20 @@ describe('isolated simulation reference map', () => {
     await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" userLocation={gps} referenceRoute={null}/>));
     expect(mapHarness.operations).toContain('remove-source:evacuation-reference-route');
     expect(mapHarness.operations.slice(operations)).not.toContain('add-source:gsi-reference');
+  });
+  it('marks the legacy single reference route and the new reference routes as reference-only, never movement-authorized',async()=>{
+    const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
+    vi.stubGlobal('crypto',webcrypto);vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)})));
+    mapHarness.referenceFrames=[];container=document.createElement('div');document.body.append(container);root=createRoot(container);
+    const route={id:'candidate-1' as const,coordinates:[[141.303,38.433],[141.304,38.433]] as [number,number][],distance_m:88,origin_gap_m:0,destination_gap_m:0,road_names:[]};
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" referenceRoute={route}/>));
+    await act(async()=>{await new Promise(resolve=>setTimeout(resolve,40));});
+    const legacy=mapHarness.referenceFrames.find(f=>f.id==='evacuation-reference-route')?.data as {properties:Record<string,unknown>}|undefined;
+    expect(legacy?.properties).toEqual({authority:'ROAD_REFERENCE_ONLY',movement_authorized:false});
+    const envelope={...route,role:'ROAD_REFERENCE_ONLY' as const,movement_authorized:false as const};
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" referenceRoutes={[envelope]}/>));
+    const routes=mapHarness.referenceFrames.find(f=>f.id==='road-reference-only-routes')?.data as {features:{properties:Record<string,unknown>}[]}|undefined;
+    expect(routes?.features.map(f=>f.properties.movement_authorized)).toEqual([false]);
   });
   it('allows compact map panning and pinch/wheel zoom without a blocking information card',async()=>{
     const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));

@@ -109,12 +109,12 @@ The exercise screens now use the same AppShell, NowScreen, MapScreen and ListRow
 | /disaster-test Replay / P1.5 run button | primary | secondary (the page's one primary is the full simulation launch) | unchanged text |
 | /demo 計画の履歴 / 情報源 badges and action prefixes (fix round 1) | raw codes: `ACTIVE` / `INVALIDATED` / `EXPIRED`, `VERIFIED_OFFICIAL` / `CONFLICTING` / `STALE`, `NOW` / `NEXT` / `AVOID`, source authority `A0–A4` | replace with existing localized labels; authority code removed from the visible line | 有効 / 失効 / 期限切れ / 不明 (messages.active / invalid / stale / unknown); いま行うこと / 次に確認すること / 避けること |
 | /demo safety check (fix round 1) | inside 演習の詳細 Disclosure, status shown as raw enum (`AWAITING_RESPONSE · 0/3`) | move under the Now screen (Live's position); status uses existing words | 安否確認 / 無事です / 助けが必要 / 今は動けません / 応答なし・状態は不明です。 (vnextMessages) |
-| /demo Map tab (fix round 1) | live /map link | in-place exercise map (synthetic quake) with the road-reference sheet and location section | Peek: `請選擇一個點以顯示道路參考線` when replay has no locally selected point; section titles 道路參考 / 現在地 |
+| /demo Map tab (fix round 1) | live /map link | in-place exercise map (synthetic quake) with the road-reference sheet and location section | Peek: `請選擇一個點以顯示道路參考線` until a point is chosen with the in-sheet 演練位置 picker; section titles 道路參考 / 現在地 |
 | /disaster-test reset (fix round 1) | button at the end of 情境設定 | move into the exercise bar | すべて初期化 / Reset / 重設 (unchanged) |
 
 # Task 8: Exercise road-reference section
 
-The `/simulation` sheet reads only the in-memory selected drill point. The `/demo` replay snapshot has area identity but no selected point, so its road section remains idle and does not substitute device GPS. Road lines and shelter designations stay reference-only; opening state and safest route remain undetermined.
+The `/simulation` sheet reads only the in-memory selected drill point. `/demo` reuses the same 演練位置 picker (preset-free: 在地圖上選點 / 我的目前位置) inside its road-reference section; the chosen point and its resolved prefecture live only in the Dashboard's component state. They are never persisted, never written to the replay profile, and never used as the SOS / distress location; neither the replay area nor device GPS is substituted for a missing point. Without a point the 道路參考 chip opens the sheet at the picker; with a point it toggles the lines. Road lines and shelter designations stay reference-only; opening state and safest route remain undetermined.
 
 | Location | zh-TW | ja | en |
 |---|---|---|---|
@@ -125,6 +125,7 @@ The `/simulation` sheet reads only the in-memory selected drill point. The `/dem
 | Reference disclaimer (once per map page) | 道路參考線不是避難路線，最安全路線未判定。 | 道路参考線は避難経路ではありません。最も安全な経路は未判定です。 | Road reference lines are not evacuation routes. The safest route is undetermined. |
 | OSM attribution | © OpenStreetMap contributors | © OpenStreetMap contributors | © OpenStreetMap contributors |
 | Exercise tag | 演練 | 演習 | Exercise |
+| Verified empty area (`NO_ROADS`, peek and section; no retry) | 此地區沒有可用的道路資料 | この地域には利用できる道路データがありません | No road data is available for this area |
 | Partial, stale, offline and persistence states | 部分道路資料未下載；資料較舊（取得於 YYYY-MM-DD）；此地區沒有道路參考資料（離線）；無法離線保存 | 道路データの一部が未取得；データは古くなっています（取得日 YYYY-MM-DD）；この地域の道路参考データはありません（オフライン）；オフライン保存できませんでした | Some road data tiles are missing; Data is stale (retrieved YYYY-MM-DD); No road reference data for this area (offline); Could not save for offline use |
 
-The map and its drawer render the fixed reference disclaimer once. The road lines are dashed, capped at three candidates, and carry the `ROAD_REFERENCE_ONLY` map-layer identity. No opening-state or safety wording is inferred from designation or route availability.
+While road reference lines are on (a point is chosen and the 道路參考 chip is pressed), the fixed disclaimer and the OSM attribution render once in the persistent map chrome under the region row, so they stay visible whether the sheet is open, collapsed or (on `/simulation`) unmounted; the drawer section then omits its own copy. With the lines off, the section carries the single copy instead. The road lines are dashed, capped at three candidates, and carry the `ROAD_REFERENCE_ONLY` map-layer identity with `movement_authorized: false` (the legacy single `referenceRoute` feature included); they are drawn only from READY road tiles. No opening-state or safety wording is inferred from designation or route availability.

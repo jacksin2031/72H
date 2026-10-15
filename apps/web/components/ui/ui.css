@@ -315,6 +315,11 @@ a.ui-btn-secondary{color:var(--info)}
 .road-reference-list li{padding:var(--sp-2) 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
 .road-reference-disclaimer{color:var(--warn);font-size:var(--fs-meta);font-weight:600}
 .road-reference-attribution{font-size:var(--fs-meta);color:var(--text-2)}
+/* Persistent road-reference disclaimer + OSM attribution: below the region / help row, above the sheet's 70vh reach. */
+.map-notice{position:absolute;top:calc(var(--sp-3) + 48px + var(--sp-2));left:var(--gutter);right:72px;z-index:6;padding:0 var(--sp-2);background:color-mix(in srgb,var(--bg) 85%,transparent)}
+.map-notice p{margin:0}
+.map-notice .road-reference-disclaimer{padding-top:var(--sp-1)}
+.map-notice a{display:inline-flex;align-items:center;min-height:48px;color:var(--info)}
 
 /* Map help has its own top row beside the region picker; it never covers chips, legend, sheet or zoom. */
 .ui-app:has(.map-screen) .ui-help-pin{top:calc(var(--band-h,0px) + var(--sp-3));bottom:auto;right:72px;left:auto;max-width:128px}

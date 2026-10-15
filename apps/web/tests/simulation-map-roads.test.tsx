@@ -20,6 +20,8 @@ const destinationCalls=vi.hoisted(()=>[] as unknown[][]);
 vi.mock('../lib/road-tiles',()=>({loadRoadTilesAround:vi.fn()}));
 vi.mock('../lib/japan-shelters',()=>({loadJapanShelterCatalog:vi.fn(),loadJapanShelterPrefecture:vi.fn()}));
 vi.mock('../lib/road-destinations',()=>({roadDestinations:vi.fn()}));
+vi.mock('../lib/area-resolution',async orig=>({...await orig<typeof import('../lib/area-resolution')>(),
+  resolveDeviceArea:vi.fn(async()=>({status:'RESOLVED',area_ids:['JP-MUNI-13101','JP-13','JP'],label:'千代田区'}))}));
 vi.mock('../components/simulation-reference-map',()=>({SimulationReferenceMap:(p:Record<string,unknown>)=>{mapCalls.push(p);return <div data-testid="stub-map"/>;}}));
 vi.mock('next/link',()=>({default:({children,...p}:React.ComponentProps<'a'>)=><a {...p}>{children}</a>}));
 vi.mock('../lib/use-power',async()=>{const {derivePower}=await import('../lib/vnext');return {usePower:()=>({power:derivePower(75,false),level:null,override:'AUTO',choose:()=>{}})};});
@@ -178,4 +180,75 @@ it('/demo keeps replay area and GPS separate from an exercise point and renders 
   expect(page.querySelector('.ui-sheet-head')?.textContent).toContain('請選擇一個點以顯示道路參考線');
   expect(roadCalls).toHaveLength(0);
   expect(mapCalls.at(-1)).toMatchObject({focusPoint:null,referenceRoutes:[]});
+});
+
+const disclaimer='道路參考線不是避難路線，最安全路線未判定。';
+const occurrences=(text:string|null|undefined,needle:string)=>(text??'').split(needle).length-1;
+
+it('keeps the road disclaimer and OSM attribution visible exactly once in map chrome while the sheet is closed',async()=>{
+  const page=await renderScreen({...config,drillPoint:point1,locationContext:{source:'USER_SELECTED',area_ids:['JP-04','JP'],label:'石巻市'} as never});
+  expect(page.querySelector('.ui-sheet-head')?.getAttribute('aria-expanded')).toBe('false');
+  expect(page.querySelector('.ui-sheet-body')).toBeNull();
+  expect(occurrences(page.querySelector('.map-notice')?.textContent,disclaimer)).toBe(1);
+  expect(occurrences(page.textContent,disclaimer)).toBe(1);
+  expect(occurrences(page.textContent,'© OpenStreetMap contributors')).toBe(1);
+  await act(async()=>(page.querySelector('.ui-sheet-head') as HTMLButtonElement).click());
+  expect(page.querySelector('.ui-sheet-body')).not.toBeNull();
+  expect(occurrences(page.textContent,disclaimer)).toBe(1);
+  expect(occurrences(page.textContent,'© OpenStreetMap contributors')).toBe(1);
+  // Lines off: the chrome notice goes away and the open section carries the single copy instead.
+  const chip=[...page.querySelectorAll<HTMLButtonElement>('.map-chips button')].find(button=>button.textContent?.includes('道路參考'))!;
+  await act(async()=>chip.click());
+  expect(page.querySelector('.map-notice')).toBeNull();
+  expect(occurrences(page.textContent,disclaimer)).toBe(1);
+});
+
+it('shows the NO_ROADS state in the collapsed peek without lines',async()=>{
+  vi.mocked(loadRoadTilesAround).mockImplementation(async(point,opts)=>{roadCalls.push({point,signal:opts?.signal});return {status:'UNAVAILABLE',reason:'NO_ROADS'};});
+  const page=await renderScreen({...config,drillPoint:point1,locationContext:{source:'USER_SELECTED',area_ids:['JP-04','JP'],label:'石巻市'} as never});
+  expect(page.querySelector('.ui-sheet-head')?.textContent).toBe('此地區沒有可用的道路資料');
+  expect(mapCalls.at(-1)?.referenceRoutes).toEqual([]);
+});
+
+it('/demo chooses a volatile local point with the drill picker, then focuses it, loads roads and draws reference routes',async()=>{
+  const page=await renderDashboard();
+  const mapTab=[...page.querySelectorAll<HTMLButtonElement>('nav.ui-tabs button')][1];
+  await act(async()=>mapTab.click());
+  const profileBefore=JSON.stringify(served.profile);
+  const chip=()=>[...page.querySelectorAll<HTMLButtonElement>('.map-chips button')].find(button=>button.textContent?.includes('道路參考'))!;
+  expect(chip().getAttribute('aria-pressed')).toBe('false');
+  expect(page.querySelector('.map-notice')).toBeNull();
+  // The chip is not a no-op without a point: it opens the sheet at the point picker.
+  await act(async()=>chip().click());
+  expect(page.querySelector('.ui-sheet-head')?.getAttribute('aria-expanded')).toBe('true');
+  const button=(label:string)=>[...page.querySelectorAll<HTMLButtonElement>('.ui-sheet-body button')].find(b=>b.textContent===label)!;
+  expect(button('在地圖上選點')).toBeTruthy();
+  expect(page.querySelector('.ui-sheet-body')?.textContent).not.toContain('請選擇一個點以顯示道路參考線');
+  const callsBeforePick=fetchCalls.length;
+  await act(async()=>button('在地圖上選點').click());
+  const pickerMap=mapCalls.filter(call=>typeof call.onReferencePoint==='function').at(-1)!;
+  await act(async()=>(pickerMap.onReferencePoint as (p:{lat:number;lng:number})=>void)({lat:35.6812,lng:139.7671}));
+  await act(async()=>button('使用這個位置').click());
+  await act(async()=>{await new Promise(resolve=>setTimeout(resolve,260));});
+  expect(roadCalls.map(call=>call.point)).toEqual([{lat:35.6812,lng:139.7671}]);
+  expect(loadJapanShelterPrefecture).toHaveBeenCalledWith(expect.anything(),'13',expect.any(AbortSignal));
+  const mainMap=mapCalls.filter(call=>call.onReferencePoint===undefined).at(-1)!;
+  expect(mainMap).toMatchObject({focusPoint:{lat:35.6812,lng:139.7671,zoom:14}});
+  expect((mainMap.referenceRoutes as {role:string;movement_authorized:boolean}[]).length).toBe(3);
+  expect((mainMap.referenceRoutes as {role:string;movement_authorized:boolean}[]).every(route=>route.role==='ROAD_REFERENCE_ONLY'&&route.movement_authorized===false)).toBe(true);
+  expect(chip().getAttribute('aria-pressed')).toBe('true');
+  expect(page.querySelector('.ui-sheet-head')?.textContent).toContain('處');
+  expect(occurrences(page.textContent,disclaimer)).toBe(1);
+  expect(occurrences(page.querySelector('.map-notice')?.textContent,disclaimer)).toBe(1);
+  expect(occurrences(page.textContent,'© OpenStreetMap contributors')).toBe(1);
+  // Volatile and local: the replay profile and SOS/distress location are untouched, nothing is persisted.
+  expect(JSON.stringify(served.profile)).toBe(profileBefore);
+  expect(fetchCalls.slice(callsBeforePick).filter(call=>!call.startsWith('GET'))).toEqual([]);
+  expect(Object.values({...localStorage}).join(' ')).not.toContain('139.7671');
+  // Toggling the chip now hides the lines and moves the notice back into the open section.
+  await act(async()=>chip().click());
+  expect(chip().getAttribute('aria-pressed')).toBe('false');
+  expect(mapCalls.filter(call=>call.onReferencePoint===undefined).at(-1)?.referenceRoutes).toEqual([]);
+  expect(page.querySelector('.map-notice')).toBeNull();
+  expect(occurrences(page.textContent,disclaimer)).toBe(1);
 });

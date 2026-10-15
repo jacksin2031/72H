@@ -10,7 +10,7 @@ import { AdaptiveHome } from './adaptive-home';
 import { DeviceLocationControls } from './device-location';
 import type { AppTab } from '@/lib/app-tabs';
 import { NowScreen } from './now-screen';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { snapshotSchema, type Language, type Snapshot } from '@/lib/contracts';
 import { messages } from '@/lib/i18n';
 import { liveMessages } from '@/lib/live-i18n';
@@ -27,7 +27,9 @@ import { ScenarioPicker } from './scenario-picker';
 import { PlanExplanationPanel } from './plan-explanation-panel';
 import { DistressEntry } from './distress-entry';
 import { fixFromDevicePosition } from '@/lib/distress-guidance';
-import { RoadReferenceSection, roadPeekText, useRoadReference } from './road-reference-section';
+import { RoadReferenceNotice, RoadReferenceSection, roadLayerLabel, roadPeekText, roadReferenceRoutes, useRoadReference } from './road-reference-section';
+import { DrillLocationPicker } from './drill-location-picker';
+import type { DrillPoint } from '@/lib/drill-location';
 import type { RoadHazard } from '@/lib/road-destinations';
 
 const exerciseLabel: Record<Language, string> = { 'zh-TW': '演練', ja: '演習', en: 'Exercise' };
@@ -54,9 +56,14 @@ export function Dashboard({ view }: { view: string }) {
   const [sessionMissing, setSessionMissing] = useState(false);
   const [distressOpen, setDistressOpen] = useState(false);
   const demoRoadHazard:RoadHazard=snapshot?.distress.level==='OFFICIAL_TSUNAMI'?'tsunami':'earthquake';
-  const demoPrefectureArea=snapshot?.profile.current_location.area_ids.find(id=>/^JP-\d{2}$/.test(id));
-  // /demo replay snapshots carry an area, not the local drill point; never substitute device GPS or invent coordinates.
-  const demoRoadReference=useRoadReference(null,demoRoadHazard,demoPrefectureArea?.slice(3)??null);
+  // /demo's exercise reference point is chosen on this page only: volatile component state, never persisted and never written to the
+  // replay profile or the SOS / distress location. The replay area and device GPS are never substituted for it.
+  const [demoPoint, setDemoPoint] = useState<{ point: DrillPoint; prefecture: string | null } | null>(null);
+  const [demoRoadLayerOn, setDemoRoadLayerOn] = useState(false);
+  const [demoSheetOpen, setDemoSheetOpen] = useState(false);
+  const demoRoadReference=useRoadReference(demoPoint?{lat:demoPoint.point.lat,lng:demoPoint.point.lng}:null,demoRoadHazard,demoPoint?.prefecture??null);
+  const demoReferenceRoutes=useMemo(()=>roadReferenceRoutes(demoRoadReference,demoRoadLayerOn),[demoRoadLayerOn,demoRoadReference.state,demoRoadReference.result]);
+  const demoRoadNoticeInChrome=demoRoadLayerOn&&demoPoint!==null;
   // Owned here so the hero and the Now-screen safety check use the same state (VNextExperience restores, persists and advances it).
   const [check, setCheck] = useState<SafetyCheckState>(initialSafetyCheck);
   const [tab, setTab] = useState<AppTab>('now');
@@ -272,14 +279,22 @@ export function Dashboard({ view }: { view: string }) {
   // Same position as Live: the safety check sits right under the Now screen (AdaptiveHome embedded); consent stays reachable
   // here because the exercise has no More settings of its own.
   const safetyCheck = <ReplaySafetyCheck check={check} setCheck={setCheck} language={language} visible={presentation.showSafetyCheck} hideTitle />;
-  const exerciseMap = <MapScreen language={language}
-    layers={[{key:'road-reference',label:language==='ja'?'道路参考':language==='en'?'Road reference':'道路參考',on:false,toggle:()=>{}}]}
-    legend={null} region={null} routeSection={null}
+  const demoPicker = <DrillLocationPicker language={language} caseId={null} value={demoPoint?.point ?? null}
+    onChange={(point, location) => {
+      setDemoPoint(point ? { point, prefecture: location?.area_ids.find(id => /^JP-\d{2}$/.test(id))?.slice(3) ?? null } : null);
+      setDemoRoadLayerOn(Boolean(point));
+    }} />;
+  const exerciseMap = <MapScreen language={language} sheetOpen={demoSheetOpen} onSheetOpenChange={setDemoSheetOpen}
+    // Without a chosen point the chip opens the sheet at the point picker; with one it toggles the reference lines.
+    layers={[{key:'road-reference',label:roadLayerLabel(language),on:demoRoadLayerOn&&demoPoint!==null,
+      toggle:()=>{if(demoPoint)setDemoRoadLayerOn(on=>!on);else setDemoSheetOpen(true);}}]}
+    legend={null} region={null} routeSection={null} notice={demoRoadNoticeInChrome?<RoadReferenceNotice language={language}/>:null}
     map={<SimulationReferenceMap language={language} showInformation={false} legend="none" regionPicker={false}
-      focusPoint={null} referenceRoutes={[]} userLocation={deviceLocation.position ? {lat:deviceLocation.position.latitude,lng:deviceLocation.position.longitude,accuracy_m:deviceLocation.position.accuracy_m,captured_at:deviceLocation.position.captured_at,source:'BROWSER_GEOLOCATION'} : null} />}
+      focusPoint={demoPoint?{lat:demoPoint.point.lat,lng:demoPoint.point.lng,zoom:14}:null} referenceRoutes={demoReferenceRoutes} userLocation={deviceLocation.position ? {lat:deviceLocation.position.latitude,lng:deviceLocation.position.longitude,accuracy_m:deviceLocation.position.accuracy_m,captured_at:deviceLocation.position.captured_at,source:'BROWSER_GEOLOCATION'} : null} />}
     peek={roadPeekText(language,demoRoadHazard,demoRoadReference)}
     sections={[
-      {title:language==='ja'?'道路参考':language==='en'?'Road reference':'道路參考',content:<RoadReferenceSection language={language} exercise hazard={demoRoadHazard} reference={demoRoadReference}/>},
+      {title:roadLayerLabel(language),content:<RoadReferenceSection language={language} exercise hazard={demoRoadHazard} reference={demoRoadReference}
+        suppressNotice={demoRoadNoticeInChrome} pointControl={demoPicker}/>},
       { title: t.location, content: <DeviceLocationControls location={deviceLocation} language={language} /> },
     ]} />;
   return <AppShell tab={tab} language={language} band={band} exerciseControls={exerciseControls} fullBleed={tab === 'map'}

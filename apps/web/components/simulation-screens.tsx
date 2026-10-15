@@ -23,7 +23,7 @@ import { MAP_REGIONS, mapOverviewLabel, mapRegionLabel } from '@/lib/map-regions
 import { sosText } from '@/lib/distress';
 import { exerciseHeroText, officialAlert } from '@/lib/now-status';
 import type { AppTab } from '@/lib/app-tabs';
-import { RoadReferenceSection, roadPeekText, useRoadReference } from './road-reference-section';
+import { RoadReferenceNotice, RoadReferenceSection, roadLayerLabel, roadPeekText, roadReferenceRoutes, useRoadReference } from './road-reference-section';
 import type { RoadHazard } from '@/lib/road-destinations';
 
 /** home / plan / events all render the shared Now screen (events opens its basis on the timeline); map and more use the shared Map and More layouts. */
@@ -107,13 +107,12 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
   const occurredOrigins=seismicOrigins.filter(origin=>Date.parse(origin.observed_at_jst)<=time);
   const epicenter=occurredOrigins.at(-1)??epicenterForPlayedMilestones(config.historicalCase,config.milestones,done);
   const warning=historicTsunamiWarningStarted(config.milestones,done);
-  const roadHazard:RoadHazard=warning||state?.snapshot.distress.level==='OFFICIAL_TSUNAMI'?'tsunami':'earthquake';
+  const roadHazard:RoadHazard=warning||state?.snapshot.distress?.level==='OFFICIAL_TSUNAMI'?'tsunami':'earthquake';
   const prefectureArea=config.locationContext?.area_ids.find(id=>/^JP-\d{2}$/.test(id));
   const roadReference=useRoadReference(config.drillPoint?{lat:config.drillPoint.lat,lng:config.drillPoint.lng}:null,roadHazard,prefectureArea?.slice(3)??null);
-  const referenceRoutes=useMemo(()=>roadLayerOn&&roadReference.state==='READY'
-    ?(roadReference.result?.destinations??[]).flatMap(destination=>destination.road
-      &&destination.road.role==='ROAD_REFERENCE_ONLY'&&destination.road.movement_authorized===false?[destination.road]:[]).slice(0,3)
-    :[],[roadLayerOn,roadReference.state,roadReference.result]);
+  const referenceRoutes=useMemo(()=>roadReferenceRoutes(roadReference,roadLayerOn),[roadLayerOn,roadReference.state,roadReference.result]);
+  // One disclaimer + OSM attribution per page: in the persistent map chrome while road lines are on, otherwise in the section.
+  const roadNoticeInChrome=roadLayerOn&&Boolean(config.drillPoint);
   useEffect(()=>setRoadLayerOn(Boolean(config.drillPoint)),[config.drillPoint?.lat,config.drillPoint?.lng]);
   const assessment=screenGeoExposure({location:geo.location,epicenter,tsunamiWarningActive:warning,now:Date.now()});
   const current=config.milestones[Math.max(0,done-1)]??null;
@@ -188,11 +187,11 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
         <option value="">{mapOverviewLabel(language)}</option>
         {MAP_REGIONS.map(r=><option key={r.value} value={r.value}>{r.label}</option>)}
       </select>}
-      layers={[{key:'road-reference',label:language==='ja'?'道路参考':language==='en'?'Road reference':'道路參考',on:roadLayerOn,toggle:()=>setRoadLayerOn(value=>!value)}]}
-      legend={t.note} routeSection={null}
+      layers={[{key:'road-reference',label:roadLayerLabel(language),on:roadLayerOn,toggle:()=>setRoadLayerOn(value=>!value)}]}
+      legend={t.note} routeSection={null} notice={roadNoticeInChrome?<RoadReferenceNotice language={language}/>:null}
       peek={config.drillPoint?roadPeekText(language,roadHazard,roadReference)
         :`${roadPeekText(language,roadHazard,roadReference)} · ${warning?t.tsunamiWarningSummary:t.mapNotice} · ${t.mapRiskUnknown}`}
-      sections={[{title:language==='ja'?'道路参考':language==='en'?'Road reference':'道路參考',content:<RoadReferenceSection language={language} exercise hazard={roadHazard} reference={roadReference}/>},
+      sections={[{title:roadLayerLabel(language),content:<RoadReferenceSection language={language} exercise hazard={roadHazard} reference={roadReference} suppressNotice={roadNoticeInChrome}/>},
         {title:t.mapRiskTitle,content:<>
         <SimulationRiskPanel language={language} assessment={assessment} gpsState={geo.state} gpsError={geo.error} requestLocation={geo.request} clearLocation={geo.clear}/>
         <p className="now-meta">{t.risk}</p>
