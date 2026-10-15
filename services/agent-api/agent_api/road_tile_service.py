@@ -16,8 +16,8 @@ from .road_tiles import ENDPOINT, TileTooDense, build_tile_graph, content_hash_m
 USER_AGENT = "72H-road-reference/1.0 (+https://github.com/jacksin2031/72H)"
 CACHE_TTL = timedelta(days=30)
 MIN_INTERVAL_S = 2.0
-UPSTREAM_TIMEOUT_S = 25
-LOCK_WAIT_S = 3.0
+UPSTREAM_TIMEOUT_S = 12
+LOCK_WAIT_S = 16.0
 TOTAL_BUDGET_S = 30.0  # lock wait + spacing + fetch; must stay under the web proxy's 35 s abort
 MAX_WAITERS = 8
 MAX_SESSIONS = 2048

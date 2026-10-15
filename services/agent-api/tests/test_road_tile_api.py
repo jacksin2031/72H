@@ -142,7 +142,7 @@ def test_concurrent_same_tile_misses_coalesce(tmp_path):
 
 def test_timeout_budget_fits_under_proxy_abort():
     import agent_api.road_tile_service as mod
-    assert mod.UPSTREAM_TIMEOUT_S == 25 and mod.MAX_WAITERS == 8
+    assert mod.UPSTREAM_TIMEOUT_S == 12 and mod.MAX_WAITERS == 8
     assert mod.LOCK_WAIT_S + mod.MIN_INTERVAL_S + mod.UPSTREAM_TIMEOUT_S <= 30 == mod.TOTAL_BUDGET_S
 
 
@@ -193,3 +193,17 @@ def test_session_table_is_bounded(tmp_path):
     for i in range(2100):
         assert c.get("/api/roads/tile/r1920c5651", headers={"X-Road-Session": f"k{i}"}).status_code == 200
     assert len(svc._hits) <= 2048
+
+
+def test_nine_sequential_cold_tiles_all_succeed(tmp_path, monkeypatch):
+    """A 3x3 download on a cold cache: each fetch takes 2 s of fake time, spacing 2 s, no 503."""
+    import asyncio
+    import agent_api.road_tile_service as mod
+    now = {"t": 1000.0}
+    async def fake_sleep(s): now["t"] += s
+    async def fetch(q): now["t"] += 2.0; return 200, RAW
+    monkeypatch.setattr(mod.asyncio, "sleep", fake_sleep)
+    svc = RoadTileService(fetch=fetch, cache_dir=tmp_path, clock=lambda: now["t"])
+    async def run():
+        return [await svc.get(f"r{1919 + r}c{5650 + c}", "one") for r in range(3) for c in range(3)]
+    assert len(asyncio.run(run())) == 9

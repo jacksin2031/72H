@@ -44,7 +44,7 @@ def _box(b): return f"({b[0]:g},{b[1]:g},{b[2]:g},{b[3]:g})"
 
 def overpass_query(bounds) -> str:
     box = _box(bounds)
-    return ("[out:json][timeout:45];(\n"
+    return ("[out:json][timeout:12];(\n"
             f'way["highway"~"^(footway|path|pedestrian|steps|living_street|residential|unclassified|tertiary|service)$"]{box};\n'
             f'way["highway"~"^(secondary|primary)$"]["sidewalk"~"^(yes|both|left|right)$"]{box};\n'
             f'way["highway"~"^(secondary|primary)$"]["foot"~"^(yes|designated|permissive)$"]{box};\n'

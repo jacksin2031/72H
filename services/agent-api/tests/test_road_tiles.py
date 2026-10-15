@@ -22,7 +22,7 @@ def test_tile_id_rejects_malformed_or_outside_japan(bad):
 
 def test_query_is_fixed_and_bounded():
     q = overpass_query(tile_bounds(1920, 5651))
-    assert q.startswith("[out:json][timeout:45];") and "out body qt;" in q
+    assert q.startswith("[out:json][timeout:12];") and "out body qt;" in q
     assert "service" in q and "sidewalk" in q and "foot" in q
     assert q.count("(38.4,141.275,38.42,141.3)") == 3
 

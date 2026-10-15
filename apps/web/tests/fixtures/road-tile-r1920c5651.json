@@ -28,7 +28,7 @@
     "osm_base_timestamp": "2026-10-15T00:00:00Z",
     "retrieved_at": "2026-10-15T00:00:00+00:00",
     "raw_sha256": "2aa033428478f5fe3bf0c65e5434f851c56471949227bc2fe8b62f2fccb4a9a6",
-    "query_sha256": "8bc86415b5854cdbcc09255707b53e88125aa4c3a89fe0c09ac70cbcf14c9cb6"
+    "query_sha256": "18d2dc43802ca0f7d41fae81a1a8fd3a1145d4f9a1cefcbeab46279039e274b9"
   },
   "nodes": [
     [
@@ -81,5 +81,5 @@
       0
     ]
   ],
-  "content_sha256": "d1db6184a89ab5fe873e4a353ef3cf8c8f73f6f464c840e1a4c8d99b15f19559"
+  "content_sha256": "cbf2649f892bfcc13d9e0bf521e7be779289913cd08b9a82cd9ea780fb5af06a"
 }
