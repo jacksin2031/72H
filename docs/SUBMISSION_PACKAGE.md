@@ -50,7 +50,7 @@ TokyoとOsakaの登録済みシナリオは合成データです。Osakaは汎�
 - **安全確認**: 端末内の同意ベース自己申告確認。無応答は不明であり、救助連絡・Rescue Beaconはありません。
 - **地図**: catalog選択式の中央東京参照用道路データのみ。hazard overlay、避難所判定、safe-route判定はありません。
 
-Gemini / Google ADKは候補となるaction intentの選択に使い、公開可能な行動とplan dependencyはSafety Coreが検証する構成です。Canonical CLIとclean-browser replayがPASSし、vNext production acceptanceは **PASS** です。最終状態の`L1 / MONITOR`は、最新assessmentの`ACTIVE`にseverity情報がないことを示し、確定的な危険解除を意味しません。
+Gemini / Google ADKは、Safety Coreが承認した行動への説明文・根拠の割り当て（ADK）、救助要請の音声・文字からの状況タグ抽出（Gemini）、演習での所在地に応じた行動評価（ADK）、救助時の助言の保守的な調整（Gemini）に使います。いずれも構造化された選択肢から選ぶだけで、計画の生成・再計画、公開可能な行動とplan dependencyはSafety Coreが決定論的に行います（2026-10-15 時点の提出版。初期版の候補intent選択経路は現在呼び出されていません）。最新の提出用説明文は `output/promo/zenn-project-description.md` を参照してください。Canonical CLIとclean-browser replayがPASSし、vNext production acceptanceは **PASS** です。最終状態の`L1 / MONITOR`は、最新assessmentの`ACTIVE`にseverity情報がないことを示し、確定的な危険解除を意味しません。
 
 次の機能は今回の完成機能として扱いません: JMA live feed、live hazard / shelter情報、safe-route判定、Web Push、Rescue Beacon、native background service、OS電池予約。
 
