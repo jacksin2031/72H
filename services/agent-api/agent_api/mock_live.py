@@ -217,7 +217,8 @@ class MockTsunamiSource:
             operation=TsunamiOperation.UPDATE if len(reached) > 1 else TsunamiOperation.ISSUE,
             published_at=published,
             occurred_at=self._published[reached[0][0]],
-            reference_url=f"mock://72h/historical/{historic.id}/{stage}/tsunami",
+            # Case-absolute milestone index, so a time window never changes the provenance path.
+            reference_url=f"mock://72h/historical/{historic.id}/{historic.milestones.index(milestone) + 1}/tsunami",
             forecast_areas=tuple(
                 JmaTsunamiArea(
                     # Synthetic 9xx code (9 + prefecture code): never presented as a real JMA forecast-area code.
@@ -430,7 +431,10 @@ class MockLiveDrillStore:
         """
         plan_id = str(snapshot.situation.current_plan_id) if snapshot.situation.current_plan_id else None
         with session.assessment_lock:
-            if not session.assessments or session.assessments[-1].plan_id == plan_id:
+            # Only the current step's assessment may be rebound: while a `next` is between advancing the
+            # stage and appending the new step's assessment, the previous step's entry must stay as it is.
+            if (not session.assessments or session.assessments[-1].plan_id == plan_id
+                    or session.assessments[-1].step != session.store.mock_source.stage):
                 return
             old = session.assessments[-1]
             envelope = self._advice_envelope(session, old.step, plan_id, datetime.now(timezone.utc))
@@ -444,9 +448,10 @@ class MockLiveDrillStore:
             session.superseded = [*session.superseded, old][-MAX_SUPERSEDED_ASSESSMENTS:]
             session.assessments[-1] = rebound
 
-    def _response(self, session: _MockSession, snapshot: LiveSnapshot) -> MockLiveResponse:
+    def _response(self, session: _MockSession, snapshot: LiveSnapshot, *, rebind: bool = True) -> MockLiveResponse:
         self._assert_not_live(snapshot)
-        self._rebind_assessment(session, snapshot)
+        if rebind:
+            self._rebind_assessment(session, snapshot)
         return MockLiveResponse(
             current_step=session.store.mock_source.stage,
             total_steps=(len(session.store.mock_source.milestones)
@@ -473,6 +478,7 @@ class MockLiveDrillStore:
             max_intensity=case.max_intensity,
             milestones=tuple(m.public() for m in milestones),
             current_milestone=(milestones[step - 1].public() if 0 < step <= len(milestones) else None),
+            advisory_is_not_safety_core_input=not (0 < step <= len(milestones) and milestones[step - 1].public()["fed_to_safety_core"]),
         )
 
     @staticmethod
@@ -527,7 +533,9 @@ class MockLiveDrillStore:
 
     def get(self, id: UUID) -> MockLiveResponse:
         session = self._lookup(id)
-        return self._response(session, session.store.get(id))
+        # GET is synchronous and cannot await session.lock. While a mutation holds it, that mutation's own
+        # response performs the rebind; GET never rebinds concurrently with it.
+        return self._response(session, session.store.get(id), rebind=not session.lock.locked())
 
     async def record_distress(self, id: UUID, request: DistressRequest) -> MockLiveResponse:
         session = self._lookup(id)

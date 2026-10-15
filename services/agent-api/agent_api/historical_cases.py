@@ -157,6 +157,8 @@ CASES: dict[HistoricalId, HistoricCase] = {
             HistoricMilestone("2024-01-01T16:22:00+09:00", "TSUNAMI_UPGRADE",
                 "石川県能登に大津波警報へ切替", "石川縣能登升級至大海嘯警報",
                 "Major tsunami warning upgraded for Noto", JMA_NOTO,
+                # Historically only 石川県能登 was 大津波警報 (加賀: 津波警報). Live maps whole prefectures only,
+                # so the exercise conservatively warns all of 石川県 at MAJOR_WARNING.
                 tsunami_areas=(("新潟県", "WARNING"), ("富山県", "WARNING"), ("石川県", "MAJOR_WARNING"))),
         )
     ),

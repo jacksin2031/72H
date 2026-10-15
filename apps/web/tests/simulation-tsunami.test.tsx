@@ -106,7 +106,8 @@ describe('help panel under the synthetic trigger (behaviour 5)',()=>{
       sosProfile={{contacts:[],needsAssistance:false,mobilityLimited:false}} onSnapshot={vi.fn()} now={serverNow(state)}/>);
     const primary=el!.querySelector('[data-testid=distress-primary] .distress-primary-text')!.textContent!;
     expect(primary).not.toContain(t.chooseSituation);
-    expect([t.vertical,t.verticalNow]).toContain(primary.trim());
+    // Arrival is unknown, so the deadline is now: Live's D1 rule gives the immediate vertical instruction.
+    expect(primary.trim()).toBe(t.verticalNow);
     expect(el!.querySelector('[data-testid=distress-exercise]')).not.toBeNull();
     expect(el!.querySelector('[data-testid=distress-basis]')?.textContent).toMatch(/^演練／模擬 · /);
   });

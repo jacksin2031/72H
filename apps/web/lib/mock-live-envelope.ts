@@ -37,6 +37,7 @@ export const mockLiveResponseSchema = z.object({
   const latest=value.movement_assessment,history=value.movement_assessment_history;
   if(value.current_step>value.total_steps || (latest && (latest.session_id!==value.snapshot.session_id || latest.step!==value.current_step
     ||latest.plan_id!==value.snapshot.situation.current_plan_id)) ||history.some((a,i)=>a.session_id!==value.snapshot.session_id||a.step!==i+1)
+    ||value.movement_assessment_superseded.some(a=>a.session_id!==value.snapshot.session_id||a.step>value.current_step)
     ||(latest ? history.length!==value.current_step||JSON.stringify(latest)!==JSON.stringify(history.at(-1)) : history.length>0))
     ctx.addIssue({code:'custom',message:'Simulation assessment does not belong to current snapshot'});
 });

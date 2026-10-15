@@ -261,3 +261,37 @@ def test_mock_tsunami_bulletin_is_stable_labelled_and_expires(monkeypatch):
     offline.jma.stage = 2
     assert offline.fetch_latest().status == LiveSourceStatus.UNAVAILABLE
     assert offline.fetch_latest().bulletins == ()
+
+
+def test_get_never_rebinds_a_previous_step_while_next_is_in_flight(monkeypatch):
+    monkeypatch.setenv("DRILL_ACCESS_KEY", KEY)
+    advisor = SimulationAdvisor(config=PlannerConfig(mode="gemini"), runner=UnknownRunner())
+    store = MockLiveDrillStore(planner=CandidatePlanner(PlannerConfig(mode="deterministic")), advisor=advisor)
+    with TestClient(create_app(mock_live_store=store)) as client:
+        sid = _start(client)
+        _next(client, sid)
+        session = next(iter(store._sessions.values()))
+        step1 = session.assessments[-1]
+        # Simulate `next` between advancing the stage (new plan exists) and appending the step-2 assessment.
+        session.store.mock_source.stage = 2
+        snapshot = session.store.get(session.store_session_id)
+        moved = snapshot.model_copy(update={"situation": snapshot.situation.model_copy(update={"current_plan_id": "plan_v9"})})
+        store._rebind_assessment(session, moved)
+        assert session.assessments[-1] == step1 and session.superseded == []
+        # And a GET while a mutation holds the session lock never rebinds.
+        session.store.mock_source.stage = 1
+        assert store._response(session, moved, rebind=False).movement_assessment == step1
+
+
+def test_stale_exercise_evidence_never_yields_a_current_tsunami_trigger(monkeypatch):
+    monkeypatch.setenv("DRILL_ACCESS_KEY", KEY)
+    with _client() as client:
+        body = {"historical_case": "tohoku-2011", "use_gemini": True, "evidence": "STALE",
+                "location_context": {"area_ids": list(ISHINOMAKI), "source": "USER_SELECTED",
+                                     "observed_at": datetime.now(timezone.utc).isoformat()}}
+        sid = client.post("/api/mock-live/start", headers=HEADERS, json=body).json()["snapshot"]["session_id"]
+        for _ in range(4):
+            data = _next(client, sid)
+            assert data["snapshot"]["distress"]["level"] in {"NONE", "OFFICIAL_STALE"}
+            assert all(a["intent_id"] != "tsunami_evacuate_now" for a in data["snapshot"]["plan_actions"])
+            _assert_exercise_safe(data)

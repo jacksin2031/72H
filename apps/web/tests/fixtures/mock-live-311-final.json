@@ -5,15 +5,15 @@
  "ai_modes": [],
  "battery": 60,
  "snapshot": {
-  "session_id": "0624111f-4ac8-441a-93b7-c4d92aee6290",
+  "session_id": "37a0021b-c8cf-46c5-849f-dc420dd25933",
   "mode": "LIVE",
   "source": {
    "source_key": "jma-live-eqvol",
    "source_name": "SIMULATED JMA provider (NOT official)",
    "source_url": "mock://72h/jma",
    "status": "FRESH",
-   "retrieved_at": "2026-10-14T17:35:23.380445Z",
-   "last_published_at": "2026-10-14T17:35:23.380445Z",
+   "retrieved_at": "2026-10-15T00:10:01.372423Z",
+   "last_published_at": "2026-10-15T00:10:01.372423Z",
    "next_retry_at": null,
    "record_count": 1,
    "detail": "SIMULATION ONLY. MOCK LIVE historical tohoku-2011; archived 2011-03-11T15:15:00+09:00; not live JMA.",
@@ -44,7 +44,7 @@
    "recovery": null
   },
   "profile": {
-   "id": "user_live_0624111f4ac8441a93b7c4d92aee6290",
+   "id": "user_live_37a0021bc8cf46c5849fdc420dd25933",
    "preferred_language": "zh-TW",
    "current_location": {
     "label": "石巻市",
@@ -55,7 +55,7 @@
      "JP-04",
      "JP"
     ],
-    "observed_at": "2026-10-14T17:35:23.358987Z",
+    "observed_at": "2026-10-15T00:10:01.283913Z",
     "source": "USER_SELECTED"
    },
    "accommodation_location": {
@@ -71,8 +71,8 @@
    "self_reported_safety_status": "UNCERTAIN",
    "current_plan_summary": "SIMULATION ONLY",
    "accessibility_constraints": [],
-   "created_at": "2026-10-14T17:35:23.362117Z",
-   "updated_at": "2026-10-14T17:35:23.362117Z"
+   "created_at": "2026-10-15T00:10:01.287656Z",
+   "updated_at": "2026-10-15T00:10:01.287656Z"
   },
   "area_catalog": [
    {
@@ -322,17 +322,18 @@
    }
   ],
   "situation": {
-   "id": "sit_0624111f4ac8441a93b7c4d92aee6290",
-   "user_id": "user_live_0624111f4ac8441a93b7c4d92aee6290",
+   "id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+   "user_id": "user_live_37a0021bc8cf46c5849fdc420dd25933",
    "incident_status": "ASSESSING",
    "network_state": "ONLINE_VERIFIED",
    "active_event_ids": [
     "jma-historical-tohoku-2011-1",
-    "jma-tsunami-94f4e59c95bd6654--1-1791999323",
+    "jma-tsunami-94f4e59c95bd6654--1-1792023001",
+    "jma-tsunami-94f4e59c95bd6654--2-1792023001",
     "jma-historical-tohoku-2011-4"
    ],
-   "current_plan_id": "plan_v2",
-   "latest_evidence_at": "2026-10-14T17:35:23.380445Z",
+   "current_plan_id": "plan_v3",
+   "latest_evidence_at": "2026-10-15T00:10:01.373422Z",
    "uncertainty_flags": [],
    "conflict_flags": [],
    "claim_states": [
@@ -343,46 +344,55 @@
      "evidence_ids": [
       "ev_jma-historical-tohoku-2011-4"
      ],
-     "updated_at": "2026-10-14T17:35:23.381109Z"
+     "updated_at": "2026-10-15T00:10:01.374440Z"
     },
     {
      "key": "disaster.TSUNAMI.JP-03.status",
      "status": "VERIFIED",
      "value": "ACTIVE",
      "evidence_ids": [
-      "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+      "ev_jma-tsunami-94f4e59c95bd6654--2-1792023001"
      ],
-     "updated_at": "2026-10-14T17:35:23.381109Z"
+     "updated_at": "2026-10-15T00:10:01.374440Z"
     },
     {
      "key": "disaster.TSUNAMI.JP-04.status",
      "status": "VERIFIED",
      "value": "ACTIVE",
      "evidence_ids": [
-      "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+      "ev_jma-tsunami-94f4e59c95bd6654--2-1792023001"
      ],
-     "updated_at": "2026-10-14T17:35:23.381109Z"
+     "updated_at": "2026-10-15T00:10:01.374440Z"
     },
     {
      "key": "disaster.TSUNAMI.JP-07.status",
      "status": "VERIFIED",
      "value": "ACTIVE",
      "evidence_ids": [
-      "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+      "ev_jma-tsunami-94f4e59c95bd6654--2-1792023001"
      ],
-     "updated_at": "2026-10-14T17:35:23.381109Z"
+     "updated_at": "2026-10-15T00:10:01.374440Z"
+    },
+    {
+     "key": "disaster.TSUNAMI.JP-08.status",
+     "status": "VERIFIED",
+     "value": "ACTIVE",
+     "evidence_ids": [
+      "ev_jma-tsunami-94f4e59c95bd6654--2-1792023001"
+     ],
+     "updated_at": "2026-10-15T00:10:01.374440Z"
     }
    ],
-   "created_at": "2026-10-14T17:35:23.362117Z",
-   "updated_at": "2026-10-14T17:35:23.381109Z"
+   "created_at": "2026-10-15T00:10:01.287656Z",
+   "updated_at": "2026-10-15T00:10:01.374440Z"
   },
   "events": [
    {
     "id": "jma-historical-tohoku-2011-1",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
     "event_type": "EARTHQUAKE",
-    "occurred_at": "2026-10-14T17:35:23.369133Z",
-    "received_at": "2026-10-14T17:35:23.369133Z",
+    "occurred_at": "2026-10-15T00:10:01.297230Z",
+    "received_at": "2026-10-15T00:10:01.297230Z",
     "affected_areas": [
      "宮城県 (MOCK)"
     ],
@@ -397,11 +407,11 @@
     "is_synthetic": true
    },
    {
-    "id": "jma-tsunami-94f4e59c95bd6654--1-1791999323",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "id": "jma-tsunami-94f4e59c95bd6654--1-1792023001",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
     "event_type": "TSUNAMI",
-    "occurred_at": "2026-10-14T17:35:23.373124Z",
-    "received_at": "2026-10-14T17:35:23.373124Z",
+    "occurred_at": "2026-10-15T00:10:01.320462Z",
+    "received_at": "2026-10-15T00:10:01.320462Z",
     "affected_areas": [
      "岩手県",
      "宮城県",
@@ -420,11 +430,36 @@
     "is_synthetic": true
    },
    {
+    "id": "jma-tsunami-94f4e59c95bd6654--2-1792023001",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "event_type": "TSUNAMI",
+    "occurred_at": "2026-10-15T00:10:01.320462Z",
+    "received_at": "2026-10-15T00:10:01.346766Z",
+    "affected_areas": [
+     "岩手県",
+     "宮城県",
+     "福島県",
+     "茨城県"
+    ],
+    "affected_area_ids": [
+     "JP-03",
+     "JP-04",
+     "JP-07",
+     "JP-08"
+    ],
+    "source_name": "SIMULATED JMA tsunami provider (NOT official)",
+    "source_class": "OFFICIAL",
+    "severity_raw": "HISTORICAL EXERCISE tsunami warning classes: MAJOR_WARNING",
+    "status": "ACTIVE",
+    "raw_reference": "mock://72h/historical/tohoku-2011/3/tsunami",
+    "is_synthetic": true
+   },
+   {
     "id": "jma-historical-tohoku-2011-4",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
     "event_type": "EARTHQUAKE",
-    "occurred_at": "2026-10-14T17:35:23.380445Z",
-    "received_at": "2026-10-14T17:35:23.380445Z",
+    "occurred_at": "2026-10-15T00:10:01.372423Z",
+    "received_at": "2026-10-15T00:10:01.373422Z",
     "affected_areas": [
      "宮城県 (MOCK)"
     ],
@@ -442,15 +477,15 @@
   "evidence": [
    {
     "id": "ev_jma-historical-tohoku-2011-1",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
     "source_key": "jma-live-eqvol",
     "source_name": "SIMULATED JMA provider (NOT official)",
     "source_class": "OFFICIAL",
     "trust_status": "VERIFIED_OFFICIAL",
     "freshness_status": "CURRENT",
-    "published_at": "2026-10-14T17:35:23.369133Z",
-    "received_at": "2026-10-14T17:35:23.369133Z",
-    "expires_at": "2026-10-14T17:50:23.369133Z",
+    "published_at": "2026-10-15T00:10:01.297230Z",
+    "received_at": "2026-10-15T00:10:01.297230Z",
+    "expires_at": "2026-10-15T00:25:01.297230Z",
     "relevant_areas": [
      "宮城県 (MOCK)"
     ],
@@ -483,16 +518,16 @@
     "eligible_for_high_risk": false
    },
    {
-    "id": "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "id": "ev_jma-tsunami-94f4e59c95bd6654--1-1792023001",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
     "source_key": "jma-live-tsunami",
     "source_name": "SIMULATED JMA tsunami provider (NOT official)",
     "source_class": "OFFICIAL",
     "trust_status": "VERIFIED_OFFICIAL",
     "freshness_status": "CURRENT",
-    "published_at": "2026-10-14T17:35:23.373124Z",
-    "received_at": "2026-10-14T17:35:23.373124Z",
-    "expires_at": "2026-10-14T17:50:23.373124Z",
+    "published_at": "2026-10-15T00:10:01.320462Z",
+    "received_at": "2026-10-15T00:10:01.320462Z",
+    "expires_at": "2026-10-15T00:25:01.320462Z",
     "relevant_areas": [
      "岩手県",
      "宮城県",
@@ -555,16 +590,103 @@
     "eligible_for_high_risk": false
    },
    {
+    "id": "ev_jma-tsunami-94f4e59c95bd6654--2-1792023001",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "source_key": "jma-live-tsunami",
+    "source_name": "SIMULATED JMA tsunami provider (NOT official)",
+    "source_class": "OFFICIAL",
+    "trust_status": "VERIFIED_OFFICIAL",
+    "freshness_status": "CURRENT",
+    "published_at": "2026-10-15T00:10:01.345235Z",
+    "received_at": "2026-10-15T00:10:01.346766Z",
+    "expires_at": "2026-10-15T00:25:01.345235Z",
+    "relevant_areas": [
+     "岩手県",
+     "宮城県",
+     "福島県",
+     "茨城県"
+    ],
+    "affected_area_ids": [
+     "JP-03",
+     "JP-04",
+     "JP-07",
+     "JP-08"
+    ],
+    "disaster_assessments": [
+     {
+      "area_id": "JP-03",
+      "event_type": "TSUNAMI",
+      "level": null,
+      "status": "ACTIVE",
+      "tsunami_warning_class": "MAJOR_WARNING",
+      "arrival_at": null,
+      "withdrawn": false
+     },
+     {
+      "area_id": "JP-04",
+      "event_type": "TSUNAMI",
+      "level": null,
+      "status": "ACTIVE",
+      "tsunami_warning_class": "MAJOR_WARNING",
+      "arrival_at": null,
+      "withdrawn": false
+     },
+     {
+      "area_id": "JP-07",
+      "event_type": "TSUNAMI",
+      "level": null,
+      "status": "ACTIVE",
+      "tsunami_warning_class": "MAJOR_WARNING",
+      "arrival_at": null,
+      "withdrawn": false
+     },
+     {
+      "area_id": "JP-08",
+      "event_type": "TSUNAMI",
+      "level": null,
+      "status": "ACTIVE",
+      "tsunami_warning_class": "MAJOR_WARNING",
+      "arrival_at": null,
+      "withdrawn": false
+     }
+    ],
+    "claim_type": "DISASTER_STATUS",
+    "claims": [
+     {
+      "key": "disaster.TSUNAMI.JP-03.status",
+      "value": "ACTIVE"
+     },
+     {
+      "key": "disaster.TSUNAMI.JP-04.status",
+      "value": "ACTIVE"
+     },
+     {
+      "key": "disaster.TSUNAMI.JP-07.status",
+      "value": "ACTIVE"
+     },
+     {
+      "key": "disaster.TSUNAMI.JP-08.status",
+      "value": "ACTIVE"
+     }
+    ],
+    "summary": "SYNTHETIC HISTORICAL EXERCISE: tohoku-2011 tsunami warning replayed on an artificial runtime clock; not live JMA. Prefecture-level area only; it does not authorize movement or identify safe places.",
+    "conflict_group": null,
+    "conflict": false,
+    "raw_reference": "mock://72h/historical/tohoku-2011/3/tsunami",
+    "is_synthetic": true,
+    "eligible_for_high_risk": false
+   },
+   {
     "id": "ev_jma-historical-tohoku-2011-4",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
     "source_key": "jma-live-eqvol",
     "source_name": "SIMULATED JMA provider (NOT official)",
     "source_class": "OFFICIAL",
     "trust_status": "VERIFIED_OFFICIAL",
     "freshness_status": "CURRENT",
-    "published_at": "2026-10-14T17:35:23.380445Z",
-    "received_at": "2026-10-14T17:35:23.380445Z",
-    "expires_at": "2026-10-14T17:50:23.380445Z",
+    "published_at": "2026-10-15T00:10:01.372423Z",
+    "received_at": "2026-10-15T00:10:01.373422Z",
+    "expires_at": "2026-10-15T00:25:01.372423Z",
     "relevant_areas": [
      "宮城県 (MOCK)"
     ],
@@ -603,17 +725,27 @@
     "freshness_status": "CURRENT",
     "age_seconds": 0,
     "ttl_seconds": 900,
-    "expires_at": "2026-10-14T17:50:23.369133Z",
+    "expires_at": "2026-10-15T00:25:01.297230Z",
     "conflict": false,
     "eligible_for_claims": true,
     "eligible_for_high_risk": false
    },
    {
-    "evidence_id": "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323",
+    "evidence_id": "ev_jma-tsunami-94f4e59c95bd6654--1-1792023001",
     "freshness_status": "CURRENT",
     "age_seconds": 0,
     "ttl_seconds": 900,
-    "expires_at": "2026-10-14T17:50:23.373124Z",
+    "expires_at": "2026-10-15T00:25:01.320462Z",
+    "conflict": false,
+    "eligible_for_claims": true,
+    "eligible_for_high_risk": false
+   },
+   {
+    "evidence_id": "ev_jma-tsunami-94f4e59c95bd6654--2-1792023001",
+    "freshness_status": "CURRENT",
+    "age_seconds": 0,
+    "ttl_seconds": 900,
+    "expires_at": "2026-10-15T00:25:01.345235Z",
     "conflict": false,
     "eligible_for_claims": true,
     "eligible_for_high_risk": false
@@ -623,7 +755,7 @@
     "freshness_status": "CURRENT",
     "age_seconds": 0,
     "ttl_seconds": 900,
-    "expires_at": "2026-10-14T17:50:23.380445Z",
+    "expires_at": "2026-10-15T00:25:01.372423Z",
     "conflict": false,
     "eligible_for_claims": true,
     "eligible_for_high_risk": false
@@ -632,11 +764,11 @@
   "plans": [
    {
     "id": "plan_v1",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
     "version": 1,
     "status": "ACTIVE",
-    "created_at": "2026-10-14T17:35:23.369133Z",
-    "expires_at": "2026-10-14T17:50:23.369133Z",
+    "created_at": "2026-10-15T00:10:01.297230Z",
+    "expires_at": "2026-10-15T00:25:01.297230Z",
     "invalidate_on_new_relevant_evidence": true,
     "based_on_evidence_ids": [
      "ev_jma-historical-tohoku-2011-1"
@@ -652,14 +784,14 @@
    },
    {
     "id": "plan_v2",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
     "version": 2,
     "status": "ACTIVE",
-    "created_at": "2026-10-14T17:35:23.373124Z",
-    "expires_at": "2026-10-14T17:50:23.373124Z",
+    "created_at": "2026-10-15T00:10:01.320462Z",
+    "expires_at": "2026-10-15T00:25:01.320462Z",
     "invalidate_on_new_relevant_evidence": true,
     "based_on_evidence_ids": [
-     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1792023001"
     ],
     "previous_plan_id": "plan_v1",
     "invalidation_reason": null,
@@ -667,6 +799,25 @@
      "act_plan_v2_now",
      "act_plan_v2_next",
      "act_plan_v2_avoid"
+    ],
+    "language": "zh-TW"
+   },
+   {
+    "id": "plan_v3",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "version": 3,
+    "status": "ACTIVE",
+    "created_at": "2026-10-15T00:10:01.346766Z",
+    "expires_at": "2026-10-15T00:25:01.320462Z",
+    "invalidate_on_new_relevant_evidence": true,
+    "based_on_evidence_ids": [
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1792023001",
+     "ev_jma-tsunami-94f4e59c95bd6654--2-1792023001"
+    ],
+    "previous_plan_id": "plan_v2",
+    "invalidation_reason": null,
+    "changed_action_ids": [
+     "act_plan_v3_now"
     ],
     "language": "zh-TW"
    }
@@ -771,7 +922,7 @@
     "risk_level": "HIGH",
     "confidence_class": "UNKNOWN",
     "evidence_ids": [
-     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1792023001"
     ],
     "dependency_keys": [
      "disaster.TSUNAMI.JP-04.status"
@@ -798,7 +949,7 @@
     "risk_level": "LOW",
     "confidence_class": "LOW",
     "evidence_ids": [
-     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1792023001"
     ],
     "dependency_keys": [
      "disaster.TSUNAMI.JP-04.status"
@@ -825,7 +976,88 @@
     "risk_level": "LOW",
     "confidence_class": "LOW",
     "evidence_ids": [
-     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1792023001"
+    ],
+    "dependency_keys": [
+     "disaster.TSUNAMI.JP-04.status"
+    ],
+    "dependency_expectations": [
+     {
+      "key": "disaster.TSUNAMI.JP-04.status",
+      "expected_value": "ACTIVE"
+     }
+    ],
+    "status": "ACTIVE",
+    "safety_decision": "ALLOW",
+    "dependency_values": {
+     "disaster.TSUNAMI.JP-04.status": "ACTIVE"
+    }
+   },
+   {
+    "id": "act_plan_v3_now",
+    "plan_id": "plan_v3",
+    "category": "NOW",
+    "intent_id": "tsunami_evacuate_now",
+    "text": "This high-risk action is blocked because live verified support is unavailable.",
+    "reason": "Synthetic replay, stale, conflicting, unverified, or missing evidence cannot authorize it.",
+    "risk_level": "HIGH",
+    "confidence_class": "UNKNOWN",
+    "evidence_ids": [
+     "ev_jma-tsunami-94f4e59c95bd6654--2-1792023001"
+    ],
+    "dependency_keys": [
+     "disaster.TSUNAMI.JP-04.status"
+    ],
+    "dependency_expectations": [
+     {
+      "key": "disaster.TSUNAMI.JP-04.status",
+      "expected_value": "ACTIVE"
+     }
+    ],
+    "status": "BLOCKED",
+    "safety_decision": "BLOCK",
+    "dependency_values": {
+     "disaster.TSUNAMI.JP-04.status": "ACTIVE"
+    }
+   },
+   {
+    "id": "act_v3_next",
+    "plan_id": "plan_v3",
+    "category": "NEXT",
+    "intent_id": "stay_high_until_official_clear",
+    "text": "到達高處後留在原地，直到官方解除海嘯警報，並持續確認官方更新。",
+    "reason": "海嘯可能多次來襲；只有官方發布才代表警報解除。",
+    "risk_level": "LOW",
+    "confidence_class": "LOW",
+    "evidence_ids": [
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1792023001"
+    ],
+    "dependency_keys": [
+     "disaster.TSUNAMI.JP-04.status"
+    ],
+    "dependency_expectations": [
+     {
+      "key": "disaster.TSUNAMI.JP-04.status",
+      "expected_value": "ACTIVE"
+     }
+    ],
+    "status": "ACTIVE",
+    "safety_decision": "ALLOW",
+    "dependency_values": {
+     "disaster.TSUNAMI.JP-04.status": "ACTIVE"
+    }
+   },
+   {
+    "id": "act_v3_avoid",
+    "plan_id": "plan_v3",
+    "category": "AVOID",
+    "intent_id": "avoid_coast_and_rivers",
+    "text": "遠離海岸、河川及低窪地方，不要回去查看情況。",
+    "reason": "海嘯警報生效期間，海岸及河岸可能持續危險。",
+    "risk_level": "LOW",
+    "confidence_class": "LOW",
+    "evidence_ids": [
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1792023001"
     ],
     "dependency_keys": [
      "disaster.TSUNAMI.JP-04.status"
@@ -846,8 +1078,8 @@
   "trace": [
    {
     "id": "trace_live_event_001",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
-    "timestamp": "2026-10-14T17:35:23.369133Z",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.297230Z",
     "agent": "SOURCE_AGENT",
     "event_type": "MOCK_LIVE_EVENT_RECEIVED",
     "input_refs": [
@@ -861,8 +1093,8 @@
    },
    {
     "id": "trace_jma-historical-tohoku-2011-1",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
-    "timestamp": "2026-10-14T17:35:23.369133Z",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.297230Z",
     "agent": "REPLAY_ENGINE",
     "event_type": "MOCK_LIVE_EVIDENCE_ADDED",
     "input_refs": [
@@ -877,12 +1109,12 @@
    },
    {
     "id": "trace_003",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
-    "timestamp": "2026-10-14T17:35:23.369133Z",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.297230Z",
     "agent": "SAFETY_CORE",
     "event_type": "PLAN_GENERATED",
     "input_refs": [
-     "live-refresh-1791999323"
+     "live-refresh-1792023001"
     ],
     "output_refs": [
      "plan_v1",
@@ -893,43 +1125,43 @@
    },
    {
     "id": "trace_live_event_004",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
-    "timestamp": "2026-10-14T17:35:23.373124Z",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.320462Z",
     "agent": "SOURCE_AGENT",
     "event_type": "MOCK_LIVE_EVENT_RECEIVED",
     "input_refs": [
-     "jma-tsunami-94f4e59c95bd6654--1-1791999323"
+     "jma-tsunami-94f4e59c95bd6654--1-1792023001"
     ],
     "output_refs": [
-     "jma-tsunami-94f4e59c95bd6654--1-1791999323"
+     "jma-tsunami-94f4e59c95bd6654--1-1792023001"
     ],
     "status": "SUCCESS",
     "public_summary": "MOCK LIVE: synthetic earthquake input exercised the Live reducer; not a JMA bulletin."
    },
    {
-    "id": "trace_jma-tsunami-94f4e59c95bd6654--1-1791999323",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
-    "timestamp": "2026-10-14T17:35:23.373124Z",
+    "id": "trace_jma-tsunami-94f4e59c95bd6654--1-1792023001",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.320462Z",
     "agent": "REPLAY_ENGINE",
     "event_type": "MOCK_LIVE_EVIDENCE_ADDED",
     "input_refs": [
-     "jma-tsunami-94f4e59c95bd6654--1-1791999323"
+     "jma-tsunami-94f4e59c95bd6654--1-1792023001"
     ],
     "output_refs": [
-     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323",
-     "jma-tsunami-94f4e59c95bd6654--1-1791999323"
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1792023001",
+     "jma-tsunami-94f4e59c95bd6654--1-1792023001"
     ],
     "status": "SUCCESS",
     "public_summary": "Synthetic replay evidence was normalized and stored with server-assigned source trust."
    },
    {
     "id": "trace_006",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
-    "timestamp": "2026-10-14T17:35:23.373124Z",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.320462Z",
     "agent": "SAFETY_CORE",
     "event_type": "PLAN_EVALUATED",
     "input_refs": [
-     "live-refresh-1791999323"
+     "live-refresh-1792023001"
     ],
     "output_refs": [
      "plan_v1",
@@ -942,12 +1174,12 @@
    },
    {
     "id": "trace_007",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
-    "timestamp": "2026-10-14T17:35:23.373124Z",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.320462Z",
     "agent": "SAFETY_CORE",
     "event_type": "PLAN_INVALIDATED",
     "input_refs": [
-     "live-refresh-1791999323"
+     "live-refresh-1792023001"
     ],
     "output_refs": [
      "act_plan_v1_avoid",
@@ -959,40 +1191,136 @@
    },
    {
     "id": "trace_008",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
-    "timestamp": "2026-10-14T17:35:23.373124Z",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.320462Z",
     "agent": "SAFETY_CORE",
     "event_type": "REPLAN_TRIGGERED",
     "input_refs": [
-     "live-refresh-1791999323"
+     "live-refresh-1792023001"
     ],
     "output_refs": [
      "plan_v1",
-     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1792023001"
     ],
     "status": "SUCCESS",
     "public_summary": "A dependency changed; a new plan version preserves unaffected guidance."
    },
    {
     "id": "trace_009",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
-    "timestamp": "2026-10-14T17:35:23.373124Z",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.320462Z",
     "agent": "SAFETY_CORE",
     "event_type": "PLAN_GENERATED",
     "input_refs": [
-     "live-refresh-1791999323"
+     "live-refresh-1792023001"
     ],
     "output_refs": [
      "plan_v2",
-     "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1792023001"
     ],
     "status": "SUCCESS",
     "public_summary": "A new conservative plan version was appended."
    },
    {
     "id": "trace_live_event_010",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
-    "timestamp": "2026-10-14T17:35:23.380445Z",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.346766Z",
+    "agent": "SOURCE_AGENT",
+    "event_type": "MOCK_LIVE_EVENT_RECEIVED",
+    "input_refs": [
+     "jma-tsunami-94f4e59c95bd6654--2-1792023001"
+    ],
+    "output_refs": [
+     "jma-tsunami-94f4e59c95bd6654--2-1792023001"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "MOCK LIVE: synthetic earthquake input exercised the Live reducer; not a JMA bulletin."
+   },
+   {
+    "id": "trace_jma-tsunami-94f4e59c95bd6654--2-1792023001",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.346766Z",
+    "agent": "REPLAY_ENGINE",
+    "event_type": "MOCK_LIVE_EVIDENCE_ADDED",
+    "input_refs": [
+     "jma-tsunami-94f4e59c95bd6654--2-1792023001"
+    ],
+    "output_refs": [
+     "ev_jma-tsunami-94f4e59c95bd6654--2-1792023001",
+     "jma-tsunami-94f4e59c95bd6654--2-1792023001"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "Synthetic replay evidence was normalized and stored with server-assigned source trust."
+   },
+   {
+    "id": "trace_012",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.346766Z",
+    "agent": "SAFETY_CORE",
+    "event_type": "PLAN_EVALUATED",
+    "input_refs": [
+     "live-refresh-1792023001"
+    ],
+    "output_refs": [
+     "plan_v2",
+     "act_plan_v2_now"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "One or more plan actions lost a dependency or current evidence. the distress level changed; the NOW action must be re-evaluated."
+   },
+   {
+    "id": "trace_013",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.346766Z",
+    "agent": "SAFETY_CORE",
+    "event_type": "PLAN_INVALIDATED",
+    "input_refs": [
+     "live-refresh-1792023001"
+    ],
+    "output_refs": [
+     "act_plan_v2_now"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "One or more plan actions lost a dependency or current evidence. the distress level changed; the NOW action must be re-evaluated."
+   },
+   {
+    "id": "trace_014",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.346766Z",
+    "agent": "SAFETY_CORE",
+    "event_type": "REPLAN_TRIGGERED",
+    "input_refs": [
+     "live-refresh-1792023001"
+    ],
+    "output_refs": [
+     "plan_v2",
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1792023001",
+     "ev_jma-tsunami-94f4e59c95bd6654--2-1792023001"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "A dependency changed; a new plan version preserves unaffected guidance."
+   },
+   {
+    "id": "trace_015",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.346766Z",
+    "agent": "SAFETY_CORE",
+    "event_type": "PLAN_GENERATED",
+    "input_refs": [
+     "live-refresh-1792023001"
+    ],
+    "output_refs": [
+     "plan_v3",
+     "ev_jma-tsunami-94f4e59c95bd6654--1-1792023001",
+     "ev_jma-tsunami-94f4e59c95bd6654--2-1792023001"
+    ],
+    "status": "SUCCESS",
+    "public_summary": "A new conservative plan version was appended."
+   },
+   {
+    "id": "trace_live_event_016",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.373422Z",
     "agent": "SOURCE_AGENT",
     "event_type": "MOCK_LIVE_EVENT_RECEIVED",
     "input_refs": [
@@ -1006,8 +1334,8 @@
    },
    {
     "id": "trace_jma-historical-tohoku-2011-4",
-    "situation_id": "sit_0624111f4ac8441a93b7c4d92aee6290",
-    "timestamp": "2026-10-14T17:35:23.380445Z",
+    "situation_id": "sit_37a0021bc8cf46c5849fdc420dd25933",
+    "timestamp": "2026-10-15T00:10:01.373422Z",
     "agent": "REPLAY_ENGINE",
     "event_type": "MOCK_LIVE_EVIDENCE_ADDED",
     "input_refs": [
@@ -1025,12 +1353,21 @@
    {
     "plan_id": "plan_v1",
     "status": "INVALIDATED",
-    "evaluated_at": "2026-10-14T17:35:23.373124Z",
+    "evaluated_at": "2026-10-15T00:10:01.320462Z",
     "reason": "Every plan action lost a dependency or current evidence. Changed dependencies: disaster.TSUNAMI.JP-04.status.",
     "invalid_action_ids": [
      "act_plan_v1_avoid",
      "act_plan_v1_next",
      "act_plan_v1_now"
+    ]
+   },
+   {
+    "plan_id": "plan_v2",
+    "status": "PARTIAL_INVALIDATION",
+    "evaluated_at": "2026-10-15T00:10:01.346766Z",
+    "reason": "One or more plan actions lost a dependency or current evidence. the distress level changed; the NOW action must be re-evaluated.",
+    "invalid_action_ids": [
+     "act_plan_v2_now"
     ]
    }
   ],
@@ -1043,7 +1380,7 @@
    "route": null,
    "plan_id": null,
    "action_id": null,
-   "evaluated_at": "2026-10-14T17:35:23.381109Z",
+   "evaluated_at": "2026-10-15T00:10:01.374440Z",
    "gate_reasons": [
     "NO_SUPPORTED_LIVE_MOVEMENT_DIRECTIVE",
     "DESTINATION_OR_ROUTE_EVIDENCE_IS_NOT_CURRENT_AND_ELIGIBLE",
@@ -1058,8 +1395,8 @@
     "source_name": "SIMULATED JMA provider (NOT official)",
     "source_url": "mock://72h/jma",
     "status": "FRESH",
-    "retrieved_at": "2026-10-14T17:35:23.380445Z",
-    "last_published_at": "2026-10-14T17:35:23.380445Z",
+    "retrieved_at": "2026-10-15T00:10:01.372423Z",
+    "last_published_at": "2026-10-15T00:10:01.372423Z",
     "next_retry_at": null,
     "record_count": 1,
     "detail": "SIMULATION ONLY. MOCK LIVE historical tohoku-2011; archived 2011-03-11T15:15:00+09:00; not live JMA.",
@@ -1070,8 +1407,8 @@
     "source_name": "SIMULATED JMA tsunami provider (NOT official)",
     "source_url": "mock://72h/jma-tsunami",
     "status": "FRESH",
-    "retrieved_at": "2026-10-14T17:35:23.380445Z",
-    "last_published_at": "2026-10-14T17:35:23.373124Z",
+    "retrieved_at": "2026-10-15T00:10:01.372423Z",
+    "last_published_at": "2026-10-15T00:10:01.345235Z",
     "next_retry_at": null,
     "record_count": 1,
     "detail": "SIMULATION ONLY. HISTORICAL EXERCISE tsunami bulletin for tohoku-2011 (archived 2011-03-11T15:14:00+09:00); synthetic, replayed on the runtime clock; not live JMA.",
@@ -1082,14 +1419,14 @@
    "level": "OFFICIAL_TSUNAMI",
    "reports": [],
    "trigger_evidence_ids": [
-    "ev_jma-tsunami-94f4e59c95bd6654--1-1791999323"
+    "ev_jma-tsunami-94f4e59c95bd6654--2-1792023001"
    ],
-   "deadline_at": "2026-10-14T17:35:23.381109Z",
+   "deadline_at": "2026-10-15T00:10:01.374440Z",
    "ai_escalated": false,
    "synthetic": true,
    "warning_class": "MAJOR_WARNING",
-   "last_official_at": "2026-10-14T17:35:23.373124Z",
-   "trigger_expires_at": "2026-10-14T17:50:23.373124Z",
+   "last_official_at": "2026-10-15T00:10:01.345235Z",
+   "trigger_expires_at": "2026-10-15T00:25:01.345235Z",
    "stale_reason": null
   }
  },
@@ -1165,14 +1502,14 @@
    "historic_observation": true,
    "fed_to_safety_core": true
   },
-  "advisory_is_not_safety_core_input": true
+  "advisory_is_not_safety_core_input": false
  },
  "movement_assessment": {
   "authority": "SIMULATION_REFERENCE_ONLY",
-  "version": "c13cb78c297328db90e21b1ffa154307ab1fab8a24f90664522fedd045ca54e9",
-  "session_id": "0624111f-4ac8-441a-93b7-c4d92aee6290",
+  "version": "824ed6f64a05248f9114cb60ca0a1b194e67d427000c93c2449e8e2b157413d2",
+  "session_id": "37a0021b-c8cf-46c5-849f-dc420dd25933",
   "step": 4,
-  "plan_id": "plan_v2",
+  "plan_id": "plan_v3",
   "decision": "UNKNOWN",
   "allowed_decisions": [
    "UNKNOWN"
@@ -1184,9 +1521,9 @@
   ],
   "area_label": "石巻市",
   "location_source": "USER_SELECTED",
-  "location_observed_at": "2026-10-14T17:35:23.358987Z",
-  "created_at": "2026-10-14T17:35:23.381109Z",
-  "expires_at": "2026-10-14T17:40:23.381109Z",
+  "location_observed_at": "2026-10-15T00:10:01.283913Z",
+  "created_at": "2026-10-15T00:10:01.375433Z",
+  "expires_at": "2026-10-15T00:15:01.375433Z",
   "facts": [
    {
     "id": "LOCATION",
@@ -1265,8 +1602,8 @@
  "movement_assessment_history": [
   {
    "authority": "SIMULATION_REFERENCE_ONLY",
-   "version": "e1449767f9c12de7287a0fd51519fa556e7e6a64e66f9e9f5bdd25db1bb5d8d1",
-   "session_id": "0624111f-4ac8-441a-93b7-c4d92aee6290",
+   "version": "b1842b9bc49374e180e99922378a7fc61a383b8374837a44e8519e9a3a08ea31",
+   "session_id": "37a0021b-c8cf-46c5-849f-dc420dd25933",
    "step": 1,
    "plan_id": "plan_v1",
    "decision": "UNKNOWN",
@@ -1280,9 +1617,9 @@
    ],
    "area_label": "石巻市",
    "location_source": "USER_SELECTED",
-   "location_observed_at": "2026-10-14T17:35:23.358987Z",
-   "created_at": "2026-10-14T17:35:23.369133Z",
-   "expires_at": "2026-10-14T17:40:23.369133Z",
+   "location_observed_at": "2026-10-15T00:10:01.283913Z",
+   "created_at": "2026-10-15T00:10:01.298230Z",
+   "expires_at": "2026-10-15T00:15:01.298230Z",
    "facts": [
     {
      "id": "LOCATION",
@@ -1360,8 +1697,8 @@
   },
   {
    "authority": "SIMULATION_REFERENCE_ONLY",
-   "version": "c3cbbdc83213953195b071adbc8c5f49761042fda84a5e125213c0d801ac5ce4",
-   "session_id": "0624111f-4ac8-441a-93b7-c4d92aee6290",
+   "version": "d086a1ce9eff73d05b320228b2a92ec2ebcbfeb46f817aa0142208fef2ae02c6",
+   "session_id": "37a0021b-c8cf-46c5-849f-dc420dd25933",
    "step": 2,
    "plan_id": "plan_v2",
    "decision": "UNKNOWN",
@@ -1375,9 +1712,9 @@
    ],
    "area_label": "石巻市",
    "location_source": "USER_SELECTED",
-   "location_observed_at": "2026-10-14T17:35:23.358987Z",
-   "created_at": "2026-10-14T17:35:23.373124Z",
-   "expires_at": "2026-10-14T17:40:23.373124Z",
+   "location_observed_at": "2026-10-15T00:10:01.283913Z",
+   "created_at": "2026-10-15T00:10:01.322590Z",
+   "expires_at": "2026-10-15T00:15:01.322590Z",
    "facts": [
     {
      "id": "LOCATION",
@@ -1455,10 +1792,10 @@
   },
   {
    "authority": "SIMULATION_REFERENCE_ONLY",
-   "version": "01a5696d9a425562c156be08648fd17a6242cd9c6546be5fcc0508cf2688359d",
-   "session_id": "0624111f-4ac8-441a-93b7-c4d92aee6290",
+   "version": "547864f4a783829f17e277d940406cbde6464207119cf40a6942eae064868fe3",
+   "session_id": "37a0021b-c8cf-46c5-849f-dc420dd25933",
    "step": 3,
-   "plan_id": "plan_v2",
+   "plan_id": "plan_v3",
    "decision": "UNKNOWN",
    "allowed_decisions": [
     "UNKNOWN"
@@ -1470,9 +1807,9 @@
    ],
    "area_label": "石巻市",
    "location_source": "USER_SELECTED",
-   "location_observed_at": "2026-10-14T17:35:23.358987Z",
-   "created_at": "2026-10-14T17:35:23.378619Z",
-   "expires_at": "2026-10-14T17:40:23.378619Z",
+   "location_observed_at": "2026-10-15T00:10:01.283913Z",
+   "created_at": "2026-10-15T00:10:01.348325Z",
+   "expires_at": "2026-10-15T00:15:01.348325Z",
    "facts": [
     {
      "id": "LOCATION",
@@ -1550,10 +1887,10 @@
   },
   {
    "authority": "SIMULATION_REFERENCE_ONLY",
-   "version": "c13cb78c297328db90e21b1ffa154307ab1fab8a24f90664522fedd045ca54e9",
-   "session_id": "0624111f-4ac8-441a-93b7-c4d92aee6290",
+   "version": "824ed6f64a05248f9114cb60ca0a1b194e67d427000c93c2449e8e2b157413d2",
+   "session_id": "37a0021b-c8cf-46c5-849f-dc420dd25933",
    "step": 4,
-   "plan_id": "plan_v2",
+   "plan_id": "plan_v3",
    "decision": "UNKNOWN",
    "allowed_decisions": [
     "UNKNOWN"
@@ -1565,9 +1902,9 @@
    ],
    "area_label": "石巻市",
    "location_source": "USER_SELECTED",
-   "location_observed_at": "2026-10-14T17:35:23.358987Z",
-   "created_at": "2026-10-14T17:35:23.381109Z",
-   "expires_at": "2026-10-14T17:40:23.381109Z",
+   "location_observed_at": "2026-10-15T00:10:01.283913Z",
+   "created_at": "2026-10-15T00:10:01.375433Z",
+   "expires_at": "2026-10-15T00:15:01.375433Z",
    "facts": [
     {
      "id": "LOCATION",
