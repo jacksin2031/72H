@@ -50,9 +50,9 @@
 
 ## 外部サービス
 
-- Google Cloud（Cloud Run、Vertex AI / Gemini、Secret Manager、Cloud Build、Artifact Registry）: Google Cloud の利用規約に従って利用しています。
+- Google Cloud（Cloud Run、Vertex AI / Gemini、Secret Manager、Cloud Build、Artifact Registry、紹介動画用の Text-to-Speech）: Google Cloud の利用規約に従って利用しています。
 - 駅すぱあと API（MCP Server）: 提供元の利用規約に従い、API キーは Secret Manager で管理しています。
 
 ## 生成ツール・素材
 
-- 紹介動画のナレーションは音声合成（Microsoft Edge TTS）、BGM は本プロジェクトのためにプログラムで生成したオリジナルです。
+- 紹介動画のナレーションは Google Cloud Text-to-Speech（h-japan プロジェクト）で生成し、BGM は本プロジェクトのためにプログラムで生成したオリジナルです。
