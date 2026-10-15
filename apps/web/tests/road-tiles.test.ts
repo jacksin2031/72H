@@ -36,6 +36,84 @@ async function tile(id:string,retrieved='2026-10-15T00:00:00+00:00'){
   return {...body,content_sha256:await sha(body)};
 }
 
+async function tileSnapshot(id:string,options:{reverseNodes?:boolean;bidirectional?:boolean}={}){
+  const source=await tile(id);
+  const {content_sha256:_contentSha,...body}=source;
+  const nodes=options.reverseNodes?[...source.nodes].reverse():source.nodes;
+  const ways=options.bidirectional
+    ?(source.ways as [number,Record<string,string>][]).map(([osmId,tags])=>[osmId,{highway:tags.highway}] as const)
+    :source.ways;
+  const edges=options.bidirectional?[[0,1,0] as const]:[[0,1,0,1] as const];
+  const snapshot={...body,nodes,ways,edges};
+  return {...snapshot,content_sha256:await sha(snapshot)};
+}
+
+function fakeIndexedDb(options:{commitDelayMs?:number;failPutKey?:string}={}){
+  const values=new Map<string,unknown>();
+  const failedKeys=new Set<string>();
+  const delay=options.commitDelayMs??1;
+  let abortCount=0;
+  let firstPutResolved=false;
+  let resolveFirstPut!:(key:string)=>void;
+  const firstPutStarted=new Promise<string>((resolve)=>{resolveFirstPut=resolve;});
+  const database={
+    objectStoreNames:{contains:()=>true},
+    transaction:()=>{
+      let aborted=false;
+      let timer:ReturnType<typeof setTimeout>|undefined;
+      const transaction:{
+        error:unknown;
+        oncomplete:(()=>void)|null;
+        onerror:(()=>void)|null;
+        onabort:(()=>void)|null;
+        abort:()=>void;
+        objectStore:()=>{
+          get:(key:IDBValidKey)=>unknown;
+          put:(value:unknown,key?:IDBValidKey)=>unknown;
+        };
+      }={
+        error:null,
+        oncomplete:null,
+        onerror:null,
+        onabort:null,
+        abort:()=>{
+          abortCount+=1;aborted=true;
+          if(timer!==undefined)clearTimeout(timer);
+          queueMicrotask(()=>transaction.onabort?.());
+        },
+        objectStore:()=>({
+          get:(key)=>{
+            const request:{result:unknown;onsuccess:(()=>void)|null}={result:undefined,onsuccess:null};
+            queueMicrotask(()=>{request.result=values.get(String(key));request.onsuccess?.();});
+            return request;
+          },
+          put:(value,key='')=>{
+            const id=String(key);
+            if(!firstPutResolved){firstPutResolved=true;resolveFirstPut(id);}
+            timer=setTimeout(()=>{
+              if(aborted)return;
+              if(id===options.failPutKey&&!failedKeys.has(id)){
+                failedKeys.add(id);transaction.error=new Error('transient IndexedDB put failure');transaction.onerror?.();return;
+              }
+              values.set(id,value);transaction.oncomplete?.();
+            },delay);
+            return {};
+          },
+        }),
+      };
+      return transaction as unknown as IDBTransaction;
+    },
+  } as unknown as IDBDatabase;
+  const factory={
+    open:()=>{
+      const request:{result:IDBDatabase;onsuccess:(()=>void)|null}={result:database,onsuccess:null};
+      queueMicrotask(()=>request.onsuccess?.());
+      return request as unknown as IDBOpenDBRequest;
+    },
+  } as unknown as IDBFactory;
+  return {factory,values,firstPutStarted,get abortCount(){return abortCount;}};
+}
+
 const memStore=()=>{
   const m=new Map<string,unknown>();
   const store:TileStore={get:async(key)=>m.get(key)??null,put:async(key,value)=>{m.set(key,value);}};
@@ -73,6 +151,27 @@ describe('loadRoadTilesAround',()=>{
       expect(result.graph.edges.every((edge)=>edge.direction==='FORWARD')).toBe(true);
       expect(result.graph.sources).toHaveLength(9);expect(result.missing).toEqual([]);expect(result.stale).toBe(false);
       expect(result.oldestRetrievedAt).toBe('2026-10-15T00:00:00+00:00');expect(result.persisted).toBe(false);
+    }
+  });
+
+  it('rejects reverse-oriented duplicate one-way snapshots whose allowed arcs oppose',async()=>{
+    const {store}=memStore();
+    const fetchTile=vi.fn(async(id:string)=>Response.json(id===EAST
+      ?await tileSnapshot(id,{reverseNodes:true})
+      :await tile(id)));
+    await expect(loadRoadTilesAround(P,{fetchTile,store,online:true})).resolves.toEqual({status:'UNAVAILABLE',reason:'INVALID_DATA'});
+  });
+
+  it('collapses reverse-oriented bidirectional snapshots into one physical edge',async()=>{
+    const {store}=memStore();
+    const fetchTile=vi.fn(async(id:string)=>Response.json(id===CENTRE||id===EAST
+      ?await tileSnapshot(id,{reverseNodes:id===EAST,bidirectional:true})
+      :await tile(id)));
+    const result=await loadRoadTilesAround(P,{fetchTile,store,online:true});
+    expect(result.status).toBe('READY');
+    if(result.status==='READY'){
+      expect(result.graph.edges).toHaveLength(8);
+      expect(result.graph.edges.filter((edge)=>result.graph.ways[edge.way_index].osm_id===8_000_000_000_001)).toHaveLength(1);
     }
   });
 
@@ -208,5 +307,47 @@ describe('loadRoadTilesAround',()=>{
     });
     await expect(loadRoadTilesAround(P,{signal:abort.signal,fetchTile,store,online:true})).rejects.toThrow();
     expect(m.size).toBe(0);
+  });
+
+  it('aborts a pending default IndexedDB transaction before its tile commits',async()=>{
+    vi.resetModules();
+    const roads=await import('../lib/road-tiles');
+    const idb=fakeIndexedDb({commitDelayMs:50});
+    vi.stubGlobal('indexedDB',idb.factory);
+    try{
+      const abort=new AbortController();
+      const load=roads.loadRoadTilesAround(P,{signal:abort.signal,fetchTile:async(id)=>Response.json(await tile(id)),online:true});
+      await idb.firstPutStarted;
+      abort.abort(new Error('cancelled during IndexedDB put'));
+      await expect(load).rejects.toThrow('cancelled during IndexedDB put');
+      expect(idb.abortCount).toBe(1);
+      expect(idb.values.size).toBe(0);
+    }finally{vi.unstubAllGlobals();}
+  });
+
+  it('uses per-key fallback after a transient IndexedDB put failure and reports mixed persistence',async()=>{
+    vi.resetModules();
+    const roads=await import('../lib/road-tiles');
+    const idb=fakeIndexedDb({failPutKey:EAST});
+    vi.stubGlobal('indexedDB',idb.factory);
+    try{
+      const fetchTile=async(id:string)=>Response.json(await tile(id));
+      const first=await roads.loadRoadTilesAround(P,{fetchTile,now:new Date('2026-10-16T00:00:00Z'),online:true});
+      expect(first.status).toBe('READY');
+      if(first.status==='READY')expect(first.persisted).toBe(false);
+
+      const offline=await roads.loadRoadTilesAround(P,{fetchTile:vi.fn(),now:new Date('2026-10-16T00:00:00Z'),online:false});
+      expect(offline.status).toBe('READY');
+      if(offline.status==='READY'){
+        expect(offline.missing).toEqual([]);
+        expect(offline.persisted).toBe(false);
+        expect(offline.graph.sources.some((source)=>source.pack_id===`osm-tile-${EAST}-v1`)).toBe(true);
+      }
+
+      const recovered=await roads.loadRoadTilesAround(P,{fetchTile:async(id)=>Response.json(await tile(id,'2026-11-16T00:00:00+00:00')),
+        now:new Date('2026-11-17T00:00:00Z'),online:true});
+      expect(recovered.status).toBe('READY');
+      if(recovered.status==='READY')expect(recovered.persisted).toBe(true);
+    }finally{vi.unstubAllGlobals();}
   });
 });

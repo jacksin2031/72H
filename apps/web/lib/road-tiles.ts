@@ -16,7 +16,7 @@ const ROAD_SESSION_ID=globalThis.crypto.randomUUID();
 
 export interface TileStore {
   get(id:string):Promise<unknown|null>;
-  put(id:string,value:unknown):Promise<void>;
+  put(id:string,value:unknown,signal?:AbortSignal):Promise<void>;
 }
 
 export type RoadTileState=
@@ -229,9 +229,11 @@ function defaultFetchTile(id:string,signal?:AbortSignal):Promise<Response>{
 class IndexedDbTileStore implements TileStore{
   private dbPromise:Promise<IDBDatabase|null>|null=null;
   private readonly fallback=new Map<string,unknown>();
-  private persistent=false;
+  private readonly persistentIds=new Set<string>();
 
-  isPersistent():boolean{return this.persistent;}
+  isPersistent(ids:readonly string[]):boolean{
+    return ids.length>0&&ids.every((id)=>this.persistentIds.has(id)&&!this.fallback.has(id));
+  }
 
   private open():Promise<IDBDatabase|null>{
     if(this.dbPromise)return this.dbPromise;
@@ -253,35 +255,59 @@ class IndexedDbTileStore implements TileStore{
 
   async get(id:string):Promise<unknown|null>{
     const db=await this.open();
-    if(!db){this.persistent=false;return this.fallback.get(id)??null;}
+    if(!db){this.persistentIds.delete(id);return this.fallback.get(id)??null;}
     try{
       const value=await new Promise<unknown>((resolve,reject)=>{
         const request=db.transaction('tiles','readonly').objectStore('tiles').get(id);
         request.onsuccess=()=>resolve(request.result);
         request.onerror=()=>reject(request.error);
       });
-      this.persistent=true;
-      return value??null;
+      if(value!==null&&value!==undefined){
+        this.persistentIds.add(id);
+        this.fallback.delete(id);
+        return value;
+      }
+      this.persistentIds.delete(id);
+      return this.fallback.get(id)??null;
     }catch{
-      this.persistent=false;return this.fallback.get(id)??null;
+      this.persistentIds.delete(id);return this.fallback.get(id)??null;
     }
   }
 
-  async put(id:string,value:unknown):Promise<void>{
+  async put(id:string,value:unknown,signal?:AbortSignal):Promise<void>{
+    throwIfAborted(signal);
     const db=await this.open();
-    if(!db){this.persistent=false;this.fallback.set(id,value);return;}
+    throwIfAborted(signal);
+    if(!db){this.persistentIds.delete(id);this.fallback.set(id,value);return;}
     try{
       await new Promise<void>((resolve,reject)=>{
         const transaction=db.transaction('tiles','readwrite');
-        transaction.objectStore('tiles').put(value,id);
-        transaction.oncomplete=()=>resolve();
-        transaction.onerror=()=>reject(transaction.error);
-        transaction.onabort=()=>reject(transaction.error);
+        let settled=false;
+        const cleanup=()=>signal?.removeEventListener('abort',onAbort);
+        const resolveOnce=()=>{
+          if(settled)return;
+          settled=true;cleanup();this.fallback.delete(id);this.persistentIds.add(id);resolve();
+        };
+        const rejectOnce=(error:unknown)=>{
+          if(settled)return;
+          settled=true;cleanup();reject(error);
+        };
+        const onAbort=()=>{try{transaction.abort();}catch{/* The transaction may already have committed. */}};
+        transaction.oncomplete=resolveOnce;
+        transaction.onerror=()=>rejectOnce(transaction.error??new Error('IndexedDB tile write failed'));
+        transaction.onabort=()=>rejectOnce(signal?.aborted
+          ?signal.reason??new DOMException('The operation was aborted','AbortError')
+          :transaction.error??new Error('IndexedDB tile write aborted'));
+        signal?.addEventListener('abort',onAbort,{once:true});
+        if(signal?.aborted){onAbort();return;}
+        try{transaction.objectStore('tiles').put(value,id);}
+        catch(error){onAbort();rejectOnce(error);}
       });
-      this.persistent=true;
     }catch{
-      this.persistent=false;this.fallback.set(id,value);
+      if(signal?.aborted)throwIfAborted(signal);
+      this.persistentIds.delete(id);this.fallback.set(id,value);
     }
+    throwIfAborted(signal);
   }
 }
 
@@ -290,6 +316,14 @@ const defaultStore=new IndexedDbTileStore();
 function sameTags(left:Record<string,string>,right:Record<string,string>):boolean{
   const leftKeys=Object.keys(left).sort(),rightKeys=Object.keys(right).sort();
   return leftKeys.length===rightKeys.length&&leftKeys.every((key,index)=>key===rightKeys[index]&&left[key]===right[key]);
+}
+
+type PhysicalDirection='BIDIRECTIONAL'|'LOW_TO_HIGH'|'HIGH_TO_LOW';
+
+function physicalDirection(direction:'BIDIRECTIONAL'|'FORWARD'|'REVERSE',fromId:number,toId:number):PhysicalDirection{
+  if(direction==='BIDIRECTIONAL')return 'BIDIRECTIONAL';
+  const allowedFrom=direction==='FORWARD'?fromId:toId;
+  return allowedFrom<Math.max(fromId,toId)?'LOW_TO_HIGH':'HIGH_TO_LOW';
 }
 
 function mergeTiles(tiles:readonly RoadTile[]):RoadReferenceGraph{
@@ -315,6 +349,7 @@ function mergeTiles(tiles:readonly RoadTile[]):RoadReferenceGraph{
   const nodeIndex=new Map(nodes.map((node,index)=>[node[0],index]));
   const wayIndex=new Map(ways.map((way,index)=>[way[0],index]));
   const edgeByKey=new Map<string,{from_node_index:number;to_node_index:number;way_index:number;direction:'BIDIRECTIONAL'|'FORWARD'|'REVERSE';distance_m:number}>();
+  const directionByPhysicalEdge=new Map<string,PhysicalDirection>();
   const bounds=tiles.map((tile)=>tile.bounds);
   for(const tile of tiles){
     for(const [from,to,localWay,directionCode] of tile.edges){
@@ -322,10 +357,13 @@ function mergeTiles(tiles:readonly RoadTile[]):RoadReferenceGraph{
       const fromIndex=nodeIndex.get(fromId),toIndex=nodeIndex.get(toId),globalWayIndex=wayIndex.get(wayId);
       if(fromIndex===undefined||toIndex===undefined||globalWayIndex===undefined)throw new Error('Merged road reference is missing');
       const direction=directionCode===1?'FORWARD':directionCode===2?'REVERSE':'BIDIRECTIONAL';
-      const key=`${wayId}:${fromId}:${toId}`;
+      const lowId=Math.min(fromId,toId),highId=Math.max(fromId,toId);
+      const key=`${wayId}:${lowId}:${highId}`;
+      const physicalAllowed=physicalDirection(direction,fromId,toId);
       const existing=edgeByKey.get(key);
-      if(existing){if(existing.direction!==direction)throw new Error('Conflicting duplicate road edge');continue;}
+      if(existing){if(directionByPhysicalEdge.get(key)!==physicalAllowed)throw new Error('Conflicting duplicate road edge direction');continue;}
       edgeByKey.set(key,{from_node_index:fromIndex,to_node_index:toIndex,way_index:globalWayIndex,direction,distance_m:0});
+      directionByPhysicalEdge.set(key,physicalAllowed);
     }
   }
 
@@ -388,8 +426,9 @@ export async function loadRoadTilesAround(point:RoadPoint,opts:LoadOptions={}):P
 
   if(!online){
     if(!cached.has(centre))return unsupported;
-    const used=ids.flatMap((id)=>cached.get(id)?[cached.get(id)!.tile]:[]);
-    try{return readyState(used,[...missing],now,store===defaultStore&&defaultStore.isPersistent());}
+    const usedIds=ids.filter((id)=>cached.has(id));
+    const used=usedIds.map((id)=>cached.get(id)!.tile);
+    try{return readyState(used,[...missing],now,store===defaultStore&&defaultStore.isPersistent(usedIds));}
     catch{return {status:'UNAVAILABLE',reason:'INVALID_DATA'};}
   }
 
@@ -431,17 +470,21 @@ export async function loadRoadTilesAround(point:RoadPoint,opts:LoadOptions={}):P
   }
   if(!selected.has(centre))return {status:'UNAVAILABLE',reason:'TEMPORARILY_UNAVAILABLE'};
 
-  const used=ids.flatMap((id)=>selected.get(id)?[selected.get(id)!.tile]:[]);
+  const usedIds=ids.filter((id)=>selected.has(id));
+  const used=usedIds.map((id)=>selected.get(id)!.tile);
   let result:RoadTileState;
-  try{result=readyState(used,[...missing],now,store===defaultStore&&defaultStore.isPersistent());}
+  try{result=readyState(used,[...missing],now,store===defaultStore&&defaultStore.isPersistent(usedIds));}
   catch{return {status:'UNAVAILABLE',reason:'INVALID_DATA'};}
 
   for(const [id,outcome] of outcomes){
     throwIfAborted(opts.signal);
     if(outcome.kind==='ready'){
-      try{await store.put(id,outcome.value.tile);}catch{/* A storage failure leaves the verified in-memory result usable. */}
+      try{await store.put(id,outcome.value.tile,opts.signal);}
+      catch{throwIfAborted(opts.signal);/* A storage failure leaves the verified in-memory result usable. */}
+      throwIfAborted(opts.signal);
     }
   }
-  if(store===defaultStore&&result.status==='READY')result={...result,persisted:defaultStore.isPersistent()};
+  throwIfAborted(opts.signal);
+  if(store===defaultStore&&result.status==='READY')result={...result,persisted:defaultStore.isPersistent(usedIds)};
   return result;
 }
