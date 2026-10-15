@@ -5,6 +5,9 @@ import {afterEach,beforeEach,expect,it,vi} from 'vitest';
 import type {DistressStatus} from '../lib/contracts';
 import {loadRoadTilesAround,type RoadTileState} from '../lib/road-tiles';
 import {loadEvacuationRoadGraph,ishinomakiReferenceGraph} from '../lib/evacuation-road-graph';
+import {fixFromDevicePosition} from '../lib/distress-guidance';
+import {readFileSync} from 'node:fs';
+import {resolve} from 'node:path';
 
 const panel=vi.hoisted(()=>[] as Record<string,unknown>[]);
 vi.mock('../components/distress-panel',()=>({DistressPanel:(p:Record<string,unknown>)=>{panel.push(p);return null;}}));
@@ -37,12 +40,53 @@ async function render(point:{lat:number;lng:number},protect?:boolean,level:Distr
   return panel.at(-1)!;
 }
 
-it.each([[undefined],[true]] as const)('protectDeviceLocation=%s (default true): real fix kept, graph null, no tile or embedded-pack request',async protect=>{
+it.each([[undefined],[true]] as const)('protectDeviceLocation=%s (default true): real fix kept, embedded Ishinomaki graph used, no tile request',async protect=>{
   const props=await render(ISHINOMAKI,protect);
   expect(props.location).toMatchObject({lat:38.43,lng:141.3,accuracy_m:10});
+  expect(props.graph).toBe(ishinomakiGraph);
+  expect(loadEvacuationRoadGraph).toHaveBeenCalledTimes(1);
+  expect(loadRoadTilesAround).not.toHaveBeenCalled();
+});
+
+it('protected fix outside the Ishinomaki bounds still gets the embedded graph (bounds are checked by reachability) and no tile request',async()=>{
+  const props=await render(KESENNUMA,true);
+  expect(props.graph).toBe(ishinomakiGraph);
+  expect(loadRoadTilesAround).not.toHaveBeenCalled();
+});
+
+it('protected fix outside a tsunami level loads no road data',async()=>{
+  const props=await render(ISHINOMAKI,true,'NONE');
+  expect(props.graph).toBeNull();
+  expect(loadEvacuationRoadGraph).not.toHaveBeenCalled();
+  expect(loadRoadTilesAround).not.toHaveBeenCalled();
+});
+
+it('protected fix with an embedded pack that fails verification gets graph null, still without tiles',async()=>{
+  vi.mocked(ishinomakiReferenceGraph).mockImplementation(()=>{throw new Error('pin mismatch');});
+  const props=await render(ISHINOMAKI,true);
   expect(props.graph).toBeNull();
   expect(loadRoadTilesAround).not.toHaveBeenCalled();
-  expect(loadEvacuationRoadGraph).not.toHaveBeenCalled();
+});
+
+it('Now/live path: a device GPS fix with the live call-site props uses the embedded graph and never requests road tiles',async()=>{
+  host=document.createElement('div');document.body.append(host);root=createRoot(host);
+  const fix=fixFromDevicePosition({latitude:38.43,longitude:141.3,accuracy_m:15,captured_at:Date.now()});
+  // Exactly the props live-dashboard.tsx passes (no protectDeviceLocation, so the protected default applies).
+  await act(async()=>root!.render(<DistressEntry snapshot={{distress:status('OFFICIAL_TSUNAMI'),replay:{id:'r1'}}} language="ja" scope="live" fix={fix} onSnapshot={vi.fn()}
+    refreshLocation={undefined}/>));
+  await act(async()=>{await new Promise(resolve=>setTimeout(resolve,0));});
+  const props=panel.at(-1)!;
+  expect(props.location).toMatchObject({lat:38.43,lng:141.3,accuracy_m:15});
+  expect(props.graph).toBe(ishinomakiGraph);
+  expect(loadRoadTilesAround).not.toHaveBeenCalled();
+});
+
+it('no DistressEntry call site opts out of location protection',()=>{
+  for(const file of ['components/live-dashboard.tsx','components/dashboard.tsx','components/simulation-screens.tsx','app/map/page.tsx']){
+    const src=readFileSync(resolve(__dirname,'..',file),'utf8');
+    expect(src,file).toContain('<DistressEntry');
+    expect(src,file).not.toMatch(/protectDeviceLocation=\{false\}/);
+  }
 });
 
 it('an explicitly unprotected fix during a tsunami level uses the tiles around it',async()=>{

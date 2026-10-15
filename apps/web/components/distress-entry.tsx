@@ -17,13 +17,15 @@ const EMPTY:SosProfile={contacts:[],needsAssistance:false,mobilityLimited:false}
 
 /** Loads device-local assets once (place pack, SOS profile) and freshness-checks the fix.
  * Uses the place pack directly instead of useDesignatedPlaces() so no opening-status polling runs in emergency power modes.
- * protectDeviceLocation (default true): the fix never leaves the device, so reachability uses no road graph (straight-line estimate).
+ * protectDeviceLocation (default true) gates only network road-tile requests, which would carry tile ids off the device: a protected fix
+ * keeps the embedded verified Ishinomaki graph (a local static asset, loaded once during a tsunami level, no location in the request).
  * Only an explicitly unprotected fix, during a tsunami level, loads the road tiles around it; the verified Ishinomaki pack replaces
  * them only inside its exact bounds and only when tiles are temporarily / offline unavailable (never TOO_DENSE, INVALID_DATA, NO_ROADS).
  * The fix itself always stays the panel's location; no map point replaces it. */
 export function DistressEntry({snapshot,language,scope,accessKey,fix,onSnapshot,now,refreshLocation,protectDeviceLocation=true}:{snapshot:DistressSnapshot;language:Language;
  scope:DistressScope;accessKey?:string;fix:DistressFix;onSnapshot:(raw:unknown)=>void;now?:number;refreshLocation?:()=>void;protectDeviceLocation?:boolean}){
  const [places,setPlaces]=useState<DesignatedPlace[]|null>(null),[road,setRoad]=useState<{graph:RoadReferenceGraph|null}|null>(null);
+ const [embedded,setEmbedded]=useState<RoadReferenceGraph|null|undefined>(undefined);
  const [profile,setProfile]=useState<SosProfile>(EMPTY),[wall,setWall]=useState(()=>Date.now());
  const tsunami=snapshot?.distress.level==='OFFICIAL_TSUNAMI',keepFresh=!!snapshot&&keepsLocationFresh(snapshot.distress.level),asked=useRef(false);
  useEffect(()=>{
@@ -34,6 +36,13 @@ export function DistressEntry({snapshot,language,scope,accessKey,fix,onSnapshot,
   const tick=setInterval(()=>setWall(Date.now()),10_000);
   return()=>{abort.abort();clearInterval(tick);};
  },[]);
+ useEffect(()=>{
+  if(!tsunami||!protectDeviceLocation||embedded!==undefined)return;
+  const abort=new AbortController();
+  void loadEvacuationRoadGraph(AbortSignal.any([abort.signal,AbortSignal.timeout(15_000)])).then(g=>{if(!abort.signal.aborted)setEmbedded(ishinomakiReferenceGraph(g));})
+   .catch(()=>{if(!abort.signal.aborted)setEmbedded(null);});
+  return()=>abort.abort();
+ },[tsunami,protectDeviceLocation,embedded]);
  const location=usableDistressOrigin(fix,wall);
  // Reloaded per centre tile, not per fix, so a 90 s refresh inside the same tile requests nothing.
  const tile=tsunami&&!protectDeviceLocation&&location?tileIdFor(location.lat,location.lng):'';
@@ -55,7 +64,7 @@ export function DistressEntry({snapshot,language,scope,accessKey,fix,onSnapshot,
   return()=>abort.abort();
  },[tile]);
  // A previous tile's graph stays usable while the next loads: reachability only routes inside the graph's own bounds.
- const graph=tile?road?road.graph:undefined:null;
+ const graph=!tsunami?null:protectDeviceLocation?embedded:tile?road?road.graph:undefined:null;
  // One fresh fix per opening when permission was already granted; never prompts on its own.
  useEffect(()=>{if(!location&&refreshLocation&&!asked.current){asked.current=true;refreshLocation();}},[location,refreshLocation]);
  // During an official tsunami level (live or stale), keep the origin fresh so "go to X" does not flip to NO_LOCATION
