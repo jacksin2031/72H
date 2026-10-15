@@ -1,5 +1,25 @@
 # 72H — Current Development Phase
 
+## 演練位置與全國道路參考線（2026-10-15 JST）
+
+分支：`codex/drill-location-roads`。狀態：**PARTIAL — 前端整合與真機驗收進行中**。
+使用者已確認 [設計](../docs/superpowers/specs/2026-10-15-drill-location-nationwide-roads-design.md)
+及 [實作計劃](../docs/superpowers/plans/2026-10-15-drill-location-nationwide-roads.md)。
+
+已接續 Claude 留下的 Task 5 修正，完成道路區塊的手機端驗證／快取／合併，
+以及依災害適用旗標篩選的目的地 helper。取消寫入、單向邊衝突、較新 fallback
+被舊 DB 取代及候選輸出的 safety envelope 均有回歸測試與獨立複審。
+演練與 Live 地圖的共用介面仍在整合，未據此宣稱完整產品驗收。
+
+311 前置修正已從 `codex/311-tsunami-guidance` 整合至此分支（`7ef277f`），
+包括 GET／步進競態及失敗 stage 的時間戳清理；完整後端測試 490/490 通過。
+主 checkout 的文件整理及正式部署均保持獨立，今次沒有部署。
+
+精確點位留在裝置，道路 API 只接受固定格網 ID；演練選點不寫入 Live 位置。
+所有道路資料仍為 `ROAD_REFERENCE_ONLY`、`movement_authorized=false`。
+實際外部來源失敗、browser／真機未驗證項目及清理狀態保留於
+[驗收紀錄](../docs/DRILL_ROADS_DEVICE_VALIDATION.md)。
+
 ## P2.8 求助輔助 distress assist (2026-10-14 JST)
 
 分支：`codex/p2-8-distress-assist`。狀態：PARTIAL — 本機實作完成；真機驗收與

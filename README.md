@@ -244,7 +244,10 @@ never grant official area authority. These changes are merged into `main`.
 
 Map worker modules are prepared by npm postinstall/build. Refresh the data pack
 only explicitly with `uv run --project services/agent-api python scripts/build_offline_map.py`;
-the application never queries Overpass at runtime. Attribution and database license
+this installed base-map pack does not query Overpass at runtime. The separately
+implemented [nationwide road-reference tiles](docs/VNEXT_EVACUATION_ROADS_SOURCE.md#全國道路參考區塊)
+use fixed backend Overpass queries on demand; their local acceptance does not
+change the deployed runtime. Attribution and database license
 are in `apps/web/public/maps/LICENSE.md`. The public service now runs the vNext
 image; local evidence remains in `docs/VNEXT_VALIDATION.md`, and deployed
 acceptance is recorded separately in `docs/VNEXT_PRODUCTION_RELEASE.md`.

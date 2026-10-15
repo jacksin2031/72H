@@ -1,0 +1,40 @@
+{
+  "at": "2026-10-15T03:41:47.627507+00:00",
+  "results": [
+    {
+      "place": "Ishinomaki",
+      "tile_id": "r1920c5651",
+      "status": "UNAVAILABLE",
+      "error": "TileUnavailable",
+      "reason": "upstream status 504"
+    },
+    {
+      "place": "Kesennuma",
+      "tile_id": "r1945c5662",
+      "status": "PASS",
+      "counts": [
+        3874,
+        516,
+        4041
+      ],
+      "role": "ROAD_REFERENCE_ONLY",
+      "movement_authorized": false,
+      "hash_matches": true,
+      "retrieved_at": "2026-10-15T03:41:36.481089+00:00"
+    },
+    {
+      "place": "Kumamoto",
+      "tile_id": "r1639c5232",
+      "status": "PASS",
+      "counts": [
+        2799,
+        838,
+        2988
+      ],
+      "role": "ROAD_REFERENCE_ONLY",
+      "movement_authorized": false,
+      "hash_matches": true,
+      "retrieved_at": "2026-10-15T03:41:47.537170+00:00"
+    }
+  ]
+}

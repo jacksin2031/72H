@@ -1,0 +1,16 @@
+{
+  "movement_authorized": false,
+  "httpStatus": 200,
+  "role": "ROAD_REFERENCE_ONLY",
+  "counts": [
+    443,
+    100,
+    476
+  ],
+  "retrieved_at": "2026-10-15T13:27:10.434205+09:00",
+  "tile_id": "r1920c5651",
+  "status": "PASS",
+  "at": "2026-10-15T04:27:08.4944554+00:00",
+  "content_sha256": "e6b0bde0925b5e53f015c667c1dcc41ee6bb6be6bccfee3f094b11305c41f903",
+  "manualRetry": true
+}

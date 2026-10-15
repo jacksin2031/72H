@@ -111,7 +111,11 @@ from configuration. Uncovered regions remain explicitly unsupported. A manifest
 validates bytes/SHA-256, feature count, geographic extent, capture timestamp and
 license. The Service Worker precaches the map, worker modules and application
 shell. Map data never enters trusted disaster evidence. No remote tiles, fonts,
-Overpass calls or maps API secrets are required at runtime.
+Overpass calls or maps API secrets are required for this installed base-map pack.
+The later nationwide road-reference extension separately permits fixed backend
+Overpass queries for coarse tile IDs, with validation, throttling and local
+reference-only caching. See [road data boundaries](VNEXT_EVACUATION_ROADS_SOURCE.md#全國道路參考區塊);
+this does not promote OSM geometry into official evidence or movement permission.
 
 Safety checks, notification ledgers and power preference persist locally with
 schema validation. Explicit storage consent can retain one last browser position

@@ -1,0 +1,18 @@
+{
+  "role": "ROAD_REFERENCE_ONLY",
+  "cacheControl": [
+    "public, max-age=86400"
+  ],
+  "content_sha256": "1ade403d31052ae4684fb49599221912e91701a33aea4fbb84246035bddf75db",
+  "counts": [
+    3874,
+    516,
+    4041
+  ],
+  "movement_authorized": false,
+  "tile": "osm-tile-r1945c5662-v1",
+  "httpStatus": 200,
+  "health": {
+    "status": "ok"
+  }
+}

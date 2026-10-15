@@ -1,0 +1,120 @@
+{
+  "at": "2026-10-15T04:28:35.602574+00:00",
+  "concurrency": 3,
+  "results": [
+    {
+      "tile_id": "r1919c5650",
+      "httpStatus": 503,
+      "status": "UNAVAILABLE",
+      "error": {
+        "detail": "ROAD_DATA_TEMPORARILY_UNAVAILABLE"
+      }
+    },
+    {
+      "tile_id": "r1919c5651",
+      "httpStatus": 200,
+      "status": "PASS",
+      "counts": [
+        0,
+        0,
+        0
+      ],
+      "content_sha256": "06ec139b9de1f4e725ecc4ae872cd87d40faa8c7b44efd709c4b4bbcbddbbc6d",
+      "retrieved_at": "2026-10-15T04:27:56.950092+00:00",
+      "role": "ROAD_REFERENCE_ONLY",
+      "movement_authorized": false
+    },
+    {
+      "tile_id": "r1919c5652",
+      "httpStatus": 200,
+      "status": "PASS",
+      "counts": [
+        0,
+        0,
+        0
+      ],
+      "content_sha256": "89156b18559c15c65fb45c2a27889dece07f908f4adfb865f36015fd1df8d149",
+      "retrieved_at": "2026-10-15T04:28:00.507923+00:00",
+      "role": "ROAD_REFERENCE_ONLY",
+      "movement_authorized": false
+    },
+    {
+      "tile_id": "r1920c5650",
+      "httpStatus": 200,
+      "status": "PASS",
+      "counts": [
+        302,
+        70,
+        305
+      ],
+      "content_sha256": "26f5e67558192139453da794971e70da97e8d2d3933d621d3dd6ca9cc3d9d55a",
+      "retrieved_at": "2026-10-15T04:28:09.582390+00:00",
+      "role": "ROAD_REFERENCE_ONLY",
+      "movement_authorized": false
+    },
+    {
+      "tile_id": "r1920c5651",
+      "httpStatus": 200,
+      "status": "PASS",
+      "counts": [
+        443,
+        100,
+        476
+      ],
+      "content_sha256": "e6b0bde0925b5e53f015c667c1dcc41ee6bb6be6bccfee3f094b11305c41f903",
+      "retrieved_at": "2026-10-15T04:27:10.434205+00:00",
+      "role": "ROAD_REFERENCE_ONLY",
+      "movement_authorized": false
+    },
+    {
+      "tile_id": "r1920c5652",
+      "httpStatus": 200,
+      "status": "PASS",
+      "counts": [
+        924,
+        188,
+        1015
+      ],
+      "content_sha256": "77a5aa01085b35f7727880608c88029da2777e6e11e3d8baa3ab3a084dbb31e4",
+      "retrieved_at": "2026-10-15T04:28:13.702800+00:00",
+      "role": "ROAD_REFERENCE_ONLY",
+      "movement_authorized": false
+    },
+    {
+      "tile_id": "r1921c5650",
+      "httpStatus": 503,
+      "status": "UNAVAILABLE",
+      "error": {
+        "detail": "ROAD_DATA_TEMPORARILY_UNAVAILABLE"
+      }
+    },
+    {
+      "tile_id": "r1921c5651",
+      "httpStatus": 200,
+      "status": "PASS",
+      "counts": [
+        5213,
+        1472,
+        5780
+      ],
+      "content_sha256": "fc813d8c53268ba03eb35ecdf5df8e9cf721714699f5590151281e9f8aa3ff8d",
+      "retrieved_at": "2026-10-15T04:28:28.638025+00:00",
+      "role": "ROAD_REFERENCE_ONLY",
+      "movement_authorized": false
+    },
+    {
+      "tile_id": "r1921c5652",
+      "httpStatus": 200,
+      "status": "PASS",
+      "counts": [
+        4259,
+        1058,
+        4652
+      ],
+      "content_sha256": "846cf167effcc2e71e067146736d5f7d062d7851c48152b3aa04e11fdd8ae959",
+      "retrieved_at": "2026-10-15T04:28:35.561102+00:00",
+      "role": "ROAD_REFERENCE_ONLY",
+      "movement_authorized": false
+    }
+  ]
+}

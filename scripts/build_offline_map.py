@@ -1,4 +1,4 @@
-"""Explicit bounded OSM road-pack refresh; runtime never calls Overpass."""
+"""This offline map-pack builder never runs at runtime; road-reference tiles are fetched by the API (see road_tiles.py)."""
 from __future__ import annotations
 
 import argparse

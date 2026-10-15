@@ -1,6 +1,51 @@
 # Ishinomaki Central Road Candidate Snapshot
 
-This document records the provenance and bounded scope of the local road-reference pack at `apps/web/public/roads/ishinomaki-central-v1/graph.json`.
+This document records the provenance and bounded scope of the local road-reference pack at `apps/web/public/roads/ishinomaki-central-v1/graph.json`, followed by the separately implemented nationwide on-demand tile boundary. Local source changes do not establish deployment or nationwide current-condition verification.
+
+## 全國道路參考區塊
+
+此分支在後端加入 `GET /api/roads/tile/{tile_id}`，以固定查詢向公共 Overpass
+取得 OSM 道路資料。固定查詢以 `[out:json][timeout:12];` 開頭，
+只含白名單 highway 值（`primary`／`secondary` 須有 sidewalk 標籤），
+無法由呼叫端改變。內建石卷資料包及離線底圖仍是獨立、固定的 snapshot；
+「不在 runtime 執行建置」只描述這些內建資料包，並不適用於按需道路 API。
+
+- 固定格網為緯度 `0.02°` × 經度 `0.025°`，ID 是
+  `r{floor(lat/0.02)}c{floor(lng/0.025)}`。後端只接受日本 bounding range
+  （緯度 20–46、經度 122–154）內完整格網的 canonical ASCII ID，不接受 query。
+  這個 range 不是日本行政界線或陸地驗證。
+- 手機在本機選點並計算周圍 3×3 格網。離開裝置的只有格網 ID（及
+  `X-Road-Session`），不傳精確 GPS；而且只在位置保護設定允許，或使用者
+  手動／演練選點時才會請求；格網仍會透露約略查詢地區。
+  演練的 `area_ids` 另經既有本機行政區 resolver 產生，並不寫入 Live 位置。
+- 後端向 `https://overpass-api.de/api/interpreter` 發送固定 pedestrian-highway
+  查詢，保留來源、OSM base timestamp（可能為 null）、取得時間及 raw/query/content
+  SHA-256。OSM 標籤及幾何不代表現時可通行、無障礙或安全。
+- 每個區塊上限為 1,500,000 bytes、20,000 節點、8,000 路段、40,000 邊。
+  過密回應為 `413 ROAD_TILE_TOO_DENSE`，不截斷成部分成功。
+  手機合併上限為 180,000 節點、360,000 邊；載入前必須通過 strict schema、
+  `content_sha256` 及通用圖驗證。
+- 空的已驗證區塊（沒有任何道路）代表 `NO_ROADS`：明確顯示沒有道路參考資料，
+  不是「安全」也不是錯誤。內建石卷資料包保留為本機 fallback。
+- 後端快取為 30 天，每次讀取都重新驗證 `content_sha256`、角色及
+  `movement_authorized=false`，不符即視為未命中；本機 cache 位置由 `ROAD_TILE_CACHE_DIR` 指定，底下使用
+  `72h-road-tiles/`。成功 HTTP 回應可快取一天；失敗不快取、不自動重試。
+  手機使用 IndexedDB `72h-roads` / `tiles`；儲存不可用時只在記憶體使用，
+  必須標示無法離線保存。超過 30 天的本機資料保留原取得日期並標示較舊。
+- 公共 Overpass 同時只處理一個請求，請求之間至少相隔兩秒；手機最多同時下載
+  三個區塊。每個 session 每分鐘最多 30 次、全域最多 120 次，session LRU 上限
+  2,048 個 key。最多八個排隊者；鎖等待上限 16 秒、上游逾時 12 秒，總預算 30 秒。
+  忙碌／失敗回 `503 ROAD_DATA_TEMPORARILY_UNAVAILABLE`，本機限流回 429。
+- 離線只使用已驗證、已下載的區塊。中央區塊缺失則不可用；缺少周邊區塊須標示
+  「部分道路資料未下載」。任何區塊過密時，整次結果不可用，不畫部分線條。
+- 資料仍屬 **© OpenStreetMap contributors / ODbL-1.0**；原始授權連結及來源
+  在下方保留。指定場所的災害適用旗標來自另外驗證的全國 GSI 目錄；
+  designation 不是開放狀態或移動授權。
+
+所有輸出維持 `ROAD_REFERENCE_ONLY`、`movement_authorized=false`。
+道路參考線不是避難路線，最安全路線未判定，場所開放狀態未知。沒有資料時不得推測或補線。
+後端快取的部署容量／淘汰策略、Cloud Storage 及 Cloud Run 發布仍屬另外的工作，
+今次沒有部署。實際檢查及未完成驗收會另記於 `DRILL_ROADS_DEVICE_VALIDATION.md`。
 
 ## Source and licence
 

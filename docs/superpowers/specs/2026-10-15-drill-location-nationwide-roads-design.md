@@ -1,6 +1,7 @@
 # 演練位置與全國道路參考線設計規格
 
-狀態：DRAFT，等使用者審閱（2026-10-15 JST）
+狀態：使用者已確認設計；實作與驗收進行中（2026-10-15 JST）。
+驗收結果及未完成項目見 [驗收紀錄](../../DRILL_ROADS_DEVICE_VALIDATION.md)。
 分支：`codex/drill-location-roads`（從 main `21c580f` 開出）
 前置：`codex/311-tsunami-guidance`（311 海嘯指示修正）先完成、審查並合併。
 
