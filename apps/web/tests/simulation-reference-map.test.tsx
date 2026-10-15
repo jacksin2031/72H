@@ -13,7 +13,7 @@ import {REFERENCE_VECTOR_LAYERS} from '../lib/reference-map-style';
 import {mapFixture,linePack,now} from './fixtures/disaster-map';
 import type {IntensityRegionPack} from '../lib/intensity-regions';
 
-const mapHarness=vi.hoisted(()=>({coordinates:[] as number[][],removed:0,operations:[] as string[],waveFrames:[] as WavefrontData[],referenceFrames:[] as Array<{id:string;data:unknown}>,gestures:[] as string[]}));
+const mapHarness=vi.hoisted(()=>({coordinates:[] as number[][],removed:0,operations:[] as string[],waveFrames:[] as WavefrontData[],referenceFrames:[] as Array<{id:string;data:unknown}>,gestures:[] as string[],handlers:[] as Array<{name:string;callback:(event:unknown)=>void}>,queried:[] as string[][]}));
 vi.mock('maplibre-gl',()=>({
   setWorkerCount:vi.fn(),setWorkerUrl:vi.fn(),
   Map:class {
@@ -24,7 +24,12 @@ vi.mock('maplibre-gl',()=>({
     waveSource:{setData:(data:WavefrontData)=>void}|null=null;
     scrollZoom={disable:vi.fn(),enable:()=>mapHarness.gestures.push('wheel')};boxZoom={disable:vi.fn()};dragRotate={disable:vi.fn()};
     dragPan={disable:vi.fn(),enable:()=>mapHarness.gestures.push('pan')};touchZoomRotate={disable:vi.fn(),enable:()=>mapHarness.gestures.push('touch'),disableRotation:vi.fn()};
-    once(_name:string,callback:()=>void){callback();} on(){} off(){} resize(){} fitBounds(){mapHarness.operations.push('country');} remove(){}
+    once(_name:string,callback:()=>void){callback();} resize(){}
+    on(name:string,callback:(event:unknown)=>void){mapHarness.handlers.push({name,callback});}
+    off(name:string,callback:(event:unknown)=>void){mapHarness.handlers=mapHarness.handlers.filter(h=>h.name!==name||h.callback!==callback);}
+    queryRenderedFeatures(_point:unknown,options:{layers:string[]}){
+      mapHarness.queried.push(options.layers);
+      if(options.layers.some(id=>!this.layers.has(id)))throw new Error('layer does not exist');return [];} fitBounds(){mapHarness.operations.push('country');} remove(){}
     getZoom(){return 9;} easeTo(){mapHarness.operations.push('center');}
     getLayer(id:string){return this.layers.has(id);} getSource(id:string){return id==='seismic-wavefronts'?this.waveSource:this.sources.has(id);}
     removeLayer(id:string){this.layers.delete(id);mapHarness.operations.push('remove-layer:'+id);}
@@ -268,5 +273,28 @@ describe('isolated simulation reference map', () => {
     expect(container.querySelector('[data-testid=japan-land-sea-legend]')?.textContent).toContain('Sea');
     expect(container.querySelector('[data-testid=japan-land-sea-legend]')?.textContent).toContain('Land');
     expect(container.querySelector('a[href*="maps.gsi.go.jp"]')).not.toBeNull();
+  });
+
+  it('attaches the reference-point click handler with no pack or places, and a tap reports its lngLat (R24)',async()=>{
+    const bytes=readFileSync(resolve(__dirname,'../public/maps/japan-land-50m.geojson'));
+    vi.stubGlobal('crypto',webcrypto);vi.stubGlobal('fetch',vi.fn(async()=>new Response(bytes)));
+    mapHarness.handlers=[];mapHarness.queried=[];
+    const onReferencePoint=vi.fn();
+    container=document.createElement('div');document.body.append(container);root=createRoot(container);
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" onReferencePoint={onReferencePoint}/>));
+    await act(async()=>{await new Promise(r=>setTimeout(r,50));});
+    const clicks=()=>mapHarness.handlers.filter(h=>h.name==='click');
+    expect(clicks()).toHaveLength(1);
+    await act(async()=>clicks()[0].callback({point:{x:10,y:20},lngLat:{lat:38.4196,lng:141.2946}}));
+    expect(onReferencePoint).toHaveBeenCalledWith({lat:38.4196,lng:141.2946});
+    expect(mapHarness.queried).toEqual([]);
+    // Re-run with places shown but no place layers: still one handler, and a tap never queries absent layers.
+    await act(async()=>root!.render(<SimulationReferenceMap language="zh-TW" onReferencePoint={onReferencePoint} showPlaces/>));
+    expect(clicks()).toHaveLength(1);
+    await act(async()=>clicks()[0].callback({point:{x:1,y:2},lngLat:{lat:35.68,lng:139.76}}));
+    expect(onReferencePoint).toHaveBeenLastCalledWith({lat:35.68,lng:139.76});
+    expect(mapHarness.queried).toEqual([]);
+    await act(async()=>root!.unmount());root=null;
+    expect(clicks()).toHaveLength(0);
   });
 });

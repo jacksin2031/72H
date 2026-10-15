@@ -320,15 +320,18 @@ export function SimulationReferenceMap({
   },[status,seismicTime,seismicOrigins,waveData]);
 
   useEffect(()=>{
-    const map=mapRef.current;if(status!=='ready'||!map||(!officialPack&&referencePlaces===undefined))return;
+    // The reference-point tap works with no pack or places (R24): only the place layers depend on them.
+    const hasPlaces=Boolean(officialPack)||referencePlaces!==undefined;
+    const map=mapRef.current;if(status!=='ready'||!map||(!hasPlaces&&!onReferencePoint))return;
     const places=referencePlaces??officialPack?.places??[];
     const byId=new Map(places.map(p=>[p.id,p]));
+    const placeLayers=['official-places-points','official-places-clusters'];
     if(showInundation&&officialPack){
       map.addSource('official-inundation',{type:'geojson',data:officialPack.inundation});
       map.addLayer({id:'official-inundation-fill',type:'fill',source:'official-inundation',paint:{'fill-color':'#e9ac66','fill-opacity':0.38}});
       map.addLayer({id:'official-inundation-edge',type:'line',source:'official-inundation',paint:{'line-color':'#ffd19a','line-width':1}});
     }
-    if(showPlaces){
+    if(showPlaces&&hasPlaces){
       map.addSource('official-places',{type:'geojson',cluster:true,clusterRadius:40,clusterMaxZoom:12,data:{type:'FeatureCollection',features:places.map(p=>({
         type:'Feature',geometry:{type:'Point',coordinates:[p.lng,p.lat]},properties:{id:p.id,kind:p.kind},
       }))}});
@@ -337,7 +340,7 @@ export function SimulationReferenceMap({
         'circle-color':['match',['get','kind'],'EMERGENCY_SITE','#afcbed','#aeb4bd'],'circle-stroke-color':'#122230','circle-stroke-width':1.5}});
     }
     const choose=(event:import('maplibre-gl').MapMouseEvent)=>{
-      const hit=showPlaces&&places.length?map.queryRenderedFeatures(event.point,{layers:['official-places-points','official-places-clusters']})[0]:null;
+      const hit=showPlaces&&places.length&&placeLayers.every(id=>map.getLayer(id))?map.queryRenderedFeatures(event.point,{layers:placeLayers})[0]:null;
       if(hit?.properties?.point_count){
         const point=hit.geometry as {type:'Point';coordinates:[number,number]};
         map.easeTo({center:point.coordinates,zoom:Math.min(17,map.getZoom()+2),duration:0});return;
