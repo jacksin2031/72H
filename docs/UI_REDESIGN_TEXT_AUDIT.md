@@ -109,5 +109,22 @@ The exercise screens now use the same AppShell, NowScreen, MapScreen and ListRow
 | /disaster-test Replay / P1.5 run button | primary | secondary (the page's one primary is the full simulation launch) | unchanged text |
 | /demo 計画の履歴 / 情報源 badges and action prefixes (fix round 1) | raw codes: `ACTIVE` / `INVALIDATED` / `EXPIRED`, `VERIFIED_OFFICIAL` / `CONFLICTING` / `STALE`, `NOW` / `NEXT` / `AVOID`, source authority `A0–A4` | replace with existing localized labels; authority code removed from the visible line | 有効 / 失効 / 期限切れ / 不明 (messages.active / invalid / stale / unknown); いま行うこと / 次に確認すること / 避けること |
 | /demo safety check (fix round 1) | inside 演習の詳細 Disclosure, status shown as raw enum (`AWAITING_RESPONSE · 0/3`) | move under the Now screen (Live's position); status uses existing words | 安否確認 / 無事です / 助けが必要 / 今は動けません / 応答なし・状態は不明です。 (vnextMessages) |
-| /demo Map tab (fix round 1) | live /map link | in-place exercise map (synthetic quake) with sheet peek and location section | Peek: `現在地: <profile location>`; section title 現在地 |
+| /demo Map tab (fix round 1) | live /map link | in-place exercise map (synthetic quake) with the road-reference sheet and location section | Peek: `請選擇一個點以顯示道路參考線` when replay has no locally selected point; section titles 道路參考 / 現在地 |
 | /disaster-test reset (fix round 1) | button at the end of 情境設定 | move into the exercise bar | すべて初期化 / Reset / 重設 (unchanged) |
+
+# Task 8: Exercise road-reference section
+
+The `/simulation` sheet reads only the in-memory selected drill point. The `/demo` replay snapshot has area identity but no selected point, so its road section remains idle and does not substitute device GPS. Road lines and shelter designations stay reference-only; opening state and safest route remain undetermined.
+
+| Location | zh-TW | ja | en |
+|---|---|---|---|
+| Collapsed road peek while loading | 正在取得道路資料… | 道路データを取得中… | Loading road data… |
+| Collapsed road peek with results | 附近 N 處海嘯適用指定場所 · 道路參考；地震情境改為地震適用 | 近くの津波対応指定場所 N か所 · 道路参考；地震時は地震対応 | N tsunami-designated places nearby · road reference; earthquake-designated for earthquake scenarios |
+| No selected point | 請選擇一個點以顯示道路參考線 | 地点を選択すると道路参考線を表示します | Select a point to show road references |
+| Place row | 名稱 · 直線 N km · 道路 N km（參考）；無路線時道路 — | 名称 · 直線 N km · 道路 N km（参考）；線がない場合は道路 — | Name · Straight-line N km · Road N km (reference); Road — when no line exists |
+| Reference disclaimer (once per map page) | 道路參考線不是避難路線，最安全路線未判定。 | 道路参考線は避難経路ではありません。最も安全な経路は未判定です。 | Road reference lines are not evacuation routes. The safest route is undetermined. |
+| OSM attribution | © OpenStreetMap contributors | © OpenStreetMap contributors | © OpenStreetMap contributors |
+| Exercise tag | 演練 | 演習 | Exercise |
+| Partial, stale, offline and persistence states | 部分道路資料未下載；資料較舊（取得於 YYYY-MM-DD）；此地區沒有道路參考資料（離線）；無法離線保存 | 道路データの一部が未取得；データは古くなっています（取得日 YYYY-MM-DD）；この地域の道路参考データはありません（オフライン）；オフライン保存できませんでした | Some road data tiles are missing; Data is stale (retrieved YYYY-MM-DD); No road reference data for this area (offline); Could not save for offline use |
+
+The map and its drawer render the fixed reference disclaimer once. The road lines are dashed, capped at three candidates, and carry the `ROAD_REFERENCE_ONLY` map-layer identity. No opening-state or safety wording is inferred from designation or route availability.

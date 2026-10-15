@@ -23,6 +23,8 @@ import { MAP_REGIONS, mapOverviewLabel, mapRegionLabel } from '@/lib/map-regions
 import { sosText } from '@/lib/distress';
 import { exerciseHeroText, officialAlert } from '@/lib/now-status';
 import type { AppTab } from '@/lib/app-tabs';
+import { RoadReferenceSection, roadPeekText, useRoadReference } from './road-reference-section';
+import type { RoadHazard } from '@/lib/road-destinations';
 
 /** home / plan / events all render the shared Now screen (events opens its basis on the timeline); map and more use the shared Map and More layouts. */
 export type SimulationSection = 'home' | 'plan' | 'events' | 'map' | 'more';
@@ -33,12 +35,12 @@ const ui = {
     warning:'演習画面 · 実際の警報ではありません', clock:'演習時刻',before:'地震発生まで', nextEvent:'次のイベント',
     timeline:'時系列',eventDone:'処理済み',upcoming:'未発生',
     awaiting:'演習が始まる前です。周囲を確認し、落ち着いて準備してください。',waiting:'AI / Safety Core の判定を待っています',
-    unsupported:'歴史的参考情報のみ · 安全判断の対象外', earthquake:'地震発生', note:'国土地理院の日本全国参考地図です。海岸線は浸水や安全経路を示しません。',
+    unsupported:'歴史的参考情報のみ · 安全判断の対象外', earthquake:'地震発生', note:'国土地理院の日本全国参考地図です。海岸線は浸水範囲を示しません。',
     safety:'GPS地域は任意設定。実際の通知・移動許可はありません',
     details:'演習の詳細（AI / Safety Core）', ai:'AI / Safety Core',
     consult:'史料', actions:'行動プラン', source:'模擬ソース', status:'ステータス', simulationOnly:'演習のみ',
     pending:'イベント発生を待っています', processing:'模擬イベントを処理中…', completed:'完了',
-    risk:'歴史の津波警報は演習用の模擬情報として Safety Core に入力されます。停電は時系列の背景情報のみです。危険エリア、避難所、安全な経路は推定表示しません。',
+    risk:'津波警報と停電は歴史的な演習情報です。危険範囲や場所の適性は判定していません。',
     error:'演習エラー', mapNotice:'安全な経路・避難所の認証なし',
     mapRiskTitle:'位置とリスク',mapRiskUnknown:'安全性：判定不能',tsunamiWarningSummary:'津波警報（歴史演習） · 避難安全性は未判定',
   },
@@ -46,12 +48,12 @@ const ui = {
     warning:'SIMULATION · Not a live alert',clock:'Simulation time',before:'Until the earthquake',nextEvent:'Next event',
     timeline:'Timeline',eventDone:'Processed',upcoming:'Not yet',
     awaiting:'The drill has not reached the event. Stay ready and monitor surroundings.',waiting:'AI / Safety Core decision pending',
-    unsupported:'Historical context only · no hazard assessment',earthquake:'Earthquake event',note:'Nationwide GSI reference map. Coastline is NOT an inundation or safe-route boundary.',
+    unsupported:'Historical context only · no hazard assessment',earthquake:'Earthquake event',note:'Nationwide GSI reference map. Coastline is not an inundation boundary.',
     safety:'GPS area is optional. No actual alerts or movement authorization',
     details:'Exercise details (AI / Safety Core)', ai:'AI / Safety Core',
     consult:'Historic source',actions:'Action plan',source:'Simulated source',status:'Status', simulationOnly:'Simulation only',
     pending:'Waiting for a simulated event',processing:'Processing simulated event…',completed:'Completed',
-    risk:'Historical tsunami warnings enter the Safety Core as simulated exercise data; the power outage is historical background only. No inferred hazard zones, shelters or safe routes are displayed.',
+    risk:'Tsunami warnings and outages are historical exercise context. Hazard exposure and place suitability are undetermined.',
     error:'Exercise error',mapNotice:'No verified shelter or safe route',
     mapRiskTitle:'Location & risk',mapRiskUnknown:'Safety: undetermined',tsunamiWarningSummary:'Historic tsunami warning · safety not verified',
   },
@@ -59,12 +61,12 @@ const ui = {
     warning:'模擬演習 · 並非真實警報',clock:'模擬時間',before:'距離地震發生',nextEvent:'下一事件',
     timeline:'時間線',eventDone:'已處理',upcoming:'未發生',
     awaiting:'尚未到達模擬災難時間，請留意周圍環境並保持準備。',waiting:'等待 AI／Safety Core 判斷',
-    unsupported:'僅作歷史背景 · 不屬安全判斷',earthquake:'地震發生',note:'全日本國土地理院參考地圖，海岸線不是海嘯浸水或避難安全邊界。',
+    unsupported:'僅作歷史背景 · 不屬安全判斷',earthquake:'地震發生',note:'全日本國土地理院參考地圖，海岸線不代表海嘯浸水範圍。',
     safety:'可自選 GPS 地區；不發出真實通知或移動授權',
     details:'演練詳細（AI／Safety Core）', ai:'AI／Safety Core',
     consult:'歷史來源',actions:'行動計劃',source:'模擬來源',status:'狀態', simulationOnly:'僅限演練',
     pending:'等待模擬事件發生',processing:'正在處理模擬事件…',completed:'已完成',
-    risk:'歷史海嘯警報會以模擬演練資料輸入 Safety Core；只有停電屬歷史背景。不會推算危險區域、避難所或安全路線。',
+    risk:'海嘯警報及停電只是歷史演習資料，危險範圍及場所適用性仍未判定。',
     error:'演習出現錯誤',mapNotice:'沒有已核實避難所或安全路線',
     mapRiskTitle:'定位與災害風險',mapRiskUnknown:'安全性：無法判定',tsunamiWarningSummary:'歷史海嘯警報已發生 · 尚未確認避難安全',
   },
@@ -93,6 +95,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
   const [lastDisconnect,setLastDisconnect]=useState(0);
   const [distressOpen,setDistressOpen]=useState(false);
   const [regionRequest,setRegionRequest]=useState<{value:string}|null>(null);
+  const [roadLayerOn,setRoadLayerOn]=useState(()=>Boolean(config.drillPoint));
   useEffect(()=>{
     const tick=setInterval(()=>setWallTime(Date.now()),1000);
     const online=()=>{setConnected(true);setWallTime(Date.now());};const offline=()=>{setConnected(false);setLastDisconnect(Date.now());};
@@ -104,6 +107,14 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
   const occurredOrigins=seismicOrigins.filter(origin=>Date.parse(origin.observed_at_jst)<=time);
   const epicenter=occurredOrigins.at(-1)??epicenterForPlayedMilestones(config.historicalCase,config.milestones,done);
   const warning=historicTsunamiWarningStarted(config.milestones,done);
+  const roadHazard:RoadHazard=warning||state?.snapshot.distress.level==='OFFICIAL_TSUNAMI'?'tsunami':'earthquake';
+  const prefectureArea=config.locationContext?.area_ids.find(id=>/^JP-\d{2}$/.test(id));
+  const roadReference=useRoadReference(config.drillPoint?{lat:config.drillPoint.lat,lng:config.drillPoint.lng}:null,roadHazard,prefectureArea?.slice(3)??null);
+  const referenceRoutes=useMemo(()=>roadLayerOn&&roadReference.state==='READY'
+    ?(roadReference.result?.destinations??[]).flatMap(destination=>destination.road
+      &&destination.road.role==='ROAD_REFERENCE_ONLY'&&destination.road.movement_authorized===false?[destination.road]:[]).slice(0,3)
+    :[],[roadLayerOn,roadReference.state,roadReference.result]);
+  useEffect(()=>setRoadLayerOn(Boolean(config.drillPoint)),[config.drillPoint?.lat,config.drillPoint?.lng]);
   const assessment=screenGeoExposure({location:geo.location,epicenter,tsunamiWarningActive:warning,now:Date.now()});
   const current=config.milestones[Math.max(0,done-1)]??null;
   const upcoming=config.milestones[done]??null;
@@ -171,14 +182,18 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
   const screen=tab==='map'
     ?<div data-testid="simulation-map-screen"><MapScreen language={language} keepSheetMounted={false}
       map={<SimulationReferenceMap language={language} showInformation={false} legend="none" regionPicker={false} regionRequest={regionRequest}
-        userLocation={assessment.user_location} epicenter={epicenter} seismicOrigins={seismicOrigins} seismicTime={time}/>}
+        userLocation={assessment.user_location} epicenter={epicenter} seismicOrigins={seismicOrigins} seismicTime={time}
+        focusPoint={config.drillPoint?{lat:config.drillPoint.lat,lng:config.drillPoint.lng,zoom:14}:null} referenceRoutes={referenceRoutes}/>}
       region={<select aria-label={mapRegionLabel(language)} defaultValue="" onChange={event=>setRegionRequest({value:event.target.value})}>
         <option value="">{mapOverviewLabel(language)}</option>
         {MAP_REGIONS.map(r=><option key={r.value} value={r.value}>{r.label}</option>)}
       </select>}
-      layers={[]} legend={t.note} routeSection={null}
-      peek={`${warning?t.tsunamiWarningSummary:t.mapNotice} · ${t.mapRiskUnknown}`}
-      sections={[{title:t.mapRiskTitle,content:<>
+      layers={[{key:'road-reference',label:language==='ja'?'道路参考':language==='en'?'Road reference':'道路參考',on:roadLayerOn,toggle:()=>setRoadLayerOn(value=>!value)}]}
+      legend={t.note} routeSection={null}
+      peek={config.drillPoint?roadPeekText(language,roadHazard,roadReference)
+        :`${roadPeekText(language,roadHazard,roadReference)} · ${warning?t.tsunamiWarningSummary:t.mapNotice} · ${t.mapRiskUnknown}`}
+      sections={[{title:language==='ja'?'道路参考':language==='en'?'Road reference':'道路參考',content:<RoadReferenceSection language={language} exercise hazard={roadHazard} reference={roadReference}/>},
+        {title:t.mapRiskTitle,content:<>
         <SimulationRiskPanel language={language} assessment={assessment} gpsState={geo.state} gpsError={geo.error} requestLocation={geo.request} clearLocation={geo.clear}/>
         <p className="now-meta">{t.risk}</p>
       </>}]}/></div>

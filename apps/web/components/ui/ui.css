@@ -310,6 +310,11 @@ a.ui-btn-secondary{color:var(--info)}
 .ui-app:has(.ui-sheet[data-open]) .ui-help-pin{top:calc(var(--band-h,0px) + 72px);bottom:auto}
 .map-chips{bottom:calc(var(--sheet-peek-h,56px) + 12px)}
 .map-legend{bottom:calc(var(--sheet-peek-h,56px) + 72px)}
+.road-reference-status{color:var(--warn);font-size:var(--fs-meta)}
+.road-reference-list{display:grid;gap:var(--sp-2);margin:0;padding:0;list-style:none;font-size:var(--fs-meta)}
+.road-reference-list li{padding:var(--sp-2) 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.road-reference-disclaimer{color:var(--warn);font-size:var(--fs-meta);font-weight:600}
+.road-reference-attribution{font-size:var(--fs-meta);color:var(--text-2)}
 
 /* Map help has its own top row beside the region picker; it never covers chips, legend, sheet or zoom. */
 .ui-app:has(.map-screen) .ui-help-pin{top:calc(var(--band-h,0px) + var(--sp-3));bottom:auto;right:72px;left:auto;max-width:128px}

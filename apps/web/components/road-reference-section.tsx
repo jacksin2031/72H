@@ -1,0 +1,130 @@
+'use client';
+
+import {useCallback,useEffect,useState} from 'react';
+import type {Language} from '@/lib/contracts';
+import {loadJapanShelterCatalog,loadJapanShelterPrefecture,type JapanShelterCatalog} from '@/lib/japan-shelters';
+import {loadRoadTilesAround,type RoadTileState} from '@/lib/road-tiles';
+import {roadDestinations,type RoadDestination,type RoadHazard} from '@/lib/road-destinations';
+import {Button,Tag} from './ui';
+
+type RoadResult={destinations:RoadDestination[];none:boolean};
+type RoadReferenceValue={state:'IDLE'|'LOADING'|'READY'|'ERROR';tiles:RoadTileState|null;result:RoadResult|null};
+export type RoadReference=RoadReferenceValue&{retry:()=>void};
+
+const idle:RoadReferenceValue={state:'IDLE',tiles:null,result:null};
+const loading:RoadReferenceValue={state:'LOADING',tiles:null,result:null};
+const ROAD_REFERENCE_DEBOUNCE_MS=250;
+
+/** Loads the selected point's bounded road tiles and prefecture designations in parallel. */
+export function useRoadReference(point:{lat:number;lng:number}|null,hazard:RoadHazard,prefectureCode:string|null):RoadReference{
+  const [retryVersion,setRetryVersion]=useState(0);
+  const [entry,setEntry]=useState<{key:string;value:RoadReferenceValue}>({key:'',value:idle});
+  const key=point?`${point.lat}:${point.lng}:${hazard}:${prefectureCode??''}`:'idle';
+  const retry=useCallback(()=>setRetryVersion(value=>value+1),[]);
+
+  useEffect(()=>{
+    if(!point){setEntry({key:'idle',value:idle});return;}
+    const controller=new AbortController();
+    let active=true;
+    setEntry({key,value:loading});
+    const fail=()=>{if(active&&!controller.signal.aborted)setEntry({key,value:{state:'ERROR',tiles:null,result:null}});};
+    if(!prefectureCode){fail();return()=>{active=false;controller.abort();};}
+    const timer=setTimeout(()=>{
+      void (async()=>{
+        try{
+          const [tiles,catalog]:[RoadTileState,JapanShelterCatalog]=await Promise.all([
+            loadRoadTilesAround(point,{signal:controller.signal}),
+            loadJapanShelterCatalog(controller.signal),
+          ]);
+          const places=await loadJapanShelterPrefecture(catalog,prefectureCode,controller.signal);
+          if(!active||controller.signal.aborted)return;
+          const result=roadDestinations(tiles.status==='READY'?tiles.graph:null,point,places,hazard);
+          setEntry({key,value:{state:'READY',tiles,result}});
+        }catch{fail();}
+      })();
+    },ROAD_REFERENCE_DEBOUNCE_MS);
+    return()=>{active=false;clearTimeout(timer);controller.abort();};
+  },[point?.lat,point?.lng,hazard,prefectureCode,retryVersion]);
+
+  const value=entry.key===key?entry.value:point?loading:idle;
+  return {...value,retry};
+}
+
+const copy={
+  ja:{
+    loading:'道路データを取得中…',noPoint:'地点を選択すると道路参考線を表示します',noPlaces:'近くに条件に合う指定場所がありません',
+    failed:'この地域の道路データを取得できません',tooDense:'この地域の道路データが密集しているため参考線を表示できません',offline:'この地域の道路参考データはありません（オフライン）',
+    partial:'道路データの一部が未取得です',stale:'データは古くなっています（取得日 {date}）',notPersisted:'オフライン保存できませんでした',
+    tsunami:'津波対応指定場所',earthquake:'地震対応指定場所',roadReference:'道路参考',exercise:'演習',retry:'再試行',
+    straight:'直線',road:'道路',reference:'参考',dash:'—',disclaimer:'道路参考線は避難経路ではありません。最も安全な経路は未判定です。',
+  },
+  en:{
+    loading:'Loading road data…',noPoint:'Select a point to show road references',noPlaces:'No nearby designated places match this hazard',failed:'Could not load road data for this area',
+    tooDense:'Road data is too dense in this area to show reference lines',offline:'No road reference data for this area (offline)',partial:'Some road data tiles are missing',
+    stale:'Data is stale (retrieved {date})',notPersisted:'Could not save for offline use',tsunami:'tsunami-designated places',earthquake:'earthquake-designated places',
+    roadReference:'road reference',exercise:'Exercise',retry:'Retry',straight:'Straight-line',road:'Road',reference:'reference',dash:'—',
+    disclaimer:'Road reference lines are not evacuation routes. The safest route is undetermined.',
+  },
+  'zh-TW':{
+    loading:'正在取得道路資料…',noPoint:'請選擇一個點以顯示道路參考線',noPlaces:'附近沒有符合條件的指定場所',failed:'無法取得此地區道路資料',
+    tooDense:'此地區道路資料過於密集，無法顯示參考線',offline:'此地區沒有道路參考資料（離線）',partial:'部分道路資料未下載',
+    stale:'資料較舊（取得於 {date}）',notPersisted:'無法離線保存',tsunami:'海嘯適用指定場所',earthquake:'地震適用指定場所',
+    roadReference:'道路參考',exercise:'演練',retry:'重試',straight:'直線',road:'道路',reference:'參考',dash:'—',
+    disclaimer:'道路參考線不是避難路線，最安全路線未判定。',
+  },
+} as const;
+
+const formatKm=(metres:number,language:Language)=>`${(metres/1000).toLocaleString(language,{minimumFractionDigits:1,maximumFractionDigits:1})} km`;
+function messageForTiles(tiles:RoadTileState|null,language:Language):string|null{
+  if(!tiles||tiles.status==='READY')return null;
+  if(tiles.reason==='TOO_DENSE')return copy[language].tooDense;
+  if(tiles.reason==='OFFLINE_NO_DATA')return copy[language].offline;
+  return copy[language].failed;
+}
+
+export function roadPeekText(language:Language,hazard:RoadHazard,reference:RoadReference):string{
+  const t=copy[language];
+  if(reference.state==='IDLE')return t.noPoint;
+  if(reference.state==='LOADING')return t.loading;
+  if(reference.state==='ERROR')return t.failed;
+  const tileMessage=messageForTiles(reference.tiles,language);
+  if(tileMessage)return tileMessage;
+  if(reference.result?.none)return t.noPlaces;
+  const count=reference.result?.destinations.length??0;
+  const hazardText=hazard==='tsunami'?t.tsunami:t.earthquake;
+  if(language==='zh-TW')return `附近 ${count} 處${hazardText} · 道路參考`;
+  if(language==='ja')return `近くの${hazardText} ${count} か所 · 道路参考`;
+  return `${count} ${hazardText} nearby · road reference`;
+}
+
+export function RoadReferenceSection({language,exercise,hazard,reference}:{language:Language;exercise:boolean;hazard:RoadHazard;reference:RoadReference}){
+  const t=copy[language];
+  const tileMessage=messageForTiles(reference.tiles,language);
+  const retryable=reference.state==='ERROR'||reference.tiles?.status==='UNAVAILABLE'
+    &&reference.tiles.reason!=='TOO_DENSE'&&reference.tiles.reason!=='OFFLINE_NO_DATA';
+  const messages:string[]=[];
+  if(reference.state==='LOADING')messages.push(t.loading);
+  else if(reference.state==='ERROR')messages.push(t.failed);
+  if(tileMessage&&!(reference.state==='ERROR'&&tileMessage===t.failed))messages.push(tileMessage);
+  if(reference.state==='IDLE')messages.push(t.noPoint);
+  if(reference.state==='READY'&&reference.result?.none)messages.push(t.noPlaces);
+  if(reference.tiles?.status==='READY'){
+    if(reference.tiles.stale)messages.push(t.stale.replace('{date}',reference.tiles.oldestRetrievedAt.slice(0,10)));
+    if(reference.tiles.missing.length>0)messages.push(t.partial);
+    if(!reference.tiles.persisted)messages.push(t.notPersisted);
+  }
+  const destinations=reference.state==='READY'?reference.result?.destinations??[]:[];
+  return <div className="road-reference-section">
+    {exercise&&<p><Tag tone="exercise">{t.exercise}</Tag></p>}
+    {messages.map((message,index)=><p className="road-reference-status" role="status" key={`${index}-${message}`}>{message}</p>)}
+    {destinations.length>0&&<ul className="road-reference-list">{destinations.map(destination=>{
+      const road=destination.road?.role==='ROAD_REFERENCE_ONLY'&&destination.road.movement_authorized===false?destination.road:null;
+      return <li key={destination.place.id}>
+        {destination.place.name} · {t.straight} {formatKm(destination.straight_m,language)} · {t.road} {road?formatKm(road.distance_m,language):t.dash}（{t.reference}）
+      </li>;
+    })}</ul>}
+    {retryable&&<Button variant="secondary" onClick={reference.retry}>{t.retry}</Button>}
+    <p className="road-reference-disclaimer">{t.disclaimer}</p>
+    <p className="road-reference-attribution"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></p>
+  </div>;
+}

@@ -27,6 +27,8 @@ import { ScenarioPicker } from './scenario-picker';
 import { PlanExplanationPanel } from './plan-explanation-panel';
 import { DistressEntry } from './distress-entry';
 import { fixFromDevicePosition } from '@/lib/distress-guidance';
+import { RoadReferenceSection, roadPeekText, useRoadReference } from './road-reference-section';
+import type { RoadHazard } from '@/lib/road-destinations';
 
 const exerciseLabel: Record<Language, string> = { 'zh-TW': '演練', ja: '演習', en: 'Exercise' };
 /** Exercise-only wording; technical terms (Agent log, Judge) appear only in the last basis section. */
@@ -51,6 +53,10 @@ export function Dashboard({ view }: { view: string }) {
   const [storageError, setStorageError] = useState(false);
   const [sessionMissing, setSessionMissing] = useState(false);
   const [distressOpen, setDistressOpen] = useState(false);
+  const demoRoadHazard:RoadHazard=snapshot?.distress.level==='OFFICIAL_TSUNAMI'?'tsunami':'earthquake';
+  const demoPrefectureArea=snapshot?.profile.current_location.area_ids.find(id=>/^JP-\d{2}$/.test(id));
+  // /demo replay snapshots carry an area, not the local drill point; never substitute device GPS or invent coordinates.
+  const demoRoadReference=useRoadReference(null,demoRoadHazard,demoPrefectureArea?.slice(3)??null);
   // Owned here so the hero and the Now-screen safety check use the same state (VNextExperience restores, persists and advances it).
   const [check, setCheck] = useState<SafetyCheckState>(initialSafetyCheck);
   const [tab, setTab] = useState<AppTab>('now');
@@ -266,10 +272,16 @@ export function Dashboard({ view }: { view: string }) {
   // Same position as Live: the safety check sits right under the Now screen (AdaptiveHome embedded); consent stays reachable
   // here because the exercise has no More settings of its own.
   const safetyCheck = <ReplaySafetyCheck check={check} setCheck={setCheck} language={language} visible={presentation.showSafetyCheck} hideTitle />;
-  const exerciseMap = <MapScreen language={language} layers={[]} legend={lm.notSafetyVerdict} region={null} routeSection={null}
-    map={<SimulationReferenceMap language={language} showInformation={false} legend="none" regionPicker={false} userLocation={deviceLocation.position ? {lat:deviceLocation.position.latitude,lng:deviceLocation.position.longitude,accuracy_m:deviceLocation.position.accuracy_m,captured_at:deviceLocation.position.captured_at,source:'BROWSER_GEOLOCATION'} : null} />}
-    peek={`${t.location}: ${snapshot.profile.current_location.label}`}
-    sections={[{ title: t.location, content: <DeviceLocationControls location={deviceLocation} language={language} /> }]} />;
+  const exerciseMap = <MapScreen language={language}
+    layers={[{key:'road-reference',label:language==='ja'?'道路参考':language==='en'?'Road reference':'道路參考',on:false,toggle:()=>{}}]}
+    legend={null} region={null} routeSection={null}
+    map={<SimulationReferenceMap language={language} showInformation={false} legend="none" regionPicker={false}
+      focusPoint={null} referenceRoutes={[]} userLocation={deviceLocation.position ? {lat:deviceLocation.position.latitude,lng:deviceLocation.position.longitude,accuracy_m:deviceLocation.position.accuracy_m,captured_at:deviceLocation.position.captured_at,source:'BROWSER_GEOLOCATION'} : null} />}
+    peek={roadPeekText(language,demoRoadHazard,demoRoadReference)}
+    sections={[
+      {title:language==='ja'?'道路参考':language==='en'?'Road reference':'道路參考',content:<RoadReferenceSection language={language} exercise hazard={demoRoadHazard} reference={demoRoadReference}/>},
+      { title: t.location, content: <DeviceLocationControls location={deviceLocation} language={language} /> },
+    ]} />;
   return <AppShell tab={tab} language={language} band={band} exerciseControls={exerciseControls} fullBleed={tab === 'map'}
     onTab={setTab} localTabs={['now', 'map']}>
     {status}

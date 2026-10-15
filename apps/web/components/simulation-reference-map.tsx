@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { UiIcon } from './ui-icon';
 import type { Language } from '@/lib/contracts';
+import type { RoadCandidate } from '@/lib/evacuation-road-graph';
 import type { Epicenter, LocationFix } from '@/lib/geospatial-exposure';
 import { validPoint } from '@/lib/geospatial-exposure';
 import { seismicWavefronts, WAVE_SPEED_SOURCE } from '@/lib/seismic-wavefront';
@@ -72,7 +73,7 @@ const mapText={
 export function SimulationReferenceMap({
   language,compact=false,showInformation=true,epicenter=null,userLocation=null,referencePoint=null,officialPack=null,showInundation=false,showPlaces=false,focusPoint=null,onReferencePoint,onPlace,protectDeviceLocation=true,seismicOrigins=[],seismicTime=null,
   disasterReference=null,forecastLinePack=null,referenceConnected=false,referenceNow=0,showForecastLines=false,
-  intensityRegionPack=null,showIntensityRegions=false,referencePlaces,viewBounds=null,referenceRoute=null,
+  intensityRegionPack=null,showIntensityRegions=false,referencePlaces,viewBounds=null,referenceRoute=null,referenceRoutes,
   legend='card',regionPicker=!compact,regionRequest=null,
 }:{
   language:Language; compact?:boolean;showInformation?:boolean;epicenter?:Epicenter|null;userLocation?:LocationFix|null;
@@ -85,7 +86,7 @@ export function SimulationReferenceMap({
   disasterReference?:DisasterMapReference|null;forecastLinePack?:ForecastLinePack|null;
   referenceConnected?:boolean;referenceNow?:number;showForecastLines?:boolean;
   intensityRegionPack?:IntensityRegionPack|null;showIntensityRegions?:boolean;
-  referenceRoute?:import('@/lib/evacuation-road-graph').RoadCandidate|null;
+  referenceRoute?:RoadCandidate|null;referenceRoutes?:readonly RoadCandidate[];
   /** 'none': the host screen renders its own one-line legend and the single navigation/safety note. */
   legend?:'card'|'none';regionPicker?:boolean;regionRequest?:{value:string}|null;
 }){
@@ -358,7 +359,24 @@ export function SimulationReferenceMap({
 
   useEffect(()=>{
     const map=mapRef.current;
-    if(status!=='ready'||!map||!referenceRoute||referenceRoute.coordinates.length<2||referenceRoute.coordinates.length>2048
+    if(status!=='ready'||!map)return;
+    if(referenceRoutes!==undefined){
+      const routes=referenceRoutes.slice(0,3).filter(route=>{
+        const envelope=route as RoadCandidate&{role?:unknown;movement_authorized?:unknown};
+        return envelope.role==='ROAD_REFERENCE_ONLY'&&envelope.movement_authorized===false
+          &&route.coordinates.length>=2&&route.coordinates.length<=2048
+          &&route.coordinates.every(p=>p.length===2&&validPoint({lng:p[0],lat:p[1]}));
+      });
+      if(routes.length===0)return;
+      const sourceId='road-reference-only-routes';const layerId='road-reference-only-route-lines';
+      map.addSource(sourceId,{type:'geojson',data:{type:'FeatureCollection',features:routes.map((route,index)=>({
+        type:'Feature' as const,properties:{authority:'ROAD_REFERENCE_ONLY',movement_authorized:false,route_index:index},
+        geometry:{type:'LineString' as const,coordinates:route.coordinates.map(([lng,lat])=>[lng,lat])},
+      }))}});
+      map.addLayer({id:layerId,type:'line',source:sourceId,paint:{'line-color':'#afcbed','line-width':4,'line-dasharray':[2,2]}});
+      return()=>{if(map.getLayer(layerId))map.removeLayer(layerId);if(map.getSource(sourceId))map.removeSource(sourceId);};
+    }
+    if(!referenceRoute||referenceRoute.coordinates.length<2||referenceRoute.coordinates.length>2048
       ||referenceRoute.coordinates.some(p=>p.length!==2||!validPoint({lng:p[0],lat:p[1]})))return;
     map.addSource('evacuation-reference-route',{type:'geojson',data:{type:'Feature',properties:{authority:'ROAD_REFERENCE_ONLY'},
       geometry:{type:'LineString',coordinates:referenceRoute.coordinates.map(p=>[p[0],p[1]])}}});
@@ -366,7 +384,7 @@ export function SimulationReferenceMap({
       paint:{'line-color':'#afcbed','line-width':4,'line-dasharray':[2,2]}});
     return()=>{if(map.getLayer('evacuation-reference-route-line'))map.removeLayer('evacuation-reference-route-line');
       if(map.getSource('evacuation-reference-route'))map.removeSource('evacuation-reference-route');};
-  },[status,referenceRoute]);
+  },[status,referenceRoute,referenceRoutes]);
 
   useEffect(()=>{
     if(status==='ready'&&focusPoint&&validPoint(focusPoint))mapRef.current?.easeTo({center:[focusPoint.lng,focusPoint.lat],zoom:focusPoint.zoom??13,duration:0});
