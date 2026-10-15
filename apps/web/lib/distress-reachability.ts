@@ -1,7 +1,7 @@
 import type {DistressTag} from './contracts';
 import type {DesignatedPlace} from './designated-places';
 import {selectEvacuationDestinations} from './evacuation-route-assessment';
-import {findRoadCandidates,isWithinBounds,type RoadReferenceGraph} from './road-graph-core';
+import {findRoadCandidates,haversine,isWithinBounds,type RoadReferenceGraph} from './road-graph-core';
 
 /** Deterministic, device-local. Distance is never a safety ranking. */
 export const DISTRESS_PARAMS={walkMps:1.0,slowWalkMps:0.5,detourFactor:1.5,lowAccuracyM:50,maxAccuracyM:100,maxCandidates:12} as const;
@@ -12,11 +12,6 @@ export type ReachCandidate={place_id:string;name:string;distance_m:number;walk_s
 export type TsunamiGuidance={kind:'GO_TO_SITE';candidates:ReachCandidate[];deadlineAt:number;excludedReach?:number}
  |{kind:'VERTICAL_NOW';reason:'NO_TIME'|'NO_REACHABLE_SITE'|'NO_LOCATION'|'NO_SITES_IN_PACK'|'EXCLUDED_BY_REPORT';deadlineAt:number;excludedReach?:number};
 
-function haversine(a:{lat:number;lng:number},b:{lat:number;lng:number}){
- const r=Math.PI/180,dLat=(b.lat-a.lat)*r,dLng=(b.lng-a.lng)*r;
- const h=Math.sin(dLat/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLng/2)**2;
- return 2*6_371_008.8*Math.asin(Math.min(1,Math.sqrt(h)));
-}
 const GRAPH_NOT_APPLICABLE:ReadonlySet<string>=new Set(['OUTSIDE_PACK_BOUNDS','INVALID_GRAPH','ORIGIN_TOO_FAR_FROM_ROAD','DESTINATION_TOO_FAR_FROM_ROAD','SAME_GRAPH_NODE']);
 
 export function resolveTsunamiGuidance(input:{origin:{lat:number;lng:number;accuracy_m:number|null}|null;deadlineAt:number;now:number;

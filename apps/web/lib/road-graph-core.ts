@@ -80,19 +80,21 @@ export function isWithinBounds(point: RoadPoint, bounds: RoadBounds): boolean {
   return point.lat >= bounds.south && point.lat <= bounds.north && point.lng >= bounds.west && point.lng <= bounds.east;
 }
 
+const BASIC_HIGHWAYS: ReadonlySet<string> = new Set(['footway', 'path', 'pedestrian', 'steps', 'living_street', 'residential', 'unclassified', 'tertiary', 'service']);
+const PUBLIC_ACCESS: ReadonlySet<string> = new Set(['yes', 'permissive']);
+const PUBLIC_FOOT_ACCESS: ReadonlySet<string> = new Set(['yes', 'designated', 'permissive']);
+const ACCESS_RULES = [
+  ['access', PUBLIC_ACCESS],
+  ['foot', PUBLIC_FOOT_ACCESS],
+  ['access:foot', PUBLIC_FOOT_ACCESS],
+] as const;
+
 export function tagsAreCandidateEligible(tags: Readonly<Record<string, string>>): boolean {
   const highway = tags.highway;
-  const basic = new Set(['footway', 'path', 'pedestrian', 'steps', 'living_street', 'residential', 'unclassified', 'tertiary', 'service']);
   const explicitlyWalkableRoad = ['yes', 'both', 'left', 'right'].includes(tags.sidewalk ?? '')
     || ['yes', 'designated', 'permissive'].includes(tags.foot ?? '');
-  if (!basic.has(highway ?? '') && !(['primary', 'secondary'].includes(highway ?? '') && explicitlyWalkableRoad)) return false;
-  const publicAccess = new Set(['yes', 'permissive']);
-  const publicFootAccess = new Set(['yes', 'designated', 'permissive']);
-  for (const [key, supported] of [
-    ['access', publicAccess],
-    ['foot', publicFootAccess],
-    ['access:foot', publicFootAccess],
-  ] as const) {
+  if (!BASIC_HIGHWAYS.has(highway ?? '') && !(['primary', 'secondary'].includes(highway ?? '') && explicitlyWalkableRoad)) return false;
+  for (const [key, supported] of ACCESS_RULES) {
     if (Object.prototype.hasOwnProperty.call(tags, key) && !supported.has(tags[key])) return false;
   }
   if (tags['access:conditional'] !== undefined || tags['foot:conditional'] !== undefined || tags.motorroad === 'yes') return false;
@@ -161,18 +163,20 @@ export function buildReferenceGraph(input: {
   if (input.nodes.length > limits.maxNodes || input.edges.length > limits.maxEdges || input.ways.length > limits.maxEdges) {
     throw new Error('Road graph exceeds installed capacity');
   }
-  if (input.sources.length < 1 || !input.sources.every((source) => source && typeof source.pack_id === 'string' && source.pack_id.length > 0
+  // Array.from turns holes into undefined so a sparse array is validated element by element, never skipped.
+  const sources = Array.from(input.sources);
+  if (sources.length < 1 || !sources.every((source) => source && typeof source.pack_id === 'string' && source.pack_id.length > 0
     && typeof source.retrieved_at === 'string' && source.retrieved_at.length > 0
     && (source.osm_base_timestamp === null || typeof source.osm_base_timestamp === 'string'))) {
     throw new Error('Road graph source is missing');
   }
 
-  const nodes: RoadGraphNode[] = input.nodes.map((node) => {
+  const nodes: RoadGraphNode[] = Array.from(input.nodes, (node) => {
     if (!node || !isOsmId(node.osm_id) || !validNode(node, bounds)) throw new Error('Road graph node outside declared bounds');
     if (!tagsWithinLimits(node.tags)) throw new Error('Road graph node tags exceed limits');
     return Object.freeze({ osm_id: node.osm_id, lat: node.lat, lng: node.lng, tags: Object.freeze({ ...node.tags }) });
   });
-  const ways: RoadGraphWay[] = input.ways.map((way) => {
+  const ways: RoadGraphWay[] = Array.from(input.ways, (way) => {
     if (!way || !isOsmId(way.osm_id) || !tagsWithinLimits(way.tags)) throw new Error('Road graph way tags exceed limits');
     if (!tagsAreCandidateEligible(way.tags)) throw new Error('Road graph contains a non-candidate way');
     return Object.freeze({ osm_id: way.osm_id, tags: Object.freeze({ ...way.tags }) });
@@ -185,7 +189,7 @@ export function buildReferenceGraph(input: {
   const edges: RoadGraphEdge[] = [];
   const edgeIdentities = new Set<string>();
   const connectedNodes = new Set<number>();
-  for (const edge of input.edges) {
+  for (const edge of input.edges) { // for-of yields holes as undefined, which fail the reference check
     const { from_node_index, to_node_index, way_index, direction } = edge ?? {};
     if (!isIndex(from_node_index, nodes.length) || !isIndex(to_node_index, nodes.length) || !isIndex(way_index, ways.length)
       || from_node_index === to_node_index) throw new Error('Invalid road graph edge reference');
@@ -205,17 +209,19 @@ export function buildReferenceGraph(input: {
   }
   if (connectedNodes.size !== nodes.length) throw new Error('Road graph contains an unconnected node');
 
-  return Object.freeze({
+  const graph: RoadReferenceGraph = Object.freeze({
     role: 'ROAD_REFERENCE_ONLY',
     movement_authorized: false,
     bounds: Object.freeze({ south: bounds.south, west: bounds.west, north: bounds.north, east: bounds.east }),
     nodes: Object.freeze(nodes),
     ways: Object.freeze(ways),
     edges: Object.freeze(edges),
-    sources: Object.freeze(input.sources.map((source) => Object.freeze({
+    sources: Object.freeze(sources.map((source) => Object.freeze({
       pack_id: source.pack_id, retrieved_at: source.retrieved_at, osm_base_timestamp: source.osm_base_timestamp,
     }))),
   });
+  builtGraphs.add(graph);
+  return graph;
 }
 
 class MinHeap {
@@ -253,16 +259,45 @@ class MinHeap {
   }
 }
 
+/**
+ * Graphs returned by buildReferenceGraph. They are deep-frozen, so the adjacency validated for one can be reused.
+ * Any other object (a spread copy, a hand-built graph) is never in this set and is re-validated on every search.
+ */
+const builtGraphs = new WeakSet<RoadReferenceGraph>();
+const validatedAdjacency = new WeakMap<RoadReferenceGraph, readonly (readonly Arc[])[]>();
+let adjacencyValidations = 0;
+
+/** Test-only: how many times the full search-time validation and adjacency build has run. */
+export function adjacencyValidationCountForTests(): number {
+  return adjacencyValidations;
+}
+
+function adjacencyFor(graph: RoadReferenceGraph): readonly (readonly Arc[])[] | null {
+  const cached = validatedAdjacency.get(graph);
+  if (cached) return cached;
+  const adjacency = buildAdjacency(graph);
+  if (adjacency && builtGraphs.has(graph)) validatedAdjacency.set(graph, adjacency);
+  return adjacency;
+}
+
 /** Re-checks the RoadReferenceGraph invariants at search time; a graph altered after building fails closed. */
 function buildAdjacency(graph: RoadReferenceGraph): Arc[][] | null {
   if (graph.role !== 'ROAD_REFERENCE_ONLY' || graph.movement_authorized !== false || !validBounds(graph.bounds)
     || graph.nodes.length < 2 || graph.nodes.length > ROAD_GRAPH_LIMITS.maxNodes
     || graph.edges.length === 0 || graph.edges.length > ROAD_GRAPH_LIMITS.maxEdges
     || graph.ways.length === 0 || graph.ways.length > ROAD_GRAPH_LIMITS.maxEdges) return null;
-  if (graph.nodes.some((node) => !validNode(node, graph.bounds))
-    || graph.ways.some((way) => !way?.tags || typeof way.tags !== 'object' || !tagsAreCandidateEligible(way.tags))) return null;
+  adjacencyValidations += 1;
+  // Indexed loops: Array.prototype.some skips holes, which would let a sparse array through to a TypeError later.
+  for (let index = 0; index < graph.nodes.length; index += 1) {
+    if (!validNode(graph.nodes[index], graph.bounds)) return null;
+  }
+  for (let index = 0; index < graph.ways.length; index += 1) {
+    const way = graph.ways[index];
+    if (!way?.tags || typeof way.tags !== 'object' || !tagsAreCandidateEligible(way.tags)) return null;
+  }
   const adjacency = Array.from({ length: graph.nodes.length }, () => [] as Arc[]);
-  for (const edge of graph.edges) {
+  for (let index = 0; index < graph.edges.length; index += 1) {
+    const edge = graph.edges[index];
     if (!edge || !isIndex(edge.from_node_index, graph.nodes.length) || !isIndex(edge.to_node_index, graph.nodes.length)
       || !isIndex(edge.way_index, graph.ways.length) || edge.from_node_index === edge.to_node_index) return null;
     const direction = edge.direction;
@@ -274,7 +309,10 @@ function buildAdjacency(graph: RoadReferenceGraph): Arc[][] | null {
   }
   // Every node must touch an edge (arcs in either direction count).
   const touched = new Uint8Array(graph.nodes.length);
-  for (const edge of graph.edges) { touched[edge.from_node_index] = 1; touched[edge.to_node_index] = 1; }
+  for (let index = 0; index < graph.edges.length; index += 1) {
+    touched[graph.edges[index].from_node_index] = 1;
+    touched[graph.edges[index].to_node_index] = 1;
+  }
   if (touched.includes(0)) return null;
   return adjacency;
 }
@@ -394,7 +432,7 @@ export function findRoadCandidates(graph: RoadReferenceGraph, origin: RoadPoint,
   if (!isWithinBounds(origin, graph.bounds) || !isWithinBounds(destination, graph.bounds)) {
     return emptyResult('OUTSIDE_PACK_BOUNDS');
   }
-  const adjacency = buildAdjacency(graph);
+  const adjacency = adjacencyFor(graph);
   if (!adjacency) return emptyResult('INVALID_GRAPH');
   const maxRelaxations = Math.max(MIN_EDGE_RELAXATIONS_PER_SEARCH, graph.edges.length * 4);
   const nearestOrigin = nearestNode(graph, origin);

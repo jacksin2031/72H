@@ -1,7 +1,7 @@
 // apps/web/tests/road-graph-core.test.ts
 import {readFileSync} from 'node:fs';
 import {describe,expect,it} from 'vitest';
-import {buildReferenceGraph,findRoadCandidates} from '../lib/road-graph-core';
+import {adjacencyValidationCountForTests,buildReferenceGraph,findRoadCandidates} from '../lib/road-graph-core';
 
 const bounds={south:38.40,west:141.27,north:38.42,east:141.30};
 const road={highway:'residential'};
@@ -70,7 +70,7 @@ describe('buildReferenceGraph invariants',()=>{
     expect(findRoadCandidates(g,{lat:38.41,lng:141.28},{lat:38.41,lng:141.284}).reason).toBeNull();
     expect(findRoadCandidates(g,{lat:38.41,lng:141.284},{lat:38.41,lng:141.28}).reason).toBe('DISCONNECTED_GRAPH');
   });
-  it('rejects role or authority claims other than reference-only and invalid bounds or sources',()=>{
+  it('rejects inverted bounds, missing or empty sources and limits above the ceiling',()=>{
     expect(()=>buildReferenceGraph({...line(3),bounds:{south:38.42,west:141.27,north:38.40,east:141.30}})).toThrow();
     expect(()=>buildReferenceGraph({...line(3),sources:[]})).toThrow();
     expect(()=>buildReferenceGraph({...line(3),sources:[{pack_id:'',retrieved_at:'x',osm_base_timestamp:null}]})).toThrow();
@@ -119,5 +119,67 @@ describe('findRoadCandidates fails closed on a tampered graph',()=>{
     expect(findRoadCandidates({...g,nodes:[...g.nodes,{osm_id:99,lat:38.41,lng:141.29,tags:{}}]},o,d).reason).toBe('INVALID_GRAPH');
     expect(findRoadCandidates({} as never,o,d).reason).toBe('INVALID_GRAPH');
     expect(findRoadCandidates(g,{lat:Number.NaN,lng:141.28},d).reason).toBe('INVALID_COORDINATE');
+  });
+});
+
+describe('findRoadCandidates tamper coverage',()=>{
+  const o={lat:38.41,lng:141.28},d={lat:38.41,lng:141.284};
+  it('rejects a spread copy whose edge direction no longer matches oneway:foot',()=>{
+    const g=buildReferenceGraph(line(5));
+    expect(findRoadCandidates({...g,edges:g.edges.map(e=>({...e,direction:'FORWARD' as const}))},o,d).reason).toBe('INVALID_GRAPH');
+  });
+  it('rejects a spread copy whose nodes were moved so an edge exceeds 1000 m',()=>{
+    const g=buildReferenceGraph({...line(3),bounds:{south:38.40,west:141.27,north:38.42,east:141.33}});
+    const stretched=g.nodes.map((n,i)=>i===2?{...n,lng:141.325}:n);
+    expect(findRoadCandidates({...g,nodes:stretched},o,d).reason).toBe('INVALID_GRAPH');
+  });
+  it('returns INVALID_GRAPH, not a TypeError, for sparse node, way or edge arrays',()=>{
+    const g=buildReferenceGraph(line(5));
+    const holed=<T,>(list:readonly T[],at:number)=>{const copy=[...list];delete copy[at];return copy;};
+    expect(findRoadCandidates({...g,nodes:holed(g.nodes,4)},o,d).reason).toBe('INVALID_GRAPH');
+    expect(findRoadCandidates({...g,ways:[...g.ways,undefined as never]},o,d).reason).toBe('INVALID_GRAPH');
+    const sparseWays=[...g.ways];sparseWays.length=2; // hole at index 1, never referenced by an edge
+    expect(findRoadCandidates({...g,ways:sparseWays},o,d).reason).toBe('INVALID_GRAPH');
+    expect(findRoadCandidates({...g,edges:holed(g.edges,1)},o,d).reason).toBe('INVALID_GRAPH');
+  });
+  it('rejects sparse arrays when building',()=>{
+    const input=line(3);
+    const ways=[...input.ways];ways.length=2;
+    expect(()=>buildReferenceGraph({...input,ways})).toThrow();
+    const sources=[...input.sources];sources.length=2;
+    expect(()=>buildReferenceGraph({...input,sources})).toThrow();
+  });
+});
+
+describe('validated adjacency cache',()=>{
+  const o={lat:38.41,lng:141.28},d={lat:38.41,lng:141.284};
+  it('validates and builds adjacency once per built graph',()=>{
+    const g=buildReferenceGraph(line(5));
+    const before=adjacencyValidationCountForTests();
+    const first=findRoadCandidates(g,o,d);
+    const second=findRoadCandidates(g,o,{lat:38.41,lng:141.283});
+    expect(adjacencyValidationCountForTests()-before).toBe(1);
+    expect(first.reason).toBeNull();expect(second.reason).toBeNull();
+    expect(findRoadCandidates(g,o,d)).toEqual(first);
+    expect(adjacencyValidationCountForTests()-before).toBe(1);
+  });
+  it('re-validates spread copies and hand-built graphs on every call, so tampering still fails closed',()=>{
+    const g=buildReferenceGraph(line(5));
+    findRoadCandidates(g,o,d);
+    const before=adjacencyValidationCountForTests();
+    const copy={...g};
+    expect(findRoadCandidates(copy,o,d).reason).toBeNull();
+    expect(findRoadCandidates(copy,o,d).reason).toBeNull();
+    expect(adjacencyValidationCountForTests()-before).toBe(2);
+    expect(findRoadCandidates({...g,movement_authorized:true} as never,o,d).reason).toBe('INVALID_GRAPH');
+    expect(findRoadCandidates({...g,ways:[{osm_id:1,tags:{highway:'motorway'}}]},o,d).reason).toBe('INVALID_GRAPH');
+    expect(findRoadCandidates({...g,edges:g.edges.map(e=>({...e,direction:'REVERSE' as const}))},o,d).reason).toBe('INVALID_GRAPH');
+    // The cached original is unaffected by the tampered copies.
+    expect(findRoadCandidates(g,o,d).reason).toBeNull();
+  });
+  it('cannot be tampered with in place because the built graph is deep-frozen',()=>{
+    const g=buildReferenceGraph(line(3));
+    expect(Object.isFrozen(g.nodes[0])).toBe(true);expect(Object.isFrozen(g.ways[0].tags)).toBe(true);
+    expect(Object.isFrozen(g.bounds)).toBe(true);expect(Object.isFrozen(g.edges[0])).toBe(true);
   });
 });

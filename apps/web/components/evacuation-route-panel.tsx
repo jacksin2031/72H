@@ -35,15 +35,16 @@ export function EvacuationRoutePanel({language,state,origin,onOrigin,onFocus,onR
  const t=text[language],hazard=state.hazard;
  const [graph,setGraph]=useState<RoadGraphPack|null>(null),[loadError,setLoadError]=useState(false),[loading,setLoading]=useState(true);
  const [destinationId,setDestinationId]=useState(''),[candidates,setCandidates]=useState<readonly RoadCandidate[]>([]),[attempted,setAttempted]=useState(false);
- // A pack that fails the pinned or generic graph checks yields no reference graph and so no candidates.
- const referenceGraph=useMemo(():RoadReferenceGraph|null=>{if(!graph)return null;try{return ishinomakiReferenceGraph(graph);}catch{return null;}},[graph]);
+ const [referenceGraph,setReferenceGraph]=useState<RoadReferenceGraph|null>(null);
  const places=useMemo(()=>selectEvacuationDestinations(state.pack?.catalog??[],hazard),[state.pack,hazard]);
  const destination=places.find(p=>p.id===destinationId)??null;
  const originKey=origin?`${origin.source}:${origin.lat}:${origin.lng}:${origin.captured_at}`:'';
  const currentCatalog=!!state.pack&&state.now>=Date.parse(state.pack.manifest.reviewed_at)&&state.now<Date.parse(state.pack.manifest.review_due_at);
  const graphCurrent=!!graph&&state.now>=Date.parse(graph.manifest.reviewed_at)&&state.now<Date.parse(graph.manifest.review_due_at);
  useEffect(()=>{
-  const abort=new AbortController();void loadEvacuationRoadGraph(abort.signal).then(pack=>{if(!abort.signal.aborted)setGraph(pack);})
+  // A pack that fails the pinned or generic graph checks is a load error ("road data unverified"), never "no route".
+  const abort=new AbortController();
+  void loadEvacuationRoadGraph(abort.signal).then(pack=>{const reference=ishinomakiReferenceGraph(pack);if(!abort.signal.aborted){setGraph(pack);setReferenceGraph(reference);}})
    .catch(()=>{if(!abort.signal.aborted)setLoadError(true);}).finally(()=>{if(!abort.signal.aborted)setLoading(false);});
   return()=>abort.abort();
  },[]);
