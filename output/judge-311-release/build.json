@@ -1,0 +1,38 @@
+{
+  "id": "0e873296-75cc-450c-b79f-25495793e80f",
+  "results": {
+    "images": [
+      {
+        "artifactRegistryPackage": "projects/h-japan/locations/asia-northeast1/repositories/h72/packages/72h/versions/sha256:4edd3b076de4c80c106d0322571cc91fd3a882335f8b6a3f0c379bcf1f904b1d",
+        "digest": "sha256:4edd3b076de4c80c106d0322571cc91fd3a882335f8b6a3f0c379bcf1f904b1d",
+        "name": "asia-northeast1-docker.pkg.dev/h-japan/h72/72h:4503c5eba19f1b0b90893c8fe1ae81ba2404e185",
+        "pushTiming": {
+          "endTime": "2026-10-15T14:40:46.939868158Z",
+          "startTime": "2026-10-15T14:38:54.572245534Z"
+        }
+      }
+    ]
+  },
+  "sourceProvenance": {
+    "fileHashes": {
+      "gs://h-japan_cloudbuild/source/1792074826.879576-5858d45c709a491281bfa328774a3d38.tgz#1792074881000775": {
+        "fileHash": [
+          {
+            "type": "MD5",
+            "value": "j6qbvo61NwAzlWM-jRiptg=="
+          },
+          {
+            "type": "SHA256",
+            "value": "50meshIXCLSetPJK7xnUpKHfnCoK9JdwbgnxrnkHhtU="
+          }
+        ]
+      }
+    },
+    "resolvedStorageSource": {
+      "bucket": "h-japan_cloudbuild",
+      "generation": "1792074881000775",
+      "object": "source/1792074826.879576-5858d45c709a491281bfa328774a3d38.tgz"
+    }
+  },
+  "status": "SUCCESS"
+}

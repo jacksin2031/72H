@@ -1,0 +1,50 @@
+{
+  "base": "https://judge-4503c5e---h72-vux6j7xjka-an.a.run.app",
+  "source": "4503c5eba19f1b0b90893c8fe1ae81ba2404e185",
+  "routes": {
+    "/": 200,
+    "/judge": 200,
+    "/demo": 200,
+    "/disaster-test": 200,
+    "/more": 200,
+    "/api/health": 200,
+    "/api/version": 200
+  },
+  "static_assets": 23,
+  "/sw.js": {
+    "sha256": "66ebbe2e3dfef767a1a7c04e54173f1b4aa4eecc3dd483955794e362fd9b998a",
+    "bytes": 6540
+  },
+  "/precache-manifest.json": {
+    "sha256": "5a5f3ddb9c908483d1178803bfd63c682c9772ac2413b37099e191feb241643e",
+    "bytes": 1755
+  },
+  "replay": {
+    "step": 11,
+    "plans": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "network_states": [
+      "ONLINE_VERIFIED",
+      "ONLINE_VERIFIED",
+      "ONLINE_VERIFIED",
+      "ONLINE_VERIFIED",
+      "ONLINE_VERIFIED",
+      "ONLINE_DEGRADED",
+      "OFFLINE_RECENT",
+      "OFFLINE_STALE",
+      "RECONNECTING",
+      "RECONNECTING",
+      "ONLINE_VERIFIED",
+      "ONLINE_VERIFIED"
+    ]
+  },
+  "live": {
+    "network_state": "ONLINE_DEGRADED",
+    "plans": 0,
+    "movement_authorized": []
+  }
+}

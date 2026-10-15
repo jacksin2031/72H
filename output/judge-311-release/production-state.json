@@ -1,0 +1,14 @@
+{
+  "revision": "h72-judge-4503c5e",
+  "image": "asia-northeast1-docker.pkg.dev/h-japan/h72/72h@sha256:4edd3b076de4c80c106d0322571cc91fd3a882335f8b6a3f0c379bcf1f904b1d",
+  "traffic": {
+    "percent": 100,
+    "revisionName": "h72-judge-4503c5e",
+    "tag": "judge-4503c5e",
+    "url": "https://judge-4503c5e---h72-vux6j7xjka-an.a.run.app"
+  },
+  "envUnchanged": true,
+  "publiclyInvokable": true,
+  "runtimeServiceAccount": "h72-runtime@h-japan.iam.gserviceaccount.com",
+  "rollback": "h72-submit-b390b8a"
+}

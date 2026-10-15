@@ -1,0 +1,38 @@
+{
+  "preview": {
+    "steps": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "plans": [
+      1,
+      2,
+      3
+    ],
+    "gemini_adk_success": 4,
+    "fallback": 0,
+    "route_authorized": false,
+    "safe_location_verified": false
+  },
+  "production": {
+    "steps": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "plans": [
+      1,
+      2,
+      3
+    ],
+    "gemini_adk_success": 4,
+    "fallback": 0,
+    "route_authorized": false,
+    "safe_location_verified": false
+  }
+}

@@ -1,5 +1,16 @@
 # 72H — ハッカソン提出パッケージ（vNext）
 
+## 最新の審査入口（2026-10-15 JST）
+
+**3.11体験の本番公開・動作確認：PASS。**
+ログイン・アクセスキー不要の入口は https://h72-vux6j7xjka-an.a.run.app/judge です。
+フォームの「動作確認の方法」には [更新済みの日本語手順](JUDGING_INSTRUCTIONS_JA.md) を使用してください。
+Runtime source `4503c5e`、revision `h72-judge-4503c5e`、100% traffic。
+プレビュー・本番の両方で4イベント、3計画、Gemini / ADK 4成功・fallback 0を確認しました。
+詳細な発行情報と制限は [本番リリース記録](releases/JUDGE_311_PRODUCTION_RELEASE.md) を参照してください。
+
+以下の旧vNext revision・検証数・機能境界は過去の記録です。最新の公開情報は上記を優先してください。
+
 - 公式イベント: 第5回 Agentic AI Hackathon with Google Cloud
 - 締切: 2026-10-15 23:59 JST
 - サービスURL: https://h72-602701455122.asia-northeast1.run.app

@@ -1,0 +1,36 @@
+{
+  "source": "4503c5eba19f1b0b90893c8fe1ae81ba2404e185",
+  "build": "0e873296-75cc-450c-b79f-25495793e80f",
+  "rollback": "h72-submit-b390b8a",
+  "url": "https://h72-vux6j7xjka-an.a.run.app",
+  "traffic": {
+    "percent": 100,
+    "revisionName": "h72-submit-b390b8a",
+    "tag": "zhcn",
+    "url": "https://zhcn---h72-vux6j7xjka-an.a.run.app"
+  },
+  "serviceAccount": "h72-runtime@h-japan.iam.gserviceaccount.com",
+  "annotations": {
+    "autoscaling.knative.dev/maxScale": "1",
+    "run.googleapis.com/client-name": "gcloud",
+    "run.googleapis.com/client-version": "587.0.0",
+    "run.googleapis.com/startup-cpu-boost": "true"
+  },
+  "resources": {
+    "limits": {
+      "cpu": "1",
+      "memory": "1Gi"
+    }
+  },
+  "concurrency": 8,
+  "timeout": 60,
+  "envNames": [
+    "GOOGLE_CLOUD_PROJECT",
+    "GOOGLE_CLOUD_LOCATION",
+    "GOOGLE_GENAI_USE_VERTEXAI",
+    "GEMINI_MODEL",
+    "PLANNER_MODE",
+    "EKISPERT_API_ACCESS_KEY",
+    "DRILL_ACCESS_KEY"
+  ]
+}

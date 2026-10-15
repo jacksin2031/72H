@@ -1,0 +1,51 @@
+{
+  "name": "h72-judge-4503c5e",
+  "image": "asia-northeast1-docker.pkg.dev/h-japan/h72/72h@sha256:4edd3b076de4c80c106d0322571cc91fd3a882335f8b6a3f0c379bcf1f904b1d",
+  "serviceAccount": "h72-runtime@h-japan.iam.gserviceaccount.com",
+  "resources": {
+    "limits": {
+      "cpu": "1",
+      "memory": "1Gi"
+    }
+  },
+  "annotations": {
+    "autoscaling.knative.dev/maxScale": "1",
+    "run.googleapis.com/client-name": "gcloud",
+    "run.googleapis.com/client-version": "587.0.0",
+    "run.googleapis.com/operation-id": "ba46bbaf-f367-4bb0-89b6-85fe87723b30",
+    "run.googleapis.com/startup-cpu-boost": "true",
+    "serving.knative.dev/creator": "jacksin2003111@gmail.com"
+  },
+  "conditions": [
+    {
+      "lastTransitionTime": "2026-10-15T14:41:53.190969Z",
+      "message": "Deploying revision succeeded in 39.5s.",
+      "status": "True",
+      "type": "Ready"
+    },
+    {
+      "lastTransitionTime": "2026-10-15T14:41:53.291899Z",
+      "severity": "Info",
+      "status": "True",
+      "type": "Active"
+    },
+    {
+      "lastTransitionTime": "2026-10-15T14:41:53.138876Z",
+      "message": "Containers became healthy in 6.29s.",
+      "status": "True",
+      "type": "ContainerHealthy"
+    },
+    {
+      "lastTransitionTime": "2026-10-15T14:41:44.826592Z",
+      "message": "Container image import completed in 30.56s.",
+      "status": "True",
+      "type": "ContainerReady"
+    },
+    {
+      "lastTransitionTime": "2026-10-15T14:41:46.3477Z",
+      "message": "Provisioning imported containers completed in 1.52s. Checking container health. This will wait for up to 4m for the configured startup probe, including an initial delay of 0s.",
+      "status": "True",
+      "type": "ResourcesAvailable"
+    }
+  ]
+}
