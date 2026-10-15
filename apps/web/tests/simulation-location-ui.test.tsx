@@ -37,8 +37,9 @@ it('resolves opt-in current location locally and exposes only canonical area IDs
   await mount(<Harness/>);expect(locate).not.toHaveBeenCalled();
   await act(async()=>[...el!.querySelectorAll('button')].find(b=>b.textContent?.includes('我的目前位置'))!.click());
   expect(locate).toHaveBeenCalledTimes(1);
-  expect(resolver).toHaveBeenCalledWith({latitude:38.43,longitude:141.30,accuracy_m:0});
-  expect(received).toHaveBeenLastCalledWith(expect.objectContaining({area_ids:['JP-MUNI-04202','JP-04','JP'],source:'GPS'}));
+  expect(resolver).toHaveBeenCalledWith({latitude:38.43,longitude:141.30,accuracy_m:10});
+  expect(received).toHaveBeenLastCalledWith(expect.objectContaining({area_ids:['JP-MUNI-04202','JP-04','JP'],source:'USER_SELECTED'}));
+  expect(received).not.toHaveBeenCalledWith(expect.objectContaining({source:'GPS'}));
   expect(network).not.toHaveBeenCalled();expect(save).not.toHaveBeenCalled();
 });
 

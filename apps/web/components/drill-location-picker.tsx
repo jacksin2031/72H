@@ -21,10 +21,10 @@ const text = {
     OUTSIDE: 'This point is outside Japan municipalities', UNAVAILABLE: 'Could not determine the municipality for this point', AMBIGUOUS: 'Could not determine the municipality for this point' },
 } as const;
 
-type Fix = { lat: number; lng: number };
+type Fix = { lat: number; lng: number; accuracy_m?: number };
 const readOnce = (): Promise<Fix> => new Promise((resolve, reject) => {
   if (typeof navigator === 'undefined' || !navigator.geolocation) { reject(new Error('unsupported')); return; }
-  navigator.geolocation.getCurrentPosition(p => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }), reject, { maximumAge: 0, timeout: 15000 });
+  navigator.geolocation.getCurrentPosition(p => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy_m: p.coords.accuracy }), reject, { maximumAge: 0, timeout: 15000 });
 });
 
 /** Exercise-only point chooser. Holds nothing in localStorage or IndexedDB; the chosen point lives in the caller's memory. */
@@ -38,8 +38,8 @@ export function DrillLocationPicker({ language, caseId, value, onChange, geoloca
   const [pending, setPending] = useState<Fix | null>(null);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
-  const presets = caseId ? DRILL_PRESETS[caseId] : [];
-  useEffect(() => { onMapOpenChange?.(mapOpen); }, [mapOpen, onMapOpenChange]);
+  const presets = (caseId ? DRILL_PRESETS[caseId] : undefined) ?? [];
+  useEffect(() => { onMapOpenChange?.(mapOpen); return () => { if (mapOpen) onMapOpenChange?.(false); }; }, [mapOpen, onMapOpenChange]);
 
   const choose = async (point: DrillPoint) => {
     setBusy(true); setMessage('');
@@ -56,7 +56,7 @@ export function DrillLocationPicker({ language, caseId, value, onChange, geoloca
     try { fix = await geolocate(); } catch { setMessage(t.geoFailed); setBusy(false); return; }
     setBusy(false);
     const label = { ja: text.ja.hereLabel, 'zh-TW': text['zh-TW'].hereLabel, en: text.en.hereLabel };
-    await choose({ lat: fix.lat, lng: fix.lng, source: 'DEVICE_ONCE', label, preset_id: null });
+    await choose({ lat: fix.lat, lng: fix.lng, source: 'DEVICE_ONCE', label, preset_id: null, accuracy_m: fix.accuracy_m });
   };
 
   if (value) {

@@ -6,7 +6,8 @@ export type HistoricalId='tohoku-2011'|'kobe-1995'|'kumamoto-2016'|'iburi-2018'|
 export type DrillPointSource='PRESET'|'MAP_PICK'|'DEVICE_ONCE';
 type Label={ja:string;'zh-TW':string;en:string};
 export type DrillPreset={id:string;lat:number;lng:number;label:Label};
-export type DrillPoint={lat:number;lng:number;source:DrillPointSource;label:Label;preset_id:string|null};
+export type DrillPoint={lat:number;lng:number;source:DrillPointSource;label:Label;preset_id:string|null;
+  /** Real device accuracy for DEVICE_ONCE points; presets and map picks have none. */accuracy_m?:number};
 
 /** Exercise-only representative points (approximate centres). Never a statement about real conditions. */
 export const DRILL_PRESETS:Record<HistoricalId,readonly DrillPreset[]>={
@@ -35,7 +36,7 @@ export const DRILL_PRESETS:Record<HistoricalId,readonly DrillPreset[]>={
 
 export async function drillPointToLocation(point:DrillPoint,resolve:(fix:AreaFix)=>Promise<AreaResolution>=resolveDeviceArea,now=new Date())
   :Promise<{ok:true;location:SimulationLocation;areaLabel:string}|{ok:false;reason:'OUTSIDE'|'UNAVAILABLE'|'AMBIGUOUS'}>{
-  const result=await resolve({latitude:point.lat,longitude:point.lng,accuracy_m:0});
+  const result=await resolve({latitude:point.lat,longitude:point.lng,accuracy_m:point.source==='DEVICE_ONCE'?(point.accuracy_m??0):0});
   if(result.status!=='RESOLVED'||result.area_ids.length<2)return {ok:false,reason:result.status==='RESOLVED'?'UNAVAILABLE':result.status};
-  return {ok:true,areaLabel:result.label,location:{area_ids:[...result.area_ids],source:point.source==='DEVICE_ONCE'?'GPS':'USER_SELECTED',observed_at:now.toISOString()}};
+  return {ok:true,areaLabel:result.label,location:{area_ids:[...result.area_ids],source:'USER_SELECTED',observed_at:now.toISOString()}};
 }

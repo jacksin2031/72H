@@ -26,9 +26,9 @@ it('map pick requires confirming the tapped point',async()=>{
   expect(onChange).not.toHaveBeenCalled();await click('使用這個位置');
   expect(onChange.mock.calls.at(-1)![0]).toMatchObject({source:'MAP_PICK',lat:38.9,lng:141.57});
 });
-it('device location reads once and maps to GPS',async()=>{
-  const geolocate=vi.fn(async()=>({lat:38.43,lng:141.30}));const onChange=await mount({geolocate});await click('我的目前位置');
-  expect(geolocate).toHaveBeenCalledTimes(1);expect(onChange.mock.calls.at(-1)![1]).toMatchObject({source:'GPS'});
+it('device location reads once and maps to USER_SELECTED with real accuracy',async()=>{
+  const geolocate=vi.fn(async()=>({lat:38.43,lng:141.30,accuracy_m:10}));const onChange=await mount({geolocate});await click('我的目前位置');
+  expect(geolocate).toHaveBeenCalledTimes(1);expect(onChange.mock.calls.at(-1)![1]).toMatchObject({source:'USER_SELECTED'});
 });
 it('collapses to one summary line once a point is chosen and never writes Live storage',async()=>{
   await mount({value:{lat:38.4196,lng:141.2946,source:'PRESET',preset_id:'tohoku-ishinomaki-kadonowaki',label:{ja:'石巻・門脇','zh-TW':'石巻・門脇',en:'x'}}});
@@ -44,4 +44,26 @@ it('shows a clear message when the point is outside Japan municipalities',async(
 it('shows exactly one primary button only while the map view is open',async()=>{
   await mount();expect(host.querySelectorAll('.ui-btn-primary').length).toBe(0);
   await click('在地圖上選點');expect(host.querySelectorAll('.ui-btn-primary').length).toBe(1);
+});
+it('shows the unavailable message for UNAVAILABLE and AMBIGUOUS',async()=>{
+  const {resolveDeviceArea}=await import('../lib/area-resolution');
+  for(const status of ['UNAVAILABLE','AMBIGUOUS'] as const){
+    vi.mocked(resolveDeviceArea).mockResolvedValueOnce({status,area_ids:[],label:''} as never);
+    const onChange=await mount();await click('石巻・門脇');
+    expect(host.textContent).toContain('無法判斷此位置所屬的市區町村');expect(onChange).not.toHaveBeenCalled();
+    await act(async()=>root.unmount());host.remove();
+  }
+  await mount();
+});
+it('shows geoFailed when the device read fails',async()=>{
+  const onChange=await mount({geolocate:async()=>{throw new Error('denied');}});await click('我的目前位置');
+  expect(host.textContent).toContain('無法取得目前位置');expect(onChange).not.toHaveBeenCalled();
+});
+it('does not crash for an unknown case id and shows no presets',async()=>{
+  await mount({caseId:'unknown-case' as never});expect(host.querySelectorAll('.ui-chip').length).toBe(0);expect(host.textContent).toContain('在地圖上選點');
+});
+it('clears the map-open flag on unmount',async()=>{
+  const open=vi.fn();await mount({onMapOpenChange:open});await click('在地圖上選點');expect(open).toHaveBeenLastCalledWith(true);
+  await act(async()=>root.unmount());expect(open).toHaveBeenLastCalledWith(false);
+  host.remove();await mount();
 });

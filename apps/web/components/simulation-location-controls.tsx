@@ -28,9 +28,9 @@ export function SimulationLocationControls({language,location,conditions,caseId,
   return <section className="sim-location-controls" data-testid="simulation-location-controls">
     <DrillLocationPicker language={language} caseId={caseId} value={drillPoint} onMapOpenChange={onMapOpenChange}
       onChange={(point,loc,areaLabel)=>{onDrillPoint(point);onLocation(loc);setLabel(areaLabel);}}/>
-    <p>{label||a.unknownArea}{location?' · '+(location.source==='GPS'?a.gps:a.manual):''}</p>
+    {!drillPoint&&<p>{label||a.unknownArea}{location?' · '+(location.source==='GPS'?a.gps:a.manual):''}</p>}
     <Disclosure summary={t.areaOnly}>
-      <AreaFallbackPicker messages={{locationResolving:t.resolving,locationChooseArea:t.choose,areaCatalogUnavailable:t.failed,locationPrefecture:t.pref,
+      <AreaFallbackPicker secondary messages={{locationResolving:t.resolving,locationChooseArea:t.choose,areaCatalogUnavailable:t.failed,locationPrefecture:t.pref,
         locationChoosePrefecture:t.pick,locationMunicipality:t.city,locationPrefectureOnly:t.broad,locationConfirmArea:t.confirm}}
         onConfirm={value=>{onDrillPoint(null);onLocation({area_ids:value.area_ids,source:'USER_SELECTED',observed_at:value.observed_at});setLabel(value.label);}}/>
     </Disclosure>

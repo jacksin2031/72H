@@ -7,7 +7,7 @@ import { type Language } from '@/lib/contracts';
 import type { DisasterTestInput } from '@/lib/disaster-test';
 import { ACCELERATION_OPTIONS, canPlayRealtime, jstInputFromEpoch, validAcceleratedPrelude, selectHistoricalRange, type Acceleration, type TimeMode } from '@/lib/historical-playback';
 import { defaultSimulationConditions, type SimulationLocation, type SimulationConditions } from '@/lib/simulation-advice';
-import type { DrillPoint, HistoricalId } from '@/lib/drill-location';
+import { DRILL_PRESETS, type DrillPoint, type HistoricalId } from '@/lib/drill-location';
 import { SimulationLocationControls } from './simulation-location-controls';
 
 const milestoneSchema = z.object({
@@ -142,6 +142,12 @@ export function MockLiveRun({ input, language, accessKey }: { input: DisasterTes
     setEndJst(chosen?.milestones.at(-1)?.at_jst.slice(0,16) ?? '');
     setAcceleratedStart(first ? jstInputFromEpoch(Date.parse(first) - 60*60*1000) : '');
   }, [catalog, historicalCase]);
+  useEffect(() => {
+    // A preset belongs to one case; drop it (and its area) if the case changes.
+    if (drillPoint?.preset_id && !(DRILL_PRESETS[historicalCase as HistoricalId] ?? []).some(p => p.id === drillPoint.preset_id)) {
+      setDrillPoint(null); setLocationContext(null);
+    }
+  }, [historicalCase, drillPoint]);
   const chosen = catalog.find(c => c.id === historicalCase);
   const selectedEvents = chosen ? timeMode === 'FAST_RANGE'
     ? selectHistoricalRange(chosen.milestones, startJst, endJst) : chosen.milestones : [];
