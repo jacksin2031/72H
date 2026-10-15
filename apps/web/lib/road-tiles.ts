@@ -263,8 +263,25 @@ class IndexedDbTileStore implements TileStore{
         request.onerror=()=>reject(request.error);
       });
       if(value!==null&&value!==undefined){
+        if(this.fallback.has(id)){
+          const fallback=await validateTile(this.fallback.get(id),id);
+          if(fallback){
+            const stored=await validateTile(value,id);
+            const fallbackRetrieved=Date.parse(fallback.tile.source.retrieved_at);
+            const storedRetrieved=stored?Date.parse(stored.tile.source.retrieved_at):Number.NaN;
+            const databaseSupersedesFallback=!!stored&&Number.isFinite(fallbackRetrieved)&&Number.isFinite(storedRetrieved)
+              &&(storedRetrieved>fallbackRetrieved
+                ||(storedRetrieved===fallbackRetrieved&&stored.tile.content_sha256===fallback.tile.content_sha256));
+            if(!databaseSupersedesFallback){
+              this.persistentIds.delete(id);
+              return fallback.tile;
+            }
+            this.fallback.delete(id);
+            this.persistentIds.add(id);
+            return stored.tile;
+          }else this.fallback.delete(id);
+        }
         this.persistentIds.add(id);
-        this.fallback.delete(id);
         return value;
       }
       this.persistentIds.delete(id);

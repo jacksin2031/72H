@@ -325,23 +325,34 @@ describe('loadRoadTilesAround',()=>{
     }finally{vi.unstubAllGlobals();}
   });
 
-  it('uses per-key fallback after a transient IndexedDB put failure and reports mixed persistence',async()=>{
+  it('keeps a newer verified fallback over an older database tile after a transient put failure',async()=>{
     vi.resetModules();
     const roads=await import('../lib/road-tiles');
     const idb=fakeIndexedDb({failPutKey:EAST});
+    idb.values.set(EAST,await tile(EAST,'2026-08-01T00:00:00+00:00'));
     vi.stubGlobal('indexedDB',idb.factory);
     try{
       const fetchTile=async(id:string)=>Response.json(await tile(id));
       const first=await roads.loadRoadTilesAround(P,{fetchTile,now:new Date('2026-10-16T00:00:00Z'),online:true});
       expect(first.status).toBe('READY');
       if(first.status==='READY')expect(first.persisted).toBe(false);
+      expect((idb.values.get(EAST) as Awaited<ReturnType<typeof tile>>).source.retrieved_at).toBe('2026-08-01T00:00:00+00:00');
 
       const offline=await roads.loadRoadTilesAround(P,{fetchTile:vi.fn(),now:new Date('2026-10-16T00:00:00Z'),online:false});
       expect(offline.status).toBe('READY');
       if(offline.status==='READY'){
         expect(offline.missing).toEqual([]);
+        expect(offline.graph.sources.find((source)=>source.pack_id===`osm-tile-${EAST}-v1`)?.retrieved_at).toBe('2026-10-15T00:00:00+00:00');
         expect(offline.persisted).toBe(false);
-        expect(offline.graph.sources.some((source)=>source.pack_id===`osm-tile-${EAST}-v1`)).toBe(true);
+        expect(offline.stale).toBe(false);
+      }
+
+      idb.values.set(EAST,await tile(EAST,'2026-10-16T00:00:00+00:00'));
+      const newerDatabase=await roads.loadRoadTilesAround(P,{fetchTile:vi.fn(),now:new Date('2026-10-17T00:00:00Z'),online:false});
+      expect(newerDatabase.status).toBe('READY');
+      if(newerDatabase.status==='READY'){
+        expect(newerDatabase.graph.sources.find((source)=>source.pack_id===`osm-tile-${EAST}-v1`)?.retrieved_at).toBe('2026-10-16T00:00:00+00:00');
+        expect(newerDatabase.persisted).toBe(true);
       }
 
       const recovered=await roads.loadRoadTilesAround(P,{fetchTile:async(id)=>Response.json(await tile(id,'2026-11-16T00:00:00+00:00')),
