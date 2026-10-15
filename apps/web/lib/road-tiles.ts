@@ -21,7 +21,7 @@ export interface TileStore {
 
 export type RoadTileState=
   | {status:'READY';graph:RoadReferenceGraph;missing:string[];oldestRetrievedAt:string;stale:boolean;persisted:boolean}
-  | {status:'UNAVAILABLE';reason:'OFFLINE_NO_DATA'|'TOO_DENSE'|'TEMPORARILY_UNAVAILABLE'|'INVALID_DATA'};
+  | {status:'UNAVAILABLE';reason:'OFFLINE_NO_DATA'|'TOO_DENSE'|'TEMPORARILY_UNAVAILABLE'|'INVALID_DATA'|'NO_ROADS'};
 
 type RoadPoint=Readonly<{lat:number;lng:number}>;
 type LoadOptions=Readonly<{
@@ -169,6 +169,9 @@ function tileGraph(tile:RoadTile):RoadReferenceGraph{
   });
 }
 
+function isEmptyTile(tile:RoadTile):boolean{
+  return tile.nodes.length===0&&tile.ways.length===0&&tile.edges.length===0;
+}
 async function validateTile(value:unknown,id:string):Promise<ValidTile|null>{
   const parsed=tileSchema.safeParse(value);
   if(!parsed.success)return null;
@@ -182,7 +185,7 @@ async function validateTile(value:unknown,id:string):Promise<ValidTile|null>{
     const {content_sha256,...body}=value as RoadTile;
     const canonical=JSON.stringify(body);
     if(new TextEncoder().encode(canonical).byteLength>MAX_TILE_BYTES||await sha256(canonical)!==content_sha256)return null;
-    tileGraph(tile);
+    if(!isEmptyTile(tile))tileGraph(tile);
   }catch{return null;}
   return {tile};
 }
@@ -412,6 +415,14 @@ function readyState(tiles:readonly RoadTile[],missing:string[],now:number,persis
   };
 }
 
+function stateForTiles(tiles:readonly RoadTile[],missing:string[],now:number,persisted:boolean,online:boolean):RoadTileState{
+  if(tiles.length>0&&tiles.every(isEmptyTile)){
+    return missing.length===0
+      ?{status:'UNAVAILABLE',reason:'NO_ROADS'}
+      :{status:'UNAVAILABLE',reason:online?'TEMPORARILY_UNAVAILABLE':'OFFLINE_NO_DATA'};
+  }
+  return readyState(tiles,missing,now,persisted);
+}
 export async function loadRoadTilesAround(point:RoadPoint,opts:LoadOptions={}):Promise<RoadTileState>{
   throwIfAborted(opts.signal);
   if(!isJapanPoint(point))return {status:'UNAVAILABLE',reason:'INVALID_DATA'};
@@ -445,7 +456,7 @@ export async function loadRoadTilesAround(point:RoadPoint,opts:LoadOptions={}):P
     if(!cached.has(centre))return unsupported;
     const usedIds=ids.filter((id)=>cached.has(id));
     const used=usedIds.map((id)=>cached.get(id)!.tile);
-    try{return readyState(used,[...missing],now,store===defaultStore&&defaultStore.isPersistent(usedIds));}
+    try{return stateForTiles(used,[...missing],now,store===defaultStore&&defaultStore.isPersistent(usedIds),false);}
     catch{return {status:'UNAVAILABLE',reason:'INVALID_DATA'};}
   }
 
@@ -490,7 +501,7 @@ export async function loadRoadTilesAround(point:RoadPoint,opts:LoadOptions={}):P
   const usedIds=ids.filter((id)=>selected.has(id));
   const used=usedIds.map((id)=>selected.get(id)!.tile);
   let result:RoadTileState;
-  try{result=readyState(used,[...missing],now,store===defaultStore&&defaultStore.isPersistent(usedIds));}
+  try{result=stateForTiles(used,[...missing],now,store===defaultStore&&defaultStore.isPersistent(usedIds),true);}
   catch{return {status:'UNAVAILABLE',reason:'INVALID_DATA'};}
 
   for(const [id,outcome] of outcomes){

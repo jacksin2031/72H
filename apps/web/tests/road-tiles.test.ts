@@ -36,6 +36,13 @@ async function tile(id:string,retrieved='2026-10-15T00:00:00+00:00'){
   return {...body,content_sha256:await sha(body)};
 }
 
+async function emptyTile(id:string,retrieved='2026-10-15T00:00:00+00:00'){
+  const body={schema_version:2,pack_id:`osm-tile-${id}-v1`,role:'ROAD_REFERENCE_ONLY',movement_authorized:false,built_at:retrieved,
+    bounds:tileBounds(id),capacity:[20000,40000],counts:[0,0,0],
+    source:{name:'OpenStreetMap contributors',endpoint:'https://overpass-api.de/api/interpreter',copyright_url:'https://www.openstreetmap.org/copyright',license:'ODbL-1.0',license_url:'https://opendatacommons.org/licenses/odbl/1-0/',osm_base_timestamp:'2026-10-15T04:27:04Z',retrieved_at:retrieved,raw_sha256:'0'.repeat(64),query_sha256:'0'.repeat(64)},
+    nodes:[],ways:[],edges:[]};
+  return {...body,content_sha256:await sha(body)};
+}
 async function tileSnapshot(id:string,options:{reverseNodes?:boolean;bidirectional?:boolean}={}){
   const source=await tile(id);
   const {content_sha256:_contentSha,...body}=source;
@@ -360,5 +367,64 @@ describe('loadRoadTilesAround',()=>{
       expect(recovered.status).toBe('READY');
       if(recovered.status==='READY')expect(recovered.persisted).toBe(true);
     }finally{vi.unstubAllGlobals();}
+  });
+  it('accepts a backend-generated empty water tile as coverage beside non-empty roads',async()=>{
+    const {m,store}=memStore();
+    const real=committedTile('road-tile-r1919c5651-empty.json');
+    const emptyId='r1919c5651';
+    const fetchTile=vi.fn(async(id:string)=>Response.json(id===emptyId?real:await tile(id)));
+    const result=await loadRoadTilesAround(P,{fetchTile,store,now:new Date('2026-10-16T00:00:00Z'),online:true});
+    expect(result.status).toBe('READY');expect(m.size).toBe(9);
+    if(result.status==='READY'){
+      expect(result.graph.sources.some((source)=>source.pack_id==='osm-tile-r1919c5651-v1'&&source.osm_base_timestamp==='2026-10-15T04:27:04Z')).toBe(true);
+      expect(result.graph.nodes).toHaveLength(14);
+      expect(result.graph.ways).toHaveLength(7);
+      expect(result.graph.edges).toHaveLength(7);
+      expect(result.missing).toEqual([]);
+    }
+    const offlineFetch=vi.fn();
+    const offline=await loadRoadTilesAround(P,{fetchTile:offlineFetch,store,online:false});
+    expect(offline.status).toBe('READY');expect(offlineFetch).not.toHaveBeenCalled();
+    if(offline.status==='READY'){
+      expect(offline.graph.sources.some((source)=>source.pack_id==='osm-tile-r1919c5651-v1')).toBe(true);
+      expect(offline.graph.nodes).toHaveLength(14);
+    }
+  });
+
+  it('reports NO_ROADS for a completely verified empty neighbourhood and reuses it offline',async()=>{
+    const {m,store}=memStore();
+    const fetchTile=vi.fn(async(id:string)=>Response.json(await emptyTile(id)));
+    const online=await loadRoadTilesAround(P,{fetchTile,store,online:true});
+    expect(online).toEqual({status:'UNAVAILABLE',reason:'NO_ROADS'});
+    expect(fetchTile).toHaveBeenCalledTimes(9);expect(m.size).toBe(9);
+
+    const offlineFetch=vi.fn();
+    const offline=await loadRoadTilesAround(P,{fetchTile:offlineFetch,store,online:false});
+    expect(offline).toEqual({status:'UNAVAILABLE',reason:'NO_ROADS'});
+    expect(offlineFetch).not.toHaveBeenCalled();
+  });
+
+  it('rejects a rehashed partially empty tile that cannot form a valid reference graph',async()=>{
+    const {m,store}=memStore();
+    const real=committedTile('road-tile-r1919c5651-empty.json');
+    const {content_sha256:_hash,...body}=real as Record<string,unknown>&{content_sha256:string};
+    const mixed={...body,counts:[0,1,0],ways:[[123,{highway:'residential'}]]};
+    const invalid={...mixed,content_sha256:await sha(mixed)};
+    const fetchTile=vi.fn(async(id:string)=>Response.json(id==='r1919c5651'?invalid:await tile(id)));
+    await expect(loadRoadTilesAround(P,{fetchTile,store,online:true})).resolves.toEqual({status:'UNAVAILABLE',reason:'INVALID_DATA'});
+    expect(m.size).toBe(0);
+  });
+  it('does not claim NO_ROADS for an online empty-centre neighbourhood with missing tiles',async()=>{
+    const {m,store}=memStore();
+    const fetchTile=vi.fn(async(id:string)=>id===CENTRE?Response.json(await emptyTile(id)):new Response('',{status:503}));
+    await expect(loadRoadTilesAround(P,{fetchTile,store,online:true})).resolves.toEqual({status:'UNAVAILABLE',reason:'TEMPORARILY_UNAVAILABLE'});
+    expect(m.size).toBe(1);
+  });
+  it('does not call an incomplete empty offline cache a complete no-roads result',async()=>{
+    const {store}=memStore();
+    await store.put(CENTRE,await emptyTile(CENTRE));
+    const fetchTile=vi.fn();
+    await expect(loadRoadTilesAround(P,{fetchTile,store,online:false})).resolves.toEqual({status:'UNAVAILABLE',reason:'OFFLINE_NO_DATA'});
+    expect(fetchTile).not.toHaveBeenCalled();
   });
 });
