@@ -112,11 +112,13 @@ describe('mobile More and Plan navigation', () => {
     expect(page.querySelector('select')).toBeNull();
     await openRow(page, 'Language');
     const rows = [...page.querySelectorAll<HTMLElement>('.ui-row')];
-    expect(rows.map(r => r.querySelector('.ui-row-label')?.textContent)).toEqual(['日本語', 'English', '繁體中文']);
-    expect(rows.map(r => r.querySelector('.ui-row-tail')?.textContent ?? '')).toEqual(['', '✓', '']);
-    expect(rows.map(r => r.getAttribute('aria-current'))).toEqual([null, 'true', null]);
+    expect(rows.map(r => r.querySelector('.ui-row-label')?.textContent)).toEqual(['日本語', 'English', '繁體中文', '简体中文']);
+    expect(rows.map(r => r.querySelector('.ui-row-tail')?.textContent ?? '')).toEqual(['', '✓', '', '']);
+    expect(rows.map(r => r.getAttribute('aria-current'))).toEqual([null, 'true', null, null]);
     await click(rows[2]);
     expect(chooseLanguage).toHaveBeenCalledWith('zh-TW');
+    await click(rows[3]);
+    expect(chooseLanguage).toHaveBeenCalledWith('zh-CN');
   });
 
   it('has no language select (or any select) on the main More list', async () => {

@@ -21,14 +21,16 @@ export function shouldPinSos(tags:readonly DistressTag[],profile:SosProfile,leve
  return level!=='NONE'&&(profile.needsAssistance||profile.mobilityLimited);
 }
 export const tagText:Record<Language,Record<DistressTag,string>>={
- 'zh-TW':{WATER_RISING:'水淹進來',TRAPPED:'被困住',INJURED:'受傷',MOBILITY_LIMITED:'行動不便',WITH_DEPENDENTS:'帶小孩或長者',LOST_NO_DESTINATION:'不知道去哪',ROUTE_BLOCKED_REPORTED:'路被擋住'},
+ 'zh-TW':{WATER_RISING:'水淹進來',TRAPPED:'被困住',INJURED:'受傷',MOBILITY_LIMITED:'行動不便',WITH_DEPENDENTS:'帶小孩或長者',LOST_NO_DESTINATION:'不知道去哪',ROUTE_BLOCKED_REPORTED:'路被擋住'}, 'zh-CN': {WATER_RISING:'水淹进来',TRAPPED:'被困住',INJURED:'受伤',MOBILITY_LIMITED:'行动不便',WITH_DEPENDENTS:'带小孩或长者',LOST_NO_DESTINATION:'不知道去哪',ROUTE_BLOCKED_REPORTED:'路被挡住'},
  ja:{WATER_RISING:'水が入ってきた',TRAPPED:'閉じ込められた',INJURED:'けがをした',MOBILITY_LIMITED:'移動が難しい',WITH_DEPENDENTS:'子ども・高齢者と一緒',LOST_NO_DESTINATION:'どこへ行けばいいか分からない',ROUTE_BLOCKED_REPORTED:'道がふさがれている'},
  en:{WATER_RISING:'Water is rising',TRAPPED:'Trapped',INJURED:'Injured',MOBILITY_LIMITED:'Limited mobility',WITH_DEPENDENTS:'With children or elderly',LOST_NO_DESTINATION:'Don’t know where to go',ROUTE_BLOCKED_REPORTED:'Road blocked'},
 };
 export const sosText={
  'zh-TW':{title:'需要協助',setupTitle:'設定緊急聯絡人（選填）',name:'名字',phone:'電話',mobility:'我行動不便',assist:'我需要協助撤離',testAlarm:'試播警報聲',save:'儲存',skip:'略過',
   battery:'聯絡人只存在這支手機，不會上傳。電量低時請先節省電力。',privacy:'聯絡人只存在這支手機。',learnMore:'了解更多',privacyMore:'聯絡人不會上傳。電量低時請先節省電力。',saveFailed:'無法儲存，請再試一次或略過。',
-  call119:'撥打 119',call110:'撥打 110',message:'傳訊息給聯絡人',share:'分享我的位置',alarm:'播放警報聲',stop:'停止',net119:'網路 119（需先登錄）',needsNetwork:'需要網路連線'},
+  call119:'撥打 119',call110:'撥打 110',message:'傳訊息給聯絡人',share:'分享我的位置',alarm:'播放警報聲',stop:'停止',net119:'網路 119（需先登錄）',needsNetwork:'需要網路連線'}, 'zh-CN': {title:'需要协助',setupTitle:'设置紧急联系人（选填）',name:'名字',phone:'电话',mobility:'我行动不便',assist:'我需要协助撤离',testAlarm:'试播警报声',save:'保存',skip:'略过',
+  battery:'联系人只存在这支手机，不会上传。电量低时请先节省电力。',privacy:'联系人只存在这支手机。',learnMore:'了解更多',privacyMore:'联系人不会上传。电量低时请先节省电力。',saveFailed:'无法保存，请再试一次或略过。',
+  call119:'拨打 119',call110:'拨打 110',message:'传消息给联系人',share:'分享我的位置',alarm:'播放警报声',stop:'停止',net119:'网络 119（需先登录）',needsNetwork:'需要网络连接'},
  ja:{title:'助けが必要',setupTitle:'緊急連絡先の設定（任意）',name:'名前',phone:'電話番号',mobility:'移動が難しい',assist:'避難の手助けが必要',testAlarm:'警報音をテスト',save:'保存',skip:'スキップ',
   battery:'連絡先はこの端末にのみ保存され、送信されません。電池が少ないときは先に節電してください。',privacy:'連絡先はこの端末にのみ保存されます。',learnMore:'詳しく見る',privacyMore:'連絡先は送信されません。電池が少ないときは先に節電してください。',saveFailed:'保存できませんでした。もう一度試すかスキップしてください。',
   call119:'119に電話',call110:'110に電話',message:'連絡先にメッセージ',share:'現在地を共有',alarm:'警報音を鳴らす',stop:'停止',net119:'ネット119（事前登録が必要）',needsNetwork:'ネット接続が必要です'},
@@ -37,7 +39,7 @@ export const sosText={
   call119:'Call 119',call110:'Call 110',message:'Message my contacts',share:'Share my location',alarm:'Play alarm',stop:'Stop',net119:'Net 119 (registration required)',needsNetwork:'Needs a network connection'},
 } as const;
 const msg={
- 'zh-TW':{head:'【求救】我需要協助。',where:'位置',none:'無法取得位置',time:'時間',sent:'此訊息由使用者送出，並非官方訊息。'},
+ 'zh-TW':{head:'【求救】我需要協助。',where:'位置',none:'無法取得位置',time:'時間',sent:'此訊息由使用者送出，並非官方訊息。'}, 'zh-CN': {head:'【求救】我需要协助。',where:'位置',none:'无法取得位置',time:'时间',sent:'此消息由用户送出，并非官方消息。'},
  ja:{head:'【救助要請】助けが必要です。',where:'位置',none:'位置情報なし',time:'時刻',sent:'このメッセージは本人が送信したもので、公式情報ではありません。'},
  en:{head:'[SOS] I need help.',where:'Location',none:'Location unavailable',time:'Time',sent:'Sent by the user; not an official message.'},
 } as const;
@@ -69,7 +71,15 @@ export const distressText={
   notGuaranteed:'這是建議，不代表一定沒有危險。請依現場與官方指示判斷。',walkMeta:'步行約 {min} 分鐘 · {m} m',computing:'正在計算可到達的場所…',
   reasonNoTime:'海嘯預估抵達時間已到或已過。',reasonNoLocation:'沒有可靠的目前位置。',reasonNoReachable:'在預估抵達時間前走不到任何指定場所。',reasonNoSites:'這個範圍沒有指定緊急避難場所資料。',reasonExcludedByReport:'依你回報的封路，AI 建議排除可到達的指定場所。',
   officialSites:'查看官方指定避難場所',pendingTags:'AI 判讀的狀況（請勾選正確的項目）',analyze:'讓 AI 判讀',moreDetails:'更多細節',otherCandidates:'其他候選場所',sosSuggested:'建議求救',lastReport:'已回報',
-  basis:'依據：氣象廳 {warning} · 發布 {time}',warningMajor:'大津波警報',warningWarning:'津波警報',staleNotice:'官方資料已超過有效時間，最後確認 {time}',locationStaleNotice:'位置資料過舊，最後定位 {time}'},
+  basis:'依據：氣象廳 {warning} · 發布 {time}',warningMajor:'大津波警報',warningWarning:'津波警報',staleNotice:'官方資料已超過有效時間，最後確認 {time}',locationStaleNotice:'位置資料過舊，最後定位 {time}'}, 'zh-CN': {vertical:'现在往上走／往高处去，远离水。',verticalNow:'立刻往坚固建筑物 3 楼以上或高处移动（来不及抵达指定场所）',goTo:'立刻前往 {name}（官方指定海啸避难场所）',verticalTrapped:'请求救，留在可以保护自己的地方；如果水在上升，就往高处移动。',
+  roadCandidateNotice:'这是道路候选路线，沿途状况未经确认。',exercise:'演练／仿真',aiSuggestion:'AI 建议',aiUnavailable:'AI 暂时无法使用，以下为内置指引。',
+  countdown:'剩余时间',speak:'朗读',mute:'静音',replay:'重播',chooseSituation:'请选择你现在的状况',confirm:'确认',record:'录音',stopRecording:'停止录音',typeInstead:'改用文本输入',
+  offlineReason:'目前离线，显示的是上次确认的信息。',
+  send:'送出',voiceNeedsNetwork:'语音与文本判读需要网络连接，请改用上方按钮。',aiHeard:'AI 听到：',micUnavailable:'无法使用麦克风，请改用上方按钮。',noSession:'目前没有连接中的工作阶段，无法使用语音或文本判读，请改用上方按钮。',analyzing:'AI 判读中…',lastVerified:'最后确认时间',extractFailed:'AI 无法判读，请用按钮选择状况。',sendFailed:'未能送出，已在这支手机上显示指引。',
+  notGuaranteed:'这是建议，不代表一定没有危险。请依现场与官方指示判断。',walkMeta:'步行约 {min} 分钟 · {m} m',computing:'正在计算可到达的场所…',
+  reasonNoTime:'海啸预估抵达时间已到或已过。',reasonNoLocation:'没有可靠的目前位置。',reasonNoReachable:'在预估抵达时间前走不到任何指定场所。',reasonNoSites:'这个范围没有指定紧急避难场所数据。',reasonExcludedByReport:'依你回报的封路，AI 建议排除可到达的指定场所。',
+  officialSites:'查看官方指定避难场所',pendingTags:'AI 判读的状况（请勾选正确的项目）',analyze:'让 AI 判读',moreDetails:'更多细节',otherCandidates:'其他候选场所',sosSuggested:'建议求救',lastReport:'已回报',
+  basis:'依据：气象厅 {warning} · 发布 {time}',warningMajor:'大津波警报',warningWarning:'津波警报',staleNotice:'官方数据已超过有效时间，最后确认 {time}',locationStaleNotice:'位置数据过旧，最后定位 {time}'},
  ja:{vertical:'今すぐ上の階・高い場所へ。水から離れてください。',verticalNow:'今すぐ頑丈な建物の3階以上か高台へ移動（指定の場所には間に合いません）',goTo:'今すぐ {name} へ（公式指定の津波避難場所）',verticalTrapped:'助けを求め、身を守れる場所にとどまってください。水が上がってきたら高い所へ移動してください。',
   roadCandidateNotice:'道路の候補です。途中の状況は未確認です。',exercise:'訓練／模擬',aiSuggestion:'AIの提案',aiUnavailable:'AIを利用できません。内蔵の案内を表示しています。',
   countdown:'残り時間',speak:'読み上げ',mute:'消音',replay:'もう一度',chooseSituation:'今の状況を選んでください',confirm:'確認',record:'録音',stopRecording:'録音を停止',typeInstead:'文字で入力',
@@ -91,7 +101,7 @@ export const distressText={
 } as const;
 /** AI emphasis clauses (fixed wording; the model only picks ids). */
 export const emphasisText:Record<Language,Record<'MOVE_UP_NOW'|'AVOID_WATER'|'STAY_TOGETHER'|'CALL_FOR_HELP'|'KEEP_PHONE_POWER',string>>={
- 'zh-TW':{MOVE_UP_NOW:'現在就往高處移動。',AVOID_WATER:'遠離水邊與河川。',STAY_TOGETHER:'和同行的人待在一起。',CALL_FOR_HELP:'需要時撥打 119 求救。',KEEP_PHONE_POWER:'節省手機電量。'},
+ 'zh-TW':{MOVE_UP_NOW:'現在就往高處移動。',AVOID_WATER:'遠離水邊與河川。',STAY_TOGETHER:'和同行的人待在一起。',CALL_FOR_HELP:'需要時撥打 119 求救。',KEEP_PHONE_POWER:'節省手機電量。'}, 'zh-CN': {MOVE_UP_NOW:'现在就往高处移动。',AVOID_WATER:'远离水边与河川。',STAY_TOGETHER:'和同行的人待在一起。',CALL_FOR_HELP:'需要时拨打 119 求救。',KEEP_PHONE_POWER:'节省手机电量。'},
  ja:{MOVE_UP_NOW:'今すぐ高い所へ。',AVOID_WATER:'水辺や川から離れてください。',STAY_TOGETHER:'一緒にいる人と離れないでください。',CALL_FOR_HELP:'必要なら119に助けを求めてください。',KEEP_PHONE_POWER:'スマホの電池を節約してください。'},
  en:{MOVE_UP_NOW:'Move to higher ground now.',AVOID_WATER:'Stay away from the shore and rivers.',STAY_TOGETHER:'Stay together with the people you are with.',CALL_FOR_HELP:'Call 119 for help if you need it.',KEEP_PHONE_POWER:'Save your phone battery.'},
 };

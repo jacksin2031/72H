@@ -53,7 +53,7 @@ Primary v0.1 scenario:
 - Current location: Shibuya
 - Accommodation: Asakusa
 - Original plan: Return to accommodation at 18:00
-- Languages: Japanese / English / Traditional Chinese
+- Languages: Japanese / English / Traditional Chinese / Simplified Chinese
 
 ## Key capabilities
 

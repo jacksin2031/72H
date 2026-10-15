@@ -1,5 +1,17 @@
 # 72H Product Specification v0.1
 
+## Simplified Chinese UI language (2026-10-15)
+
+The user requested Simplified Chinese (`zh-CN`) alongside Japanese, English and
+Traditional Chinese. `zh-CN` is a fourth UI/explanation language: the shared
+`Language` contract, every fixed message table, deterministic fallback wording,
+historical exercise labels and the language picker carry it. Text was derived
+from the reviewed `zh-TW` wording with OpenCC (Taiwan→Mainland phrasing) and
+spot-checked. Language changes wording only: evidence, Safety Core decisions,
+plan versions and risk levels are identical across languages (tested). Older
+payloads without a `zh-CN` label fall back to the `zh-TW` text. Deployed to
+Cloud Run on 2026-10-15 at the user's request.
+
 ## Nationwide designated-place reference (2026-10-13)
 
 The user requested nationwide shelters. [NATIONWIDE_SHELTERS.md](NATIONWIDE_SHELTERS.md)
@@ -127,6 +139,7 @@ Supported UI languages for v0.1:
 - Japanese
 - English
 - Traditional Chinese
+- Simplified Chinese (added 2026-10-15)
 
 ## 3. Primary Scenario
 

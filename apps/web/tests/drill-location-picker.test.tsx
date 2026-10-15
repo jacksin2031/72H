@@ -31,7 +31,7 @@ it('device location reads once and maps to USER_SELECTED with real accuracy',asy
   expect(geolocate).toHaveBeenCalledTimes(1);expect(onChange.mock.calls.at(-1)![1]).toMatchObject({source:'USER_SELECTED'});
 });
 it('collapses to one summary line once a point is chosen and never writes Live storage',async()=>{
-  await mount({value:{lat:38.4196,lng:141.2946,source:'PRESET',preset_id:'tohoku-ishinomaki-kadonowaki',label:{ja:'石巻・門脇','zh-TW':'石巻・門脇',en:'x'}}});
+  await mount({value:{lat:38.4196,lng:141.2946,source:'PRESET',preset_id:'tohoku-ishinomaki-kadonowaki',label:{ja:'石巻・門脇','zh-TW':'石巻・門脇', 'zh-CN': '石巻・门脇',en:'x'}}});
   expect(host.textContent).toContain('石巻・門脇 · 演練位置');expect(host.querySelectorAll('button').length).toBeLessThanOrEqual(2);
   expect(Object.keys(localStorage)).toEqual([]);
 });

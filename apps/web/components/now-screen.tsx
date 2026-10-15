@@ -3,7 +3,7 @@ import type {ReactNode} from 'react';
 import type {Language} from '@/lib/contracts';
 import {Disclosure,Section,Tag} from './ui';
 
-const T={'zh-TW':{basis:'依據',next:'接下來',avoid:'避免',exercise:'演練'},ja:{basis:'根拠',next:'次に',avoid:'避ける',exercise:'演習'},en:{basis:'Basis',next:'Next',avoid:'Avoid',exercise:'Exercise'}} as const;
+const T={'zh-TW':{basis:'依據',next:'接下來',avoid:'避免',exercise:'演練'}, 'zh-CN': {basis:'依据',next:'接下来',avoid:'避免',exercise:'演练'},ja:{basis:'根拠',next:'次に',avoid:'避ける',exercise:'演習'},en:{basis:'Basis',next:'Next',avoid:'Avoid',exercise:'Exercise'}} as const;
 
 /** note: the page's single "not a safety verdict" line, shown once directly under the basis line. */
 export function NowScreen({language,hero,heroTone,basis,next,avoid,updatedLabel,exercise,openBasis,basisDetails,help,note=null}:{

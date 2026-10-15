@@ -17,7 +17,7 @@ const config: SimulationLaunch = {
   historicalCase: 'tohoku-2011', title: '東日本大震災',
   milestones: [{
     at_jst: '2011-03-11T14:46:00+09:00', kind: 'EARTHQUAKE',
-    label: { ja: '地震', en: 'Earthquake', 'zh-TW': '地震' },
+    label: { ja: '地震', en: 'Earthquake', 'zh-TW': '地震', 'zh-CN': '地震' },
     source_url: 'https://www.jma.go.jp/', historic_observation: true, fed_to_safety_core: true,
   }],
   timeMode: 'ACCELERATED', acceleratedStart: '2011-03-11T13:46',

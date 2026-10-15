@@ -13,6 +13,18 @@ const copy = {
     scans: { NOT_STARTED: '未開始', SCANNING: '補抓／等待中', WINDOW_VERIFIED: '已核實所見窗口', GAP: '歷史缺口未能補齊', UNKNOWN: '未核實' },
     connections: { REACHABLE: '可連接', UNAVAILABLE: '無法連接', UNKNOWN: '未判定' },
     stores: { HEALTHY: '可用', UNCONFIGURED: '未設定持久儲存', FAILED: '保存失敗' },
+  }, 'zh-CN': {
+    title: '官方电文与补抓状态', limit: '只列出最近的参考纪录。核实 feed 窗口不代表全国安全、没有警报或可开始移动。',
+    empty: '尚未有可显示的官方电文原文纪录。', unknown: '未判定', offline: '显示保存／补抓纪录，当前状态未核实。',
+    transport: '来源连接（最后查找）', fetch: '最新成功接收', publication: '最新官方发表', verified: '长期 feed 核实至',
+    pending: '待补抓电文', storage: '持久保存', interrupted: '轮询中断：等待较新的长期 feed',
+    scan: '补抓状态', issued: '电文发表／更新', reported: '业务报告时间', received: '首次接收', age: '电文年龄（分钟）',
+    scope: '官方目标区域代码（未映射地点）', noScope: '未提供可核实的目标区域', officialExpiry: '官方有效期', appExpiry: '应用程序证据使用期限',
+    cancel: '电文已撤销；不代表地区警报解除。', proof: '原文识别与版本', source: '打开官方原文',
+    states: { CURRENT: '目前电文', STALE: '过时', WITHDRAWN: '电文撤销', SUPERSEDED: '已被取代', CONFLICT: '内容冲突', UNKNOWN: '未核实' },
+    scans: { NOT_STARTED: '未开始', SCANNING: '补抓／等待中', WINDOW_VERIFIED: '已核实所见窗口', GAP: '历史缺口未能补齐', UNKNOWN: '未核实' },
+    connections: { REACHABLE: '可连接', UNAVAILABLE: '无法连接', UNKNOWN: '未判定' },
+    stores: { HEALTHY: '可用', UNCONFIGURED: '未设置持久保存', FAILED: '保存失败' },
   },
   ja: {
     title: '公式電文と取得状況', limit: '最近の参考記録のみ表示します。feed 窓の確認は全国の安全、警報なし、移動許可を意味しません。',

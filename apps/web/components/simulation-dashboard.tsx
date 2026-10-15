@@ -26,7 +26,7 @@ function Playback({ config }: { config: SimulationLaunch }) {
   const router = useRouter();
   const { endSimulation } = useSimulationSession();
   const language: Language = config.language;
-  const confirmText = { ja: '演習を終了して設定に戻りますか？', en: 'End simulation and return to settings?', 'zh-TW': '結束模擬並返回設定？' }[language];
+  const confirmText = { ja: '演習を終了して設定に戻りますか？', en: 'End simulation and return to settings?', 'zh-TW': '結束模擬並返回設定？', 'zh-CN': '结束仿真并返回设置？' }[language];
   const [phase, setPhase] = useState<Phase>('waiting');
   const [tab, setTab] = useState<Section>('home');
   const [time, setTime] = useState<number>(() => config.milestones.length

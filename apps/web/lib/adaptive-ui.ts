@@ -92,6 +92,13 @@ const copy: Record<Language, Record<string, string>> = {
     SHELTER_IN_PLACE: '請在目前位置保護自己，等待已確認的更新。',
     EMERGENCY_PROTECT: '請先保護自己，遠離窗戶與可能掉落的物品。',
     EVACUATE: '目的地與移動指示確認前，請等待已驗證的行動資訊。',
+  }, 'zh-CN': {
+    NORMAL: '目前没有需要立即移动的指示，请等待已确认的更新。',
+    MONITOR: '请留在安全位置，留意已确认的更新。',
+    PREPARE: '请留在安全位置，留意已确认的官方信息。',
+    SHELTER_IN_PLACE: '请在目前位置保护自己，等待已确认的更新。',
+    EMERGENCY_PROTECT: '请先保护自己，远离窗户与可能掉落的物品。',
+    EVACUATE: '目的地与移动指示确认前，请等待已验证的行动信息。',
   },
 };
 

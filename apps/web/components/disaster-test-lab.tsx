@@ -11,7 +11,7 @@ import { AgentDrillPanel } from './agent-drill-panel';
 import { AppShell, Button, Section, StatusBand } from './ui';
 import { NowScreen } from './now-screen';
 
-const exerciseLabel: Record<Language, string> = { 'zh-TW': '演練', ja: '演習', en: 'Exercise' };
+const exerciseLabel: Record<Language, string> = { 'zh-TW': '演練', 'zh-CN': '演练', ja: '演習', en: 'Exercise' };
 
 const copy = {
   ja: {
@@ -73,6 +73,25 @@ const copy = {
     powerMode: '模擬省電模式', map: '模擬地圖', disabled: '已停用', notify: '已發送警報', no: '沒有', reset: '重設',
     noRealEmergency: '119／110 只供參考，測試介面不設撥號功能。',
     threshold: '模擬電量 ≤30% 省電、≤15% 緊急省電、≤5% 極簡顯示。',
+  }, 'zh-CN': {
+    title: '灾难测试', test: '测试模式 — 并非真实灾难警报',
+    explanation: '在这里设置情境，开始后会进入独立 72H 仿真主画面，按倒数时间运行事件及 AI 判断。不会更改真实 GPS、电量、网络或发出紧急通知。',
+    back: '返回设置', presets: '快速情境', routine: '日常', moderate: '中等灾难', critical: '重大／离线', survival: '电量 3%',
+    settings: '情境设置', disaster: '灾难类型', severity: '仿真程度（不是官方震度或警报等级）',
+    battery: '仿真手机电量', batteryUnknown: '仿真无法读取电量', network: '仿真网络', evidence: '仿真信息状态', mobility: '行动能力',
+    preview: '仿真画面', now: 'NOW · 仿真', next: 'NEXT · 仿真', avoid: 'AVOID · 仿真',
+    level: '程度', normal: '一般', conserve: '省电', emergencyPower: '紧急省电', survivalPower: '极简显示',
+    networkOnline: '有网络', networkOffline: '离线', networkReconnect: '重新连接中',
+    evidenceFresh: '最新（仿真）', evidenceStale: '已过期', evidenceUnknown: '未核实', able: '可以移动', cannotMove: '无法移动',
+    earthquake: '地震', tsunami: '海啸', typhoon: '台风', flood: '水浸', landslide: '山泥倾泻', fire: '火灾',
+    none: '显示一般准备状态', monitor: '留意灾难消息', emergency: '显示紧急保护状态', check: '进行仿真安全确认',
+    lowPower: '优先显示最基本文本信息', unverified: '需要重新核实官方信息', simulatedFresh: '即使仿真信息为最新，亦不代表已获正式安全授权',
+    nextAction: '先确保自身安全，再核实官方指引', avoidAction: '不要视未核实路线及避难场所为安全',
+    checkTitle: '仿真 Safety Check', safe: '安全', needHelp: '需要协助', stuck: '无法移动', checkResult: '仿真回答',
+    noCheck: '程度达严重以上才显示安全确认操作', mapBlocked: '使用仿真数据时，安全路线及移动授权一律停用',
+    powerMode: '仿真省电模式', map: '仿真地图', disabled: '已停用', notify: '已发送警报', no: '没有', reset: '重设',
+    noRealEmergency: '119／110 只供参考，测试接口不设拨号功能。',
+    threshold: '仿真电量 ≤30% 省电、≤15% 紧急省电、≤5% 极简显示。',
   },
 } as const;
 
@@ -83,7 +102,7 @@ export function DisasterTestLab() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem('72h-language');
-      if (saved === 'en' || saved === 'ja' || saved === 'zh-TW') setLanguage(saved);
+      if (saved === 'en' || saved === 'ja' || saved === 'zh-TW' || saved === 'zh-CN') setLanguage(saved);
     } catch { /* Use Japanese without saved preferences. */ }
   }, []);
   useEffect(() => { document.documentElement.lang = language; }, [language]);

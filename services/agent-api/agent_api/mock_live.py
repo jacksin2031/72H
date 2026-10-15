@@ -20,6 +20,7 @@ from seventytwoh_contracts.models import (
 )
 from .drill import DrillRequest
 from .historical_cases import CASES, TSUNAMI_KINDS, HistoricalId, HistoricCase, list_historical_cases
+from .historical_zh_cn import zh_cn
 from .live import LiveSessionNotFound, LiveStore
 from .live_sources import (
     JMA_PREFECTURES, JMA_TSUNAMI_SOURCE_KEY, JmaEarthquakeReport, JmaPrefObservation, JmaFetchResult,
@@ -473,7 +474,7 @@ class MockLiveDrillStore:
         milestones = session.store.mock_source.milestones
         step = session.store.mock_source.stage
         return HistoricalView(
-            case_id=case.id, title={"ja": case.ja, "zh-TW": case.zh, "en": case.en},
+            case_id=case.id, title={"ja": case.ja, "zh-TW": case.zh, "zh-CN": zh_cn(case.zh), "en": case.en},
             source_url=case.source_url, magnitude=case.magnitude,
             max_intensity=case.max_intensity,
             milestones=tuple(m.public() for m in milestones),

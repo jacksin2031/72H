@@ -7,7 +7,7 @@ export function SimulationAdvicePanel({advice,language,stale=false,cannotMove=fa
   const t=simulationAdviceText[language],c:Record<string,string>=simulationConditionText[language];
   const model=advice?.ai_mode??executionMode;
   return <section className="sim-advice-panel" data-testid="simulation-advice-panel" aria-live="polite">
-    <h2>{t.title}</h2><small data-testid="simulation-ai-mode">{stale&&model!=='NOT_RUN'?language==='zh-TW'?'最近一次執行：':language==='ja'?'直近の実行：':'Last execution: ':''}{model==='GEMINI_ADK'?t.success:model==='GEMINI_ADK_FALLBACK'?t.fallback:t.notRun}</small>
+    <h2>{t.title}</h2><small data-testid="simulation-ai-mode">{stale&&model!=='NOT_RUN'?language==='zh-TW'?'最近一次執行：':language==='zh-CN'?'最近一次运行：':language==='ja'?'直近の実行：':'Last execution: ':''}{model==='GEMINI_ADK'?t.success:model==='GEMINI_ADK_FALLBACK'?t.fallback:t.notRun}</small>
     {stale&&<p data-testid="simulation-advice-unavailable">{t.expired}</p>}
     <strong data-testid="simulation-location-decision">{t[advice?.decision??'UNKNOWN']}</strong>
     {cannotMove&&<p data-testid="simulation-basic-assistance">{t.ASSISTANCE}</p>}

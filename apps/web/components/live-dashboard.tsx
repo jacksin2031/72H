@@ -328,12 +328,12 @@ export function ProfileForm({ language, busy, submit, initial, startLabel, title
       <label>{messages.area}<select value={accommodationArea} onChange={event => { setDraftDirty(true); setAccommodationArea(event.target.value as AreaChoice); }}><option value="">{messages.noArea}</option><option value="JP-13">{messages.tokyo}</option><option value="JP-27">{messages.osaka}</option></select></label>
     </>;
   const partyField = <label>{messages.partySize}<select value={partySize} onChange={event => setPartySize(Number(event.target.value))}>{Array.from({ length: 8 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label>;
-  const safetyField = <label>{language === 'ja' ? '現在の状態（自己申告）' : language === 'zh-TW' ? '目前狀態（自行回報）' : 'Current status (self-reported)'}
+  const safetyField = <label>{language === 'ja' ? '現在の状態（自己申告）' : language === 'zh-TW' ? '目前狀態（自行回報）' : language === 'zh-CN' ? '目前状态（自行回报）' : 'Current status (self-reported)'}
         <select value={safety} onChange={event => { setDraftDirty(true); setSafety(event.target.value as LiveProfileSeed['self_reported_safety_status']); }}>
-          <option value="UNKNOWN">{language === 'ja' ? '未回答' : language === 'zh-TW' ? '尚未回答' : 'Not reported'}</option>
-          <option value="SAFE">{language === 'ja' ? '安全' : language === 'zh-TW' ? '安全' : 'Safe'}</option>
-          <option value="UNCERTAIN">{language === 'ja' ? '不明' : language === 'zh-TW' ? '不確定' : 'Unsure'}</option>
-          <option value="NEEDS_ASSISTANCE">{language === 'ja' ? '支援が必要' : language === 'zh-TW' ? '需要協助' : 'Needs assistance'}</option>
+          <option value="UNKNOWN">{language === 'ja' ? '未回答' : language === 'zh-TW' ? '尚未回答' : language === 'zh-CN' ? '尚未回答' : 'Not reported'}</option>
+          <option value="SAFE">{language === 'ja' ? '安全' : language === 'zh-TW' ? '安全' : language === 'zh-CN' ? '安全' : 'Safe'}</option>
+          <option value="UNCERTAIN">{language === 'ja' ? '不明' : language === 'zh-TW' ? '不確定' : language === 'zh-CN' ? '不确定' : 'Unsure'}</option>
+          <option value="NEEDS_ASSISTANCE">{language === 'ja' ? '支援が必要' : language === 'zh-TW' ? '需要協助' : language === 'zh-CN' ? '需要协助' : 'Needs assistance'}</option>
         </select>
       </label>;
   const accessibilityField = <div className="accessibility-choices" role="group" aria-label={messages.accessibilityNeeds}>
@@ -368,7 +368,7 @@ export function ProfileForm({ language, busy, submit, initial, startLabel, title
           setDraftPresent(false); setDraftDirty(false); setDraftStorageUnavailable(false); setDraftCleanupError(false); onSaved?.();
         }}>{messages.discardDraft}</button>}
       </div>
-      {validationError && <p className="error" role="alert">{language === 'ja' ? '場所を入力してください。' : language === 'zh-TW' ? '請填寫地點。' : 'Enter both locations.'}</p>}
+      {validationError && <p className="error" role="alert">{language === 'ja' ? '場所を入力してください。' : language === 'zh-TW' ? '請填寫地點。' : language === 'zh-CN' ? '请填写地点。' : 'Enter both locations.'}</p>}
       {saveError && <p className="error" role="alert">{messages.profileUpdateRejected}</p>}
       {draftStorageUnavailable && <p className="error" role="alert">{messages.draftStorageUnavailable}</p>}
       {draftCleanupError && <p role="status">{messages.draftCleanupUnavailable}</p>}
@@ -390,7 +390,7 @@ function SourceSummary({ snapshot, language, messages, projection, compact = fal
     <div><span className={`source-indicator ${sourceCurrent ? 'source-current' : 'source-stale'}`} />
       <strong>{snapshot.source.source_name}</strong><span>{status}</span></div>
     <p>{messages.attribution} · {messages.sourceAge}: {displayTime(snapshot.source.retrieved_at, language)}</p>
-    {!compact && <><p>{language === 'ja' ? '最終公開' : language === 'zh-TW' ? '最後發布' : 'Last published'}: {displayTime(snapshot.source.last_published_at, language)}</p>
+    {!compact && <><p>{language === 'ja' ? '最終公開' : language === 'zh-TW' ? '最後發布' : language === 'zh-CN' ? '最后发布' : 'Last published'}: {displayTime(snapshot.source.last_published_at, language)}</p>
       <div className="live-source-links">{sources.map(({ source, attribution: label }) => <p key={source.source_key}>
         <a href={source.source_url} target="_blank" rel="noreferrer">{source.source_name} · {messages.officialDetails}</a><small>{label}</small>
       </p>)}</div>
@@ -414,7 +414,7 @@ function SourceReview({ snapshot, language, messages, projection, now, connectio
     <SourceSummary snapshot={snapshot} language={language} messages={messages} projection={projection} />
     <OfficialSourceReview snapshot={snapshot} language={language} now={now} connected={connection !== 'offline'} />
     {refresh && canRefresh && <button type="button" disabled={busy} onClick={refresh}>{busy ? messages.refreshing : messages.retry}</button>}
-    <section className="record-list"><h2>{language === 'ja' ? '確認済み情報' : language === 'zh-TW' ? '已核對資訊' : 'Reviewed information'}</h2>
+    <section className="record-list"><h2>{language === 'ja' ? '確認済み情報' : language === 'zh-TW' ? '已核對資訊' : language === 'zh-CN' ? '已核对信息' : 'Reviewed information'}</h2>
       {evidence.map(item => {
         const sourceForEvidence = [snapshot.source, snapshot.destination_source, snapshot.route_source].find(source => source.source_key === item.source_key);
         return <article key={item.id}>
@@ -425,7 +425,7 @@ function SourceReview({ snapshot, language, messages, projection, now, connectio
       })}
       {!evidence.length && <p>{messages.pending}</p>}
     </section>
-    <section className="record-list"><h2>{language === 'ja' ? '目的地候補' : language === 'zh-TW' ? '目的地清單' : 'Listed destinations'}</h2>
+    <section className="record-list"><h2>{language === 'ja' ? '目的地候補' : language === 'zh-TW' ? '目的地清單' : language === 'zh-CN' ? '目的地清单' : 'Listed destinations'}</h2>
       {snapshot.destinations.map(item => <article key={item.id}><h3>{item.name}</h3><p>{item.address || item.area_id}</p>
         <p>{messages.mapOpen} · {item.source_name}</p><a href={item.source_url} target="_blank" rel="noreferrer">{messages.officialDetails}</a>
       </article>)}
@@ -677,9 +677,9 @@ function LiveNow({ view, snapshot, projection, primaryAction, language, messages
 }
 
 const themeChoices = ['dark', 'system', 'contrast'] as const;
-const languageChoices = [['ja', '日本語'], ['en', 'English'], ['zh-TW', '繁體中文']] as const;
+const languageChoices = [['ja', '日本語'], ['en', 'English'], ['zh-TW', '繁體中文'], ['zh-CN', '简体中文']] as const;
 const moreCopy = {
-  'zh-TW': { learnMore: '了解更多', version: '版本', privacyShort: '精確座標只在此裝置上使用。' },
+  'zh-TW': { learnMore: '了解更多', version: '版本', privacyShort: '精確座標只在此裝置上使用。' }, 'zh-CN': { learnMore: '了解更多', version: '版本', privacyShort: '精确坐标只在此设备上使用。' },
   ja: { learnMore: '詳しく見る', version: 'バージョン', privacyShort: '正確な座標はこの端末内でのみ使います。' },
   en: { learnMore: 'Learn more', version: 'Version', privacyShort: 'Exact coordinates stay on this device.' },
 } as const;
@@ -1074,7 +1074,7 @@ export function LiveDashboard({ view }: { view: string }) {
       const preferred = localStorage.getItem('72h-language');
       const requested = new URLSearchParams(window.location.search).get('language');
       const candidate = requested || preferred;
-      if (candidate && ['ja', 'en', 'zh-TW'].includes(candidate)) setLanguage(candidate as Language);
+      if (candidate && ['ja', 'en', 'zh-TW', 'zh-CN'].includes(candidate)) setLanguage(candidate as Language);
     } catch { /* The UI remains usable without local preferences. */ }
     let cancelled = false;
     void (async () => {
@@ -1433,7 +1433,7 @@ export function LiveDashboard({ view }: { view: string }) {
       {<button hidden={!showHelpPin} type="button" className="ui-help-pin" aria-label={sosText[language].title} aria-expanded={false}
         onClick={toggleDistress}>{language === 'ja' ? '助けて' : language === 'en' ? 'Help' : '求助'}</button>}
       {!criticalMobileTakeover && <LiveHeaderStatus hasSession={!!snapshot} busy={busy} networkLabel={networkLabel} messages={messages} />}
-      {!snapshot && <label className="live-language">{messages.language}<select aria-label={messages.language} value={language} onChange={event => chooseLanguage(event.target.value as Language)}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option></select></label>}
+      {!snapshot && <label className="live-language">{messages.language}<select aria-label={messages.language} value={language} onChange={event => chooseLanguage(event.target.value as Language)}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option><option value="zh-CN">简体中文</option></select></label>}
       {error && <p className="error" role="alert">{error}</p>}
       {sessionLost && snapshot && !criticalMobileTakeover && <section className="session-loss-banner" role="status">
         <strong>{messages.sessionLost}</strong><p>{messages.lastVerified}: {displayTime(snapshot.situation.latest_evidence_at, language)}</p>

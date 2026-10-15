@@ -87,4 +87,4 @@ export function locationUploadAllowed(o:{online:boolean;offline:boolean;allowNon
 export function effectiveDistressLevel(level:DistressStatus['level'],localTags:readonly DistressTag[]):DistressStatus['level']{
  return level==='NONE'&&localTags.length?'USER_REPORTED':level;
 }
-export function speechLang(language:Language){return language==='ja'?'ja-JP':language==='en'?'en-US':'zh-TW';}
+export function speechLang(language:Language){return language==='ja'?'ja-JP':language==='en'?'en-US':language==='zh-CN'?'zh-CN':'zh-TW';}

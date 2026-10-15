@@ -16,6 +16,14 @@ const text={
     openingUnavailable:'目前開放資料未能取得或尚未重新核實。',
     same:'官方註記：與另一角色的場所地址相同；身份及用途仍分開。',accept:'受入對象／限制',
     unknownId:'共通 ID：未提供',ref:'來源快照',closed:'目前開放：已關閉（官方來源）',open:'目前開放：官方資料顯示開放；仍非安全或移動授權',
+  }, 'zh-CN': {format:'场所数据格式',hazard:'灾害类别',all:'所有角色及分类',csv:'石卷指定目录（CSV）',geo:'附近 GeoJSON 图层',
+    noId:'GeoJSON 没有共通 ID；只供图层参考，不能连接开放证据。',tile:'只加载此地图分片的海啸场所及一般避难所；不是完整市级或全国目录。',
+    unavailable:'地震 GeoJSON 分片回应 404；不能推论没有场所。',notLoaded:'未加载此类 GeoJSON 分片；数据未判定。',
+    dates:'石卷 CSV 目录首次公开／数据库更新',dateUnknown:'各场所指定日期及更新时间：未提供',
+    openingSource:'尚未接入可核实场所身份的自治体开放来源；目前开放保持未核实。',
+    openingUnavailable:'目前开放数据未能取得或尚未重新核实。',
+    same:'官方注记：与另一角色的场所地址相同；身份及用途仍分开。',accept:'受入对象／限制',
+    unknownId:'共通 ID：未提供',ref:'来源快照',closed:'目前开放：已关闭（官方来源）',open:'目前开放：官方数据显示开放；仍非安全或移动授权',
   },
   ja:{format:'場所データ形式',hazard:'災害種別',all:'全用途・種別',csv:'石巻の指定目録（CSV）',geo:'周辺 GeoJSON レイヤー',
     noId:'GeoJSON に共通IDはありません。参考表示のみで開設情報と結び付けません。',tile:'このタイルの津波対応場所・一般避難所のみ。市全体・全国の完全な目録ではありません。',
@@ -77,7 +85,7 @@ export function DesignatedPlacesPanel({language,state,onPlace}:{language:Languag
 
 function openingReason(language:Language,reason:string){
   const labels={
-    'zh-TW':{VERIFIED:'已核對來源（非安全授權）',STALE:'已過期',CONFLICT:'資料衝突',OFFLINE:'離線，只作舊資料參考',AUTHORITY_REVIEW_EXPIRED:'來源覆核期限已過',SOURCE_UNKNOWN:'來源狀態未知',UNVERIFIED_SCOPE_OR_RECONNECT:'重連尚未重新核實'},
+    'zh-TW':{VERIFIED:'已核對來源（非安全授權）',STALE:'已過期',CONFLICT:'資料衝突',OFFLINE:'離線，只作舊資料參考',AUTHORITY_REVIEW_EXPIRED:'來源覆核期限已過',SOURCE_UNKNOWN:'來源狀態未知',UNVERIFIED_SCOPE_OR_RECONNECT:'重連尚未重新核實'}, 'zh-CN': {VERIFIED:'已核对来源（非安全授权）',STALE:'已过期',CONFLICT:'数据冲突',OFFLINE:'离线，只作旧数据参考',AUTHORITY_REVIEW_EXPIRED:'来源覆核期限已过',SOURCE_UNKNOWN:'来源状态未知',UNVERIFIED_SCOPE_OR_RECONNECT:'重连尚未重新核实'},
     ja:{VERIFIED:'出典確認済（安全の許可ではない）',STALE:'期限切れ',CONFLICT:'情報の競合',OFFLINE:'オフライン・過去の参考情報',AUTHORITY_REVIEW_EXPIRED:'出典再確認期限切れ',SOURCE_UNKNOWN:'出典状態不明',UNVERIFIED_SCOPE_OR_RECONNECT:'再接続後未確認'},
     en:{VERIFIED:'Source checked; not safety authorization',STALE:'Expired',CONFLICT:'Conflicting reports',OFFLINE:'Offline; archived reference only',AUTHORITY_REVIEW_EXPIRED:'Authority review expired',SOURCE_UNKNOWN:'Unknown source state',UNVERIFIED_SCOPE_OR_RECONNECT:'Reconnect not reverified'},
   };

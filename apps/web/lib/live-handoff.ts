@@ -12,7 +12,7 @@ export function publicHandoffUrl(origin: string, language: Language): string | n
       && !/^\d+$/.test(labels.at(-1) ?? '');
     if (url.protocol !== 'https:' || !validDnsName || ipv4Literal || url.username || url.password || url.port
       || host === 'localhost' || reservedSuffixes.some(suffix => host === suffix.slice(1) || host.endsWith(suffix))
-      || !['ja', 'en', 'zh-TW'].includes(language)) return null;
+      || !['ja', 'en', 'zh-TW', 'zh-CN'].includes(language)) return null;
     url.pathname = '/dashboard';
     url.search = `?language=${encodeURIComponent(language)}`;
     url.hash = '';

@@ -23,7 +23,7 @@ class DrillRequest(BaseModel):
     network: Literal["ONLINE", "OFFLINE", "RECONNECTING"] = "ONLINE"
     evidence: Literal["FRESH", "STALE", "UNKNOWN"] = "FRESH"
     mobility: Literal["ABLE", "CANNOT_MOVE"] = "ABLE"
-    language: Literal["ja", "en", "zh-TW"] = "zh-TW"
+    language: Literal["ja", "en", "zh-TW", "zh-CN"] = "zh-TW"
 
 
 def compile_drill(request: DrillRequest) -> ReplayScenario:

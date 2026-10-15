@@ -29,7 +29,9 @@ import { RoadReferenceNotice } from '@/components/road-reference-section';
 const screenText={
   'zh-TW':{title:'全日本參考地圖',inundation:'浸水想定',places:'避難場所',lines:'海嘯預報區',regions:'震度地域',
     legendInundation:'浸水想定：官方靜態想定，非即時',legendPlaces:'避難場所：官方指定，開放未核實',legendRegions:'震度地域：地域最大值，非逐點實測',
-    note:'僅供參考：不可作避難導航，也不是安全判定',peek:(n:number)=>`已載入 ${n} 處指定避難場所`,placesTitle:'避難場所',officialTitle:'官方資料'},
+    note:'僅供參考：不可作避難導航，也不是安全判定',peek:(n:number)=>`已載入 ${n} 處指定避難場所`,placesTitle:'避難場所',officialTitle:'官方資料'}, 'zh-CN': {title:'全日本参考地图',inundation:'浸水想定',places:'避难场所',lines:'海啸预报区',regions:'震度地域',
+    legendInundation:'浸水想定：官方静态想定，非即时',legendPlaces:'避难场所：官方指定，开放未核实',legendRegions:'震度地域：地域最大值，非逐点实测',
+    note:'仅供参考：不可作避难导航，也不是安全判定',peek:(n:number)=>`已加载 ${n} 处指定避难场所`,placesTitle:'避难场所',officialTitle:'官方数据'},
   ja:{title:'日本全国の参考地図',inundation:'浸水想定',places:'避難場所',lines:'津波予報区',regions:'震度地域',
     legendInundation:'浸水想定：公式の静的想定・リアルタイムではない',legendPlaces:'避難場所：公式指定・開設は未確認',legendRegions:'震度地域：地域の最大値・各地点の実測ではない',
     note:'参考情報：避難ナビ・安全判定には使えません',peek:(n:number)=>`読み込み済みの指定避難場所 ${n} か所`,placesTitle:'避難場所',officialTitle:'公式情報'},

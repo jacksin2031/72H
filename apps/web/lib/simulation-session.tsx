@@ -11,7 +11,7 @@ import type { SimulationLocation, SimulationConditions } from './simulation-advi
 export type SimulationMilestone = {
   at_jst: string;
   kind: string;
-  label: { ja: string; en: string; 'zh-TW': string };
+  label: { ja: string; en: string; 'zh-TW': string; 'zh-CN': string };
   source_url: string;
   historic_observation: boolean;
   fed_to_safety_core: boolean;

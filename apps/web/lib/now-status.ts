@@ -5,7 +5,7 @@ import { distressText } from './distress';
 import { degradeExpiredOfficial } from './distress-guidance';
 
 const ALERT_NAMES: Record<Language, Record<'MAJOR_WARNING' | 'WARNING' | 'ADVISORY' | 'GENERIC', string>> = {
-  'zh-TW': { MAJOR_WARNING: '大津波警報', WARNING: '津波警報', ADVISORY: '津波注意報', GENERIC: '海嘯' },
+  'zh-TW': { MAJOR_WARNING: '大津波警報', WARNING: '津波警報', ADVISORY: '津波注意報', GENERIC: '海嘯' }, 'zh-CN': { MAJOR_WARNING: '大津波警报', WARNING: '津波警报', ADVISORY: '津波注意报', GENERIC: '海啸' },
   ja: { MAJOR_WARNING: '大津波警報', WARNING: '津波警報', ADVISORY: '津波注意報', GENERIC: '津波' },
   en: { MAJOR_WARNING: 'Major Tsunami Warning', WARNING: 'Tsunami Warning', ADVISORY: 'Tsunami Advisory', GENERIC: 'Tsunami' },
 };

@@ -728,6 +728,7 @@ def _evidence_text(evidence_ids: tuple[str, ...], language: Language) -> str:
         "ja": "この行動には現在有効で対象条件を満たす証拠が結び付いています。参照 ID は一覧をご確認ください。",
         "en": "Current eligible evidence is linked to this action; see the evidence reference list.",
         "zh-TW": "此行動連結了符合條件的有效證據，請查看證據參照清單。",
+        "zh-CN": "此行动链接了符合条件的有效证据，请查看证据参照清单。",
     }[language.value]
 
 
@@ -736,6 +737,7 @@ def _fact_text(fact_ids: tuple[str, ...], language: Language) -> str:
         "ja": "確認済みの計画事実のみを参照しています。参照 ID は一覧をご確認ください。",
         "en": "Only verified plan facts are referenced; see the fact reference list.",
         "zh-TW": "說明只參照已驗證的計劃事實，請查看事實參照清單。",
+        "zh-CN": "说明只参照已验证的计划事实，请查看事实参照清单。",
     }[language.value]
 
 
@@ -744,6 +746,7 @@ def _no_support_text(language: Language) -> str:
         "ja": "この行動を支える有効な証拠はありません。下記の制限を確認してください。",
         "en": "No current eligible evidence supports this action; see the limitations below.",
         "zh-TW": "目前沒有符合資格的依據支持此行動，請參閱下方限制。",
+        "zh-CN": "目前没有符合资格的依据支持此行动，请参阅下方限制。",
     }[language.value]
 
 
@@ -754,21 +757,25 @@ def _limitations(prepared: _PreparedExplanation) -> tuple[str, ...]:
             "ja": "この説明は計画、Safety Core の判断、行動、移動権限を作成または変更しません。",
             "en": "This explanation cannot create or change the plan, Safety Core decisions, actions, or movement authorization.",
             "zh-TW": "這段說明不能建立或更改計劃、Safety Core 判斷、行動或移動授權。",
+            "zh-CN": "这段说明不能创建或更改计划、Safety Core 判断、行动或移动授权。",
         }[language],
         {
             "ja": "交通の利用可否や経路形状は、経路の安全性を証明しません。",
             "en": "Transport availability and route geometry do not establish route safety.",
             "zh-TW": "交通可用性及路線幾何資料均不代表路線安全。",
+            "zh-CN": "交通可用性及路线几何数据均不代表路线安全。",
         }[language],
         {
             "ja": "古い、競合中、未確認、または対象外の証拠は説明に使用しません。",
             "en": "Stale, conflicting, unverified, and ineligible evidence is excluded.",
             "zh-TW": "過時、衝突、未驗證或不符合資格的資料不會用於說明。",
+            "zh-CN": "过时、冲突、未验证或不符合资格的数据不会用于说明。",
         }[language],
         {
             "ja": "この説明は表示された計画と参照 ID に限定され、有効期限を過ぎると利用できません。",
             "en": "This explanation is bound to the displayed plan and references and expires at the stated deadline.",
             "zh-TW": "這段說明只對應所列計劃及參照 ID，並會在指定期限失效。",
+            "zh-CN": "这段说明只对应所列计划及参照 ID，并会在指定期限失效。",
         }[language],
     ]
     if prepared.source_mode in {"SYNTHETIC_REPLAY", "MOCK_LIVE"}:
@@ -776,24 +783,28 @@ def _limitations(prepared: _PreparedExplanation) -> tuple[str, ...]:
             "ja": "これは演習用の合成データであり、現在の公式情報ではありません。",
             "en": "This is a synthetic exercise and is not current official information.",
             "zh-TW": "這是合成演習資料，並非目前的官方資訊。",
+            "zh-CN": "这是合成演习数据，并非目前的官方信息。",
         }[language])
     if prepared.no_plan_reason == "NO_CURRENT_PLAN":
         values.append({
             "ja": "説明できる現在有効な Safety Core 計画はありません。",
             "en": "There is no current active Safety Core plan to explain.",
             "zh-TW": "目前沒有可供說明的有效 Safety Core 計劃。",
+            "zh-CN": "目前没有可供说明的有效 Safety Core 计划。",
         }[language])
     elif prepared.no_plan_reason == "NO_APPROVED_ACTIONS":
         values.append({
             "ja": "現在の計画に説明可能な有効な承認済み行動はありません。",
             "en": "The current plan has no active approved actions to explain.",
             "zh-TW": "目前計劃沒有可供說明的有效核准行動。",
+            "zh-CN": "目前计划没有可供说明的有效核准行动。",
         }[language])
     elif not prepared.eligible_evidence_ids:
         values.append({
             "ja": "現在有効で対象条件を満たす証拠参照はありません。",
             "en": "No current eligible evidence references are available.",
             "zh-TW": "目前沒有符合條件的有效證據參照。",
+            "zh-CN": "目前没有符合条件的有效证据参照。",
         }[language])
     return tuple(values[:MAX_LIMITATIONS])
 
@@ -803,56 +814,67 @@ _INTENT_TEXT = {
         "ja": "計画は自身の安全を優先し、確認済みの更新を見守るよう示しています。",
         "en": "The plan prioritizes personal safety and monitoring verified updates.",
         "zh-TW": "計劃建議優先保障自身安全，並留意已驗證的更新。",
+        "zh-CN": "计划建议优先保障自身安全，并留意已验证的更新。",
     },
     SafeIntentId.REVIEW_OFFICIAL_GUIDANCE: {
         "ja": "計画は確認済みの公式情報を確認し、現場の指示に従うよう示しています。",
         "en": "The plan asks you to review verified official guidance and follow on-site instructions.",
         "zh-TW": "計劃建議查看已驗證的官方指引，並遵循現場指示。",
+        "zh-CN": "计划建议查看已验证的官方指引，并遵循现场指示。",
     },
     SafeIntentId.WAIT_FOR_TRANSPORT_UPDATE: {
         "ja": "計画は、移動を再検討する前に新しい確認済み交通情報を待つよう示しています。",
         "en": "The plan asks you to wait for verified transport updates before reconsidering travel.",
         "zh-TW": "計劃建議先等候已驗證的交通更新，再考慮出行。",
+        "zh-CN": "计划建议先等候已验证的交通更新，再考虑出行。",
     },
     SafeIntentId.RECHECK_TRANSPORT_STATUS: {
         "ja": "計画は、移動を再検討する前に確認済み交通情報をもう一度確認するよう示しています。",
         "en": "The plan asks you to recheck verified transport status before reconsidering travel.",
         "zh-TW": "計劃建議重新考慮出行前，再確認已驗證的交通狀態。",
+        "zh-CN": "计划建议重新考虑出行前，再确认已验证的交通状态。",
     },
     SafeIntentId.AVOID_DISRUPTED_ROUTE: {
         "ja": "計画は、運行乱れが確認された経路に頼らないよう示しています。",
         "en": "The plan asks you not to rely on a route with a verified disruption.",
         "zh-TW": "計劃建議不要依賴已確認受阻的路線。",
+        "zh-CN": "计划建议不要依赖已确认受阻的路线。",
     },
     SafeIntentId.DO_NOT_ASSUME_ROUTE_SAFETY: {
         "ja": "計画は、交通状況だけで経路や自身の安全を判断しないよう示しています。",
         "en": "The plan says transport status alone cannot determine route or personal safety.",
         "zh-TW": "計劃指出，單靠交通狀態不能判斷路線或自身安全。",
+        "zh-CN": "计划指出，单靠交通状态不能判断路线或自身安全。",
     },
     SafeIntentId.EVACUATE_TO_DESIGNATED_SHELTER: {
         "ja": "現在の Safety Core 計画には、避難所へ移動する行動が含まれています。",
         "en": "The current Safety Core plan includes an action to move to a designated shelter.",
         "zh-TW": "目前的 Safety Core 計劃包含前往指定避難場所的行動。",
+        "zh-CN": "目前的 Safety Core 计划包含前往指定避难场所的行动。",
     },
     SafeIntentId.SHELTER_IN_PLACE_VERTICAL: {
         "ja": "危険が報告されたため、計画は今すぐ建物の上の階か高い場所へ移動し、水辺から離れるよう示しています。",
         "en": "Because danger was reported, the plan asks you to move to an upper floor or higher ground now and keep away from water.",
         "zh-TW": "因為已回報危險，計劃建議立刻往建築物上層或高處移動，遠離水邊。",
+        "zh-CN": "因为已回报危险，计划建议立刻往建筑物上层或高处移动，远离水边。",
     },
     SafeIntentId.TSUNAMI_EVACUATE_NOW: {
         "ja": "公式の津波警報があなたの地域に出ているため、計画は今すぐ公式に指定された津波避難場所へ向かい、間に合わない場合は頑丈な建物の3階以上か高い場所へ移動するよう示しています。",
         "en": "Because an official tsunami warning covers your area, the plan asks you to go now to an officially designated tsunami site, or, if you cannot reach one in time, to the 3rd floor or higher of a solid building or to high ground.",
         "zh-TW": "因為官方海嘯警報涵蓋你所在的地區，計劃建議立刻前往官方指定的海嘯避難場所；如果來不及，立刻往堅固建築物的 3 樓以上或高處移動。",
+        "zh-CN": "因为官方海啸警报涵盖你所在的地区，计划建议立刻前往官方指定的海啸避难场所；如果来不及，立刻往坚固建筑物的 3 楼以上或高处移动。",
     },
     SafeIntentId.STAY_HIGH_UNTIL_OFFICIAL_CLEAR: {
         "ja": "計画は、高い場所に着いたら公式に津波警報が解除されるまでとどまるよう示しています。",
         "en": "The plan asks you to stay high up until the official tsunami warning is lifted.",
         "zh-TW": "計劃建議到達高處後留在原地，直到官方解除海嘯警報。",
+        "zh-CN": "计划建议到达高处后留在原地，直到官方解除海啸警报。",
     },
     SafeIntentId.AVOID_COAST_AND_RIVERS: {
         "ja": "計画は、津波警報中は海岸・川・低い場所に近づかないよう示しています。",
         "en": "The plan asks you to stay away from the coast, rivers and low ground while the tsunami warning is in force.",
         "zh-TW": "計劃建議海嘯警報期間遠離海岸、河川及低窪地方。",
+        "zh-CN": "计划建议海啸警报期间远离海岸、河川及低洼地方。",
     },
 }
 
@@ -861,15 +883,18 @@ _GENERIC_INTENT_TEXT = {
         "ja": "これは現在の計画に含まれる NOW 行動です。",
         "en": "This is a NOW action in the current plan.",
         "zh-TW": "這是目前計劃中的 NOW 行動。",
+        "zh-CN": "这是目前计划中的 NOW 行动。",
     },
     PlanActionCategory.NEXT: {
         "ja": "これは現在の計画に含まれる NEXT 行動です。",
         "en": "This is a NEXT action in the current plan.",
         "zh-TW": "這是目前計劃中的 NEXT 行動。",
+        "zh-CN": "这是目前计划中的 NEXT 行动。",
     },
     PlanActionCategory.AVOID: {
         "ja": "これは現在の計画に含まれる AVOID 行動です。",
         "en": "This is an AVOID action in the current plan.",
         "zh-TW": "這是目前計劃中的 AVOID 行動。",
+        "zh-CN": "这是目前计划中的 AVOID 行动。",
     },
 }

@@ -14,14 +14,14 @@ vi.mock('../components/simulation-reference-map', () => ({
 const quake = {
   at_jst: '2011-03-11T14:46:00+09:00',
   kind: 'EARTHQUAKE',
-  label: { ja:'地震', en:'Earthquake', 'zh-TW':'地震' },
+  label: { ja:'地震', en:'Earthquake', 'zh-TW':'地震', 'zh-CN': '地震' },
   source_url:'https://www.jma.go.jp/',
   historic_observation:true, fed_to_safety_core:true,
 };
 const tsunami = {
   ...quake, at_jst:'2011-03-11T14:49:00+09:00',
   kind:'TSUNAMI_WARNING',fed_to_safety_core:false,
-  label:{ ja:'津波警報',en:'Tsunami warning','zh-TW':'海嘯警報' },
+  label:{ ja:'津波警報',en:'Tsunami warning','zh-TW':'海嘯警報', 'zh-CN': '海啸警报' },
 };
 const config:SimulationLaunch = {
   input:{...defaultDisasterTest,kind:'EARTHQUAKE'},language:'zh-TW',

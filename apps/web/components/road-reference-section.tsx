@@ -113,6 +113,12 @@ const copy={
     stale:'資料較舊（取得於 {date}）',notPersisted:'無法離線保存',tsunami:'海嘯適用指定場所',earthquake:'地震適用指定場所',
     roadReference:'道路參考',exercise:'演練',retry:'重試',straight:'直線',road:'道路',reference:'參考',dash:'—',
     disclaimer:'道路參考線不是避難路線，最安全路線未判定。',
+  }, 'zh-CN': {
+    loading:'正在取得道路数据…',noPoint:'请选择一个点以显示道路参考线',noPlaces:'附近没有符合条件的指定场所',failed:'无法取得此地区道路数据',
+    tooDense:'此地区道路数据过于密集，无法显示参考线',noRoads:'此地区没有可用的道路数据',offline:'此地区没有道路参考数据（离线）',partial:'部分道路数据未下载',
+    stale:'数据较旧（取得于 {date}）',notPersisted:'无法离线保存',tsunami:'海啸适用指定场所',earthquake:'地震适用指定场所',
+    roadReference:'道路参考',exercise:'演练',retry:'重试',straight:'直线',road:'道路',reference:'参考',dash:'—',
+    disclaimer:'道路参考线不是避难路线，最安全路线未判定。',
   },
 } as const;
 
@@ -136,6 +142,7 @@ export function roadPeekText(language:Language,hazard:RoadHazard,reference:RoadR
   const count=reference.result?.destinations.length??0;
   const hazardText=hazard==='tsunami'?t.tsunami:t.earthquake;
   if(language==='zh-TW')return `附近 ${count} 處${hazardText} · 道路參考`;
+  if(language==='zh-CN')return `附近 ${count} 处${hazardText} · 道路参考`;
   if(language==='ja')return `近くの${hazardText} ${count} か所 · 道路参考`;
   return `${count} ${hazardText} nearby · road reference`;
 }

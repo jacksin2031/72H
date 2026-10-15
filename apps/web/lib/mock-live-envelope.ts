@@ -3,7 +3,7 @@ import { mockLiveSnapshotSchema } from './mock-live-contract';
 import { simulationAssessmentSchema } from './simulation-advice';
 import { boundedText } from './disaster-map';
 
-const historicalLabel = z.object({ ja: z.string(), en: z.string(), 'zh-TW': z.string() });
+const historicalLabel = z.object({ ja: z.string(), en: z.string(), 'zh-TW': z.string(), 'zh-CN': z.string().optional() }).transform(l => ({ ...l, 'zh-CN': l['zh-CN'] ?? l['zh-TW'] }));
 export const mockMilestoneSchema = z.object({
   at_jst: z.string(),
   kind: z.string(),

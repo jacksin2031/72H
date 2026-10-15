@@ -49,7 +49,7 @@ export const planSchema = z.object({
   id, situation_id: id, version: z.number().int().positive(), status: planStatus,
   created_at: timestamp, expires_at: timestamp, invalidate_on_new_relevant_evidence: z.boolean(),
   based_on_evidence_ids: ids, previous_plan_id: id.nullable(), invalidation_reason: text.nullable(),
-  changed_action_ids: ids, language: z.enum(['ja', 'en', 'zh-TW']),
+  changed_action_ids: ids, language: z.enum(['ja', 'en', 'zh-TW', 'zh-CN']),
 });
 export const actionSchema = z.object({
   id, plan_id: id, category: z.enum(['NOW', 'NEXT', 'AVOID']), text, reason: text,
@@ -80,7 +80,7 @@ export const distressStatusSchema = z.object({
 export type DistressStatus = z.infer<typeof distressStatusSchema>;
 const defaultDistress: DistressStatus = { level: 'NONE', reports: [], trigger_evidence_ids: [], deadline_at: null, ai_escalated: false, synthetic: false, warning_class: null, last_official_at: null, trigger_expires_at: null, stale_reason: null };
 export const snapshotSchema = z.object({
-  profile: z.object({ id, preferred_language: z.enum(['ja', 'en', 'zh-TW']), current_location: location, accommodation_location: location, current_destination: location.nullable(), party_size: z.number().int().positive(), self_reported_safety_status: z.enum(['SAFE', 'UNCERTAIN', 'NEEDS_ASSISTANCE', 'UNKNOWN']), current_plan_summary: text.default(''), accessibility_constraints: z.array(text).max(32).default([]), created_at: timestamp, updated_at: timestamp }),
+  profile: z.object({ id, preferred_language: z.enum(['ja', 'en', 'zh-TW', 'zh-CN']), current_location: location, accommodation_location: location, current_destination: location.nullable(), party_size: z.number().int().positive(), self_reported_safety_status: z.enum(['SAFE', 'UNCERTAIN', 'NEEDS_ASSISTANCE', 'UNKNOWN']), current_plan_summary: text.default(''), accessibility_constraints: z.array(text).max(32).default([]), created_at: timestamp, updated_at: timestamp }),
   area_catalog: z.array(areaDefinitionSchema).max(512).default([]),
   situation: z.object({ id, user_id: id, incident_status: text, network_state: networkState, active_event_ids: ids, current_plan_id: id.nullable(), latest_evidence_at: timestamp.nullable(), uncertainty_flags: z.array(text).max(64), conflict_flags: z.array(text).max(64), created_at: timestamp, updated_at: timestamp, claim_states: z.array(z.object({ key: id, status: z.enum(['VERIFIED', 'UNKNOWN', 'CONFLICT']), value: z.union([text, z.number(), z.boolean(), z.null()]), evidence_ids: ids, updated_at: timestamp })).max(128).default([]) }),
   events: z.array(z.object({ id, event_type: disasterEventType, occurred_at: timestamp, affected_areas: z.array(text), affected_area_ids: areaIds.default([]), source_name: text, raw_reference: text })).max(100),
@@ -503,7 +503,7 @@ export type RoutePresentation = z.infer<typeof routePresentationSchema>;
 export type SpatialGuidance = z.infer<typeof spatialGuidanceSchema>;
 export type LiveProfileSeed = z.infer<typeof liveProfileSeedSchema>;
 export type Location = z.infer<typeof location>;
-export type Language = 'ja' | 'en' | 'zh-TW';
+export type Language = 'ja' | 'en' | 'zh-TW' | 'zh-CN';
 export type NetworkState = z.infer<typeof networkState>;
 export type AreaDefinition = z.infer<typeof areaDefinitionSchema>;
 export type DisasterAssessment = z.infer<typeof disasterAssessmentSchema>;

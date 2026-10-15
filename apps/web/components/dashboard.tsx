@@ -32,10 +32,10 @@ import { DrillLocationPicker } from './drill-location-picker';
 import type { DrillPoint } from '@/lib/drill-location';
 import type { RoadHazard } from '@/lib/road-destinations';
 
-const exerciseLabel: Record<Language, string> = { 'zh-TW': '演練', ja: '演習', en: 'Exercise' };
+const exerciseLabel: Record<Language, string> = { 'zh-TW': '演練', 'zh-CN': '演练', ja: '演習', en: 'Exercise' };
 /** Exercise-only wording; technical terms (Agent log, Judge) appear only in the last basis section. */
 const exerciseCopy: Record<Language, { details: string; setup: string; planning: string }> = {
-  'zh-TW': { details: '演練詳細（Agent 紀錄 · Judge）', setup: '演練設定', planning: '計畫產生方式' },
+  'zh-TW': { details: '演練詳細（Agent 紀錄 · Judge）', setup: '演練設定', planning: '計畫產生方式' }, 'zh-CN': { details: '演练详细（Agent 纪录 · Judge）', setup: '演练设置', planning: '计划产生方式' },
   ja: { details: '演習の詳細（エージェント記録 · Judge）', setup: '演習の設定', planning: '計画の作成方法' },
   en: { details: 'Exercise details (agent log · Judge)', setup: 'Exercise setup', planning: 'Planning mode' },
 };
@@ -132,7 +132,7 @@ export function Dashboard({ view }: { view: string }) {
     let savedSession: string | null = null;
     try {
       const savedLanguage = localStorage.getItem('72h-language');
-      if (savedLanguage && ['ja', 'en', 'zh-TW'].includes(savedLanguage)) setLanguage(savedLanguage as Language);
+      if (savedLanguage && ['ja', 'en', 'zh-TW', 'zh-CN'].includes(savedLanguage)) setLanguage(savedLanguage as Language);
       savedSession = localStorage.getItem('72h-session');
     } catch { setStorageError(true); }
     let cancelled = false;

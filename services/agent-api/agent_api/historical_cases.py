@@ -15,6 +15,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
+from .historical_zh_cn import zh_cn
+
 HistoricalId = Literal["tohoku-2011", "kobe-1995", "kumamoto-2016", "iburi-2018", "noto-2024"]
 StageKind = Literal["EARTHQUAKE", "TSUNAMI_WARNING", "TSUNAMI_UPGRADE", "POWER_OUTAGE", "AFTERSHOCK"]
 TsunamiClass = Literal["MAJOR_WARNING", "WARNING"]
@@ -48,7 +50,7 @@ class HistoricMilestone:
     def public(self) -> dict:
         return {
             "at_jst": self.at_jst, "kind": self.kind,
-            "label": {"ja": self.ja, "zh-TW": self.zh, "en": self.en},
+            "label": {"ja": self.ja, "zh-TW": self.zh, "zh-CN": zh_cn(self.zh), "en": self.en},
             "source_url": self.source_url,
             "historic_observation": self.historic_observation,
             "fed_to_safety_core": self.kind in SAFETY_CORE_KINDS,
@@ -72,7 +74,7 @@ class HistoricCase:
     def public(self) -> dict:
         return {
             "id": self.id, "year": self.year,
-            "label": {"ja": self.ja, "zh-TW": self.zh, "en": self.en},
+            "label": {"ja": self.ja, "zh-TW": self.zh, "zh-CN": zh_cn(self.zh), "en": self.en},
             "magnitude": self.magnitude, "max_intensity": self.max_intensity,
             "area_id": "JP-" + self.area_code,
             "source_url": self.source_url,

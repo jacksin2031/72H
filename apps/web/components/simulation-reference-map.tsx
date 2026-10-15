@@ -66,6 +66,19 @@ const mapText={
     shortCaution:'海岸線 ≠ 海嘯浸水區 · 不可作避難導航',details:'地圖限制與資料',
     land:'陸地',sea:'海洋',gps:'● GPS · 模擬',epicenter:'✕ 氣象廳歷史震央',
     gpsOut:'GPS 超出地圖範圍',epicenterOut:'震央超出地圖範圍',noAccess:'不可用作安全導航或避難授權',
+  }, 'zh-CN': {
+    title:'全日本参考地图',note:'国土地理院地图 · 并非海啸风险图',
+    caution:'海岸线只代表海陆边界，并非浸水范围、安全避难所或安全路线。P／S 波前按发震时间、深度及固定波速估算，不代表实测波形、震度或震动影响范围。',
+    waves:'P／S 波前估算',waveSource:'气象厅：地震波速度',
+    loading:'正在验证日本全国离线海岸线',
+    unavailable:'无法验证日本全国海岸图，不会显示未经核实的地图。',
+    ready:'放大查看地名、道路、铁路及车站。参考道路不代表可通行或安全路线。',
+    roads:'参考道路',rail:'铁路',
+    tilesUnavailable:'部分地图详情未能加载 · 海陆轮廓仍可查看',
+    zoomIn:'放大',zoomOut:'缩小',overview:'显示全日本',focusEpicenter:'前往历史震央',focusGPS:'前往已授权定位',
+    shortCaution:'海岸线 ≠ 海啸浸水区 · 不可作避难导航',details:'地图限制与数据',
+    land:'陆地',sea:'海洋',gps:'● GPS · 仿真',epicenter:'✕ 气象厅历史震央',
+    gpsOut:'GPS 超出地图范围',epicenterOut:'震央超出地图范围',noAccess:'不可用作安全导航或避难授权',
   },
 } as const;
 

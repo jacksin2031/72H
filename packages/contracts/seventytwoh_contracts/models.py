@@ -43,6 +43,7 @@ class Language(StrEnum):
     JAPANESE = "ja"
     ENGLISH = "en"
     TRADITIONAL_CHINESE = "zh-TW"
+    SIMPLIFIED_CHINESE = "zh-CN"
 
 
 class SelfReportedSafetyStatus(StrEnum):

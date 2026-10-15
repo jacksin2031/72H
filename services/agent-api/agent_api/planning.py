@@ -1046,11 +1046,13 @@ def _new_movement_action(
         "ja": f"確認済みの避難指示に従い、開設と適合性を確認した指定避難先「{destination.name}」へ、確認済みの経路で移動してください。",
         "en": f"Follow the verified evacuation directive to designated shelter “{destination.name}” using the currently verified route.",
         "zh-TW": f"依照已驗證的避難指示，沿目前已驗證的路線前往已確認開放且適合的指定避難處「{destination.name}」。",
+        "zh-CN": f"依照已验证的避难指示，沿目前已验证的路线前往已确认开放且适合的指定避难处「{destination.name}」。",
     }[language]
     reason = {
         "ja": "現在有來源受控的避難指示、開設中で災害に適合する目的地，以及新鮮で競合のない経路証拠。",
         "en": "A source-controlled evacuation directive, a currently open hazard-suitable destination, and fresh non-conflicting route evidence are all present.",
         "zh-TW": "目前具備來源受控的避難指示、已確認開放且適合此災害的目的地，以及新鮮且無衝突的路線證據。",
+        "zh-CN": "目前具备来源受控的避难指示、已确认开放且适合此灾害的目的地，以及新鲜且无冲突的路线证据。",
     }[language]
     expectations = tuple(
         DependencyExpectation(key=key, expected_value=current_claim_value(claims.get(key)))
@@ -1112,6 +1114,7 @@ def _new_action(
                 "ja": "確認済みの公式情報を確認し、現場の指示に従いながら自身の安全を優先してください。",
                 "en": "Review verified official guidance and follow on-site instructions while protecting your personal safety.",
                 "zh-TW": "查看已驗證的官方指引，遵循現場指示並優先保護自身安全。",
+                "zh-CN": "查看已验证的官方指引，遵循现场指示并优先保护自身安全。",
             }
             text = words[state.profile.preferred_language.value]
             reason = _now_reason(state.profile.preferred_language.value, bool(official_ids))
@@ -1133,6 +1136,7 @@ def _new_action(
                 "ja": "予定している帰路を再検討する前に、確認済みの交通情報をもう一度確認してください。",
                 "en": "Check current verified transport updates again before reconsidering the planned return.",
                 "zh-TW": "重新考慮原定返程前，再確認一次已驗證的交通資訊。",
+                "zh-CN": "重新考虑原定返程前，再确认一次已验证的交通信息。",
             }
             text = words[state.profile.preferred_language.value]
             _, reason, risk, dependencies, _ = _next_content(
@@ -1155,6 +1159,7 @@ def _new_action(
                 "ja": "交通状況だけで、経路や自身の安全を判断しないでください。",
                 "en": "Do not treat transport status alone as an assessment of personal or route safety.",
                 "zh-TW": "不要只根據交通狀態判斷路線或自身安全。",
+                "zh-CN": "不要只根据交通状态判断路线或自身安全。",
             }
             text = words[state.profile.preferred_language.value]
             _, reason, risk, dependencies, _ = _avoid_content(
@@ -1207,6 +1212,10 @@ _DISTRESS_WORDS = {
             "立刻往建築物上層或高處移動，遠離水邊。",
             "你回報了危險。立刻往建築物上層或高處移動，遠離水邊。",
         ),
+        "zh-CN": (
+            "立刻往建筑物上层或高处移动，远离水边。",
+            "你回报了危险。立刻往建筑物上层或高处移动，远离水边。",
+        ),
     },
     SafeIntentId.TSUNAMI_EVACUATE_NOW: {
         "ja": (
@@ -1220,6 +1229,10 @@ _DISTRESS_WORDS = {
         "zh-TW": (
             "立刻前往官方指定的海嘯避難場所；如果來不及，立刻往堅固建築物的 3 樓以上或高處移動。",
             "官方海嘯警報涵蓋你所在的地區。立刻前往官方指定的海嘯避難場所；如果來不及，立刻往堅固建築物的 3 樓以上或高處移動。",
+        ),
+        "zh-CN": (
+            "立刻前往官方指定的海啸避难场所；如果来不及，立刻往坚固建筑物的 3 楼以上或高处移动。",
+            "官方海啸警报涵盖你所在的地区。立刻前往官方指定的海啸避难场所；如果来不及，立刻往坚固建筑物的 3 楼以上或高处移动。",
         ),
     },
 }
@@ -1240,6 +1253,10 @@ _STALE_WORDS = {
         "立刻往建築物上層或高處移動，遠離水邊。",
         "官方海嘯警報資料已超過有效時間（未收到解除）。立刻往建築物上層或高處移動，遠離水邊。",
     ),
+    "zh-CN": (
+        "立刻往建筑物上层或高处移动，远离水边。",
+        "官方海啸警报数据已超过有效时间（未收到解除）。立刻往建筑物上层或高处移动，远离水边。",
+    ),
 }
 
 
@@ -1257,11 +1274,16 @@ _LOCATION_STALE_WORDS = {
         "立刻往建築物上層或高處移動，遠離水邊。",
         "位置資料過舊，無法確認你仍在官方海嘯警報地區內。立刻往建築物上層或高處移動，遠離水邊。",
     ),
+    "zh-CN": (
+        "立刻往建筑物上层或高处移动，远离水边。",
+        "位置数据过旧，无法确认你仍在官方海啸警报地区内。立刻往建筑物上层或高处移动，远离水边。",
+    ),
 }
 _LOCATION_STALE_PREFIX = {
     "ja": "位置情報が古く、公式の津波警報の地域内にいるか確認できません。",
     "en": "Your location fix is too old to confirm you are inside the official tsunami warning area.",
     "zh-TW": "位置資料過舊，無法確認你仍在官方海嘯警報地區內。",
+    "zh-CN": "位置数据过旧，无法确认你仍在官方海啸警报地区内。",
 }
 
 
@@ -1269,6 +1291,7 @@ _STALE_PREFIX = {
     "ja": "公式の津波警報の情報が有効時間を過ぎました（取り消しは確認されていません）。",
     "en": "The official tsunami warning data has expired (no cancellation was received).",
     "zh-TW": "官方海嘯警報資料已超過有效時間（未收到解除）。",
+    "zh-CN": "官方海啸警报数据已超过有效时间（未收到解除）。",
 }
 # Level-1 vertical guidance for a person who reported TRAPPED: they may not be able to move.
 _TRAPPED_WORDS = {
@@ -1283,6 +1306,10 @@ _TRAPPED_WORDS = {
     "zh-TW": (
         "請求救，留在可以保護自己的地方；如果水在上升，就往高處移動。",
         "你回報受困。請求救，留在可以保護自己的地方；如果水在上升，就往高處移動。",
+    ),
+    "zh-CN": (
+        "请求救，留在可以保护自己的地方；如果水在上升，就往高处移动。",
+        "你回报受困。请求救，留在可以保护自己的地方；如果水在上升，就往高处移动。",
     ),
 }
 
@@ -1346,6 +1373,8 @@ _NO_TRIP_WORDS = {
                "No trip is set, so official updates come before transport information."),
         "zh-TW": ("持續留意已驗證的官方資訊，並遵循現場人員指示。",
                   "目前沒有設定行程，因此優先確認官方資訊，而不是交通資訊。"),
+        "zh-CN": ("持续留意已验证的官方信息，并遵循现场人员指示。",
+                  "目前没有设置行程，因此优先确认官方信息，而不是交通信息。"),
     },
     PlanActionCategory.AVOID: {
         "ja": ("確認済みの情報がないまま、周囲や経路が安全だと決めつけないでください。",
@@ -1354,6 +1383,8 @@ _NO_TRIP_WORDS = {
                "No verified information establishes that your surroundings or any route are safe."),
         "zh-TW": ("沒有已驗證資訊之前，不要自行認定周邊或任何路線是安全的。",
                   "目前沒有已驗證資訊可確認周邊或路線的安全。"),
+        "zh-CN": ("没有已验证信息之前，不要自行认定周边或任何路线是安全的。",
+                  "目前没有已验证信息可确认周边或路线的安全。"),
     },
 }
 
@@ -1367,6 +1398,8 @@ _TSUNAMI_FOLLOW_UP_WORDS = {
                "Tsunami waves can arrive repeatedly; only an official announcement lifts the warning."),
         "zh-TW": ("到達高處後留在原地，直到官方解除海嘯警報，並持續確認官方更新。",
                   "海嘯可能多次來襲；只有官方發布才代表警報解除。"),
+        "zh-CN": ("到达高处后留在原地，直到官方解除海啸警报，并持续确认官方更新。",
+                  "海啸可能多次来袭；只有官方发布才代表警报解除。"),
     },
     PlanActionCategory.AVOID: {
         "ja": ("海岸や川の近く、低い場所に近づかないでください。様子を見に戻らないでください。",
@@ -1375,6 +1408,8 @@ _TSUNAMI_FOLLOW_UP_WORDS = {
                "While a tsunami warning is in force, coasts and riverbanks can remain dangerous."),
         "zh-TW": ("遠離海岸、河川及低窪地方，不要回去查看情況。",
                   "海嘯警報生效期間，海岸及河岸可能持續危險。"),
+        "zh-CN": ("远离海岸、河川及低洼地方，不要回去查看情况。",
+                  "海啸警报生效期间，海岸及河岸可能持续危险。"),
     },
 }
 
@@ -1428,6 +1463,10 @@ def _now_content(language, evidence_ids, dependencies):
             "先注意自身安全，遵循現場人員與官方指示，並留意已驗證的最新資訊。",
             "目前有符合資格的已驗證官方資訊，請查看其中所載的災害狀態。",
         ),
+        "zh-CN": (
+            "先注意自身安全，遵循现场人员与官方指示，并留意已验证的最新信息。",
+            "目前有符合资格的已验证官方信息，请查看其中所载的灾害状态。",
+        ),
     }
     text, reason = words[language.value]
     return (
@@ -1445,11 +1484,13 @@ def _now_reason(language: str, evidence_available: bool) -> str:
             "ja": "確認済みの公式情報があります。示されている災害状況を確認してください。",
             "en": "An eligible verified official update is available; review its stated disaster status.",
             "zh-TW": "目前有符合資格的已驗證官方資訊，請查看其中所載的災害狀態。",
+            "zh-CN": "目前有符合资格的已验证官方信息，请查看其中所载的灾害状态。",
         }[language]
     return {
         "ja": "現在有効な確認済み公式情報はありません。",
         "en": "No current verified official update is available.",
         "zh-TW": "目前沒有有效的已驗證官方資訊。",
+        "zh-CN": "目前没有有效的已验证官方信息。",
     }[language]
 
 
@@ -1468,6 +1509,10 @@ def _next_content(language, route_value, evidence_ids, dependencies):
                 "重新考慮返程前，先等候更新的交通資訊。",
                 "已驗證的交通資訊顯示原定路線受到影響。",
             ),
+            "zh-CN": (
+                "重新考虑返程前，先等候更新的交通信息。",
+                "已验证的交通信息显示原定路线受到影响。",
+            ),
         }
     elif route_value == "CONFLICT":
         words = {
@@ -1482,6 +1527,10 @@ def _next_content(language, route_value, evidence_ids, dependencies):
             "zh-TW": (
                 "先等候新的已驗證交通資訊，以釐清來源間的差異。",
                 "目前已驗證來源對交通狀況的說法不一致。",
+            ),
+            "zh-CN": (
+                "先等候新的已验证交通信息，以厘清来源间的差异。",
+                "目前已验证来源对交通状况的说法不一致。",
             ),
         }
     elif route_value == "AVAILABLE":
@@ -1498,6 +1547,10 @@ def _next_content(language, route_value, evidence_ids, dependencies):
                 "開始原定返程前，再確認一次交通狀況。",
                 "路線可用資訊不代表災害期間的路線安全。",
             ),
+            "zh-CN": (
+                "开始原定返程前，再确认一次交通状况。",
+                "路线可用信息不代表灾害期间的路线安全。",
+            ),
         }
     else:
         words = {
@@ -1512,6 +1565,10 @@ def _next_content(language, route_value, evidence_ids, dependencies):
             "zh-TW": (
                 "開始原定返程前，先等候已驗證的交通資訊。",
                 "目前沒有已驗證的交通狀況。",
+            ),
+            "zh-CN": (
+                "开始原定返程前，先等候已验证的交通信息。",
+                "目前没有已验证的交通状况。",
             ),
         }
     text, reason = words[language.value]
@@ -1539,6 +1596,10 @@ def _avoid_content(language, route_value, evidence_ids, dependencies):
                 "不要依賴已確認受影響的路線返程。",
                 "已驗證的交通資訊顯示該路線受到影響。",
             ),
+            "zh-CN": (
+                "不要依赖已确认受影响的路线返程。",
+                "已验证的交通信息显示该路线受到影响。",
+            ),
         }
     elif route_value == "AVAILABLE":
         words = {
@@ -1553,6 +1614,10 @@ def _avoid_content(language, route_value, evidence_ids, dependencies):
             "zh-TW": (
                 "不要把路線可用狀態當成災害安全評估。",
                 "交通可用資訊不等於路線安全判斷。",
+            ),
+            "zh-CN": (
+                "不要把路线可用状态当成灾害安全评估。",
+                "交通可用信息不等于路线安全判断。",
             ),
         }
     elif route_value == "CONFLICT":
@@ -1569,6 +1634,10 @@ def _avoid_content(language, route_value, evidence_ids, dependencies):
                 "不要根據互相矛盾的交通資訊決定移動。",
                 "已驗證來源之間仍有未解決的差異。",
             ),
+            "zh-CN": (
+                "不要根据互相矛盾的交通信息决定移动。",
+                "已验证来源之间仍有未解决的差异。",
+            ),
         }
     else:
         words = {
@@ -1583,6 +1652,10 @@ def _avoid_content(language, route_value, evidence_ids, dependencies):
             "zh-TW": (
                 "不要假設原定路線仍可使用。",
                 "目前沒有已驗證的交通資訊可確認路線狀況。",
+            ),
+            "zh-CN": (
+                "不要假设原定路线仍可使用。",
+                "目前没有已验证的交通信息可确认路线状况。",
             ),
         }
     text, reason = words[language.value]

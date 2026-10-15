@@ -69,6 +69,18 @@ const ui = {
     risk:'海嘯警報及停電只是歷史演習資料，危險範圍及場所適用性仍未判定。',
     error:'演習出現錯誤',mapNotice:'沒有已核實避難所或安全路線',
     mapRiskTitle:'定位與災害風險',mapRiskUnknown:'安全性：無法判定',tsunamiWarningSummary:'歷史海嘯警報已發生 · 尚未確認避難安全',
+  }, 'zh-CN': { exercise:'演练', more:'更多',close:'结束演习',
+    warning:'仿真演习 · 并非真实警报',clock:'仿真时间',before:'距离地震发生',nextEvent:'下一事件',
+    timeline:'时间线',eventDone:'已处理',upcoming:'未发生',
+    awaiting:'尚未到达仿真灾难时间，请留意周围环境并保持准备。',waiting:'等待 AI／Safety Core 判断',
+    unsupported:'仅作历史背景 · 不属安全判断',earthquake:'地震发生',note:'全日本国土地理院参考地图，海岸线不代表海啸浸水范围。',
+    safety:'可自选 GPS 地区；不发出真实通知或移动授权',
+    details:'演练详细（AI／Safety Core）', ai:'AI／Safety Core',
+    consult:'历史来源',actions:'行动计划',source:'仿真来源',status:'状态', simulationOnly:'仅限演练',
+    pending:'等待仿真事件发生',processing:'正在处理仿真事件…',completed:'已完成',
+    risk:'海啸警报及停电只是历史演习数据，危险范围及场所适用性仍未判定。',
+    error:'演习出现错误',mapNotice:'没有已核实避难所或安全路线',
+    mapRiskTitle:'定位与灾害风险',mapRiskUnknown:'安全性：无法判定',tsunamiWarningSummary:'历史海啸警报已发生 · 尚未确认避难安全',
   },
 } as const;
 
@@ -126,7 +138,7 @@ export function SimulationScreens({config,phase,tab,setTab,time,speed,state,done
       &&Date.parse(state.movement_assessment?.created_at??'')>lastDisconnect,wallTime):null;
   const adviceText=simulationAdviceText[language];
   const lastMode=state?.movement_assessment?.ai_mode;
-  const ai=(state?.movement_assessment&&!advice&&lastMode!=='NOT_RUN'?(language==='zh-TW'?'最近一次執行：':language==='ja'?'直近の実行：':'Last execution: '):'')
+  const ai=(state?.movement_assessment&&!advice&&lastMode!=='NOT_RUN'?(language==='zh-TW'?'最近一次執行：':language==='zh-CN'?'最近一次运行：':language==='ja'?'直近の実行：':'Last execution: '):'')
     +(lastMode==='GEMINI_ADK'?adviceText.success:lastMode==='GEMINI_ADK_FALLBACK'?adviceText.fallback:adviceText.notRun);
   const doneEvent=done>0;
   const timeText=jstInputFromEpoch(time).replace('T',' ')+':'+new Date(time).toISOString().slice(17,19);

@@ -33,9 +33,9 @@ vi.mock('../lib/use-device-location',()=>{
 vi.mock('../lib/continuity',async orig=>({...await orig<typeof import('../lib/continuity')>(),loadSnapshot:async()=>null,saveSnapshot:async()=>{}}));
 (globalThis as {IS_REACT_ACT_ENVIRONMENT?:boolean}).IS_REACT_ACT_ENVIRONMENT=true;
 
-const quake={at_jst:'2011-03-11T14:46:00+09:00',kind:'EARTHQUAKE',label:{ja:'地震',en:'Earthquake','zh-TW':'地震'},source_url:'https://www.jma.go.jp/',historic_observation:true,fed_to_safety_core:true};
-const tsunami={...quake,at_jst:'2011-03-11T14:49:00+09:00',kind:'TSUNAMI_WARNING',label:{ja:'津波警報',en:'Tsunami warning','zh-TW':'海嘯警報'},fed_to_safety_core:false};
-const point1={lat:38.4196,lng:141.2946,source:'PRESET' as const,preset_id:'tohoku-ishinomaki-kadonowaki',label:{ja:'石巻・門脇','zh-TW':'石巻・門脇',en:'Ishinomaki Kadonowaki'}};
+const quake={at_jst:'2011-03-11T14:46:00+09:00',kind:'EARTHQUAKE',label:{ja:'地震',en:'Earthquake','zh-TW':'地震', 'zh-CN': '地震'},source_url:'https://www.jma.go.jp/',historic_observation:true,fed_to_safety_core:true};
+const tsunami={...quake,at_jst:'2011-03-11T14:49:00+09:00',kind:'TSUNAMI_WARNING',label:{ja:'津波警報',en:'Tsunami warning','zh-TW':'海嘯警報', 'zh-CN': '海啸警报'},fed_to_safety_core:false};
+const point1={lat:38.4196,lng:141.2946,source:'PRESET' as const,preset_id:'tohoku-ishinomaki-kadonowaki',label:{ja:'石巻・門脇','zh-TW':'石巻・門脇', 'zh-CN': '石巻・门脇',en:'Ishinomaki Kadonowaki'}};
 const point2={...point1,lat:38.9,lng:141.57,preset_id:null,source:'MAP_PICK' as const};
 const config:SimulationLaunch={input:{...defaultDisasterTest,kind:'EARTHQUAKE'},language:'zh-TW',accessKey:'local-test-access-key',
   historicalCase:'tohoku-2011',title:'311 東日本大震災',milestones:[quake,tsunami],timeMode:'REALTIME',acceleratedStart:'2011-03-11T13:46',

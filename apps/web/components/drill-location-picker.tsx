@@ -10,7 +10,10 @@ const text = {
   'zh-TW': { title: '演練位置', map: '在地圖上選點', here: '我的目前位置', use: '使用這個位置', cancel: '取消', change: '更改',
     suffix: '演練位置', hint: '點選地圖，再確認這個位置。', mapLabel: '地圖選點', hereLabel: '目前位置', busy: '正在解析所在地區…',
     geoFailed: '無法取得目前位置',
-    OUTSIDE: '此位置不在日本的市區町村範圍內', UNAVAILABLE: '無法判斷此位置所屬的市區町村', AMBIGUOUS: '無法判斷此位置所屬的市區町村' },
+    OUTSIDE: '此位置不在日本的市區町村範圍內', UNAVAILABLE: '無法判斷此位置所屬的市區町村', AMBIGUOUS: '無法判斷此位置所屬的市區町村' }, 'zh-CN': { title: '演练位置', map: '在地图上选点', here: '我的目前位置', use: '使用这个位置', cancel: '取消', change: '更改',
+    suffix: '演练位置', hint: '点击地图，再确认这个位置。', mapLabel: '地图选点', hereLabel: '目前位置', busy: '正在解析所在地区…',
+    geoFailed: '无法取得目前位置',
+    OUTSIDE: '此位置不在日本的市区町村范围内', UNAVAILABLE: '无法判断此位置所属的市区町村', AMBIGUOUS: '无法判断此位置所属的市区町村' },
   ja: { title: '演習位置', map: '地図で選ぶ', here: '現在地', use: 'この位置を使う', cancel: 'キャンセル', change: '変更',
     suffix: '演習位置', hint: '地図をタップして位置を確認します。', mapLabel: '地図で選択', hereLabel: '現在地', busy: '地域を解析中…',
     geoFailed: '現在地を取得できません',
@@ -55,7 +58,7 @@ export function DrillLocationPicker({ language, caseId, value, onChange, geoloca
     let fix: Fix;
     try { fix = await geolocate(); } catch { setMessage(t.geoFailed); setBusy(false); return; }
     setBusy(false);
-    const label = { ja: text.ja.hereLabel, 'zh-TW': text['zh-TW'].hereLabel, en: text.en.hereLabel };
+    const label = { ja: text.ja.hereLabel, 'zh-TW': text['zh-TW'].hereLabel, 'zh-CN': text['zh-CN'].hereLabel, en: text.en.hereLabel };
     await choose({ lat: fix.lat, lng: fix.lng, source: 'DEVICE_ONCE', label, preset_id: null, accuracy_m: fix.accuracy_m });
   };
 
@@ -81,7 +84,7 @@ export function DrillLocationPicker({ language, caseId, value, onChange, geoloca
       </div>
       <Button variant="primary" disabled={!pending || busy} onClick={() => {
         if (pending) void choose({ lat: pending.lat, lng: pending.lng, source: 'MAP_PICK', preset_id: null,
-          label: { ja: text.ja.mapLabel, 'zh-TW': text['zh-TW'].mapLabel, en: text.en.mapLabel } });
+          label: { ja: text.ja.mapLabel, 'zh-TW': text['zh-TW'].mapLabel, 'zh-CN': text['zh-CN'].mapLabel, en: text.en.mapLabel } });
       }}>{t.use}</Button>
       <Button variant="secondary" onClick={() => { setMapOpen(false); setPending(null); setMessage(''); }}>{t.cancel}</Button>
     </>}

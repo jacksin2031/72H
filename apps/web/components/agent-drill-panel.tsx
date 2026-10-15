@@ -45,6 +45,18 @@ const copy = {
     actions: 'Safety Core 生成的行動', evidence: '模擬 API 證據', log: '完整 Trace 紀錄', empty: '暫時沒有行動計劃',
     synthetic: '所有演習資訊均屬虛構，不構成真實避難指示。斷網只是模擬事件，不會關閉手機網絡。',
     battery: '模擬電量會傳入 AI 決策上下文；實際省電規則仍由確定性策略執行。',
+  }, 'zh-CN': {
+    title: 'AI 实战演习', notice: '仿真 API → 真正 Safety Core → Gemini／ADK 候选决策 → 计划及 Trace',
+    key: '演习访问密钥', keyHint: '由管理员配置，只暂存在这个页面的内存，不会保存。',
+    run: '开始 AI 实战', stop: '停止', executing: 'AI 演习正在进行',
+    unsupported: '目前完整实战引擎只支持地震；其他灾种暂时只有画面示意，未接入 Safety Core。',
+    disabled: '演习 API 未激活或未配置；需要管理员设置。',
+    accessDenied: '演习密钥不正确。',
+    step: '进度', done: '演习完成', error: '演习未能完成。',
+    ai: 'AI 候选决策', actual: 'Gemini／ADK 已成功运行', fallback: 'AI 回退至保守安全规则', deterministic: '只有确定性规则（没有运行 AI）',
+    actions: 'Safety Core 生成的行动', evidence: '仿真 API 证据', log: '完整 Trace 纪录', empty: '暂时没有行动计划',
+    synthetic: '所有演习信息均属虚构，不构成真实避难指示。断网只是仿真事件，不会关闭手机网络。',
+    battery: '仿真电量会传入 AI 决策上下文；实际省电规则仍由确定性策略运行。',
   },
 } as const;
 

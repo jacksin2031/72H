@@ -5,7 +5,7 @@ export type ExplanationSnapshot=Pick<Snapshot,'situation'|'plans'|'plan_actions'
 export const EXPLAINABLE_DECISIONS:readonly string[]=['ALLOW','MODIFY','WAIT_FOR_EVIDENCE'];
 const ids=z.array(z.string().min(1).max(160)).max(128);
 export const planExplanationSchema=z.object({plan_id:z.string().min(1).max(160).nullable(),plan_version:z.number().int().positive().nullable(),
- binding:z.string().regex(/^[a-f0-9]{64}$/),language:z.enum(['ja','en','zh-TW']),
+ binding:z.string().regex(/^[a-f0-9]{64}$/),language:z.enum(['ja','en','zh-TW','zh-CN']),
  mode:z.enum(['GEMINI_ADK_EXPLANATION','DETERMINISTIC_FALLBACK','NOT_RUN']),created_at:z.iso.datetime({offset:true}),expires_at:z.iso.datetime({offset:true}),
  paragraphs:z.array(z.string().min(1).max(320)).max(96),limitations:z.array(z.string().min(1).max(240)).min(1).max(8),
  evidence_ids:ids,fact_ids:ids,action_ids:ids,explanation_has_authority:z.literal(false),reason_code:z.string().max(100).nullable().optional(),
@@ -38,7 +38,9 @@ export function acceptPlanExplanation(raw:unknown,snapshot:ExplanationSnapshot,l
 export const explanationText={
  'zh-TW':{title:'AI 行動解釋',loading:'正在解釋已批准的行動…',retry:'重新解釋目前行動',ai:'Gemini／ADK 已核對解釋',fallback:'固定說明 · 未取得有效 AI 解釋',
   limits:'限制及重新核實',noPlan:'目前沒有有效計劃，先查看官方消息及現場指示。',stale:'資料已過期、離線或計劃改變，請重新核實。',
-  scope:'解釋只適用於這個計劃版本；不能新增行動、保證場所或路線安全。',sources:'依據',routes:'按災害分類評估避難路線'},
+  scope:'解釋只適用於這個計劃版本；不能新增行動、保證場所或路線安全。',sources:'依據',routes:'按災害分類評估避難路線'}, 'zh-CN': {title:'AI 行动解释',loading:'正在解释已批准的行动…',retry:'重新解释目前行动',ai:'Gemini／ADK 已核对解释',fallback:'固定说明 · 未取得有效 AI 解释',
+  limits:'限制及重新核实',noPlan:'目前没有有效计划，先查看官方消息及现场指示。',stale:'数据已过期、离线或计划改变，请重新核实。',
+  scope:'解释只适用于这个计划版本；不能添加行动、保证场所或路线安全。',sources:'依据',routes:'按灾害分类评估避难路线'},
  ja:{title:'AI 行動の説明',loading:'承認済みの行動を説明しています…',retry:'現在の行動を再説明',ai:'Gemini／ADK の説明を検証済み',fallback:'固定説明 · 有効なAI説明なし',
   limits:'制約・再確認',noPlan:'有効な計画がありません。公式情報と現場の指示を確認してください。',stale:'期限切れ・オフライン・計画変更。再確認してください。',
   scope:'この計画版だけの説明です。新しい行動や場所・経路の安全を保証しません。',sources:'根拠',routes:'災害種別から避難経路を検討'},

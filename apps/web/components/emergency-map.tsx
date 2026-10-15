@@ -29,6 +29,7 @@ export function EmergencyMap({ language, conserve, profile, location, locationRe
   const t = vnextMessages[language];
   const geographyLabels = language === 'ja' ? { land: '陸地', ocean: '海域', coast: '海岸線', unavailable: '陸地・海域のデータを利用できません。参考道路のみ表示しています。' }
     : language === 'zh-TW' ? { land: '陸地', ocean: '海洋', coast: '海岸線', unavailable: '陸海底圖未能載入，目前只顯示參考道路。' }
+    : language === 'zh-CN' ? { land: '陆地', ocean: '海洋', coast: '海岸线', unavailable: '陆海底图未能加载，目前只显示参考道路。' }
       : { land: 'Land', ocean: 'Sea', coast: 'Coastline', unavailable: 'Land and sea data unavailable. Reference roads only.' };
   const origin = routeOrigin ? [routeOrigin.lng, routeOrigin.lat] as [number, number] : locationCoordinates(profile?.current_location);
   const device = location.position ? [location.position.longitude, location.position.latitude] as [number, number] : null;

@@ -1,7 +1,7 @@
 import {describe,expect,it,vi} from 'vitest';
 import {DRILL_PRESETS,drillPointToLocation,type DrillPoint} from '../lib/drill-location';
 
-const point=(source:DrillPoint['source']):DrillPoint=>({lat:38.4196,lng:141.2946,source,label:{ja:'石巻・門脇','zh-TW':'石巻・門脇',en:'Ishinomaki Kadonowaki'},preset_id:source==='PRESET'?'tohoku-ishinomaki-kadonowaki':null});
+const point=(source:DrillPoint['source']):DrillPoint=>({lat:38.4196,lng:141.2946,source,label:{ja:'石巻・門脇','zh-TW':'石巻・門脇', 'zh-CN': '石巻・门脇',en:'Ishinomaki Kadonowaki'},preset_id:source==='PRESET'?'tohoku-ishinomaki-kadonowaki':null});
 
 describe('drill presets',()=>{
   it('has 2–3 presets inside Japan for every historical case',()=>{

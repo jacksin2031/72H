@@ -9,7 +9,7 @@ it('maps every legacy view to one of three tabs',()=>{
   expect(shouldOpenBasis('plan')).toBe(true);expect(shouldOpenBasis('sources')).toBe(true);expect(shouldOpenBasis('dashboard')).toBe(false);
 });
 it('labels tabs in three languages',()=>{
-  expect(APP_TABS[0].label).toEqual({'zh-TW':'現在',ja:'今',en:'Now'});
+  expect(APP_TABS[0].label).toEqual({'zh-TW':'現在', 'zh-CN': '现在',ja:'今',en:'Now'});
 });
 it('still statically generates every legacy view so old links never 404',()=>{
   expect(generateStaticParams().map(p=>p.view).sort()).toEqual(['dashboard','demo','more','notifications','plan','sources','trace'].sort());

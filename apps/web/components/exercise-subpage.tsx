@@ -6,7 +6,7 @@ import {ListRow,Tag} from './ui';
 import {SimulationReferenceMap} from './simulation-reference-map';
 
 const text={
-  'zh-TW':{exercise:'演練',picker:'歷史地震',none:'顯示歷史震央',mapNote:'歷史震央僅作演練參考，不是目前的災害資訊。',demo:'示範',simulation:'模擬',test:'災害測試'},
+  'zh-TW':{exercise:'演練',picker:'歷史地震',none:'顯示歷史震央',mapNote:'歷史震央僅作演練參考，不是目前的災害資訊。',demo:'示範',simulation:'模擬',test:'災害測試'}, 'zh-CN': {exercise:'演练',picker:'历史地震',none:'显示历史震央',mapNote:'历史震央仅作演练参考，不是目前的灾害信息。',demo:'示范',simulation:'仿真',test:'灾害测试'},
   ja:{exercise:'演習',picker:'過去の地震',none:'過去の震央を表示',mapNote:'過去の震央は演習用の参考で、現在の災害情報ではありません。',demo:'デモ',simulation:'シミュレーション',test:'災害テスト'},
   en:{exercise:'Exercise',picker:'Historical earthquake',none:'Show historical epicenter',mapNote:'Historical epicenters are exercise references, not current disaster information.',demo:'Demo',simulation:'Simulation',test:'Disaster test'},
 } as const;

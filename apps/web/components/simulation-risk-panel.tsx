@@ -45,6 +45,19 @@ const copy={
     privacy:'只在你按掣授權後取得一次 GPS，資料僅存於記憶體，不會送往 AI 或伺服器。',
     history:'日本氣象廳歷史震央資料',warning:'此為歷史演習；現實緊急情況請遵從最新官方警報及現場指示。',
     outside:'歷史震央位於東京都心參考道路地圖範圍以外。',
+  }, 'zh-CN': {
+    title:'位置与灾害风险',location:'使用目前 GPS 定位',clear:'清除定位',
+    pending:'尚未提供位置',requesting:'正在要求 GPS 权限…',
+    failure:'无法取得有效 GPS，请检查定位权限和精度。',
+    gps:'本机 GPS',accuracy:'定位误差',distance:'距离震央的地表直线距离',distanceOnly:'距离只供参考，不能推算震度或证明安全',
+    earthquake:'地震安全评估',tsunami:'海啸与浸水风险',unknown:'无法判定',
+    tsunamiWarning:'历史仿真海啸警报已发生。如现实中在海岸或河岸遇到警报，应遵从官方指示前往高地或指定避难建筑。',
+    noWarning:'仿真的海啸警报尚未发生，但不代表没有海啸风险。',
+    tsunamiMissing:'缺少已核实的浸水预测、地势高度和海岸风险数据，不能判定哪些位置安全。',
+    shelters:'已核实安全避难地点',notVerified:'未有可核实的开放状态、灾害适用性和安全路线；不会推荐或启动导航。',
+    privacy:'只在你按掣授权后取得一次 GPS，数据仅存于内存，不会送往 AI 或服务器。',
+    history:'日本气象厅历史震央数据',warning:'此为历史演习；现实紧急情况请遵从最新官方警报及现场指示。',
+    outside:'历史震央位于东京都心参考道路地图范围以外。',
   },
 } as const;
 
