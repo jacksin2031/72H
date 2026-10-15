@@ -147,11 +147,7 @@ def create_app(
         secret = os.environ.get("DRILL_ACCESS_KEY", "")
         if len(secret) < 32 or not drill_key or len(drill_key) > 256 or not secrets.compare_digest(secret, drill_key):
             return False
-        try:
-            isolated_mock_live.get(sid)
-            return True
-        except LiveSessionNotFound:
-            return False
+        return isolated_mock_live.has_session(sid)
 
     @application.post("/api/distress/extract", response_model=ExtractResponse)
     async def distress_extract(request: ExtractRequest, x_drill_key: str | None = Header(default=None)) -> ExtractResponse:
@@ -376,8 +372,8 @@ def create_app(
             raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     @application.get("/api/mock-live/{session_id}", response_model=MockLiveResponse)
-    def get_mock_live(session_id: UUID, _: None = Depends(authenticate_drill)) -> MockLiveResponse:
-        return _run_live(lambda: isolated_mock_live.get(session_id))
+    async def get_mock_live(session_id: UUID, _: None = Depends(authenticate_drill)) -> MockLiveResponse:
+        return await _run_live_async(lambda: isolated_mock_live.get(session_id))
 
     @application.post("/api/mock-live/{session_id}/explanation", response_model=ExplanationResponse)
     async def explain_mock_live(
@@ -386,12 +382,16 @@ def create_app(
         _: None = Depends(authenticate_drill),
     ) -> ExplanationResponse:
         try:
-            result = isolated_mock_live.get(session_id)
+            result = await isolated_mock_live.get(session_id)
+
+            async def latest_snapshot():
+                return (await isolated_mock_live.get(session_id)).snapshot
+
             return await explanation_engine.explain(
                 result.snapshot,
                 request.language,
                 source_mode="MOCK_LIVE",
-                latest_snapshot=lambda: isolated_mock_live.get(session_id).snapshot,
+                latest_snapshot=latest_snapshot,
             )
         except LiveSessionNotFound as exc:
             raise HTTPException(status_code=404, detail="mock live session not found") from exc
@@ -419,7 +419,7 @@ def create_app(
         session_id: UUID, request: AdviceRequest, _: None = Depends(authenticate_drill),
     ) -> dict:
         try:
-            snapshot = isolated_mock_live.get(session_id).snapshot
+            snapshot = (await isolated_mock_live.get(session_id)).snapshot
             applied = await _advise(session_id, snapshot, request, MAX_LIVE_TRACE_EVENTS)
             if applied.raised_level and not await isolated_mock_live.record_ai_escalation(session_id):
                 applied = escalation_skipped(applied)

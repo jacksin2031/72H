@@ -5,9 +5,13 @@ evidence, dependency invalidation, re-planning and distress trigger code as a li
 """
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timedelta, timezone
+from threading import Event
+from uuid import UUID
 
 import pytest
+from httpx import ASGITransport, AsyncClient
 from fastapi.testclient import TestClient
 
 from agent_api.historical_cases import CASES
@@ -281,6 +285,132 @@ def test_get_never_rebinds_a_previous_step_while_next_is_in_flight(monkeypatch):
         # And a GET while a mutation holds the session lock never rebinds.
         session.store.mock_source.stage = 1
         assert store._response(session, moved, rebind=False).movement_assessment == step1
+
+
+def test_delayed_get_cannot_rebind_the_completed_next_assessment_to_an_old_plan(monkeypatch):
+    monkeypatch.setenv("DRILL_ACCESS_KEY", KEY)
+    advisor = SimulationAdvisor(config=PlannerConfig(mode="gemini"), runner=UnknownRunner())
+    store = MockLiveDrillStore(planner=CandidatePlanner(PlannerConfig(mode="deterministic")), advisor=advisor)
+    app = create_app(mock_live_store=store)
+
+    async def exercise():
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            start = await client.post(
+                "/api/mock-live/start",
+                headers=HEADERS,
+                json={
+                    "historical_case": "tohoku-2011",
+                    "use_gemini": True,
+                    "location_context": {
+                        "area_ids": list(ISHINOMAKI),
+                        "source": "USER_SELECTED",
+                        "observed_at": datetime.now(timezone.utc).isoformat(),
+                    },
+                    "conditions": {"site": "COASTAL_LOWLAND", "shaking": "AFTER"},
+                },
+            )
+            assert start.status_code == 201, start.text
+            sid = start.json()["snapshot"]["session_id"]
+            first = await client.post(f"/api/mock-live/{sid}/next", headers=HEADERS)
+            assert first.status_code == 200, first.text
+
+            session = store._sessions[UUID(sid)]
+            captured = Event()
+            release = Event()
+            next_entered = Event()
+            refresh_entered = Event()
+            original_get = session.store.get
+            original_next = store.next
+            original_refresh = session.store.refresh_async
+
+            def delayed_get(session_id):
+                snapshot = original_get(session_id)
+                captured.set()
+                if not release.wait(timeout=5):
+                    raise TimeoutError("test did not release the delayed GET")
+                return snapshot
+
+            async def observed_next(session_id):
+                next_entered.set()
+                return await original_next(session_id)
+
+            async def observed_refresh(session_id):
+                refresh_entered.set()
+                return await original_refresh(session_id)
+
+            monkeypatch.setattr(session.store, "get", delayed_get)
+            monkeypatch.setattr(store, "next", observed_next)
+            monkeypatch.setattr(session.store, "refresh_async", observed_refresh)
+
+            get_task = asyncio.create_task(client.get(f"/api/mock-live/{sid}", headers=HEADERS))
+            next_task = None
+            try:
+                assert await asyncio.to_thread(captured.wait, 5), "GET did not capture its snapshot"
+                next_task = asyncio.create_task(client.post(f"/api/mock-live/{sid}/next", headers=HEADERS))
+                assert await asyncio.to_thread(next_entered.wait, 5), "next mutation did not start"
+                # With atomic GET/mutation serialization, next waits on the session lock here.
+                serialized = not refresh_entered.is_set()
+            finally:
+                release.set()
+
+            get_response = await get_task
+            assert next_task is not None
+            next_response = await next_task
+            assert get_response.status_code == 200, get_response.text
+            assert next_response.status_code == 200, next_response.text
+            assert serialized, "next mutation ran after GET captured a stale snapshot but before GET rebound it"
+
+            current_plan_id = next_response.json()["snapshot"]["situation"]["current_plan_id"]
+            assert session.assessments[-1].step == 2
+            assert session.assessments[-1].plan_id == current_plan_id
+            assert [item.step for item in session.assessments] == [1, 2]
+            assert session.superseded == []
+
+    asyncio.run(exercise())
+
+
+def test_failed_stage_refresh_discards_its_unpublished_tsunami_timestamp(monkeypatch):
+    store = MockLiveDrillStore(
+        planner=CandidatePlanner(PlannerConfig(mode="deterministic")),
+        advisor=SimulationAdvisor(config=PlannerConfig(mode="deterministic")),
+    )
+
+    async def exercise():
+        started = await store.start(MockLiveRequest(historical_case="tohoku-2011"))
+        session_id = started.snapshot.session_id
+        await store.next(session_id)  # Earthquake milestone; tsunami stage has not been reached.
+        session = store._sessions[session_id]
+        tsunami_source = session.store._tsunami
+        clock = {"now": datetime.now(timezone.utc)}
+        tsunami_source._now = lambda: clock["now"]
+        session.store._now = lambda: clock["now"]
+        original_apply = session.store._apply_source_results_locked
+        failed = False
+
+        def fail_first_refresh(*args, **kwargs):
+            nonlocal failed
+            if not failed:
+                failed = True
+                raise RuntimeError("injected refresh failure after source fetch")
+            return original_apply(*args, **kwargs)
+
+        monkeypatch.setattr(session.store, "_apply_source_results_locked", fail_first_refresh)
+        with pytest.raises(RuntimeError, match="injected refresh failure"):
+            await store.next(session_id)
+
+        assert session.store.mock_source.stage == 1
+        assert 2 not in tsunami_source._published
+        clock["now"] += timedelta(hours=1)
+        retry_time = clock["now"]
+
+        retried = await store.next(session_id)
+        result = tsunami_source.fetch_latest()
+        assert retried.current_step == 2
+        assert tsunami_source._published[2] == retry_time
+        assert result.last_published_at == retry_time
+        assert result.status == LiveSourceStatus.FRESH
+
+    asyncio.run(exercise())
 
 
 def test_stale_exercise_evidence_never_yields_a_current_tsunami_trigger(monkeypatch):

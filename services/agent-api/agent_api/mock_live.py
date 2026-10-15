@@ -531,11 +531,18 @@ class MockLiveDrillStore:
             self._sessions[snap.session_id] = session
         return self._response(session, snap)
 
-    def get(self, id: UUID) -> MockLiveResponse:
+    async def get(self, id: UUID) -> MockLiveResponse:
         session = self._lookup(id)
-        # GET is synchronous and cannot await session.lock. While a mutation holds it, that mutation's own
-        # response performs the rebind; GET never rebinds concurrently with it.
-        return self._response(session, session.store.get(id), rebind=not session.lock.locked())
+        async with session.lock:
+            snapshot = await asyncio.to_thread(session.store.get, id)
+            return self._response(session, snapshot)
+
+    def has_session(self, id: UUID) -> bool:
+        try:
+            self._lookup(id)
+        except LiveSessionNotFound:
+            return False
+        return True
 
     async def record_distress(self, id: UUID, request: DistressRequest) -> MockLiveResponse:
         session = self._lookup(id)
@@ -568,6 +575,7 @@ class MockLiveDrillStore:
                 snap = await session.store.refresh_async(id)
             except Exception:
                 session.store.mock_source.stage = stage
+                session.store._tsunami._published.pop(stage + 1, None)
                 raise
             if session.request.use_gemini:
                 plan_id = str(snap.situation.current_plan_id) if snap.situation.current_plan_id else None
