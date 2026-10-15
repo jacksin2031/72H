@@ -1,0 +1,12 @@
+{
+  "commit": "a044746",
+  "deviceOnceSelected": true,
+  "geolocationSpoofed": false,
+  "browserPerformanceBuffer": "full; backend access log used",
+  "apiRoadRequestCount": 18,
+  "allApiRoadRequestsUseCanonicalTileId": true,
+  "requestEvidence": "owned API8041 includes preset and actual device-once loads; aggregate only, current-location tile ids withheld",
+  "preciseCoordinatesRecorded": false,
+  "roadState": "UNAVAILABLE",
+  "result": "PARTIAL: actual GPS and request privacy verified; references blocked by upstream 502/timeouts"
+}

@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-15",
+  "status": "PARTIAL",
+  "branch": "codex/drill-location-roads",
+  "sourceCommit": "34ca301c29c84ee8f28ff948fbfbfdd6eabb2a44",
+  "productionBuild": "LN3GOQMKqkRN08w2dR-QE",
+  "checks": {
+    "frontend": {
+      "passed": 762,
+      "skipped": 3,
+      "filesPassed": 106,
+      "filesSkipped": 1
+    },
+    "backend": {
+      "passed": 507,
+      "atCommit": "a044746",
+      "backendChangesAfterThisRun": false
+    },
+    "typecheck": "PASS",
+    "productionBuild": "PASS",
+    "secretGate": "PASS",
+    "diffCheck": "PASS"
+  },
+  "deviceAcceptance": {
+    "ishinomakiPreset": "PASS with actual-source warm cache and partial coverage",
+    "kesennumaMapPick": "PASS with actual-source warm cache and partial coverage",
+    "deviceOnce": "PARTIAL: real GPS and tile-id-only paths PASS; references blocked by upstream 502/timeouts",
+    "offlineSamePoint": "RED reproduced at a044746; PASS after 34ca301 on fresh origin with automatically controlled SW",
+    "offlineNewPoint": "PASS on Live /map, earthquake selected, no road requests, no road distances",
+    "kumamotoMapPick": "PASS: all five public-pack checked places earthquake-designated; partial coverage"
+  },
+  "remaining": [
+    "actual-location road references unavailable due to upstream errors",
+    "conditional SW fallback does not guarantee offline persistence",
+    "expanded sheet can obscure map notice; new 320px visual and max-graph phone latency not measured"
+  ],
+  "cleanup": {
+    "testOriginDatabases": 0,
+    "testOriginCaches": 0,
+    "testOriginSwRegistrations": 0,
+    "testOriginLocalStorage": 0,
+    "testOriginSessionStorage": 0,
+    "testTabsRemaining": 0,
+    "original3039TabPreserved": true,
+    "ownedServiceListeners": 0,
+    "ownedApiAndWebStopped": true,
+    "testAdbForwardAndReverseRemoved": true,
+    "onlineOverrideRestored": true,
+    "temporaryKeyFileCreated": false
+  },
+  "deployed": false
+}

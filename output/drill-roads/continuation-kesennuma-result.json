@@ -1,0 +1,50 @@
+{
+  "commit": "34ca301",
+  "build": "LN3GOQMKqkRN08w2dR-QE",
+  "historicalCase": "tohoku-2011",
+  "pointSource": "MAP_PICK",
+  "mapInteraction": "actual touch pan and pinch, then observed urban-road tap near Kesennuma station and confirmation",
+  "completed": true,
+  "peek": "附近 5 處海嘯適用指定場所 · 道路參考",
+  "rows": [
+    "気仙沼小学校 · 直線 0.5 km · 道路 1.3 km（參考）",
+    "気仙沼中学校 · 直線 0.7 km · 道路 1.8 km（參考）",
+    "市民会館 · 直線 0.8 km · 道路 1.9 km（參考）",
+    "駅前住宅交流センター（駅前プラザ） · 直線 0.9 km · 道路 —（參考）",
+    "気仙沼高等学校 · 直線 1.0 km · 道路 —（參考）"
+  ],
+  "statuses": [
+    "部分道路資料未下載"
+  ],
+  "shelterPack": "04-dd436d7071cf74dc79dcc26c51e866b095ea9a85a3279e6ca830b8a2b87c2682.json",
+  "shelterPackHashMatchesFilename": true,
+  "designationCheck": [
+    {
+      "name": "気仙沼小学校",
+      "kind": "EMERGENCY_SITE",
+      "tsunami": "D"
+    },
+    {
+      "name": "気仙沼中学校",
+      "kind": "EMERGENCY_SITE",
+      "tsunami": "D"
+    },
+    {
+      "name": "市民会館",
+      "kind": "EMERGENCY_SITE",
+      "tsunami": "D"
+    },
+    {
+      "name": "駅前住宅交流センター（駅前プラザ）",
+      "kind": "EMERGENCY_SITE",
+      "tsunami": "D"
+    },
+    {
+      "name": "気仙沼高等学校",
+      "kind": "EMERGENCY_SITE",
+      "tsunami": "D"
+    }
+  ],
+  "disclaimerCount": 1,
+  "coverage": "PARTIAL; real previously downloaded backend tiles reused, no cold-source reliability claim"
+}

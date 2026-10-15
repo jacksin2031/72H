@@ -15,8 +15,13 @@
 
 **Spec：** `docs/superpowers/specs/2026-10-15-drill-location-nationwide-roads-design.md`
 
+**執行狀態（2026-10-15，source `34ca301`）：** Task 1–9 已實作及複審；Task 10
+完整自動檢查及離線真機回歸已通過。整體仍為 **PARTIAL**：真實定位的道路載入受
+Overpass 502／逾時阻擋；成功道路畫面使用實際來源快取及部分覆蓋，不能證明冷下載可靠。
+本文件保留原步驟清單；當前逐項證據及限制以 [驗收紀錄](../../DRILL_ROADS_DEVICE_VALIDATION.md) 為準。
+
 ## 與規格的差異（已裁定）
-- 規格 §3.2 原本提到「新增位置來源 enum」。本計畫改為沿用既有的 `GPS`／`USER_SELECTED`：PRESET 與 MAP_PICK 對應到 USER_SELECTED，DEVICE_ONCE 對應到 GPS。點位只留在手機上，後端只收到 `area_ids`，結果和規格「Safety Core 視為 USER_SELECTED」一致，而且不需要改資料契約。
+- R3／R4 已修正原計畫的 GPS 映射錯誤：PRESET、MAP_PICK、DEVICE_ONCE 三種演練點位一律對應 `USER_SELECTED`。演練錨點並非持續 GPS 的時效聲稱；DEVICE_ONCE 的實際精度仍傳給本機地區解析。點位只留在手機上，後端只收到 `area_ids`，不新增資料契約來源值。
 - 規格 §3.1 原本把預設地點放在 `historical_cases.py`。本計畫改放在前端的 `lib/drill-location.ts`，讓座標不必經過後端。
 
 ## Global Constraints
@@ -80,7 +85,7 @@
 - Consumes: `resolveDeviceArea(fix: AreaFix): Promise<AreaResolution>`（`lib/area-resolution.ts`），以及 `SimulationLocation`（`lib/simulation-advice.ts`：`{area_ids:string[]; source:'GPS'|'USER_SELECTED'; observed_at:string}`）
 - Produces:
   - `type DrillPointSource = 'PRESET'|'MAP_PICK'|'DEVICE_ONCE'`
-  - `type DrillPoint = {lat:number; lng:number; source:DrillPointSource; label:{ja:string;'zh-TW':string;en:string}; preset_id:string|null}`
+  - `type DrillPoint = {lat:number; lng:number; source:DrillPointSource; label:{ja:string;'zh-TW':string;en:string}; preset_id:string|null; accuracy_m?:number}`
   - `DRILL_PRESETS: Record<HistoricalId, readonly DrillPreset[]>`，其中 `DrillPreset = {id:string; lat:number; lng:number; label:{ja,'zh-TW',en}}`
   - `async function drillPointToLocation(point:DrillPoint, resolve=resolveDeviceArea, now=new Date()): Promise<{ok:true; location:SimulationLocation; areaLabel:string}|{ok:false; reason:'OUTSIDE'|'UNAVAILABLE'|'AMBIGUOUS'}>`
 
@@ -106,8 +111,8 @@ describe('drill presets',()=>{
 
 describe('drillPointToLocation',()=>{
   const resolved=vi.fn(async()=>({status:'RESOLVED' as const,area_ids:['JP-MUNI-04202','JP-04','JP'],label:'石巻市'}));
-  it('maps PRESET and MAP_PICK to USER_SELECTED and DEVICE_ONCE to GPS',async()=>{
-    for(const [src,expected] of [['PRESET','USER_SELECTED'],['MAP_PICK','USER_SELECTED'],['DEVICE_ONCE','GPS']] as const){
+  it('maps all exercise point sources to USER_SELECTED',async()=>{
+    for(const [src,expected] of [['PRESET','USER_SELECTED'],['MAP_PICK','USER_SELECTED'],['DEVICE_ONCE','USER_SELECTED']] as const){
       const r=await drillPointToLocation(point(src),resolved,new Date('2026-10-15T00:00:00Z'));
       expect(r).toEqual({ok:true,areaLabel:'石巻市',location:{area_ids:['JP-MUNI-04202','JP-04','JP'],source:expected,observed_at:'2026-10-15T00:00:00.000Z'}});
     }
@@ -146,7 +151,7 @@ export type HistoricalId='tohoku-2011'|'kobe-1995'|'kumamoto-2016'|'iburi-2018'|
 export type DrillPointSource='PRESET'|'MAP_PICK'|'DEVICE_ONCE';
 type Label={ja:string;'zh-TW':string;en:string};
 export type DrillPreset={id:string;lat:number;lng:number;label:Label};
-export type DrillPoint={lat:number;lng:number;source:DrillPointSource;label:Label;preset_id:string|null};
+export type DrillPoint={lat:number;lng:number;source:DrillPointSource;label:Label;preset_id:string|null;accuracy_m?:number};
 
 /** Exercise-only representative points (approximate centres). Never a statement about real conditions. */
 export const DRILL_PRESETS:Record<HistoricalId,readonly DrillPreset[]>={
@@ -175,9 +180,9 @@ export const DRILL_PRESETS:Record<HistoricalId,readonly DrillPreset[]>={
 
 export async function drillPointToLocation(point:DrillPoint,resolve:(fix:AreaFix)=>Promise<AreaResolution>=resolveDeviceArea,now=new Date())
   :Promise<{ok:true;location:SimulationLocation;areaLabel:string}|{ok:false;reason:'OUTSIDE'|'UNAVAILABLE'|'AMBIGUOUS'}>{
-  const result=await resolve({latitude:point.lat,longitude:point.lng,accuracy_m:0});
+  const result=await resolve({latitude:point.lat,longitude:point.lng,accuracy_m:point.source==='DEVICE_ONCE'?(point.accuracy_m??0):0});
   if(result.status!=='RESOLVED'||result.area_ids.length<2)return {ok:false,reason:result.status==='RESOLVED'?'UNAVAILABLE':result.status};
-  return {ok:true,areaLabel:result.label,location:{area_ids:[...result.area_ids],source:point.source==='DEVICE_ONCE'?'GPS':'USER_SELECTED',observed_at:now.toISOString()}};
+  return {ok:true,areaLabel:result.label,location:{area_ids:[...result.area_ids],source:'USER_SELECTED',observed_at:now.toISOString()}};
 }
 ```
 
@@ -241,7 +246,7 @@ it('map pick requires confirming the tapped point',async()=>{
 });
 it('device location reads once and maps to GPS',async()=>{
   const geolocate=vi.fn(async()=>({lat:38.43,lng:141.30}));const onChange=await mount({geolocate});await click('我的目前位置');
-  expect(geolocate).toHaveBeenCalledTimes(1);expect(onChange.mock.calls.at(-1)![1]).toMatchObject({source:'GPS'});
+  expect(geolocate).toHaveBeenCalledTimes(1);expect(onChange.mock.calls.at(-1)![1]).toMatchObject({source:'USER_SELECTED'});
 });
 it('collapses to one summary line once a point is chosen and never writes Live storage',async()=>{
   await mount({value:{lat:38.4196,lng:141.2946,source:'PRESET',preset_id:'tohoku-ishinomaki-kadonowaki',label:{ja:'石巻・門脇','zh-TW':'石巻・門脇',en:'x'}}});

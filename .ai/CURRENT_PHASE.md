@@ -2,22 +2,28 @@
 
 ## 演練位置與全國道路參考線（2026-10-15 JST）
 
-分支：`codex/drill-location-roads`。狀態：**PARTIAL — 前端整合與真機驗收進行中**。
+分支：`codex/drill-location-roads`。source：`34ca301`。狀態：**PARTIAL — 本地檢查及離線回歸通過；道路來源可用性未完整驗收**。
 使用者已確認 [設計](../docs/superpowers/specs/2026-10-15-drill-location-nationwide-roads-design.md)
 及 [實作計劃](../docs/superpowers/plans/2026-10-15-drill-location-nationwide-roads.md)。
 
 已接續 Claude 留下的 Task 5 修正，完成道路區塊的手機端驗證／快取／合併，
 以及依災害適用旗標篩選的目的地 helper。取消寫入、單向邊衝突、較新 fallback
 被舊 DB 取代及候選輸出的 safety envelope 均有回歸測試與獨立複審。
-演練與 Live 地圖的共用介面仍在整合，未據此宣稱完整產品驗收。
+演練與 Live 地圖共用介面已整合。接手 Claude 的 `a044746` 後，真機發現
+已下載位置離線重試仍重抓場所清單；`34ca301` 分開重試 key，並在 direct drill
+重用既有 SW 初始化。完整前端 762 PASS／3 skipped、TypeScript、production build、
+design guard（完整測試內）及 secret gate 通過。真機同點離線保留資料、新點離線無道路資料通過。
 
 311 前置修正已從 `codex/311-tsunami-guidance` 整合至此分支（`7ef277f`），
-包括 GET／步進競態及失敗 stage 的時間戳清理；完整後端測試 490/490 通過。
+包括 GET／步進競態及失敗 stage 的時間戳清理；當前後端完整測試 507/507 通過。
 主 checkout 的文件整理及正式部署均保持獨立，今次沒有部署。
 
 精確點位留在裝置，道路 API 只接受固定格網 ID；演練選點不寫入 Live 位置。
 所有道路資料仍為 `ROAD_REFERENCE_ONLY`、`movement_authorized=false`。
-實際外部來源失敗、browser／真機未驗證項目及清理狀態保留於
+石卷、氣仙沼、熊本真機均有指定場所及道路參考距離；使用實際來源快取及部分覆蓋。
+真正 DEVICE_ONCE 與格網 ID 請求界線通過，但該位置道路被上游 502／逾時阻擋，
+不能聲稱所有地點冷下載可靠或完整產品驗收。本輪 API/web、adb 規則及測試 origin 已清理。
+實際外部來源失敗、逐項真機證據及其餘限制保留於
 [驗收紀錄](../docs/DRILL_ROADS_DEVICE_VALIDATION.md)。
 
 ## P2.8 求助輔助 distress assist (2026-10-14 JST)

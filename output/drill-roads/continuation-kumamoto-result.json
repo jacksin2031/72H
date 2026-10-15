@@ -1,0 +1,49 @@
+{
+  "commit": "a044746",
+  "historicalCase": "kumamoto-2016",
+  "pointSource": "MAP_PICK",
+  "mapTapConfirmed": true,
+  "completed": true,
+  "peek": "附近 5 處地震適用指定場所 · 道路參考",
+  "rows": [
+    "益城町復興まちづくりセンター · 直線 0.2 km · 道路 0.4 km（參考）",
+    "辻団地地区避難広場 · 直線 0.4 km · 道路 0.6 km（參考）",
+    "益城町文化会館 · 直線 0.6 km · 道路 1.0 km（參考）",
+    "安永地区避難広場 · 直線 0.6 km · 道路 —（參考）",
+    "木山蛭子町地区避難広場 · 直線 0.7 km · 道路 —（參考）"
+  ],
+  "statuses": [
+    "部分道路資料未下載"
+  ],
+  "shelterPack": "43-853a790a8247e91193922f942a8083e27354f53f2c9c0f0b499708b47857216d.json",
+  "shelterPackHashMatchesFilename": true,
+  "designationCheck": [
+    {
+      "name": "益城町復興まちづくりセンター",
+      "kind": "EMERGENCY_SITE",
+      "earthquake": "D"
+    },
+    {
+      "name": "辻団地地区避難広場",
+      "kind": "EMERGENCY_SITE",
+      "earthquake": "D"
+    },
+    {
+      "name": "益城町文化会館",
+      "kind": "EMERGENCY_SITE",
+      "earthquake": "D"
+    },
+    {
+      "name": "安永地区避難広場",
+      "kind": "EMERGENCY_SITE",
+      "earthquake": "D"
+    },
+    {
+      "name": "木山蛭子町地区避難広場",
+      "kind": "EMERGENCY_SITE",
+      "earthquake": "D"
+    }
+  ],
+  "disclaimerCount": 1,
+  "coverage": "PARTIAL; actual previously fetched centre tile reused; no complete-neighbourhood download claim"
+}
