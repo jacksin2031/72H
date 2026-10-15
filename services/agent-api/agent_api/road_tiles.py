@@ -15,7 +15,7 @@ LNG_RANGE = (122.0, 154.0)
 MAX_NODES, MAX_WAYS, MAX_EDGES, MAX_BYTES = 20_000, 8_000, 40_000, 1_500_000
 MAX_SEGMENT_M = 1_000
 ENDPOINT = "https://overpass-api.de/api/interpreter"
-_ID = re.compile(r"^r(\d{1,4})c(\d{1,4})$")
+_ID = re.compile(r"r(0|[1-9][0-9]{0,3})c(0|[1-9][0-9]{0,3})")
 BASIC = {"footway", "path", "pedestrian", "steps", "living_street", "residential", "unclassified", "tertiary", "service"}
 
 
@@ -24,7 +24,7 @@ class TileTooDense(Exception):
 
 
 def parse_tile_id(tile_id: str) -> tuple[int, int]:
-    match = _ID.fullmatch(tile_id or "")
+    match = _ID.fullmatch(tile_id) if isinstance(tile_id, str) else None
     if not match:
         raise ValueError("Invalid tile id")
     row, col = int(match[1]), int(match[2])
@@ -63,9 +63,45 @@ def _eligible(tags: dict) -> bool:
         return False
     if tags.get("service") in {"driveway", "parking_aisle", "drive-through"}:
         return False
-    if "oneway:foot" in tags and tags["oneway:foot"] not in {"no", "yes", "true", "false", "1", "0", "-1"}:
+    if tags.get("oneway:foot") and tags["oneway:foot"] not in {"no", "yes", "true", "false", "1", "0", "-1"}:
         return False
     return True
+
+
+ELIGIBILITY_KEYS = {"highway", "access", "foot", "access:foot", "sidewalk", "service", "motorroad",
+                    "oneway:foot", "access:conditional", "foot:conditional"}
+MAX_TAGS, MAX_KEY_LEN, MAX_VALUE_LEN = 200, 100, 1000
+_INT_KEY = re.compile(r"[0-9]+")
+
+
+def _clean_tags(tags: dict) -> dict | None:
+    """Apply the browser tag limits deterministically. None means an eligibility tag breaks them."""
+    kept: dict = {}
+    for key, value in tags.items():
+        if not isinstance(key, str) or not isinstance(value, str):
+            if key in ELIGIBILITY_KEYS:
+                return None
+            continue
+        if len(key) > MAX_KEY_LEN or len(value) > MAX_VALUE_LEN:
+            if key in ELIGIBILITY_KEYS:
+                return None
+            continue
+        if _INT_KEY.fullmatch(key):  # JS objects reorder integer-like keys, breaking the hash
+            continue
+        kept[key] = value
+    if len(kept) > MAX_TAGS:
+        keep = {k for k in kept if k in ELIGIBILITY_KEYS}
+        for k in kept:
+            if len(keep) >= MAX_TAGS:
+                break
+            keep.add(k)
+        kept = {k: v for k, v in kept.items() if k in keep}
+    return kept
+
+
+def _num(x):
+    """Whole-number floats become ints so JSON.stringify(JSON.parse(x)) reproduces the same bytes."""
+    return int(x) if isinstance(x, float) and x.is_integer() else x
 
 
 def _haversine(a, b) -> float:
@@ -80,15 +116,17 @@ def build_tile_graph(tile_id: str, overpass: dict, raw_bytes: bytes, retrieved_a
     bounds = [round(s - BUFFER_DEG, 6), round(w - BUFFER_DEG, 6), round(n + BUFFER_DEG, 6), round(e + BUFFER_DEG, 6)]
     inside = lambda lat, lng: bounds[0] <= lat <= bounds[2] and bounds[1] <= lng <= bounds[3]
     elements = overpass.get("elements") or []
-    coords = {el["id"]: (el["lat"], el["lon"], el.get("tags") or {}) for el in elements
+    coords = {el["id"]: (_num(el["lat"]), _num(el["lon"]), _clean_tags(el.get("tags") or {}) or {}) for el in elements
               if el.get("type") == "node" and isinstance(el.get("lat"), (int, float)) and inside(el["lat"], el["lon"])}
     if len(coords) > MAX_NODES * 3:
         raise TileTooDense(tile_id)
     ways, node_index, nodes, edges, seen = [], {}, [], [], set()
     for el in elements:
-        if el.get("type") != "way" or not _eligible(el.get("tags") or {}):
+        if el.get("type") != "way":
             continue
-        tags = el["tags"]
+        tags = _clean_tags(el.get("tags") or {})
+        if tags is None or not _eligible(tags):
+            continue
         foot = tags.get("oneway:foot")
         code = 1 if foot in {"yes", "true", "1"} else 2 if foot == "-1" else None
         way_index = len(ways)
@@ -118,7 +156,7 @@ def build_tile_graph(tile_id: str, overpass: dict, raw_bytes: bytes, retrieved_a
     query = overpass_query((s, w, n, e))
     body = {
         "schema_version": 2, "pack_id": f"osm-tile-{tile_id}-v1", "role": "ROAD_REFERENCE_ONLY",
-        "movement_authorized": False, "built_at": retrieved_at.isoformat(), "bounds": bounds,
+        "movement_authorized": False, "built_at": retrieved_at.isoformat(), "bounds": [_num(v) for v in bounds],
         "capacity": [MAX_NODES, MAX_EDGES], "counts": [len(nodes), len(ways), len(edges)],
         "source": {"name": "OpenStreetMap contributors", "endpoint": ENDPOINT,
                    "copyright_url": "https://www.openstreetmap.org/copyright", "license": "ODbL-1.0",

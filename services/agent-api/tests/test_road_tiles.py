@@ -15,7 +15,7 @@ def test_tile_id_round_trip_and_bounds():
     assert s == pytest.approx(1920 * TILE_LAT_DEG) and n == pytest.approx(s + TILE_LAT_DEG)
     assert w == pytest.approx(5651 * TILE_LNG_DEG) and e == pytest.approx(w + TILE_LNG_DEG)
 
-@pytest.mark.parametrize("bad", ["", "r1c", "x1c2", "r-1c5", "r999c5651", "r1920c99999", "r1920c5651;", "R1920C5651"])
+@pytest.mark.parametrize("bad", ["", "r1c", "x1c2", "r-1c5", "r999c5651", "r1920c99999", "r1920c5651;", "R1920C5651", "r\u0661\u0669\u0662\u0660c5651", "r01920c5651", "r1920c05651", "r1920c5651\n"])
 def test_tile_id_rejects_malformed_or_outside_japan(bad):
     with pytest.raises(ValueError):
         parse_tile_id(bad)
@@ -61,3 +61,83 @@ def test_committed_browser_fixture_matches_rebuild():
     committed = Path(__file__).parents[3] / "apps" / "web" / "tests" / "fixtures" / "road-tile-r1920c5651.json"
     assert json.loads(committed.read_text(encoding="utf-8")) == g
     assert committed.read_text(encoding="utf-8") == json.dumps(g, ensure_ascii=False, indent=2) + "\n"
+
+
+def _zig(i, count=None):
+    return {"type": "node", "id": 20_000_000 + i, "lat": 38.41 + i * 5e-7, "lon": 141.28 + (i % 2) * 0.0001}
+
+
+def _base():
+    raw = FIXTURE.read_bytes()
+    return raw, json.loads(raw)
+
+
+def test_integral_float_coordinates_are_emitted_as_ints():
+    data = {"elements": [{"type": "node", "id": 1, "lat": 38.0, "lon": 141.0},
+                         {"type": "node", "id": 2, "lat": 38.0, "lon": 141.0001},
+                         {"type": "way", "id": 9, "nodes": [1, 2], "tags": {"highway": "footway"}}]}
+    g = build_tile_graph("r1900c5640", data, b"{}", AT)  # tile spans 38.0-38.02, 141.0-141.025
+    assert g["nodes"][0] == [1, 38, 141]
+    compact = json.dumps(g, separators=(",", ":"), ensure_ascii=False)
+    assert '"nodes":[[1,38,141],[2,38,141.0001]]' in compact
+
+
+def test_tags_are_limited_like_the_browser_schema():
+    raw, data = _base()
+    way = next(e for e in data["elements"] if e["id"] == 201)
+    way["tags"].update({"1": "x", "k" * 101: "v", "big": "v" * 1001})
+    for i in range(250):
+        way["tags"][f"zz{i:03d}"] = "v"
+    g = build_tile_graph("r1920c5651", data, raw, AT)
+    tags = g["ways"][0][1]
+    assert "1" not in tags and "big" not in tags and not any(len(k) > 100 for k in tags)
+    assert len(tags) == 200 and tags["highway"] == "footway"
+    assert [k for k in tags][-1] == "zz197"  # first 200 kept in source order
+
+
+def test_eligibility_key_breaking_limits_excludes_way():
+    raw, data = _base()
+    way = next(e for e in data["elements"] if e["id"] == 201)
+    way["tags"]["access"] = "x" * 1001
+    g = build_tile_graph("r1920c5651", data, raw, AT)
+    assert g["ways"] == []
+
+
+def test_empty_oneway_foot_is_accepted_without_direction():
+    raw, data = _base()
+    next(e for e in data["elements"] if e["id"] == 201)["tags"]["oneway:foot"] = ""
+    g = build_tile_graph("r1920c5651", data, raw, AT)
+    assert len(g["ways"]) == 1 and all(len(e) == 3 for e in g["edges"])
+
+
+def test_early_node_guard_raises():
+    raw, data = _base()
+    data["elements"] += [{"type": "node", "id": 40_000_000 + i, "lat": 38.41, "lon": 141.28} for i in range(60_001)]
+    with pytest.raises(TileTooDense):
+        build_tile_graph("r1920c5651", data, raw, AT)
+
+
+def test_way_cap_raises():
+    raw, data = _base()
+    data["elements"] = [_zig(i) for i in range(16_002)] + [
+        {"type": "way", "id": 50_000 + k, "nodes": [20_000_000 + 2 * k, 20_000_000 + 2 * k + 1], "tags": {"highway": "footway"}}
+        for k in range(8_001)]
+    with pytest.raises(TileTooDense):
+        build_tile_graph("r1920c5651", data, raw, AT)
+
+
+def test_edge_cap_raises():
+    raw, data = _base()
+    refs = [20_000_000 + i for i in range(10_000)]
+    data["elements"] = [_zig(i) for i in range(10_000)] + [
+        {"type": "way", "id": 60_000 + k, "nodes": refs, "tags": {"highway": "footway"}} for k in range(5)]
+    with pytest.raises(TileTooDense):
+        build_tile_graph("r1920c5651", data, raw, AT)
+
+
+def test_byte_cap_raises(monkeypatch):
+    import agent_api.road_tiles as rt
+    raw, data = _base()
+    monkeypatch.setattr(rt, "MAX_BYTES", 100)
+    with pytest.raises(TileTooDense):
+        build_tile_graph("r1920c5651", data, raw, AT)
