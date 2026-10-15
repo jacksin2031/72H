@@ -394,6 +394,20 @@ class MockLiveDrillStore:
         self._lock = RLock()
         self._advisor = advisor or SimulationAdvisor()
 
+    def new_session_store(self, *, max_sessions: int = MAX_MOCK_SESSIONS) -> MockLiveDrillStore:
+        """Create a separate session pool while retaining shared global AI budgets."""
+        return MockLiveDrillStore(planner=self._planner, max_sessions=max_sessions, advisor=self._advisor)
+
+    def release_session(self, id: UUID) -> bool:
+        """Release one stored run and its per-session planner/advisor accounting."""
+        with self._lock:
+            session = self._sessions.pop(id, None)
+        if session is None:
+            return False
+        session.planner.release_session(f"live-{id}")
+        self._advisor.release_session(str(id))
+        return True
+
     def _purge(self) -> None:
         expired = [k for k, s in self._sessions.items() if s.expires <= monotonic()]
         for k in expired:

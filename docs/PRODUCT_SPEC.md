@@ -1,5 +1,16 @@
 # 72H Product Specification v0.1
 
+## Guided 311 judging experience (2026-10-15, local only)
+
+The approved judging experience uses the existing 311 historical Mock Live
+pipeline at `/judge`: a fixed Ishinomaki exercise, Japanese default with all four
+languages, four deliberate event steps, current action/reason/evidence, and a
+review of actual plan versions and AI execution outcomes. Public requests cannot
+configure the scenario, location or safety conditions. This presentation does not
+authorize synthetic movement or change Live state. Existing advanced simulation
+and replay remain available. See the [local record](validation/JUDGE_311_LOCAL_VALIDATION.md)
+for limits and validation; no deployment is included.
+
 ## Simplified Chinese UI language (2026-10-15)
 
 The user requested Simplified Chinese (`zh-CN`) alongside Japanese, English and

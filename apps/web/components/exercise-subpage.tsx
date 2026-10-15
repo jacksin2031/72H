@@ -4,6 +4,7 @@ import type {Language} from '@/lib/contracts';
 import {documentedEpicenters} from '@/lib/geospatial-exposure';
 import {ListRow,Tag} from './ui';
 import {SimulationReferenceMap} from './simulation-reference-map';
+import {judgeText} from '@/lib/judge-experience';
 
 const text={
   'zh-TW':{exercise:'演練',picker:'歷史地震',none:'顯示歷史震央',mapNote:'歷史震央僅作演練參考，不是目前的災害資訊。',demo:'示範',simulation:'模擬',test:'災害測試'}, 'zh-CN': {exercise:'演练',picker:'历史地震',none:'显示历史震央',mapNote:'历史震央仅作演练参考，不是目前的灾害信息。',demo:'示范',simulation:'仿真',test:'灾害测试'},
@@ -17,6 +18,7 @@ export function ExerciseSubpage({language}:{language:Language}){
   const [historicCase,setHistoricCase]=useState('');
   return <div className="exercise-sub">
     <div><Tag tone="exercise">{t.exercise}</Tag></div>
+    <ListRow label={judgeText[language].entry} href="/judge"/>
     <ListRow label={t.demo} href="/demo"/>
     <ListRow label={t.simulation} href="/simulation"/>
     <ListRow label={t.test} href="/disaster-test"/>

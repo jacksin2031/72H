@@ -35,8 +35,9 @@ export function dependencyValues(evidence: Evidence[]) {
   return values;
 }
 
+type ContinuityState = Pick<Snapshot, 'profile' | 'area_catalog' | 'evidence' | 'evidence_projections' | 'plans' | 'plan_actions' | 'plan_evaluations' | 'situation'>;
 /** A read projection; immutable published plans and evidence are never rewritten. */
-export function projectContinuity(snapshot: Snapshot, now: number, connection: 'online' | 'offline' | 'reconnecting') {
+export function projectContinuity(snapshot: ContinuityState, now: number, connection: 'online' | 'offline' | 'reconnecting') {
   const projections = new Map(snapshot.evidence_projections.map(p => [p.evidence_id, p]));
   const evidence = snapshot.evidence.map(e => {
     const p = projections.get(e.id);

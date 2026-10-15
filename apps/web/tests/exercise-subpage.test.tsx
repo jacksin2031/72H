@@ -12,7 +12,7 @@ afterEach(async()=>{await act(async()=>root.unmount());host.remove();mapProps.le
 async function render(language:'zh-TW'|'ja'|'en'='zh-TW'){host=document.createElement('div');document.body.append(host);root=createRoot(host);await act(async()=>root.render(<ExerciseSubpage language={language}/>));}
 it('links the exercise tools and labels the context as an exercise',async()=>{
   await render();
-  expect([...host.querySelectorAll('a.ui-row')].map(a=>a.getAttribute('href'))).toEqual(['/demo','/simulation','/disaster-test']);
+  expect([...host.querySelectorAll('a.ui-row')].map(a=>a.getAttribute('href'))).toEqual(['/judge','/demo','/simulation','/disaster-test']);
   expect(host.querySelector('.ui-tag-exercise')?.textContent).toBe('演練');
 });
 it('lists the five historical cases and passes the chosen epicenter to the reference map',async()=>{

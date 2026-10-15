@@ -1,0 +1,28 @@
+{
+  "scope": "local browser + real Gemini/ADK; no deployment",
+  "requestCount": 5,
+  "steps": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "planVersions": [
+    1,
+    2,
+    3
+  ],
+  "aiModes": [
+    "GEMINI_ADK",
+    "GEMINI_ADK",
+    "GEMINI_ADK",
+    "GEMINI_ADK"
+  ],
+  "movementAuthorized": false,
+  "geometry": {
+    "height": 740,
+    "scrollWidth": 320,
+    "width": 320
+  }
+}

@@ -2,11 +2,17 @@
 
 from __future__ import annotations
 
+from collections import deque
+from datetime import datetime, timezone
+from threading import RLock
+from time import monotonic
+from typing import Literal
 from uuid import UUID
 import logging
 import os
 import secrets
 
+from pydantic import BaseModel, ConfigDict
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -51,7 +57,8 @@ from .domain import MAX_TRACE
 from .planner import CandidatePlanner
 from .drill import DrillRequest
 from .drill_store import DrillStore
-from .mock_live import MockLiveDrillStore, MockLiveResponse, MockLiveRequest
+from .mock_live import MAX_MOCK_SESSIONS, MOCK_TTL, MockLiveDrillStore, MockLiveResponse, MockLiveRequest
+from .simulation_advice import SimulationLocation
 from .road_tile_service import RoadTileService, TileRateLimited, TileUnavailable
 from .road_tiles import TileTooDense
 from .historical_cases import list_historical_cases
@@ -62,6 +69,17 @@ from .distress_advice import AdviceRequest, DistressAdvisor, escalation_skipped
 
 
 logger = logging.getLogger(__name__)
+
+# Per API process: four public starts per rolling minute; no client/IP keys are retained.
+JUDGE_STARTS_PER_WINDOW = 4
+JUDGE_START_WINDOW_SECONDS = 60
+JUDGE_ISHINOMAKI_AREA_IDS = ("JP-MUNI-04202", "JP-04", "JP")
+
+
+class JudgeStartRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    language: Literal["ja", "en", "zh-TW", "zh-CN"] = "ja"
 
 
 def _log_road_tile_failure(tile_id: str, status_code: int, reason: str) -> None:
@@ -74,6 +92,7 @@ def create_app(
     live_store: LiveStore | None = None,
     drill_store: DrillStore | None = None,
     mock_live_store: MockLiveDrillStore | None = None,
+    judge_store: MockLiveDrillStore | None = None,
     place_opening_store: PlaceOpeningStore | None = None,
     explanation_service: ExplanationService | None = None,
     distress_extractor: DistressExtractor | None = None,
@@ -91,6 +110,8 @@ def create_app(
         live_session_store = live_store if live_store is not None else LiveStore()
     isolated_drills = drill_store or DrillStore(planner=planner if store is None and live_store is None else None)
     isolated_mock_live = mock_live_store or MockLiveDrillStore(planner=planner if store is None and live_store is None else None)
+    # Keep public judge session capacity separate while sharing planner/advisor global budgets.
+    isolated_judge = judge_store or isolated_mock_live.new_session_store(max_sessions=MAX_MOCK_SESSIONS)
     application = FastAPI(
         title="72H Agent API",
         version=__version__,
@@ -100,6 +121,94 @@ def create_app(
     application.state.live_store = live_session_store
     application.state.drill_store = isolated_drills
     application.state.mock_live_store = isolated_mock_live
+    application.state.judge_store = isolated_judge
+    judge_lock = RLock()
+    judge_start_times: deque[float] = deque()
+    # Completed markers retain 409 behavior without occupying store slots. Abandoned
+    # incomplete sessions retain a slot until the existing 30-minute idle TTL; at most eight.
+    judge_sessions: dict[UUID, tuple[float, bool]] = {}
+    judge_starting = 0
+
+    def _prune_judge_state(now: float) -> None:
+        cutoff = now - JUDGE_START_WINDOW_SECONDS
+        while judge_start_times and judge_start_times[0] <= cutoff:
+            judge_start_times.popleft()
+        expired = [session_id for session_id, (expires, _) in judge_sessions.items() if expires <= now]
+        for session_id in expired:
+            judge_sessions.pop(session_id, None)
+
+    def _reserve_judge_start() -> None:
+        now = monotonic()
+        with judge_lock:
+            _prune_judge_state(now)
+            if len(judge_start_times) >= JUDGE_STARTS_PER_WINDOW:
+                retry_after = max(1, int(JUDGE_START_WINDOW_SECONDS - (now - judge_start_times[0]) + 0.999))
+                raise HTTPException(
+                    status_code=429,
+                    detail="Judge start rate limit exceeded",
+                    headers={"Retry-After": str(retry_after)},
+                )
+            judge_start_times.append(now)
+
+    def _reserve_judge_session_slot() -> None:
+        nonlocal judge_starting
+        now = monotonic()
+        with judge_lock:
+            _prune_judge_state(now)
+            active = sum(not completed for _, completed in judge_sessions.values())
+            if active + judge_starting >= MAX_MOCK_SESSIONS:
+                raise HTTPException(status_code=503, detail="judge exercise capacity reached")
+            judge_starting += 1
+
+    def _release_judge_start_reservation() -> None:
+        nonlocal judge_starting
+        with judge_lock:
+            judge_starting = max(0, judge_starting - 1)
+
+    def _remember_judge_session(session_id: UUID) -> None:
+        now = monotonic()
+        with judge_lock:
+            _prune_judge_state(now)
+            if len(judge_sessions) >= MAX_MOCK_SESSIONS and session_id not in judge_sessions:
+                # Prefer evicting completed markers so active sessions keep their full TTL.
+                completed_id = next(
+                    (key for key, (_, completed) in judge_sessions.items() if completed),
+                    None,
+                )
+                if completed_id is None:
+                    raise RuntimeError("judge session marker capacity invariant failed")
+                judge_sessions.pop(completed_id)
+            judge_sessions[session_id] = (now + MOCK_TTL, False)
+
+    def _require_judge_session(session_id: UUID) -> bool:
+        with judge_lock:
+            now = monotonic()
+            _prune_judge_state(now)
+            marker = judge_sessions.get(session_id)
+            if marker is None:
+                raise HTTPException(status_code=404, detail="judge session not found")
+            if marker[1]:
+                return True
+            # Refresh before awaiting store.next so a slow in-flight advance cannot
+            # lose its authorization marker while the underlying store stays alive.
+            judge_sessions[session_id] = (now + MOCK_TTL, False)
+            return False
+
+    def _forget_judge_session(session_id: UUID) -> None:
+        with judge_lock:
+            judge_sessions.pop(session_id, None)
+
+    def _mark_judge_completed(session_id: UUID) -> None:
+        with judge_lock:
+            marker = judge_sessions.get(session_id)
+            if marker is not None:
+                judge_sessions[session_id] = (marker[0], True)
+
+    def _refresh_judge_session(session_id: UUID) -> None:
+        with judge_lock:
+            marker = judge_sessions.get(session_id)
+            if marker is not None and not marker[1]:
+                judge_sessions[session_id] = (monotonic() + MOCK_TTL, False)
     road_tile_service = road_tiles or RoadTileService()
     application.state.road_tiles = road_tile_service
 
@@ -161,7 +270,7 @@ def create_app(
     @application.exception_handler(RequestValidationError)
     async def validation_handler(request, exc: RequestValidationError):
         path = request.url.path
-        if path != "/api/distress/extract" and not path.endswith("/distress/advice"):
+        if path != "/api/distress/extract" and not path.endswith("/distress/advice") and not path.startswith("/api/judge/"):
             return await request_validation_exception_handler(request, exc)
         # Never echo `input` or `ctx`: they can contain the user's words or audio.
         detail = [{"loc": list(e.get("loc", ())), "msg": str(e.get("msg", "invalid")), "type": str(e.get("type", "invalid"))} for e in exc.errors()]
@@ -399,6 +508,60 @@ def create_app(
     @application.get("/api/mock-live/cases")
     def list_mock_historical_cases() -> tuple[dict, ...]:
         return list_historical_cases()
+
+    @application.post("/api/judge/start", response_model=MockLiveResponse, status_code=status.HTTP_201_CREATED)
+    async def start_judge(request: Request, body: JudgeStartRequest | None = Body(default=None)) -> MockLiveResponse:
+        if request.url.query:
+            raise HTTPException(status_code=422, detail="Judge start accepts only a language field")
+        _reserve_judge_start()
+        observed_at = datetime.now(timezone.utc)
+        exercise = MockLiveRequest(
+            kind="EARTHQUAKE",
+            severity=4,
+            battery=80,
+            network="ONLINE",
+            evidence="FRESH",
+            mobility="ABLE",
+            language=body.language if body is not None else "ja",
+            use_gemini=True,
+            historical_case="tohoku-2011",
+            location_context=SimulationLocation(
+                area_ids=JUDGE_ISHINOMAKI_AREA_IDS,
+                source="USER_SELECTED",
+                observed_at=observed_at,
+            ),
+        )
+        _reserve_judge_session_slot()
+        try:
+            result = await isolated_judge.start(exercise)
+            _remember_judge_session(result.snapshot.session_id)
+        except SessionCapacityReached as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        finally:
+            _release_judge_start_reservation()
+        return result
+
+    @application.post("/api/judge/{session_id}/next", response_model=MockLiveResponse)
+    async def next_judge(session_id: UUID, request: Request) -> MockLiveResponse:
+        if request.url.query or await request.body():
+            raise HTTPException(status_code=422, detail="Judge next does not accept request data")
+        if _require_judge_session(session_id):
+            raise HTTPException(status_code=409, detail="mock live exercise completed")
+        try:
+            result = await isolated_judge.next(session_id)
+        except LiveSessionNotFound as exc:
+            _forget_judge_session(session_id)
+            raise HTTPException(status_code=404, detail="judge session not found") from exc
+        except InvalidReplayTransition as exc:
+            _mark_judge_completed(session_id)
+            isolated_judge.release_session(session_id)
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        if result.current_step >= result.total_steps:
+            _mark_judge_completed(session_id)
+            isolated_judge.release_session(session_id)
+        else:
+            _refresh_judge_session(session_id)
+        return result
 
     @application.post("/api/mock-live/start", response_model=MockLiveResponse, status_code=status.HTTP_201_CREATED)
     async def start_mock_live(request: MockLiveRequest, _: None = Depends(authenticate_drill)) -> MockLiveResponse:

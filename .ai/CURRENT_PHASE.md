@@ -1,5 +1,15 @@
 # 72H — Current Development Phase
 
+## 311 評審引導體驗（2026-10-15 JST，本地）
+
+分支：`codex/judge-311`；基底：`a4add97`。使用者已確認固定 311／石卷、日文預設、
+逐事件推進、行動／原因／證據及實際結果回顧。公開入口不需要管理員密鑰；
+只允許固定演習，沿用現有 Safety Core，不授權真實移動。
+狀態：**COMPLETE — 本地**。後端 528 PASS；前端 797 PASS／3 原有 skipped；
+TypeScript／build／secret gate 通過。320px 完整流程及 1280px 入口通過，
+實際 Gemini/ADK 四次成功、三個計劃版本；GitHub `main` 上載另行記錄。
+驗收詳見 [本地紀錄](../docs/validation/JUDGE_311_LOCAL_VALIDATION.md)。沒有部署。
+
 ## 演練位置與全國道路參考線（2026-10-15 JST）
 
 分支：`codex/drill-location-roads`。source：`34ca301`。狀態：**PARTIAL — 本地檢查及離線回歸通過；道路來源可用性未完整驗收**。

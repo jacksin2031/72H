@@ -10,6 +10,7 @@ import {
 import { AgentDrillPanel } from './agent-drill-panel';
 import { AppShell, Button, Section, StatusBand } from './ui';
 import { NowScreen } from './now-screen';
+import { JudgeEntry } from './judge-experience';
 
 const exerciseLabel: Record<Language, string> = { 'zh-TW': '演練', 'zh-CN': '演练', ja: '演習', en: 'Exercise' };
 
@@ -139,6 +140,7 @@ export function DisasterTestLab() {
   return <AppShell tab="more" language={language} band={<StatusBand tone="exercise" label={exerciseLabel[language]} />}
     exerciseControls={<Button variant="secondary" onClick={() => { setInput(defaultDisasterTest); setAnswer(''); }}>{t.reset}</Button>}>
     <div data-testid="disaster-test-lab">
+      <JudgeEntry language={language} />
       <p className="now-meta"><strong>{t.title}</strong> · {t.preview}</p>
       <div data-testid="simulation-now" data-local-preview="true">
         <NowScreen language={language} hero={primary} heroTone={output.critical ? 'danger' : input.severity ? 'warn' : 'normal'}

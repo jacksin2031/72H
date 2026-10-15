@@ -1,0 +1,39 @@
+Verified 199273 published designation records across 47 prefectures.
+▲ Next.js 16.3.8 (Turbopack)
+✓ Running next.config.ts took 40ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 954ms
+  Running TypeScript ...
+  Finished TypeScript in 6.6s ...
+  Collecting page data using 13 workers ...
+  Generating static pages using 13 workers (0/14) ...
+  Generating static pages using 13 workers (3/14)
+  Generating static pages using 13 workers (6/14)
+  Generating static pages using 13 workers (10/14)
+✓ Generating static pages using 13 workers (14/14) in 1924ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├   /[view]
+│ ├ ● /dashboard
+│ ├ ● /plan
+│ ├ ● /more
+│ └ ● [+4 more paths]
+├ ƒ /api/[...path]
+├ ƒ /api/reference-glyphs/[font]/[range]
+├ ƒ /api/reference-tiles/[z]/[x]/[y]
+├ ƒ /api/reference-vectors/[z]/[x]/[y]
+├ ○ /disaster-test
+├ ○ /judge
+├ ○ /map
+└ ○ /simulation
+
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+Prepared 39 static assets for offline shell.

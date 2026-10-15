@@ -3,9 +3,11 @@ import { sameOrigin } from '@/lib/request-origin';
 
 export const dynamic = 'force-dynamic';
 const allowed = /^(health|version|distress\/extract|roads\/tile\/r\d{1,4}c\d{1,4}|reference\/(tsunami|disaster-map|place-opening\/\d{5})|replay\/(start|[a-zA-Z0-9_-]{1,80}(\/(pause|resume|next|reset|speed|explanation|distress(\/advice)?))?)|mock-live\/(start|cases|[a-zA-Z0-9_-]{1,80}(\/(next|explanation|distress(\/advice)?))?)|drill\/(start|[a-zA-Z0-9_-]{1,80}(\/next)?)|live\/(start|[a-zA-Z0-9_-]{1,80}(\/(refresh|routes\/search|location|profile|explanation|distress(\/advice)?))?))$/;
-export function isAllowedApiProxyPath(path: string) { return allowed.test(path); }
+const judgePath = /^judge\/(start|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/next)$/i;
+export function isAllowedApiProxyPath(path: string) { return allowed.test(path) || judgePath.test(path); }
 export function isAllowedApiProxyRequest(path: string, method: string) {
   if (!isAllowedApiProxyPath(path) || !['GET', 'POST'].includes(method)) return false;
+  if (path.startsWith('judge/')) return method === 'POST';
   if (path.startsWith('reference/')) return method === 'GET';
   if (/^roads\/tile\/r\d{1,4}c\d{1,4}$/.test(path)) return method === 'GET';
   // Post-Core explanations are generated on demand and never fetched with GET.

@@ -77,7 +77,7 @@ describe('mobile More and Plan navigation', () => {
   it('keeps the disaster simulator under Exercises & demo, labelled as an exercise', async () => {
     const page = await mount(sceneProps());
     await openRow(page, 'Exercises & demo');
-    expect([...page.querySelectorAll('a.ui-row')].map(a => a.getAttribute('href'))).toEqual(['/demo', '/simulation', '/disaster-test']);
+    expect([...page.querySelectorAll('a.ui-row')].map(a => a.getAttribute('href'))).toEqual(['/judge', '/demo', '/simulation', '/disaster-test']);
     expect(page.querySelector('.ui-tag-exercise')?.textContent).toBe('Exercise');
     expect(page.querySelector('select[aria-label="Historical earthquake"]')).not.toBeNull();
   });

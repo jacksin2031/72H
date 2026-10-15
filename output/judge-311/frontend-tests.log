@@ -1,0 +1,761 @@
+
+ RUN  v5.0.3 F:/資料夾/下載/72H/apps/web
+
+stderr | tests/distress-panel.test.tsx > records at most 30 s, releases the mic, and only reports AI tags after the person confirms them
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > official tsunami with time left: go to the nearest site, countdown, road-candidate notice, never claims safety
+An update to ForwardRef(LinkComponent) inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > official tsunami with time left: go to the nearest site, countdown, road-candidate notice, never claims safety
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > official tsunami with time left: go to the nearest site, countdown, road-candidate notice, never claims safety
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > applies AI exclusion deterministically and labels it; keeps the order on deterministic fallback
+An update to ForwardRef(LinkComponent) inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > applies AI exclusion deterministically and labels it; keeps the order on deterministic fallback
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > applies AI exclusion deterministically and labels it; keeps the order on deterministic fallback
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > applies AI exclusion deterministically and labels it; keeps the order on deterministic fallback
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > applies AI exclusion deterministically and labels it; keeps the order on deterministic fallback
+An update to ForwardRef(LinkComponent) inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > applies AI exclusion deterministically and labels it; keeps the order on deterministic fallback
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > applies AI exclusion deterministically and labels it; keeps the order on deterministic fallback
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > announces only the instruction; the countdown is a silent timer
+An update to ForwardRef(LinkComponent) inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > announces only the instruction; the countdown is a silent timer
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > announces only the instruction; the countdown is a silent timer
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > never lets a slow device clock add time: live uses the server time as a floor
+An update to ForwardRef(LinkComponent) inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > never lets a slow device clock add time: live uses the server time as a floor
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > never lets a slow device clock add time: live uses the server time as a floor
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > keeps the previous instruction while recomputing after the origin moves (no computing flash)
+An update to ForwardRef(LinkComponent) inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > keeps the previous instruction while recomputing after the origin moves (no computing flash)
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > keeps the previous instruction while recomputing after the origin moves (no computing flash)
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > shows the official basis and issue time under the primary instruction while online
+An update to ForwardRef(LinkComponent) inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > shows the official basis and issue time under the primary instruction while online
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > shows the official basis and issue time under the primary instruction while online
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > keeps the deterministic nearest site as the primary instruction; AI order only reorders the other candidates
+An update to ForwardRef(LinkComponent) inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > keeps the deterministic nearest site as the primary instruction; AI order only reorders the other candidates
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > keeps the deterministic nearest site as the primary instruction; AI order only reorders the other candidates
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > explains vertical evacuation when every reachable site was excluded on the report, labelled as AI
+An update to ForwardRef(LinkComponent) inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > explains vertical evacuation when every reachable site was excluded on the report, labelled as AI
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > explains vertical evacuation when every reachable site was excluded on the report, labelled as AI
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > explains vertical evacuation when every reachable site was excluded on the report, labelled as AI
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > keeps the primary instruction first even when AI suggests SOS (D1)
+An update to ForwardRef(LinkComponent) inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > keeps the primary instruction first even when AI suggests SOS (D1)
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/distress-panel.test.tsx > keeps the primary instruction first even when AI suggests SOS (D1)
+An update to DistressPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/designated-places-panel.test.tsx > filters map and list together, distinguishes roles and retains opening uncertainty
+An update to Fixture inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/designated-places-panel.test.tsx > filters map and list together, distinguishes roles and retains opening uncertainty
+An update to Fixture inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel.test.tsx > calculates actual pinned roads to a tsunami-designated site locally and preserves all missing safety checks
+The current testing environment is not configured to support act(...)
+
+stderr | tests/plan-explanation-panel.test.tsx > drops late model wording after a plan mutation instead of showing old guidance
+The current testing environment is not configured to support act(...)
+
+stderr | tests/plan-explanation-panel.test.tsx > drops late model wording after a plan mutation instead of showing old guidance
+The current testing environment is not configured to support act(...)
+
+stderr | tests/plan-explanation-panel.test.tsx > drops late model wording after a plan mutation instead of showing old guidance
+The current testing environment is not configured to support act(...)
+
+stderr | tests/plan-explanation-panel.test.tsx > drops late model wording after a plan mutation instead of showing old guidance
+The current testing environment is not configured to support act(...)
+
+stderr | tests/plan-explanation-panel.test.tsx > drops late model wording after a plan mutation instead of showing old guidance
+The current testing environment is not configured to support act(...)
+
+stderr | tests/plan-explanation-panel.test.tsx > clears a validated explanation on browser offline and never calls the model while offline
+The current testing environment is not configured to support act(...)
+
+stderr | tests/plan-explanation-panel.test.tsx > clears a validated explanation on browser offline and never calls the model while offline
+The current testing environment is not configured to support act(...)
+
+stderr | tests/plan-explanation-panel.test.tsx > clears a validated explanation on browser offline and never calls the model while offline
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/plan-explanation-panel.test.tsx > clears a validated explanation on browser offline and never calls the model while offline
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/plan-explanation-panel.test.tsx > clears a validated explanation on browser offline and never calls the model while offline
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/plan-explanation-panel.test.tsx > clears a validated explanation on browser offline and never calls the model while offline
+The current testing environment is not configured to support act(...)
+
+stderr | tests/plan-explanation-panel.test.tsx > requests replay explanations with the replay session id
+The current testing environment is not configured to support act(...)
+
+stderr | tests/plan-explanation-panel.test.tsx > requests replay explanations with the replay session id
+The current testing environment is not configured to support act(...)
+
+stderr | tests/plan-explanation-panel.test.tsx > requests replay explanations with the replay session id
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/plan-explanation-panel.test.tsx > requests replay explanations with the replay session id
+The current testing environment is not configured to support act(...)
+
+stderr | tests/map-screen.test.tsx > renders a full-bleed map, one chip row, one legend line and a collapsed sheet
+The current testing environment is not configured to support act(...)
+
+stderr | tests/map-screen.test.tsx > renders a full-bleed map, one chip row, one legend line and a collapsed sheet
+The current testing environment is not configured to support act(...)
+
+stderr | tests/map-screen.test.tsx > opens the sheet to show titled sections and hides the route section when null
+The current testing environment is not configured to support act(...)
+
+stderr | tests/map-screen.test.tsx > opens the sheet to show titled sections and hides the route section when null
+The current testing environment is not configured to support act(...)
+
+stderr | tests/map-screen.test.tsx > opens the sheet to show titled sections and hides the route section when null
+The current testing environment is not configured to support act(...)
+
+stderr | tests/map-screen.test.tsx > puts the road-candidate section first when present and reflects chip state with aria-pressed
+The current testing environment is not configured to support act(...)
+
+stderr | tests/map-screen.test.tsx > puts the road-candidate section first when present and reflects chip state with aria-pressed
+The current testing environment is not configured to support act(...)
+
+stderr | tests/map-screen.test.tsx > puts the road-candidate section first when present and reflects chip state with aria-pressed
+The current testing environment is not configured to support act(...)
+
+stderr | tests/map-screen.test.tsx > keeps section state (chosen prefecture, road candidate) when the sheet is closed and reopened
+The current testing environment is not configured to support act(...)
+
+stderr | tests/map-screen.test.tsx > keeps section state (chosen prefecture, road candidate) when the sheet is closed and reopened
+The current testing environment is not configured to support act(...)
+
+stderr | tests/map-screen.test.tsx > keeps section state (chosen prefecture, road candidate) when the sheet is closed and reopened
+The current testing environment is not configured to support act(...)
+
+stderr | tests/map-screen.test.tsx > keeps section state (chosen prefecture, road candidate) when the sheet is closed and reopened
+The current testing environment is not configured to support act(...)
+
+stderr | tests/map-screen.test.tsx > keeps section state (chosen prefecture, road candidate) when the sheet is closed and reopened
+The current testing environment is not configured to support act(...)
+
+stderr | tests/map-screen.test.tsx > keeps section state (chosen prefecture, road candidate) when the sheet is closed and reopened
+The current testing environment is not configured to support act(...)
+
+stderr | tests/exercise-subpage.test.tsx > links the exercise tools and labels the context as an exercise
+The current testing environment is not configured to support act(...)
+
+stderr | tests/exercise-subpage.test.tsx > links the exercise tools and labels the context as an exercise
+The current testing environment is not configured to support act(...)
+
+stderr | tests/exercise-subpage.test.tsx > lists the five historical cases and passes the chosen epicenter to the reference map
+The current testing environment is not configured to support act(...)
+
+stderr | tests/exercise-subpage.test.tsx > lists the five historical cases and passes the chosen epicenter to the reference map
+The current testing environment is not configured to support act(...)
+
+stderr | tests/exercise-subpage.test.tsx > lists the five historical cases and passes the chosen epicenter to the reference map
+The current testing environment is not configured to support act(...)
+
+stderr | tests/exercise-subpage.test.tsx > localises the picker label
+The current testing environment is not configured to support act(...)
+
+stderr | tests/exercise-subpage.test.tsx > localises the picker label
+The current testing environment is not configured to support act(...)
+
+stderr | tests/exercise-subpage.test.tsx > gives the compact reference map a height-bearing frame (its children are all absolutely positioned)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/exercise-subpage.test.tsx > gives the compact reference map a height-bearing frame (its children are all absolutely positioned)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/app-shell.test.tsx > renders band, content, exercise controls and three tabs with aria-current
+The current testing environment is not configured to support act(...)
+
+stderr | tests/app-shell.test.tsx > renders band, content, exercise controls and three tabs with aria-current
+The current testing environment is not configured to support act(...)
+
+stderr | tests/app-shell.test.tsx > renders band, content, exercise controls and three tabs with aria-current
+The current testing environment is not configured to support act(...)
+
+stderr | tests/app-shell.test.tsx > adds fullBleed, controls and band modifier classes
+The current testing environment is not configured to support act(...)
+
+stderr | tests/app-shell.test.tsx > adds fullBleed, controls and band modifier classes
+The current testing environment is not configured to support act(...)
+
+stderr | tests/app-shell.test.tsx > adds fullBleed, controls and band modifier classes
+The current testing environment is not configured to support act(...)
+
+stderr | tests/app-shell.test.tsx > omits modifier classes when absent
+The current testing environment is not configured to support act(...)
+
+stderr | tests/app-shell.test.tsx > omits modifier classes when absent
+The current testing environment is not configured to support act(...)
+
+stderr | tests/app-shell.test.tsx > omits modifier classes when absent
+The current testing environment is not configured to support act(...)
+
+stderr | tests/ui-primitives.test.tsx > Section renders a heading without any card wrapper
+The current testing environment is not configured to support act(...)
+
+stderr | tests/ui-primitives.test.tsx > Section renders a heading without any card wrapper
+The current testing environment is not configured to support act(...)
+
+stderr | tests/ui-primitives.test.tsx > ListRow uses a link for href and a button for onClick, at least 48px tall by class
+The current testing environment is not configured to support act(...)
+
+stderr | tests/ui-primitives.test.tsx > ListRow uses a link for href and a button for onClick, at least 48px tall by class
+The current testing environment is not configured to support act(...)
+
+stderr | tests/ui-primitives.test.tsx > Button variants map to classes and pass aria-expanded
+The current testing environment is not configured to support act(...)
+
+stderr | tests/ui-primitives.test.tsx > Button variants map to classes and pass aria-expanded
+The current testing environment is not configured to support act(...)
+
+stderr | tests/ui-primitives.test.tsx > Tag tones for exercise and AI
+The current testing environment is not configured to support act(...)
+
+stderr | tests/ui-primitives.test.tsx > Tag tones for exercise and AI
+The current testing environment is not configured to support act(...)
+
+stderr | tests/ui-primitives.test.tsx > Disclosure is a native details element, closed by default
+The current testing environment is not configured to support act(...)
+
+stderr | tests/ui-primitives.test.tsx > Disclosure is a native details element, closed by default
+The current testing environment is not configured to support act(...)
+
+stderr | tests/ui-primitives.test.tsx > StatusBand announces the level once and never live-reads the countdown
+The current testing environment is not configured to support act(...)
+
+stderr | tests/ui-primitives.test.tsx > StatusBand announces the level once and never live-reads the countdown
+The current testing environment is not configured to support act(...)
+
+stderr | tests/ui-primitives.test.tsx > BottomSheet toggles via an aria-expanded header button
+The current testing environment is not configured to support act(...)
+
+stderr | tests/ui-primitives.test.tsx > BottomSheet toggles via an aria-expanded header button
+The current testing environment is not configured to support act(...)
+
+stderr | tests/ui-primitives.test.tsx > ListRow marks the selected row of a single-choice list with aria-current="true" and only that row
+The current testing environment is not configured to support act(...)
+
+stderr | tests/ui-primitives.test.tsx > ListRow marks the selected row of a single-choice list with aria-current="true" and only that row
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel-invalid-graph.test.tsx > shows "road data unverified", not "no route", when the loaded pack fails the reference-graph checks
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel-invalid-graph.test.tsx > shows "road data unverified", not "no route", when the loaded pack fails the reference-graph checks
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel-invalid-graph.test.tsx > shows "road data unverified", not "no route", when the loaded pack fails the reference-graph checks
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel-invalid-graph.test.tsx > shows "road data unverified", not "no route", when the loaded pack fails the reference-graph checks
+The current testing environment is not configured to support act(...)
+
+stderr | tests/evacuation-route-panel-invalid-graph.test.tsx > shows "road data unverified", not "no route", when the loaded pack fails the reference-graph checks
+The current testing environment is not configured to support act(...)
+
+stderr | tests/more-screen.test.tsx > lists the nine settings rows in order as plain rows
+The current testing environment is not configured to support act(...)
+
+stderr | tests/more-screen.test.tsx > lists the nine settings rows in order as plain rows
+The current testing environment is not configured to support act(...)
+
+stderr | tests/more-screen.test.tsx > shows only the subpage and a back button when a subpage is open
+The current testing environment is not configured to support act(...)
+
+stderr | tests/more-screen.test.tsx > shows only the subpage and a back button when a subpage is open
+The current testing environment is not configured to support act(...)
+
+··························································································································································································································································································································································································································································································································································································································································································································································································································---···
+
+ Test Files  109 passed | 1 skipped (110)
+      Tests  797 passed | 3 skipped (800)
+   Start at  23:06:47
+   Duration  37.44s (tests 40%, environment 37%, import 17%, transform 5%, worker 1%)
+
+    Isolate  110 workers spawned · ~616ms startup each (spawn + environment, per file)
+             at least ~16.33s faster with isolate: false — reuses workers across files instead of one per file

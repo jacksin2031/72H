@@ -1,5 +1,38 @@
 /* apps/web/components/ui/ui.css — the only place allowed to use border-radius (plus map styles). */
 .ui-section{padding:var(--sp-5) 0;}
+.judge-entry{padding:var(--sp-5) 0 var(--sp-6);border-bottom:1px solid var(--line);margin-bottom:var(--sp-4)}
+.judge-entry h2{font-size:var(--fs-title);margin:0 0 var(--sp-2)}
+.judge-entry p{color:var(--text-2);margin:0 0 var(--sp-4)}
+.judge-entry a{text-decoration:none;box-sizing:border-box}
+.judge-experience{padding-bottom:calc(104px + env(safe-area-inset-bottom))}
+.judge-header{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-4);padding:var(--sp-4) 0;border-bottom:1px solid var(--line)}
+.judge-header>a{font-size:var(--fs-title);font-weight:700;text-decoration:none}
+.judge-header label{display:flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-meta);color:var(--text-2)}
+.judge-header select{max-width:150px;min-height:48px;background:var(--bg);color:var(--text);border:1px solid var(--line);padding:0 var(--sp-2);border-radius:var(--radius)}
+.judge-scenario{margin:var(--sp-5) 0 var(--sp-3);font-size:var(--fs-meta);color:var(--exercise);font-weight:600}
+.judge-purpose{font-size:var(--fs-title);line-height:1.6}
+.judge-pace{margin:var(--sp-5) 0 var(--sp-3);color:var(--text-2)}
+.judge-limits{margin:var(--sp-3) 0}
+.judge-event{padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+.judge-event>span{font-size:var(--fs-meta);color:var(--exercise);font-weight:600}
+.judge-event h2{font-size:var(--fs-title);line-height:1.5;margin:var(--sp-2) 0}
+.judge-change{margin:var(--sp-5) 0;padding:var(--sp-4) 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.judge-change h2{font-size:var(--fs-body);margin:0 0 var(--sp-2)}
+.judge-change p{margin:var(--sp-2) 0}
+.judge-state,.judge-processing{color:var(--warn);padding:var(--sp-3) 0;overflow-wrap:anywhere}
+.judge-controls{position:fixed;bottom:0;left:0;right:0;z-index:25;background:var(--bg);border-top:1px solid var(--line);padding:var(--sp-3) var(--gutter) calc(var(--sp-3) + env(safe-area-inset-bottom))}
+.judge-controls>.ui-btn{display:flex;max-width:var(--content-max);margin:0 auto}
+.judge-results{margin:var(--sp-5) 0}
+.judge-results>div{display:flex;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+.judge-results dd{margin:0;font-weight:700}
+.judge-history-plan{padding:var(--sp-3) 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.judge-history-plan h3{font-size:var(--fs-body);margin:0}
+.judge-history-plan small,.judge-evidence small{color:var(--text-2);font-size:var(--fs-meta)}
+.judge-timeline,.judge-evidence{padding-left:var(--sp-5);overflow-wrap:anywhere}
+.judge-timeline li,.judge-evidence li{padding:var(--sp-2) 0}
+.judge-timeline li[data-event-state=pending]{color:var(--text-2)}
+.judge-timeline a{display:block;min-height:32px;font-size:var(--fs-meta)}
+.judge-footer{padding:var(--sp-5) 0;display:flex;flex-wrap:wrap;gap:var(--sp-3);font-size:var(--fs-meta)}
 .ui-section+.ui-section{padding-top:var(--sp-6)}
 .ui-section-title{margin:0 0 var(--sp-3);font-size:var(--fs-meta);font-weight:600;color:var(--text-2);letter-spacing:.02em}
 .ui-row{display:flex;align-items:center;gap:var(--sp-3);width:100%;min-height:48px;padding:var(--sp-3) 0;background:none;border:0;border-bottom:1px solid var(--line);color:var(--text);font:inherit;text-align:left;text-decoration:none;cursor:pointer}

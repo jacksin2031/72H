@@ -1,5 +1,11 @@
 # 72H P1.8 — Full-screen historical simulation
 
+**Historical scope note (2026-10-15):** the limits and validation below describe
+the original P1.8 milestone. Current code/tests feed synthetic historical tsunami
+warnings through the real Live reducers and Safety Core; they never authorize
+real movement. The new guided `/judge` entry and its local validation are recorded
+in [JUDGE_311_LOCAL_VALIDATION.md](validation/JUDGE_311_LOCAL_VALIDATION.md).
+
 The test setup screen now launches a separate simulation home at /simulation. The screen uses the 72H mobile visual layout with a simulated clock, a countdown, real Mock Live action text, and four in-app tabs: Home, Plan, Timeline, Settings.
 
 The 311 accelerated default starts at 13:46 JST and advances to 14:46 JST at 600x (about six seconds in real time), then switches to 1x. No Mock Live requests are made before the first event. Later events are triggered in chronological order.

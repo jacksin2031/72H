@@ -5,6 +5,7 @@ import { UiIcon } from './ui-icon';
 import { AppShell, Button, Disclosure, ListRow, StatusBand } from './ui';
 import { MORE_ROW_LABELS, MORE_ROW_ORDER, MoreScreen, type MoreRowKey } from './more-screen';
 import { ExerciseSubpage } from './exercise-subpage';
+import { JudgeEntry } from './judge-experience';
 import packageInfo from '../package.json';
 import { HelpOverlay } from './help-overlay';
 import { NowScreen } from './now-screen';
@@ -61,7 +62,7 @@ export function LiveHeaderStatus({ hasSession, busy, networkLabel, messages }: {
 }
 
 export function JudgeFooter({ messages }: { messages: Record<string, string> }) {
-  return <footer className="desktop-footer"><Link href="/demo">{messages.judge} →</Link></footer>;
+  return <footer className="desktop-footer"><Link href="/judge">3.11 · {messages.judge} →</Link><span> · </span><Link href="/demo">Replay</Link></footer>;
 }
 
 function reducerSnapshot(snapshot: LiveSnapshot): Snapshot {
@@ -1434,6 +1435,7 @@ export function LiveDashboard({ view }: { view: string }) {
         onClick={toggleDistress}>{language === 'ja' ? '助けて' : language === 'en' ? 'Help' : '求助'}</button>}
       {!criticalMobileTakeover && <LiveHeaderStatus hasSession={!!snapshot} busy={busy} networkLabel={networkLabel} messages={messages} />}
       {!snapshot && <label className="live-language">{messages.language}<select aria-label={messages.language} value={language} onChange={event => chooseLanguage(event.target.value as Language)}><option value="ja">日本語</option><option value="en">English</option><option value="zh-TW">繁體中文</option><option value="zh-CN">简体中文</option></select></label>}
+      {!snapshot && tabForView(mobileView) === 'now' && <JudgeEntry language={language} />}
       {error && <p className="error" role="alert">{error}</p>}
       {sessionLost && snapshot && !criticalMobileTakeover && <section className="session-loss-banner" role="status">
         <strong>{messages.sessionLost}</strong><p>{messages.lastVerified}: {displayTime(snapshot.situation.latest_evidence_at, language)}</p>

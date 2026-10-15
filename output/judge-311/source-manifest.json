@@ -1,0 +1,18 @@
+{
+  "base_commit": "a4add9754c83655016109df3116c48eca485dc67",
+  "branch": "codex/judge-311",
+  "scope": "local implementation and browser acceptance; no deployment",
+  "runtime_sha256": {
+    "apps/web/app/judge/page.tsx": "90f119fb9a28e970ba6dc1ac5f3d4a4fb4290dec4639d3f4fce2c9c7e91ec187",
+    "apps/web/app/api/[...path]/route.ts": "0381a6c2a77edcd3b693192a368cc1674a5ac727eea2b036b03fa7e2a32828b8",
+    "apps/web/components/judge-experience.tsx": "bb25633ffa9fff5447fe7d4fe4770b266850327f93453b1be34a92c0e9cf8774",
+    "apps/web/components/live-dashboard.tsx": "48e5e8ba13a14544a79ea88ff9cafbfc469234342bf5b2ba7afa44d5cad0f651",
+    "apps/web/components/disaster-test-lab.tsx": "ee8855f6e9567cf05d844b7976165248e4dbcdf481f961882c090d3f000609e8",
+    "apps/web/components/exercise-subpage.tsx": "4d3a18963ee84b66143f2a852daa84931d489e8fb8de237421eb3868c9d28f69",
+    "apps/web/components/ui/ui.css": "0eb918deb733789a3907db96dad125ca540d19a1769641fd87706c77db3b984c",
+    "apps/web/lib/judge-experience.ts": "e05730bccb78eaede56a94c99cd36029121d02b25355407a086e8293b2828510",
+    "apps/web/lib/continuity.ts": "2594f028c15f131e5a0c8315ccf5187690d06c657bce675e685bebfab9938fac",
+    "services/agent-api/agent_api/main.py": "5c8c241958a431640f8a05084ee49790dc113754c8a178b8dc1c56094484ecc5",
+    "services/agent-api/agent_api/mock_live.py": "1a8672b2d3051525ae16bdb7ed892eaf4c32ab0c70c00c7cc28d43284873786b"
+  }
+}

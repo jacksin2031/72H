@@ -1,5 +1,15 @@
 # 72H
 
+## 3.11 guided judging experience — local implementation
+
+Open `/judge` on the local app, choose a language (Japanese by default), and start
+the four-event Ishinomaki exercise. Advance at your own pace to see the actual
+action, evidence, plan changes and Gemini/ADK execution results. No GPS or
+administrator key is needed. Historical inputs remain synthetic and cannot
+authorize real movement. Existing Live, Replay and advanced test tools remain available.
+This entry has **not been deployed**; see the
+[local validation record](docs/validation/JUDGE_311_LOCAL_VALIDATION.md).
+
 > **From Alert to Action.**  
 > **警報から、行動へ。**
 
