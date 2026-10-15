@@ -314,3 +314,4 @@ a.ui-btn-secondary{color:var(--info)}
 /* Map help has its own top row beside the region picker; it never covers chips, legend, sheet or zoom. */
 .ui-app:has(.map-screen) .ui-help-pin{top:calc(var(--band-h,0px) + var(--sp-3));bottom:auto;right:72px;left:auto;max-width:128px}
 .ui-app:has(.map-screen) .map-region{right:calc(72px + 128px + var(--sp-2))}
+.drill-map{height:clamp(280px,50dvh,420px);position:relative;margin-block:var(--sp-3)}

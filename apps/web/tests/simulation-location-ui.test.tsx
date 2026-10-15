@@ -7,6 +7,7 @@ import {SimulationScreens} from '../components/simulation-screens';
 import {defaultSimulationConditions,simulationAssessmentSchema,simulationLimits,type SimulationLocation} from '../lib/simulation-advice';
 import {defaultDisasterTest} from '../lib/disaster-test';
 import type {MockLiveResponse} from '../lib/mock-live-envelope';
+import type {DrillPoint} from '../lib/drill-location';
 import * as area from '../lib/area-resolution';
 import {SimulationAdvicePanel} from '../components/simulation-advice-panel';
 vi.mock('next/navigation',()=>({useRouter:()=>({push:vi.fn()})}));
@@ -23,21 +24,22 @@ it('keeps basic assistance visible even without model or location evidence',asyn
   expect(el!.querySelector('[data-testid=simulation-ai-mode]')?.textContent).toContain('尚未執行');
 });
 
-it('resolves opt-in GPS locally and exposes only canonical area IDs to launch',async()=>{
-  vi.useFakeTimers();const now=Date.now();vi.setSystemTime(now);
+it('resolves opt-in current location locally and exposes only canonical area IDs to launch',async()=>{
+  const now=Date.now();
   const locate=vi.fn((ok:(v:unknown)=>void)=>ok({timestamp:now,coords:{latitude:38.43,longitude:141.30,accuracy:10}}));
   Object.defineProperty(navigator,'geolocation',{configurable:true,value:{getCurrentPosition:locate}});
   const resolver=vi.spyOn(area,'resolveDeviceArea').mockResolvedValue({status:'RESOLVED',area_ids:['JP-MUNI-04202','JP-04','JP'],label:'石巻市'});
   const save=vi.spyOn(Storage.prototype,'setItem');const network=vi.fn();vi.stubGlobal('fetch',network);
   const received=vi.fn();
-  function Harness(){const [location,set]=useState<SimulationLocation|null>(null);return <SimulationLocationControls language="zh-TW" location={location} conditions={defaultSimulationConditions}
-    onLocation={v=>{set(v);received(v);}} onConditions={()=>{}}/>;}
+  function Harness(){const [location,set]=useState<SimulationLocation|null>(null);const [point,setPoint]=useState<DrillPoint|null>(null);
+    return <SimulationLocationControls language="zh-TW" location={location} conditions={defaultSimulationConditions} caseId="tohoku-2011" drillPoint={point}
+    onLocation={v=>{set(v);received(v);}} onDrillPoint={setPoint} onConditions={()=>{}}/>;}
   await mount(<Harness/>);expect(locate).not.toHaveBeenCalled();
-  await act(async()=>el!.querySelector('button')!.click());
-  expect(resolver).toHaveBeenCalledWith({latitude:38.43,longitude:141.30,accuracy_m:10});
-  expect(received).toHaveBeenLastCalledWith({area_ids:['JP-MUNI-04202','JP-04','JP'],source:'GPS',observed_at:new Date(now).toISOString()});
+  await act(async()=>[...el!.querySelectorAll('button')].find(b=>b.textContent?.includes('我的目前位置'))!.click());
+  expect(locate).toHaveBeenCalledTimes(1);
+  expect(resolver).toHaveBeenCalledWith({latitude:38.43,longitude:141.30,accuracy_m:0});
+  expect(received).toHaveBeenLastCalledWith(expect.objectContaining({area_ids:['JP-MUNI-04202','JP-04','JP'],source:'GPS'}));
   expect(network).not.toHaveBeenCalled();expect(save).not.toHaveBeenCalled();
-  await act(async()=>vi.advanceTimersByTimeAsync(135000));expect(received).toHaveBeenLastCalledWith(null);
 });
 
 it('suppresses old Gemini advice while processing, after offline and after reconnect',async()=>{

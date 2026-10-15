@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { usePathname } from 'next/navigation';
 import type { Language } from './contracts';
 import type { DisasterTestInput } from './disaster-test';
+import type { DrillPoint } from './drill-location';
 import type { Acceleration, TimeMode } from './historical-playback';
 import type { SimulationLocation, SimulationConditions } from './simulation-advice';
 
@@ -29,6 +30,8 @@ export type SimulationLaunch = {
   startJst: string;
   endJst: string;
   locationContext?: SimulationLocation | null;
+  /** Memory only, like accessKey: never persisted. */
+  drillPoint?: DrillPoint | null;
   conditions?: SimulationConditions;
 };
 

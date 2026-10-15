@@ -7,6 +7,7 @@ import { type Language } from '@/lib/contracts';
 import type { DisasterTestInput } from '@/lib/disaster-test';
 import { ACCELERATION_OPTIONS, canPlayRealtime, jstInputFromEpoch, validAcceleratedPrelude, selectHistoricalRange, type Acceleration, type TimeMode } from '@/lib/historical-playback';
 import { defaultSimulationConditions, type SimulationLocation, type SimulationConditions } from '@/lib/simulation-advice';
+import type { DrillPoint, HistoricalId } from '@/lib/drill-location';
 import { SimulationLocationControls } from './simulation-location-controls';
 
 const milestoneSchema = z.object({
@@ -122,6 +123,8 @@ export function MockLiveRun({ input, language, accessKey }: { input: DisasterTes
   const [catalog, setCatalog] = useState<HistoricalCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [locationContext,setLocationContext]=useState<SimulationLocation|null>(null);
+  const [drillPoint,setDrillPoint]=useState<DrillPoint|null>(null);
+  const [mapOpen,setMapOpen]=useState(false);
   const [conditions,setConditions]=useState<SimulationConditions>(defaultSimulationConditions);
   useEffect(() => {
     const abort = new AbortController();
@@ -157,7 +160,7 @@ export function MockLiveRun({ input, language, accessKey }: { input: DisasterTes
       title: chosen?.label[language] ?? t.custom,
       milestones: selectedEvents.map(m => ({ ...m })),
       timeMode, acceleratedStart, acceleration, startJst, endJst,
-      locationContext, conditions,
+      locationContext, drillPoint, conditions,
     });
     router.push('/simulation');
   };
@@ -165,6 +168,7 @@ export function MockLiveRun({ input, language, accessKey }: { input: DisasterTes
     <h3>{t.title}</h3>
     <p className="lab-muted"><strong>SIMULATION ONLY</strong> — {t.blocked}</p>
     <SimulationLocationControls language={language} location={locationContext} conditions={conditions}
+      caseId={(historicalCase||null) as HistoricalId|null} drillPoint={drillPoint} onDrillPoint={setDrillPoint} onMapOpenChange={setMapOpen}
       onLocation={setLocationContext} onConditions={setConditions}/>
     {input.kind !== 'EARTHQUAKE' && <p role="status">{t.unsupported}</p>}
     <label className="lab-history-select">{t.history}
@@ -213,7 +217,7 @@ export function MockLiveRun({ input, language, accessKey }: { input: DisasterTes
       {!realtimeValid && <p className="lab-drill-warning" role="alert">{t.longGap}</p>}
       {!preludeValid && <p className="lab-drill-warning" role="alert">{t.preludeInvalid}</p>}
     </fieldset>}
-    <button className="ui-btn ui-btn-primary" data-testid="launch-full-simulation" type="button" disabled={!enabled} onClick={start}>
+    <button className={mapOpen ? 'ui-btn ui-btn-secondary' : 'ui-btn ui-btn-primary'} data-testid="launch-full-simulation" type="button" disabled={!enabled} onClick={start}>
       {language === 'ja' ? 'シミュレーション開始 → ホーム画面' : language === 'en' ? 'Start full simulation → Home' : '開始整體模擬 → 進入主畫面'}
     </button>
     {!accessKey.trim() && <p className="lab-muted">{t.missing}</p>}
